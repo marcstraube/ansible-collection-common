@@ -1,0 +1,95 @@
+---
+# =============================================================================
+# Molecule Converge Playbook for PAM Hardening Role
+# =============================================================================
+
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update apt cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+  vars:
+    pam_hardening_enabled: true
+
+    # Password quality
+    pam_pwquality_enabled: true
+    pam_pwquality_minlen: 15
+    pam_pwquality_composition_rules: true
+    pam_pwquality_lcredit: -1
+    pam_pwquality_ucredit: -1
+    pam_pwquality_dcredit: -1
+    pam_pwquality_ocredit: -1
+    pam_pwquality_minclass: 0
+    pam_pwquality_maxrepeat: 3
+    pam_pwquality_maxsequence: 0
+    pam_pwquality_maxclassrepeat: 4
+    pam_pwquality_usercheck: true
+    pam_pwquality_gecoscheck: true
+    pam_pwquality_dictcheck: true
+    pam_pwquality_enforcing: true
+    pam_pwquality_retry: 3
+    pam_pwquality_enforce_for_root: true
+
+    # Account lockout
+    pam_faillock_enabled: true
+    pam_faillock_deny: 5
+    pam_faillock_unlock_time: 900
+    pam_faillock_fail_interval: 900
+    pam_faillock_audit: true
+
+    # Session limits
+    pam_limits_enabled: true
+    pam_limits_maxlogins: 10
+    pam_limits_nproc: 1024
+    pam_limits_core: 0
+    pam_limits_custom:
+      - domain: '@developers'
+        type: soft
+        item: nproc
+        value: 4096
+
+    # Access control
+    pam_access_enabled: true
+    pam_access_rules:
+      - '+:wheel:ALL'
+      - '+:root:LOCAL'
+
+    # Umask
+    pam_umask: '0077'
+
+    # Password history & hashing
+    pam_password_remember: 5
+    pam_password_hash: 'yescrypt'
+    pam_password_rounds: 5
+    pam_password_aging_enabled: true
+    pam_password_max_age: 99999
+    pam_password_min_age: 0
+    pam_password_warn_age: 7
+
+    # Null passwords
+    pam_permit_empty_passwords: false
+
+    # Securetty
+    pam_securetty_enabled: true
+    pam_securetty_ttys:
+      - tty1
+      - tty2
+
+    # 2FA disabled for testing (requires interactive setup)
+    pam_2fa_enabled: false
+
+  tasks:
+    - name: Include pam_hardening role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

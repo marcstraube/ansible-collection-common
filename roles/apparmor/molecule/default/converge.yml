@@ -1,0 +1,12 @@
+---
+# marcstraube.common.apparmor/molecule/default/converge.yml
+
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Include apparmor role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+
+timeout {{ base_systemd_boot_timeout }}
+console-mode {{ base_systemd_boot_console_mode }}
+{% if base_systemd_boot_editor %}
+editor yes
+{% else %}
+editor no
+{% endif %}

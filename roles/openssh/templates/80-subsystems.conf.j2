@@ -1,0 +1,6 @@
+{{ ansible_managed | comment }}
+{% if openssh_server_sftp_enabled | bool %}
+
+# Subsystems
+Subsystem sftp {{ __openssh_sftp_server }}
+{% endif %}

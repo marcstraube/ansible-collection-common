@@ -1,0 +1,18 @@
+---
+# =============================================================================
+# SNMP - Service Tasks
+# =============================================================================
+
+- name: Service | Enable and start snmpd
+  ansible.builtin.systemd:
+    name: '{{ __snmp_service_name }}'
+    enabled: true
+    state: started
+  when: snmp_enabled | bool
+
+- name: Service | Stop and disable snmpd
+  ansible.builtin.systemd:
+    name: '{{ __snmp_service_name }}'
+    enabled: false
+    state: stopped
+  when: not (snmp_enabled | bool)

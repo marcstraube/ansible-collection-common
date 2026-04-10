@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+# Grafana monitoring jail
+
+[grafana]
+enabled = true
+port = {{ fail2ban_grafana_port }}
+logpath = {{ fail2ban_grafana_logpath }}
+maxretry = {{ fail2ban_grafana_maxretry }}
+bantime = {{ fail2ban_grafana_bantime }}

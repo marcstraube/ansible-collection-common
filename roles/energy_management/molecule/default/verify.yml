@@ -1,0 +1,111 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # LOAD OS-SPECIFIC VARIABLES
+    # =========================================================================
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    # =========================================================================
+    # LOGIND VERIFICATION
+    # =========================================================================
+
+    - name: Verify | Check logind.conf.d directory exists
+      ansible.builtin.stat:
+        path: '{{ __energy_management_logind_conf_dir }}'
+      register: logind_dir
+      failed_when: not logind_dir.stat.exists
+
+    - name: Verify | Check logind energy.conf exists
+      ansible.builtin.stat:
+        path: '{{ __energy_management_logind_conf_dir }}/{{ __energy_management_logind_conf_file }}'
+      register: logind_conf
+      failed_when: not logind_conf.stat.exists
+
+    - name: Verify | Check logind energy.conf permissions
+      ansible.builtin.assert:
+        that:
+          - logind_conf.stat.mode == '0644'
+          - logind_conf.stat.pw_name == 'root'
+
+    - name: Verify | Read logind energy.conf
+      ansible.builtin.slurp:
+        src: '{{ __energy_management_logind_conf_dir }}/{{ __energy_management_logind_conf_file }}'
+      register: logind_content
+
+    - name: Verify | Check logind energy.conf content
+      ansible.builtin.assert:
+        that:
+          - "'HandlePowerKey=suspend' in logind_content.content | b64decode"
+          - "'HandleSuspendKey=suspend' in logind_content.content | b64decode"
+          - "'HandleHibernateKey=hibernate' in logind_content.content | b64decode"
+          # Desktop: no LidSwitch entries
+          - "'HandleLidSwitch' not in logind_content.content | b64decode"
+          # ansible_managed header present
+          - "'Ansible managed' in logind_content.content | b64decode"
+
+    # =========================================================================
+    # SLEEP VERIFICATION
+    # =========================================================================
+
+    - name: Verify | Check sleep.conf.d directory exists
+      ansible.builtin.stat:
+        path: '{{ __energy_management_sleep_conf_dir }}'
+      register: sleep_dir
+      failed_when: not sleep_dir.stat.exists
+
+    - name: Verify | Check sleep energy.conf exists
+      ansible.builtin.stat:
+        path: '{{ __energy_management_sleep_conf_dir }}/{{ __energy_management_sleep_conf_file }}'
+      register: sleep_conf
+      failed_when: not sleep_conf.stat.exists
+
+    - name: Verify | Check sleep energy.conf permissions
+      ansible.builtin.assert:
+        that:
+          - sleep_conf.stat.mode == '0644'
+          - sleep_conf.stat.pw_name == 'root'
+
+    - name: Verify | Read sleep energy.conf
+      ansible.builtin.slurp:
+        src: '{{ __energy_management_sleep_conf_dir }}/{{ __energy_management_sleep_conf_file }}'
+      register: sleep_content
+
+    - name: Verify | Check sleep energy.conf content
+      ansible.builtin.assert:
+        that:
+          - "'AllowSuspend=yes' in sleep_content.content | b64decode"
+          - "'AllowHibernation=yes' in sleep_content.content | b64decode"
+          - "'AllowSuspendThenHibernate=yes' in sleep_content.content | b64decode"
+          - "'AllowHybridSleep=no' in sleep_content.content | b64decode"
+          - "'Ansible managed' in sleep_content.content | b64decode"
+
+    - name: Verify | Check HibernateDelaySec present
+      ansible.builtin.assert:
+        that:
+          - "'HibernateDelaySec=3600' in sleep_content.content | b64decode"
+
+    # =========================================================================
+    # PPD VERIFICATION (package installed — service may not run in container)
+    # =========================================================================
+
+    - name: Verify | Check PPD packages are installed
+      ansible.builtin.package:
+        name: '{{ __energy_management_ppd_packages }}'
+        state: present
+      check_mode: true
+      register: ppd_check
+      failed_when: ppd_check.changed

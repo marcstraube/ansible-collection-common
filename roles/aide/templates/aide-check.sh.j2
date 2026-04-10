@@ -1,0 +1,42 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+
+set -euo pipefail
+
+# Configuration
+AIDE_CONFIG="{{ __aide_config_file }}"
+AIDE_DATABASE="{{ aide_database }}"
+AIDE_LOG_DIR="{{ aide_log_dir }}"
+AIDE_REPORT="${AIDE_LOG_DIR}/aide-report-$(date +%Y%m%d-%H%M%S).log"
+{% if aide_email_enabled | bool %}
+AIDE_EMAIL="{{ aide_email_to }}"
+{% endif %}
+
+# Ensure log directory exists
+mkdir -p "${AIDE_LOG_DIR}"
+
+# Run AIDE check
+echo "Starting AIDE integrity check at $(date)" | tee -a "${AIDE_REPORT}"
+echo "=======================================" | tee -a "${AIDE_REPORT}"
+
+if aide --check -c "${AIDE_CONFIG}" 2>&1 | tee -a "${AIDE_REPORT}"; then
+    echo "AIDE check completed successfully - no changes detected" | tee -a "${AIDE_REPORT}"
+    EXIT_CODE=0
+else
+    EXIT_CODE=$?
+    echo "AIDE detected changes! Exit code: ${EXIT_CODE}" | tee -a "${AIDE_REPORT}"
+{% if aide_email_enabled | bool %}
+
+    # Send email notification
+    if command -v mail &> /dev/null; then
+        mail -s "AIDE Alert: File system changes detected on $(hostname)" \
+            "${AIDE_EMAIL}" < "${AIDE_REPORT}"
+    fi
+{% endif %}
+fi
+
+# Rotate old reports
+find "${AIDE_LOG_DIR}" -name "aide-report-*.log" -mtime +{{ aide_report_retention_days }} -delete
+
+echo "AIDE check finished at $(date)" | tee -a "${AIDE_REPORT}"
+exit ${EXIT_CODE}

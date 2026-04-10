@@ -1,0 +1,35 @@
+---
+# =============================================================================
+# Additional Tools Tasks
+# =============================================================================
+
+- name: Install rebuild-detector
+  community.general.pacman:
+    name: 'rebuild-detector'
+    state: present
+  when: pacman_install_rebuild_detector | bool
+
+- name: Install pkgfile
+  community.general.pacman:
+    name: 'pkgfile'
+    state: present
+  when: pacman_install_pkgfile | bool
+  notify: 'pkgfile installed'
+
+- name: Enable pkgfile update timer
+  ansible.builtin.systemd:
+    name: 'pkgfile-update.timer'
+    state: started
+    enabled: true
+  when: pacman_install_pkgfile | bool
+
+- name: Install informant
+  become: true
+  become_user: '{{ aur_builder_user }}'
+  kewlfft.aur.aur:
+    name: 'informant'
+    use: '{{ aur_helper }}'
+    state: present
+  when:
+    - pacman_install_informant | bool
+    - aur_helper | length > 0

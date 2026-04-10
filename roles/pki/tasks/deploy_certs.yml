@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# PKI — Deploy externally-obtained certificates from inventory
+# =============================================================================
+
+- name: DeployCerts | Deploy certificate files
+  ansible.builtin.copy:
+    src: '{{ inventory_dir }}/files/certs/{{ item.src_cert }}'
+    dest: '{{ item.dest_cert }}'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '0644'
+  loop: '{{ pki_deploy_certs + pki_deploy_certs_host }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: DeployCerts | Deploy private key files
+  ansible.builtin.copy:
+    src: '{{ inventory_dir }}/files/certs/{{ item.src_key }}'
+    dest: '{{ item.dest_key }}'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '{{ item.key_mode | default("0600") }}'
+  loop: '{{ pki_deploy_certs + pki_deploy_certs_host }}'
+  loop_control:
+    label: '{{ item.name }}'
+  no_log: true
+
+- name: DeployCerts | Deploy certificate chain files
+  ansible.builtin.copy:
+    src: '{{ inventory_dir }}/files/certs/{{ item.src_chain }}'
+    dest: '{{ item.dest_chain }}'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '0644'
+  loop: '{{ pki_deploy_certs + pki_deploy_certs_host }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: item.src_chain is defined

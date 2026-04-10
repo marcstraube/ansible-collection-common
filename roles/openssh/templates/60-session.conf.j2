@@ -1,0 +1,42 @@
+{{ ansible_managed | comment }}
+# Session settings
+
+ClientAliveInterval {{ openssh_server_client_alive_interval }}
+ClientAliveCountMax {{ openssh_server_client_alive_count_max }}
+
+PrintMotd {{ openssh_server_print_motd | ternary('yes', 'no') }}
+{% if __openssh_print_lastlog_supported | default(true) %}
+PrintLastLog {{ openssh_server_print_lastlog | ternary('yes', 'no') }}
+{% endif %}
+{% if openssh_server_banner_enabled | bool %}
+Banner {{ openssh_server_banner_file }}
+{% else %}
+Banner none
+{% endif %}
+
+Compression {{ openssh_server_compression }}
+UseDNS {{ openssh_server_use_dns | ternary('yes', 'no') }}
+{% if openssh_server_version_addendum | length > 0 %}
+
+VersionAddendum {{ openssh_server_version_addendum }}
+{% endif %}
+{% if __openssh_unused_connection_timeout_supported | default(false) and openssh_server_unused_connection_timeout | length > 0 %}
+
+UnusedConnectionTimeout {{ openssh_server_unused_connection_timeout }}
+{% endif %}
+{% if __openssh_channel_timeout_supported | default(false) and openssh_server_channel_timeout | length > 0 %}
+
+ChannelTimeout {{ openssh_server_channel_timeout }}
+{% endif %}
+{% if __openssh_per_source_penalties_supported | default(false) and openssh_server_per_source_penalties | length > 0 %}
+
+PerSourcePenalties {{ openssh_server_per_source_penalties | join(',') }}
+{% endif %}
+{% if __openssh_per_source_penalties_supported | default(false) and openssh_server_per_source_net_block_size | length > 0 %}
+
+PerSourceNetBlockSize {{ openssh_server_per_source_net_block_size }}
+{% endif %}
+{% for line in openssh_server_extra_sshd_config %}
+
+{{ line }}
+{% endfor %}

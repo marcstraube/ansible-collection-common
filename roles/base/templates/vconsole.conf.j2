@@ -1,0 +1,8 @@
+{{ ansible_managed | comment }}
+KEYMAP={{ base_keymap }}
+{% if base_console_font %}
+FONT={{ base_console_font }}
+{% endif %}
+{% if base_console_font_map %}
+FONT_MAP={{ base_console_font_map }}
+{% endif %}

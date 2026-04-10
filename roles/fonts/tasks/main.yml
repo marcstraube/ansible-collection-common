@@ -1,0 +1,28 @@
+---
+# =============================================================================
+# Fonts Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  when: fonts_enabled | bool
+  tags: [fonts, fonts:vars]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: fonts_enabled | bool
+  tags: [fonts, fonts:install]
+
+- name: Main | Import fontconfig tasks
+  ansible.builtin.import_tasks: fontconfig.yml
+  when:
+    - fonts_enabled | bool
+    - fonts_fontconfig_enabled | bool
+  tags: [fonts, fonts:config]

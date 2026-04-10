@@ -1,0 +1,23 @@
+---
+# =============================================================================
+# Per-User Editor Configuration
+# =============================================================================
+# Loops over editors_users entries.
+# Respects mode: managed | initial | disabled
+# =============================================================================
+
+- name: Users | Deploy per-user editor config
+  ansible.builtin.include_tasks:
+    file: user_config.yml
+    apply:
+      tags: [editors, editors:users]
+  loop: '{{ editors_users }}'
+  loop_control:
+    loop_var: __editors_user
+    label: '{{ __editors_user.username }}'
+  when:
+    - (__editors_user.mode | default(editors_user_config_mode)) != 'disabled'
+    - >-
+      (__editors_user.mode | default(editors_user_config_mode)) == 'managed'
+      or ((__editors_user.mode | default(editors_user_config_mode)) == 'initial'
+          and __editors_user.username in (__users_newly_created | default([])))

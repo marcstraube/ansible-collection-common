@@ -1,0 +1,28 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    restic_enabled: true
+    restic_auto_init: true
+    restic_run_after_configure: false
+    restic_jobs:
+      - name: 'test'
+        repository: '/tmp/restic-test-repo'
+        password: 'test-password-12345'
+        paths:
+          - '/etc'
+        excludes:
+          - '*.bak'
+        schedule: 'daily'
+        retention:
+          keep_last: 3
+          keep_daily: 7
+          keep_within: '14d'
+
+  tasks:
+    - name: Include restic role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

@@ -1,0 +1,49 @@
+---
+# =============================================================================
+# RedHat/Rocky-specific variables for hardware tokens
+# =============================================================================
+
+# CCID smart card driver
+__hardware_tokens_ccid_package: 'ccid'
+
+# FIDO2 packages
+__hardware_tokens_fido2_packages:
+  - 'libfido2'
+  - 'fido2-tools'
+
+# Smartcard packages (pcsc-lite daemon + diagnostics)
+__hardware_tokens_smartcard_packages:
+  - 'pcsc-lite'
+  - 'pcsc-tools'
+
+# OpenSC smart card tools
+__hardware_tokens_opensc_package: 'opensc'
+
+# NitroKey packages (libnitrokey not available in RHEL/Rocky repos)
+__hardware_tokens_nitrokey_packages: []
+
+# NitroKey App GUI (not available in RHEL repos)
+__hardware_tokens_nitrokey_app_package: ''
+
+# YubiKey packages
+__hardware_tokens_yubikey_packages:
+  - 'pam_yubico'
+
+# YubiKey Manager CLI (not in Rocky repos — install via pipx if needed)
+__hardware_tokens_yubikey_manager_package: ''
+
+# PAM U2F
+__hardware_tokens_pam_u2f_package: 'pam-u2f'
+
+# Services
+__hardware_tokens_pcscd_service: 'pcscd.socket'
+
+# Udev rules path
+__hardware_tokens_udev_rules_path: '/etc/udev/rules.d'
+
+# PAM system auth config
+__hardware_tokens_pam_system_auth: '/etc/pam.d/system-auth'
+
+# Required groups
+__hardware_tokens_groups:
+  - 'plugdev'

@@ -1,0 +1,62 @@
+---
+# Markdownlint configuration for Ansible collections
+# See: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Default state for all rules
+default: true
+
+# MD013/line-length - Line length
+MD013:
+  # Longer lines for code blocks and tables
+  line_length: 120
+  # Number of characters for headings
+  heading_line_length: 120
+  # Number of characters for code blocks
+  code_block_line_length: 150
+  # Include code blocks
+  code_blocks: true
+  # Include tables
+  tables: true
+  # Include headings
+  headings: true
+  # Strict length checking
+  strict: false
+  # Stern length checking
+  stern: false
+
+# MD033/no-inline-html - Inline HTML
+MD033:
+  # Allow specific HTML elements (useful for tables, badges)
+  allowed_elements:
+    - br
+    - details
+    - summary
+    - img
+    - kbd
+
+# MD041/first-line-heading - First line in file should be a top level heading
+MD041:
+  # Level of first heading
+  level: 1
+  # RegExp for matching title in front matter
+  front_matter_title: "^\\s*title\\s*[:=]"
+
+# MD024/no-duplicate-heading - Multiple headings with the same content
+MD024:
+  # Allow duplicate headings in different sections
+  siblings_only: true
+
+# MD046/code-block-style - Code block style
+MD046:
+  # Use fenced code blocks
+  style: fenced
+
+# MD049/emphasis-style - Emphasis style
+MD049:
+  # Use asterisks for emphasis
+  style: asterisk
+
+# MD050/strong-style - Strong style
+MD050:
+  # Use asterisks for strong
+  style: asterisk

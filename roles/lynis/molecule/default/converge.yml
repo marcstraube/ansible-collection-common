@@ -1,0 +1,40 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install EPEL repository (Rocky)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+  vars:
+    lynis_enabled: true
+    lynis_timer_enabled: true
+    lynis_machine_role: 'server'
+    lynis_min_hardening_index: 50
+    lynis_compliance_enabled: true
+    lynis_compliance_standards:
+      - 'iso27001'
+    lynis_skip_tests:
+      - 'BOOT-5122'
+    lynis_btrfs_nocow: true
+
+  tasks:
+    - name: Include lynis role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

@@ -1,0 +1,38 @@
+{{ ansible_managed | comment }}
+LANG={{ base_locale }}
+{% if base_locale_lc_ctype %}
+LC_CTYPE={{ base_locale_lc_ctype }}
+{% endif %}
+{% if base_locale_lc_numeric %}
+LC_NUMERIC={{ base_locale_lc_numeric }}
+{% endif %}
+{% if base_locale_lc_time %}
+LC_TIME={{ base_locale_lc_time }}
+{% endif %}
+{% if base_locale_lc_collate %}
+LC_COLLATE={{ base_locale_lc_collate }}
+{% endif %}
+{% if base_locale_lc_monetary %}
+LC_MONETARY={{ base_locale_lc_monetary }}
+{% endif %}
+{% if base_locale_lc_messages %}
+LC_MESSAGES={{ base_locale_lc_messages }}
+{% endif %}
+{% if base_locale_lc_paper %}
+LC_PAPER={{ base_locale_lc_paper }}
+{% endif %}
+{% if base_locale_lc_name %}
+LC_NAME={{ base_locale_lc_name }}
+{% endif %}
+{% if base_locale_lc_address %}
+LC_ADDRESS={{ base_locale_lc_address }}
+{% endif %}
+{% if base_locale_lc_telephone %}
+LC_TELEPHONE={{ base_locale_lc_telephone }}
+{% endif %}
+{% if base_locale_lc_measurement %}
+LC_MEASUREMENT={{ base_locale_lc_measurement }}
+{% endif %}
+{% if base_locale_lc_identification %}
+LC_IDENTIFICATION={{ base_locale_lc_identification }}
+{% endif %}

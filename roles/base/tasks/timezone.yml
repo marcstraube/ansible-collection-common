@@ -1,0 +1,38 @@
+---
+# =============================================================================
+# Timezone Configuration Tasks
+# =============================================================================
+
+- name: Set timezone
+  community.general.timezone:
+    name: '{{ base_timezone }}'
+
+- name: Configure systemd-timesyncd
+  ansible.builtin.template:
+    src: 'timesyncd.conf.j2'
+    dest: '/etc/systemd/timesyncd.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 'restart timesyncd'
+  when:
+    - base_ntp_enabled | bool
+    - ansible_facts['os_family'] != 'RedHat'
+
+- name: Enable NTP synchronization
+  ansible.builtin.systemd:
+    name: 'systemd-timesyncd.service'
+    state: started
+    enabled: true
+  when:
+    - base_ntp_enabled | bool
+    - ansible_facts['os_family'] != 'RedHat'
+
+- name: Disable NTP synchronization
+  ansible.builtin.systemd:
+    name: 'systemd-timesyncd.service'
+    state: stopped
+    enabled: false
+  when:
+    - not (base_ntp_enabled | bool)
+    - ansible_facts['os_family'] != 'RedHat'

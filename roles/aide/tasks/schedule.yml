@@ -1,0 +1,42 @@
+---
+# =============================================================================
+# AIDE Scheduling Tasks
+# =============================================================================
+
+- name: Deploy AIDE check script
+  ansible.builtin.template:
+    src: 'aide-check.sh.j2'
+    dest: '/usr/local/bin/aide-check.sh'
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy AIDE systemd service
+  ansible.builtin.template:
+    src: 'aide-check.service.j2'
+    dest: '/etc/systemd/system/aide-check.service'
+    owner: root
+    group: root
+    mode: '0644'
+  when: aide_timer_enabled | bool
+  notify: Reload aide systemd units
+
+- name: Deploy AIDE systemd timer
+  ansible.builtin.template:
+    src: 'aide-check.timer.j2'
+    dest: '/etc/systemd/system/aide-check.timer'
+    owner: root
+    group: root
+    mode: '0644'
+  when: aide_timer_enabled | bool
+  notify:
+    - Reload aide systemd units
+    - Restart AIDE timer
+
+- name: Enable and start AIDE timer
+  ansible.builtin.systemd:
+    name: aide-check.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: aide_timer_enabled | bool

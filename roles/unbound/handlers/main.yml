@@ -1,0 +1,24 @@
+---
+# =============================================================================
+# Unbound - Handlers
+# =============================================================================
+
+- name: Restart unbound
+  ansible.builtin.systemd:
+    name: '{{ __unbound_service_name }}'
+    state: restarted
+  listen: restart unbound
+  when: unbound_enabled | bool
+
+- name: Reload unbound
+  ansible.builtin.systemd:
+    name: '{{ __unbound_service_name }}'
+    state: reloaded
+  listen: reload unbound
+  when: unbound_enabled | bool
+
+- name: Reload unbound systemd units
+  ansible.builtin.systemd:
+    daemon_reload: true
+  failed_when: false
+  listen: Reload unbound systemd units

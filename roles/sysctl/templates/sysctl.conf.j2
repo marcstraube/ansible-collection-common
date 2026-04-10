@@ -1,0 +1,8 @@
+{{ ansible_managed | comment }}
+#
+# Sysctl Configuration
+#
+
+{% for key, value in __sysctl_combined_parameters | dictsort %}
+{{ key }} = {{ value }}
+{% endfor %}

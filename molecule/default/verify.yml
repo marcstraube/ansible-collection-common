@@ -1,0 +1,33 @@
+---
+# Verify smoke test for marcstraube.common collection
+
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Verify sudo is installed
+      ansible.builtin.command: sudo --version
+      changed_when: false
+      register: sudo_version
+
+    - name: Verify vim is installed
+      ansible.builtin.command: vim --version
+      changed_when: false
+      register: vim_version
+
+    - name: Verify chronyd/ntpd service
+      ansible.builtin.service_facts:
+
+    - name: Check time sync service
+      ansible.builtin.assert:
+        that:
+          - >-
+            'chrony.service' in ansible_facts.services or
+            'chronyd.service' in ansible_facts.services or
+            'systemd-timesyncd.service' in ansible_facts.services
+        fail_msg: "No time synchronization service found"
+        success_msg: "Time synchronization is configured"
+
+    - name: Display verification results
+      ansible.builtin.debug:
+        msg: "Common collection smoke test verified successfully"

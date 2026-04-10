@@ -1,0 +1,20 @@
+---
+# =============================================================================
+# Restic - BTRFS Tasks
+# =============================================================================
+# NoCOW for log directory to avoid CoW overhead on write-heavy log files.
+# Only applies when restic_log_to_file is true.
+
+- name: BTRFS | Check filesystem type for log directory
+  ansible.builtin.command:
+    cmd: "stat -f -c '%T' {{ restic_log_dir }}"
+  register: __restic_log_fstype
+  changed_when: false
+  failed_when: false
+
+- name: BTRFS | Set NoCOW on log directory
+  ansible.builtin.command:
+    cmd: "chattr +C {{ restic_log_dir }}"
+  when:
+    - __restic_log_fstype.stdout | default('') == 'btrfs'
+  changed_when: false

@@ -1,0 +1,172 @@
+---
+# =============================================================================
+# Text Editors Configuration
+# =============================================================================
+# Role: marcstraube.common.editors
+# Description: Install and configure text editors (nano, vim, neovim)
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+editors_enabled: true
+
+# =============================================================================
+# EDITORS TO INSTALL
+# =============================================================================
+
+editors_nano: true
+editors_vim: true
+editors_neovim: true
+
+# Default editor (for EDITOR/VISUAL env vars via /etc/profile.d/editor.sh)
+# Options: nano, vim, nvim
+editors_default: 'nvim'
+
+# =============================================================================
+# CONFIGURATION MANAGEMENT
+# =============================================================================
+# Set to false to skip deploying global config (e.g. when using own dotfiles)
+
+editors_nano_config_manage: true
+editors_vim_config_manage: true
+editors_neovim_config_manage: true
+
+# =============================================================================
+# NEOVIM BINARY INSTALL (RedHat/Rocky only)
+# =============================================================================
+# Neovim is not in EPEL — install pre-built binary from GitHub releases.
+# Set to true on RedHat systems. Ignored on Arch/Debian (uses package manager).
+
+editors_neovim_binary_install: false
+editors_neovim_version: 'v0.10.4'
+
+# =============================================================================
+# NANO CONFIGURATION
+# =============================================================================
+
+editors_nano_config:
+  set_autoindent: true
+  set_linenumbers: true
+  set_mouse: true
+  set_tabsize: 4
+  set_tabstospaces: true
+  set_softwrap: true
+  set_constantshow: true             # Show cursor position in status bar
+  set_indicator: true                # Show scroll position indicator
+  set_stateflags: true               # Show state flags in title bar
+  syntax_highlighting: true
+
+# =============================================================================
+# VIM CONFIGURATION
+# =============================================================================
+
+editors_vim_config:
+  # Syntax and line numbers
+  syntax_on: true
+  set_number: true
+  set_relativenumber: false
+  # Indentation
+  set_expandtab: true
+  set_tabstop: 4
+  set_shiftwidth: 4
+  set_autoindent: true
+  set_smartindent: true
+  # Mouse and clipboard
+  set_mouse: 'a'
+  set_clipboard: 'unnamedplus'
+  # Encoding
+  set_encoding: 'utf-8'
+  # Search
+  set_hlsearch: true
+  set_incsearch: true
+  set_ignorecase: true
+  set_smartcase: true
+  # Visual
+  set_showmatch: true
+  set_showcmd: true
+  set_wildmenu: true
+  set_laststatus: 2
+  set_ruler: true
+  # Editing
+  set_backspace: 'indent,eol,start'
+  # Colorscheme (empty = default)
+  colorscheme: ''
+
+# =============================================================================
+# NEOVIM CONFIGURATION
+# =============================================================================
+
+# =============================================================================
+# PER-USER CONFIGURATION
+# =============================================================================
+# Per-user editor config deployment. Each entry controls which editor configs
+# are deployed to the user's home directory.
+#
+# Mode controls deployment behavior:
+#   managed  — deploy config on every run (Ansible owns the file)
+#   initial  — deploy only when user is newly created (user owns after that)
+#   disabled — skip per-user config deployment entirely
+#
+# config_merge controls how user config relates to global defaults:
+#   true  — merge: editors_<editor>_config | combine(user.<editor>_config)
+#   false — standalone: only user.<editor>_config is used
+#
+# Example:
+#   editors_users:
+#     - username: 'johndoe'
+#       mode: 'managed'
+#       config_merge: true
+#       vim_config:
+#         set_relativenumber: true
+#       neovim_config:
+#         colorscheme: 'catppuccin'
+#     - username: 'guest'
+#       mode: 'disabled'
+editors_users: []
+
+# Default mode when user entry has no 'mode' key
+editors_user_config_mode: 'managed'
+
+# Default config_merge: true = global | combine(user), false = user only
+editors_user_config_merge: true
+
+# =============================================================================
+# NEOVIM CONFIGURATION
+# =============================================================================
+
+editors_neovim_config:
+  # Syntax and line numbers
+  syntax_on: true
+  set_number: true
+  set_relativenumber: true
+  # Indentation
+  set_expandtab: true
+  set_tabstop: 4
+  set_shiftwidth: 4
+  set_autoindent: true
+  set_smartindent: true
+  # Mouse and clipboard
+  set_mouse: 'a'
+  set_clipboard: 'unnamedplus'
+  # Encoding
+  set_encoding: 'utf-8'
+  # True color support
+  set_termguicolors: true
+  # Search
+  set_hlsearch: true
+  set_incsearch: true
+  set_ignorecase: true
+  set_smartcase: true
+  # Visual
+  set_showmatch: true
+  set_showcmd: true
+  set_laststatus: 2
+  set_signcolumn: 'yes'
+  set_cursorline: true
+  # Performance
+  set_updatetime: 300
+  set_timeoutlen: 500
+  # Colorscheme (empty = default)
+  colorscheme: ''

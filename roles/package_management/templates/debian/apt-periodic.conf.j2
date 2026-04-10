@@ -1,0 +1,6 @@
+{{ ansible_managed | comment('c') }}
+// APT Periodic Configuration
+
+APT::Periodic::Update-Package-Lists "{{ apt_periodic_update }}";
+APT::Periodic::Download-Upgradeable-Packages "{{ apt_periodic_download }}";
+APT::Periodic::AutocleanInterval "{{ apt_periodic_autoclean }}";

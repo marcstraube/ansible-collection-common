@@ -1,0 +1,20 @@
+{{ ansible_managed | comment }}
+# SSH jails
+
+[sshd]
+enabled = {{ fail2ban_sshd_enabled | lower }}
+port = {{ fail2ban_sshd_port }}
+logpath = {{ fail2ban_sshd_logpath }}
+maxretry = {{ fail2ban_sshd_maxretry }}
+bantime = {{ fail2ban_sshd_bantime }}
+mode = {{ fail2ban_sshd_mode }}
+{% if fail2ban_sshd_ddos_enabled %}
+
+[sshd-ddos]
+enabled = true
+port = {{ fail2ban_sshd_ddos_port }}
+logpath = {{ fail2ban_sshd_logpath }}
+maxretry = {{ fail2ban_sshd_ddos_maxretry }}
+bantime = {{ fail2ban_sshd_ddos_bantime }}
+filter = sshd[mode=ddos]
+{% endif %}

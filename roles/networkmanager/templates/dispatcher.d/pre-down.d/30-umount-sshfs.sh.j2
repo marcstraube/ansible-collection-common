@@ -1,0 +1,37 @@
+#jinja2:lstrip_blocks: True
+#!/bin/sh
+{{ ansible_managed | comment }}
+
+# This script automatically unmounts SSHFS shares when the last network connection is about to go down.
+
+LOG_PREFIX="NM-SSHFS-Umount-Pre-Down"
+
+if [ "$2" = "pre-down" ]; then
+  # Find the connection ID (name) from the device name
+  CONNECTION_ID=$(nmcli -t -f NAME,DEVICE connection show --active | grep "$1" | cut -d: -f1)
+
+  # Give the system a moment to update its connection states
+  sleep 2
+
+  # Check how many active connections are currently reported by NetworkManager.
+  # We subtract 1 because the current connection is still technically "active"
+  # during pre-down, but is about to go down.
+  ACTIVE_CONNECTIONS=$(nmcli -t -f STATE,TYPE connection show --active | grep -c "activated")
+
+  # If this is the last active connection (or the only one that was active), then unmount.
+  # We check if ACTIVE_CONNECTIONS is 1 (meaning only this one is active) or 0 (meaning it already went down).
+  if [ "$ACTIVE_CONNECTIONS" -le 1 ]; then
+    echo "$LOG_PREFIX: Last network connection '$CONNECTION_ID' is going down. Unmounting all SSHFS shares."
+{% if networkmanager_sshfs_shares is defined and networkmanager_sshfs_shares | length > 0 %}
+  {% for share in networkmanager_sshfs_shares %}
+    # Check if the share is mounted
+    if mountpoint -q "{{ share.dest }}"; then
+      echo "$LOG_PREFIX: Unmounting '{{ share.name }}' from {{ share.dest }}"
+      fusermount -u "{{ share.dest }}"
+    fi
+  {% endfor %}
+{% endif %}
+  else
+    echo "$LOG_PREFIX: Connection '$CONNECTION_ID' is going down, but other connections are still active. Skipping unmount."
+  fi
+fi

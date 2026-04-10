@@ -1,0 +1,106 @@
+---
+# marcstraube.common.wireguard/molecule/default/molecule.yml
+# Vagrant-based: needs kernel modules (modprobe wireguard)
+
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    ignore-errors: true
+
+driver:
+  name: default
+  options:
+    managed: false
+    login_cmd_template: bash -c 'cd ${MOLECULE_EPHEMERAL_DIRECTORY} && vagrant ssh {instance}'
+
+platforms:
+  - name: wireguard-archlinux
+    groups:
+      - test_hosts
+  - name: wireguard-debian-trixie
+    groups:
+      - test_hosts
+  - name: wireguard-rocky-9
+    groups:
+      - test_hosts
+  - name: wireguard-rocky-10
+    groups:
+      - test_hosts
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks,timer
+      stdout_callback: default
+      result_format: yaml
+      inject_facts_as_vars: false
+  inventory:
+    host_vars:
+      wireguard-archlinux:
+        ansible_port: 2222
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/wireguard-archlinux/virtualbox/private_key
+      wireguard-debian-trixie:
+        ansible_port: 2223
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/wireguard-debian-trixie/virtualbox/private_key
+      wireguard-rocky-9:
+        ansible_port: 2224
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/wireguard-rocky-9/virtualbox/private_key
+      wireguard-rocky-10:
+        ansible_port: 2225
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/wireguard-rocky-10/virtualbox/private_key
+    group_vars:
+      all:
+        ansible_connection: ssh
+        ansible_user: vagrant
+        ansible_host: 127.0.0.1
+        ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+
+        # Centralized test configuration variables
+        wireguard_enabled: true
+        wireguard_interface: 'wg0'
+        wireguard_address: '10.100.0.1/24'
+        wireguard_port: 51820
+        wireguard_server_mode: true
+        wireguard_generate_keys: true
+        wireguard_firewalld_enabled: false
+        wireguard_peers:
+          - name: 'test-client'
+            public_key: 'DkI14ou7LuomS8yKwmPiBMslAt6g29+33GEA92doHXA='
+            allowed_ips: '10.100.0.2/32'
+            persistent_keepalive: 25
+
+  playbooks:
+    create: create.yml
+    destroy: destroy.yml
+    prepare: prepare.yml
+    converge: converge.yml
+    verify: verify.yml
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy

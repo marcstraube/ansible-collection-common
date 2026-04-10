@@ -1,0 +1,47 @@
+---
+# =============================================================================
+# PKI AppArmor Tasks (OCSP Responder)
+# =============================================================================
+
+- name: AppArmor | Check if AppArmor is active
+  ansible.builtin.stat:
+    path: /sys/kernel/security/apparmor
+  register: __pki_apparmor_active
+
+- name: AppArmor | Deploy OCSP responder AppArmor profile
+  ansible.builtin.template:
+    src: 'apparmor-pki-ocsp.j2'
+    dest: '/etc/apparmor.d/pki-ocsp'
+    owner: root
+    group: root
+    mode: '0644'
+  when: __pki_apparmor_active.stat.exists
+  notify: Restart OCSP responder
+
+- name: AppArmor | Get current profile status
+  ansible.builtin.command:
+    cmd: aa-status --json
+  register: __pki_aa_status
+  changed_when: false
+  failed_when: false
+  when: __pki_apparmor_active.stat.exists
+
+- name: AppArmor | Build enforce set
+  ansible.builtin.set_fact:
+    __pki_apparmor_enforce_set: >-
+      {{ (__pki_aa_status.stdout | default('{}') | from_json).get('profiles', {})
+         | dict2items | selectattr('value', 'eq', 'enforce')
+         | map(attribute='key') | list }}
+  when:
+    - __pki_apparmor_active.stat.exists
+    - __pki_aa_status.rc == 0
+
+- name: AppArmor | Enforce OCSP responder profile
+  ansible.builtin.command:
+    cmd: aa-enforce /etc/apparmor.d/pki-ocsp
+  when:
+    - __pki_apparmor_active.stat.exists
+    - >-
+      'pki-ocsp' not in __pki_apparmor_enforce_set | default([])
+      and '/usr/bin/openssl' not in __pki_apparmor_enforce_set | default([])
+  changed_when: true

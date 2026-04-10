@@ -1,0 +1,51 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Full system update (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update apt cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Update dnf cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+  vars:
+    graphics_enabled: true
+    # In containers, no real GPU — set manually
+    graphics_gpu: 'intel'
+    graphics_intel_enabled: true
+    graphics_intel_mesa: true
+    graphics_intel_vulkan: false
+    graphics_intel_vaapi: false
+    graphics_intel_32bit: false
+    graphics_amd_enabled: false
+    graphics_nvidia_enabled: false
+    # Test common tools
+    graphics_vulkan_tools: false
+    graphics_vaapi_tools: false
+    graphics_vdpau_tools: false
+    graphics_mesa_utils: true
+    # Kernel params (test modprobe config deployment)
+    graphics_kernel_params_enabled: true
+    graphics_intel_kernel_params:
+      - 'i915 fastboot=1'
+    # Hybrid graphics disabled in containers (no real GPU)
+    graphics_hybrid_enabled: false
+
+  tasks:
+    - name: Include graphics role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

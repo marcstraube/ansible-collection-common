@@ -1,0 +1,48 @@
+---
+# =============================================================================
+# ArchLinux-specific variables for hardware tokens
+# =============================================================================
+
+# CCID smart card driver
+__hardware_tokens_ccid_package: 'ccid'
+
+# FIDO2 packages
+__hardware_tokens_fido2_packages:
+  - 'libfido2'
+
+# Smartcard packages (pcsc-tools for diagnostics)
+__hardware_tokens_smartcard_packages:
+  - 'pcsc-tools'
+
+# OpenSC smart card tools
+__hardware_tokens_opensc_package: 'opensc'
+
+# NitroKey packages
+__hardware_tokens_nitrokey_packages:
+  - 'libnitrokey'
+  - 'nitrokey-udev-rules'
+
+# NitroKey App GUI (AUR package)
+__hardware_tokens_nitrokey_app_package: 'nitrokey-app'
+
+# YubiKey packages
+__hardware_tokens_yubikey_packages:
+  - 'yubico-pam'
+
+# YubiKey Manager CLI (ykman)
+__hardware_tokens_yubikey_manager_package: 'yubikey-manager'
+
+# PAM U2F
+__hardware_tokens_pam_u2f_package: 'pam-u2f'
+
+# Services
+__hardware_tokens_pcscd_service: 'pcscd.socket'
+
+# Udev rules path
+__hardware_tokens_udev_rules_path: '/etc/udev/rules.d'
+
+# PAM system auth config
+__hardware_tokens_pam_system_auth: '/etc/pam.d/system-auth'
+
+# Required groups (Arch uses uaccess via udev, no plugdev needed)
+__hardware_tokens_groups: []

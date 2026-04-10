@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# Unbound - Service Tasks
+# =============================================================================
+
+- name: Service | Enable and start unbound
+  ansible.builtin.systemd:
+    name: '{{ __unbound_service_name }}'
+    enabled: true
+    state: started

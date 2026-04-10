@@ -1,0 +1,63 @@
+---
+# =============================================================================
+# SNMP - Configuration Tasks
+# =============================================================================
+
+- name: Configure | Validate SNMPv3 passphrase length
+  ansible.builtin.assert:
+    that:
+      - item.auth_passphrase | length >= 8
+      - item.priv_passphrase | default(item.auth_passphrase) | length >= 8
+    fail_msg: >-
+      SNMPv3 passphrases must be at least 8 characters
+      (user: {{ item.username }})
+    quiet: true
+  loop: '{{ snmp_v3_users }}'
+  loop_control:
+    label: '{{ item.username }}'
+  no_log: true
+  when:
+    - snmp_v3_enabled | bool
+    - snmp_v3_users | length > 0
+
+- name: Configure | Ensure config directory exists
+  ansible.builtin.file:
+    path: '{{ __snmp_config_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Configure | Deploy snmpd configuration
+  ansible.builtin.template:
+    src: 'snmpd.conf.j2'
+    dest: '{{ __snmp_config_file }}'
+    owner: root
+    group: root
+    mode: '0600'
+  notify: Restart snmpd
+  no_log: true
+
+# Arch Linux snmpd.service hardcodes "udp: udp6:" in ExecStart, which
+# conflicts with agentaddress in snmpd.conf. Override to let the config
+# file control listen addresses.
+- name: Configure | Create systemd override directory (Arch)
+  ansible.builtin.file:
+    path: /etc/systemd/system/snmpd.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Configure | Deploy systemd override (Arch)
+  ansible.builtin.template:
+    src: 'snmpd-override.conf.j2'
+    dest: /etc/systemd/system/snmpd.service.d/override.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload snmp systemd units
+    - Restart snmpd
+  when: ansible_facts['os_family'] == 'Archlinux'

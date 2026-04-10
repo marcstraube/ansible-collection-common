@@ -1,0 +1,33 @@
+---
+# =============================================================================
+# Unattended Upgrades (Debian/Ubuntu)
+# =============================================================================
+
+- name: Install unattended-upgrades
+  ansible.builtin.apt:
+    name:
+      - unattended-upgrades
+      - apt-listchanges
+    state: present
+
+- name: Configure unattended-upgrades
+  ansible.builtin.template:
+    src: 'debian/unattended-upgrades.conf.j2'
+    dest: '/etc/apt/apt.conf.d/50unattended-upgrades'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable unattended-upgrades
+  ansible.builtin.template:
+    src: 'debian/auto-upgrades.conf.j2'
+    dest: '/etc/apt/apt.conf.d/20auto-upgrades'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable unattended-upgrades timer
+  ansible.builtin.systemd:
+    name: 'apt-daily-upgrade.timer'
+    state: started
+    enabled: true

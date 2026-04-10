@@ -1,0 +1,68 @@
+---
+# marcstraube.common.wireguard/molecule/default/prepare.yml
+# NOTE: No full system upgrade on Arch — upgrading the kernel without reboot
+# breaks modprobe (old running kernel, new module paths). The Vagrant box
+# kernel is new enough for built-in wireguard support.
+
+- name: Bootstrap Python on non-Arch hosts
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Wait for SSH to stabilize
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 120
+
+    - name: Install Python 3 (Debian)
+      ansible.builtin.raw: apt-get update && apt-get install -y python3
+      changed_when: false
+      when: inventory_hostname == 'wireguard-debian'
+
+    - name: Install Python 3 (Rocky)
+      ansible.builtin.raw: dnf install -y python3
+      changed_when: false
+      when: inventory_hostname in ['wireguard-rocky9', 'wireguard-rocky10']
+
+- name: Prepare Debian/Rocky
+  hosts: wireguard-debian:wireguard-rocky9:wireguard-rocky10
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Update package cache (Rocky)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Install EPEL repository (Rocky)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Prepare Arch Linux (cache only, no kernel upgrade)
+  hosts: wireguard-archlinux
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Initialize pacman keyring (Arch Linux)
+      ansible.builtin.raw: |
+        pacman-key --init
+        pacman-key --populate archlinux
+      changed_when: false
+
+    - name: Update archlinux-keyring first (Arch Linux)
+      community.general.pacman:
+        name:
+          - archlinux-keyring
+        state: latest
+        update_cache: true
+      retries: 3
+      delay: 10
+      register: keyring_update
+      until: keyring_update is succeeded

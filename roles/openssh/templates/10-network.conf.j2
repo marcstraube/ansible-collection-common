@@ -1,0 +1,14 @@
+{{ ansible_managed | comment }}
+# Network settings
+
+Port {{ openssh_server_port }}
+{% for port in openssh_server_additional_ports %}
+Port {{ port }}
+{% endfor %}
+
+AddressFamily {{ openssh_server_address_family }}
+{% for addr in openssh_server_listen_addresses %}
+ListenAddress {{ addr }}
+{% endfor %}
+
+TCPKeepAlive {{ openssh_server_tcp_keep_alive | ternary('yes', 'no') }}

@@ -1,0 +1,91 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Full system update (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Install systemd (Debian)
+      ansible.builtin.apt:
+        name:
+          - systemd
+          - procps
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install systemd (RedHat)
+      ansible.builtin.dnf:
+        name:
+          - systemd
+          - procps-ng
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+  vars:
+    snmp_enabled: true
+    snmp_v2c_enabled: true
+    snmp_v2c_communities:
+      - community: 'testcommunity'
+        source: '127.0.0.1'
+    snmp_v2c_rw_communities:
+      - community: 'testprivate'
+        source: '127.0.0.1'
+    snmp_v3_enabled: true
+    snmp_v3_users:
+      - username: 'testuser'
+        auth_protocol: 'SHA'
+        auth_passphrase: 'testauthpass123'
+        priv_protocol: 'AES'
+        priv_passphrase: 'testprivpass123'
+        access: 'rouser'
+        security_level: 'authPriv'
+    snmp_com2sec:
+      - sec_name: 'mynet'
+        source: '127.0.0.0/8'
+        community: 'testcommunity'
+    snmp_groups:
+      - name: 'mygroup'
+        version: 'v2c'
+        sec_name: 'mynet'
+    snmp_access:
+      - group: 'mygroup'
+        context: ''
+        match: 'any'
+        level: 'noauth'
+        prefix: 'exact'
+        read: 'all'
+        write: 'none'
+        notify: 'none'
+    snmp_trapsinks:
+      - host: '127.0.0.1'
+        community: 'testcommunity'
+    snmp_smuxpeers:
+      - '.1.3.6.1.4.1.674.10893.1'
+    snmp_dont_log_tcpwrappers: true
+    snmp_disk_monitors:
+      - path: '/'
+        min_free: '10%'
+    snmp_process_monitors:
+      - name: 'systemd'
+        min: 1
+    snmp_load_thresholds:
+      load1: 16
+      load5: 12
+      load15: 8
+    snmp_extend_scripts:
+      - name: 'testextend'
+        command: '/bin/echo test'
+    snmp_agentx_enabled: true
+
+  tasks:
+    - name: Include snmp role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

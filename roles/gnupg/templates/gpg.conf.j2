@@ -1,0 +1,60 @@
+{{ ansible_managed | comment }}
+
+{% if gnupg_user.default_key is defined and gnupg_user.default_key | length > 0 %}
+
+# Default key for signing
+default-key {{ gnupg_user.default_key }}
+{% elif gnupg_default_key | length > 0 %}
+default-key {{ gnupg_default_key }}
+{% endif %}
+
+# Keyserver
+keyserver {{ gnupg_keyserver }}
+
+# Auto-key-locate mechanisms
+auto-key-locate {{ gnupg_auto_key_locate }}
+
+# Algorithm preferences
+personal-cipher-preferences {{ gnupg_personal_cipher_preferences }}
+personal-digest-preferences {{ gnupg_personal_digest_preferences }}
+personal-compress-preferences {{ gnupg_personal_compress_preferences }}
+
+# Default preferences for new keys
+default-preference-list {{ gnupg_default_preference_list }}
+
+# Certificate digest algorithm
+cert-digest-algo {{ gnupg_cert_digest_algo }}
+
+# Character set
+display-charset {{ gnupg_display_charset }}
+
+# Key ID display format
+keyid-format {{ gnupg_keyid_format }}
+
+# Trust model
+trust-model {{ gnupg_trust_model }}
+
+{% if gnupg_with_fingerprint %}
+
+# Display options
+with-fingerprint
+{% endif %}
+{% if gnupg_show_uid_validity %}
+list-options show-uid-validity
+verify-options show-uid-validity
+{% endif %}
+
+{% if gnupg_no_greeting %}
+
+# Privacy hardening
+no-greeting
+{% endif %}
+{% if gnupg_no_comments %}
+no-comments
+{% endif %}
+{% if gnupg_no_emit_version %}
+no-emit-version
+{% endif %}
+{% if gnupg_throw_keyids %}
+throw-keyids
+{% endif %}

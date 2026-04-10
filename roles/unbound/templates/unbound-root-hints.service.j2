@@ -1,0 +1,18 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Update Unbound Root Hints
+Documentation=https://www.internic.net/domain/named.root
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/curl -s -o {{ unbound_root_hints_file }} https://www.internic.net/domain/named.root
+ExecStartPost=/usr/bin/systemctl reload {{ __unbound_service_name }}
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

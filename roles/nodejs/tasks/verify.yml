@@ -1,0 +1,24 @@
+---
+# =============================================================================
+# NODE.JS - VERIFICATION
+# =============================================================================
+
+- name: Verify | Check Node.js version
+  ansible.builtin.command: node --version
+  register: __nodejs_version_check
+  changed_when: false
+  failed_when: __nodejs_version_check.rc != 0
+
+- name: Verify | Check npm version
+  ansible.builtin.command: npm --version
+  register: __nodejs_npm_version_check
+  changed_when: false
+  failed_when: __nodejs_npm_version_check.rc != 0
+
+- name: Verify | Set nodejs_installed_version fact
+  ansible.builtin.set_fact:
+    nodejs_installed_version: "{{ __nodejs_version_check.stdout | regex_replace('^v', '') }}"
+
+- name: Verify | Display installed versions
+  ansible.builtin.debug:
+    msg: "Node.js {{ __nodejs_version_check.stdout }} / npm {{ __nodejs_npm_version_check.stdout }}"

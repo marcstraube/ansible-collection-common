@@ -1,0 +1,27 @@
+---
+# =============================================================================
+# Groups Tasks
+# =============================================================================
+
+- name: Create groups
+  ansible.builtin.group:
+    name: '{{ item.name }}'
+    gid: '{{ item.gid | default(omit) }}'
+    system: '{{ item.system | default(false) }}'
+    state: '{{ item.state | default("present") }}'
+  loop: '{{ users_groups }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Create primary groups for users
+  ansible.builtin.group:
+    name: '{{ item.group | default(item.name) }}'
+    gid: '{{ item.gid | default(omit) }}'
+    system: '{{ item.system | default(false) }}'
+    state: present
+  loop: '{{ users_list }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - item.state | default('present') == 'present'
+    - item.group is not defined or item.group == item.name

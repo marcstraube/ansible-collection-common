@@ -1,0 +1,147 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # ANSIBLE VERIFICATION
+    # =========================================================================
+    - name: Verify | Check ansible version
+      ansible.builtin.command:
+        cmd: ansible --version
+      register: ansible_tools_verify_ansible
+      changed_when: false
+
+    - name: Verify | Debug ansible version
+      ansible.builtin.debug:
+        var: ansible_tools_verify_ansible.stdout_lines[0]
+
+    - name: Verify | Assert ansible is installed
+      ansible.builtin.assert:
+        that:
+          - ansible_tools_verify_ansible.rc == 0
+          - "'ansible' in ansible_tools_verify_ansible.stdout"
+        fail_msg: 'ansible is not installed or not working'
+
+    # =========================================================================
+    # MOLECULE VERIFICATION
+    # =========================================================================
+    - name: Verify | Check molecule version (Arch — system package)
+      ansible.builtin.command:
+        cmd: molecule --version
+      register: ansible_tools_verify_molecule
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check molecule version (pipx — Debian/RedHat)
+      ansible.builtin.command:
+        cmd: /root/.local/bin/molecule --version
+      register: ansible_tools_verify_molecule_pipx
+      changed_when: false
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Set molecule version result
+      ansible.builtin.set_fact:
+        molecule_result: >-
+          {{ ansible_tools_verify_molecule if (ansible_facts['os_family'] == 'Archlinux')
+             else ansible_tools_verify_molecule_pipx }}
+
+    - name: Verify | Debug molecule version
+      ansible.builtin.debug:
+        var: molecule_result.stdout_lines[0]
+
+    - name: Verify | Assert molecule is installed
+      ansible.builtin.assert:
+        that:
+          - molecule_result.rc == 0
+          - "'molecule' in molecule_result.stdout"
+        fail_msg: 'molecule is not installed or not working'
+
+    # =========================================================================
+    # LINT VERIFICATION
+    # =========================================================================
+    - name: Verify | Check ansible-lint version (Arch)
+      ansible.builtin.command:
+        cmd: ansible-lint --version
+      register: ansible_tools_verify_lint
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check ansible-lint version (pipx — Debian/RedHat)
+      ansible.builtin.command:
+        cmd: /root/.local/bin/ansible-lint --version
+      register: ansible_tools_verify_lint_pipx
+      changed_when: false
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Set ansible-lint version result
+      ansible.builtin.set_fact:
+        lint_result: >-
+          {{ ansible_tools_verify_lint if (ansible_facts['os_family'] == 'Archlinux')
+             else ansible_tools_verify_lint_pipx }}
+
+    - name: Verify | Debug ansible-lint version
+      ansible.builtin.debug:
+        var: lint_result.stdout_lines[0]
+
+    - name: Verify | Assert ansible-lint is installed
+      ansible.builtin.assert:
+        that:
+          - lint_result.rc == 0
+          - "'ansible-lint' in lint_result.stdout"
+        fail_msg: 'ansible-lint is not installed or not working'
+
+    - name: Verify | Check yamllint version (Arch)
+      ansible.builtin.command:
+        cmd: yamllint --version
+      register: ansible_tools_verify_yamllint
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check yamllint version (pipx — Debian/RedHat)
+      ansible.builtin.command:
+        cmd: /root/.local/bin/yamllint --version
+      register: ansible_tools_verify_yamllint_pipx
+      changed_when: false
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Set yamllint version result
+      ansible.builtin.set_fact:
+        yamllint_result: >-
+          {{ ansible_tools_verify_yamllint if (ansible_facts['os_family'] == 'Archlinux')
+             else ansible_tools_verify_yamllint_pipx }}
+
+    - name: Verify | Debug yamllint version
+      ansible.builtin.debug:
+        var: yamllint_result.stdout_lines[0]
+
+    - name: Verify | Assert yamllint is installed
+      ansible.builtin.assert:
+        that:
+          - yamllint_result.rc == 0
+          - "'yamllint' in yamllint_result.stdout"
+        fail_msg: 'yamllint is not installed or not working'
+
+    # =========================================================================
+    # DRIVER VERIFICATION (Debian/RedHat only — Arch skips AUR in tests)
+    # =========================================================================
+    - name: Verify | Check molecule drivers (pipx — Debian/RedHat)
+      ansible.builtin.command:
+        cmd: /root/.local/bin/molecule drivers
+      register: ansible_tools_verify_drivers
+      changed_when: false
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Debug molecule drivers
+      ansible.builtin.debug:
+        var: ansible_tools_verify_drivers.stdout_lines
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Assert podman driver is available
+      ansible.builtin.assert:
+        that:
+          - "'podman' in ansible_tools_verify_drivers.stdout"
+        fail_msg: 'molecule-plugins[podman] not injected'
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']

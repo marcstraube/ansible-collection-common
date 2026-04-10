@@ -1,0 +1,82 @@
+{{ ansible_managed | comment }}
+#
+# Configuration for pam_pwquality — password quality checking.
+#
+# See pwquality.conf(5) and pam_pwquality(8) for full documentation.
+
+# Number of characters that must differ from old password
+difok = {{ pam_pwquality_difok }}
+
+# Minimum password length
+minlen = {{ pam_pwquality_minlen }}
+
+# Character class credits (negative = required minimum)
+{% if pam_pwquality_composition_rules | bool %}
+dcredit = {{ pam_pwquality_dcredit }}
+ucredit = {{ pam_pwquality_ucredit }}
+lcredit = {{ pam_pwquality_lcredit }}
+ocredit = {{ pam_pwquality_ocredit }}
+{% else %}
+dcredit = 0
+ucredit = 0
+lcredit = 0
+ocredit = 0
+{% endif %}
+{% if pam_pwquality_minclass > 0 %}
+
+# Minimum number of required character classes
+minclass = {{ pam_pwquality_minclass }}
+{% endif %}
+
+# Maximum consecutive same characters (0 = disabled)
+maxrepeat = {{ pam_pwquality_maxrepeat }}
+{% if pam_pwquality_maxsequence > 0 %}
+
+# Maximum monotonic character sequence length
+maxsequence = {{ pam_pwquality_maxsequence }}
+{% endif %}
+
+# Maximum consecutive characters of the same class (0 = disabled)
+maxclassrepeat = {{ pam_pwquality_maxclassrepeat }}
+
+# Check GECOS field words in password
+gecoscheck = {{ 1 if pam_pwquality_gecoscheck else 0 }}
+
+# Check against cracklib dictionary
+dictcheck = {{ 1 if pam_pwquality_dictcheck else 0 }}
+
+# Check if password contains username
+usercheck = {{ 1 if pam_pwquality_usercheck else 0 }}
+{% if pam_pwquality_usersubstr > 0 %}
+
+# Minimum substring length of username to reject
+usersubstr = {{ pam_pwquality_usersubstr }}
+{% endif %}
+{% if pam_pwquality_badwords | length > 0 %}
+
+# Additional prohibited words (space-separated)
+badwords = {{ pam_pwquality_badwords }}
+{% endif %}
+{% if pam_pwquality_dictpath | length > 0 %}
+
+# Custom cracklib dictionary path
+dictpath = {{ pam_pwquality_dictpath }}
+{% endif %}
+{% if not pam_pwquality_enforcing %}
+
+# Warn only, do not reject password on failed check
+enforcing = 0
+{% endif %}
+
+# Maximum password entry attempts before error
+retry = {{ pam_pwquality_retry }}
+{% if pam_pwquality_enforce_for_root %}
+
+# Enforce checks for root user password changes
+enforce_for_root
+{% endif %}
+{% if pam_pwquality_local_users_only %}
+
+# Only check local /etc/passwd users
+local_users_only
+{% endif %}

@@ -1,0 +1,90 @@
+---
+# =============================================================================
+# NODE.JS - NPM CONFIGURATION
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# HTTP(S) PROXY
+# -----------------------------------------------------------------------------
+
+- name: Configure | Check current npm HTTP proxy
+  ansible.builtin.command: npm config get proxy
+  register: __nodejs_current_proxy
+  changed_when: false
+  failed_when: false
+  when: nodejs_npm_proxy | length > 0
+
+- name: Configure | Set npm HTTP proxy
+  ansible.builtin.command: npm config set proxy {{ nodejs_npm_proxy }}
+  changed_when: true
+  when:
+    - nodejs_npm_proxy | length > 0
+    - __nodejs_current_proxy.stdout | default('') | trim != nodejs_npm_proxy
+
+- name: Configure | Check current npm HTTPS proxy
+  ansible.builtin.command: npm config get https-proxy
+  register: __nodejs_current_https_proxy
+  changed_when: false
+  failed_when: false
+  when: nodejs_npm_proxy | length > 0
+
+- name: Configure | Set npm HTTPS proxy
+  ansible.builtin.command: npm config set https-proxy {{ nodejs_npm_proxy }}
+  changed_when: true
+  when:
+    - nodejs_npm_proxy | length > 0
+    - __nodejs_current_https_proxy.stdout | default('') | trim != nodejs_npm_proxy
+
+- name: Configure | Check current npm HTTP proxy for removal
+  ansible.builtin.command: npm config get proxy
+  register: __nodejs_current_proxy_remove
+  changed_when: false
+  failed_when: false
+  when: nodejs_npm_proxy | length == 0
+
+- name: Configure | Remove npm HTTP proxy
+  ansible.builtin.command: npm config delete proxy
+  changed_when: true
+  failed_when: false
+  when:
+    - nodejs_npm_proxy | length == 0
+    - __nodejs_current_proxy_remove.stdout | default('null') | trim not in ['null', 'undefined', '']
+
+- name: Configure | Check current npm HTTPS proxy for removal
+  ansible.builtin.command: npm config get https-proxy
+  register: __nodejs_current_https_proxy_remove
+  changed_when: false
+  failed_when: false
+  when: nodejs_npm_proxy | length == 0
+
+- name: Configure | Remove npm HTTPS proxy
+  ansible.builtin.command: npm config delete https-proxy
+  changed_when: true
+  failed_when: false
+  when:
+    - nodejs_npm_proxy | length == 0
+    - __nodejs_current_https_proxy_remove.stdout | default('null') | trim not in ['null', 'undefined', '']
+
+# -----------------------------------------------------------------------------
+# CUSTOM NPM CONFIG
+# -----------------------------------------------------------------------------
+
+- name: Configure | Query current npm config values
+  ansible.builtin.command: npm config get {{ item.key }}
+  loop: '{{ nodejs_npm_config | dict2items }}'
+  loop_control:
+    label: '{{ item.key }}'
+  register: __nodejs_npm_config_current
+  changed_when: false
+  failed_when: false
+  when: nodejs_npm_config | length > 0
+
+- name: Configure | Set custom npm config
+  ansible.builtin.command: npm config set {{ item.item.key }} {{ item.item.value }}
+  loop: '{{ __nodejs_npm_config_current.results | default([]) }}'
+  loop_control:
+    label: '{{ item.item.key }}'
+  changed_when: true
+  when:
+    - nodejs_npm_config | length > 0
+    - item.stdout | default('') | trim != item.item.value | string

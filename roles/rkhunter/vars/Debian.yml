@@ -1,0 +1,8 @@
+---
+# =============================================================================
+# Debian variables for rkhunter
+# =============================================================================
+
+__rkhunter_package: 'rkhunter'
+__rkhunter_scriptdir: '/usr/share/rkhunter/scripts'
+__rkhunter_pkgmgr: 'DPKG'

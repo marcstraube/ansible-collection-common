@@ -1,0 +1,20 @@
+---
+# =============================================================================
+# rkhunter - Installation Tasks
+# =============================================================================
+
+- name: Install | Install rkhunter package
+  ansible.builtin.package:
+    name: '{{ __rkhunter_package }}'
+    state: present
+
+- name: Install | Ensure rkhunter directories exist
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  loop:
+    - '/var/lib/rkhunter/db'
+    - '/var/lib/rkhunter/tmp'

@@ -1,0 +1,149 @@
+---
+# =============================================================================
+# Sudo Configuration
+# =============================================================================
+# Role: marcstraube.common.sudo
+# Description: Configure sudo with security hardening
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+sudo_enabled: true
+
+# =============================================================================
+# WHEEL GROUP
+# =============================================================================
+
+# Allow wheel group to use sudo
+sudo_wheel_group: true
+
+# Require password for wheel group
+sudo_wheel_requires_password: true
+
+# =============================================================================
+# SUDO USERS
+# =============================================================================
+
+# Users with full sudo access (added to wheel group or direct sudoers)
+# Example:
+#   sudo_users:
+#     - name: 'admin'
+#       nopasswd: false
+#     - name: 'deploy'
+#       nopasswd: true
+#       commands: ['/usr/bin/systemctl restart myapp']
+sudo_users: []
+
+# =============================================================================
+# SUDO GROUPS
+# =============================================================================
+
+# Groups with sudo access
+# Example:
+#   sudo_groups:
+#     - name: 'developers'
+#       nopasswd: false
+#     - name: 'operators'
+#       nopasswd: true
+#       commands: ['/usr/bin/systemctl *']
+sudo_groups: []
+
+# =============================================================================
+# SUDOERS.D FILES
+# =============================================================================
+
+# Custom sudoers.d files
+# Example:
+#   sudo_sudoers_files:
+#     - name: 'backup'
+#       content: 'backup ALL=(root) NOPASSWD: /usr/bin/rsync'
+#     - name: 'monitoring'
+#       users: ['nagios', 'zabbix']
+#       commands: ['/usr/lib/nagios/plugins/*']
+#       nopasswd: true
+sudo_sudoers_files: []
+
+# =============================================================================
+# SECURITY SETTINGS
+# =============================================================================
+
+# Require tty for sudo (breaks Ansible, cron, and other non-interactive tools)
+sudo_require_tty: false
+
+# Use pty for sudo sessions
+sudo_use_pty: true
+
+# Log sudo commands to syslog
+sudo_log_syslog: true
+
+# Log input/output of sudo sessions
+sudo_log_input: false
+sudo_log_output: false
+
+# Sudo log file (empty = use syslog only)
+sudo_logfile: ''
+
+# Password prompt timeout in minutes (0 = no timeout)
+sudo_passwd_timeout: 5
+
+# Timestamp timeout in minutes (how long sudo remembers password)
+sudo_timestamp_timeout: 5
+
+# Number of password attempts before lockout
+sudo_passwd_tries: 3
+
+# Show asterisks when typing password
+sudo_pwfeedback: false
+
+# Lecture user about sudo (always, never, once)
+sudo_lecture: 'once'
+
+# Insults on wrong password (fun but not recommended for production)
+sudo_insults: false
+
+# =============================================================================
+# ENVIRONMENT
+# =============================================================================
+
+# Environment variables to preserve
+sudo_env_keep:
+  - 'EDITOR'
+  - 'VISUAL'
+  - 'LANG'
+  - 'LANGUAGE'
+  - 'LC_*'
+  - 'TERM'
+
+# Environment variables to reset
+sudo_env_reset: true
+
+# Secure path for sudo commands
+sudo_secure_path: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
+# =============================================================================
+# ADVANCED
+# =============================================================================
+
+# Mail recipient for sudo alerts (empty = disabled)
+sudo_mailto: ''
+
+# Send mail on: badpass, no_host, no_perms, no_user, all_cmnds, always
+sudo_mail_on: []
+
+# Editor for visudo
+sudo_editor: '/usr/bin/nvim:/usr/bin/vim:/usr/bin/vi'
+
+# Always set HOME to target user's home
+sudo_always_set_home: true
+
+# Extra defaults to add (raw sudoers format)
+sudo_extra_defaults: []
+
+# Remove unmanaged sudoers.d files
+sudo_purge_sudoers_d: false
+
+# Files to never remove from sudoers.d (only when purge enabled)
+sudo_keep_sudoers_files:
+  - 'README'

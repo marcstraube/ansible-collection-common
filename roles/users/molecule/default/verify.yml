@@ -1,0 +1,421 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # GROUPS VERIFICATION
+    # =========================================================================
+    - name: Verify | Check developers group exists
+      ansible.builtin.getent:
+        database: group
+        key: developers
+      register: developers_group
+      failed_when: developers_group.ansible_facts.getent_group.developers is not defined
+
+    - name: Verify | Check developers group GID
+      ansible.builtin.assert:
+        that:
+          - developers_group.ansible_facts.getent_group.developers[1] == '2000'
+        fail_msg: 'developers group has incorrect GID'
+
+    - name: Verify | Check docker group exists
+      ansible.builtin.getent:
+        database: group
+        key: docker
+      register: docker_group
+      failed_when: docker_group.ansible_facts.getent_group.docker is not defined
+
+    - name: Verify | Check testgroup exists
+      ansible.builtin.getent:
+        database: group
+        key: testgroup
+      register: testgroup
+      failed_when: testgroup.ansible_facts.getent_group.testgroup is not defined
+
+    - name: Verify | Check testgroup GID
+      ansible.builtin.assert:
+        that:
+          - testgroup.ansible_facts.getent_group.testgroup[1] == '2100'
+        fail_msg: 'testgroup has incorrect GID'
+
+    # =========================================================================
+    # USER CREATION VERIFICATION
+    # =========================================================================
+    - name: Verify | Check basicuser exists
+      ansible.builtin.getent:
+        database: passwd
+        key: basicuser
+      register: basicuser
+      failed_when: basicuser.ansible_facts.getent_passwd.basicuser is not defined
+
+    - name: Verify | Check basicuser UID
+      ansible.builtin.assert:
+        that:
+          - basicuser.ansible_facts.getent_passwd.basicuser[1] == '3001'
+        fail_msg: 'basicuser has incorrect UID'
+
+    - name: Verify | Check basicuser shell
+      ansible.builtin.assert:
+        that:
+          - basicuser.ansible_facts.getent_passwd.basicuser[5] == '/bin/bash'
+        fail_msg: 'basicuser has incorrect shell'
+
+    - name: Verify | Check devuser exists
+      ansible.builtin.getent:
+        database: passwd
+        key: devuser
+      register: devuser
+      failed_when: devuser.ansible_facts.getent_passwd.devuser is not defined
+
+    - name: Verify | Check devuser groups
+      ansible.builtin.command:
+        cmd: id -Gn devuser
+      register: devuser_groups
+      changed_when: false
+      failed_when: >
+        'developers' not in devuser_groups.stdout or
+        'docker' not in devuser_groups.stdout
+
+    - name: Verify | Check sshuser exists
+      ansible.builtin.getent:
+        database: passwd
+        key: sshuser
+      register: sshuser
+      failed_when: sshuser.ansible_facts.getent_passwd.sshuser is not defined
+
+    - name: Verify | Check genuser exists
+      ansible.builtin.getent:
+        database: passwd
+        key: genuser
+      register: genuser
+      failed_when: genuser.ansible_facts.getent_passwd.genuser is not defined
+
+    - name: Verify | Check serviceuser exists
+      ansible.builtin.getent:
+        database: passwd
+        key: serviceuser
+      register: serviceuser
+      failed_when: serviceuser.ansible_facts.getent_passwd.serviceuser is not defined
+
+    - name: Verify | Check serviceuser is system user
+      ansible.builtin.assert:
+        that:
+          - serviceuser.ansible_facts.getent_passwd.serviceuser[1] | int < 1000
+        fail_msg: 'serviceuser is not a system user'
+
+    - name: Verify | Check customhome user
+      ansible.builtin.getent:
+        database: passwd
+        key: customhome
+      register: customhome_user
+      failed_when: customhome_user.ansible_facts.getent_passwd.customhome is not defined
+
+    - name: Verify | Check customhome home directory
+      ansible.builtin.assert:
+        that:
+          - customhome_user.ansible_facts.getent_passwd.customhome[4] == '/opt/customhome'
+        fail_msg: 'customhome has incorrect home directory'
+
+    - name: Verify | Check lockeduser exists
+      ansible.builtin.getent:
+        database: passwd
+        key: lockeduser
+      register: lockeduser
+      failed_when: lockeduser.ansible_facts.getent_passwd.lockeduser is not defined
+
+    # =========================================================================
+    # HOME DIRECTORY VERIFICATION
+    # =========================================================================
+    - name: Verify | Check basicuser home directory exists
+      ansible.builtin.stat:
+        path: /home/basicuser
+      register: basicuser_home
+      failed_when: not basicuser_home.stat.exists
+
+    - name: Verify | Check basicuser home permissions
+      ansible.builtin.assert:
+        that:
+          - basicuser_home.stat.mode == '0750'
+          - basicuser_home.stat.pw_name == 'basicuser'
+          - basicuser_home.stat.gr_name == 'basicuser'
+        fail_msg: 'basicuser home directory has incorrect permissions'
+
+    - name: Verify | Check devuser home directory exists
+      ansible.builtin.stat:
+        path: /home/devuser
+      register: devuser_home
+      failed_when: not devuser_home.stat.exists
+
+    - name: Verify | Check customhome directory exists
+      ansible.builtin.stat:
+        path: /opt/customhome
+      register: custom_home
+      failed_when: not custom_home.stat.exists
+
+    - name: Verify | Check customhome directory permissions
+      ansible.builtin.assert:
+        that:
+          - custom_home.stat.mode == '0755'
+        fail_msg: 'customhome has incorrect permissions'
+
+    - name: Verify | Check serviceuser has no home directory
+      ansible.builtin.stat:
+        path: /home/serviceuser
+      register: service_home
+      failed_when: service_home.stat.exists
+
+    # =========================================================================
+    # SSH DIRECTORY VERIFICATION
+    # =========================================================================
+    - name: Verify | Check basicuser .ssh directory exists
+      ansible.builtin.stat:
+        path: /home/basicuser/.ssh
+      register: basicuser_ssh
+      failed_when: not basicuser_ssh.stat.exists
+
+    - name: Verify | Check .ssh directory permissions
+      ansible.builtin.assert:
+        that:
+          - basicuser_ssh.stat.mode == '0700'
+          - basicuser_ssh.stat.pw_name == 'basicuser'
+          - basicuser_ssh.stat.gr_name == 'basicuser'
+        fail_msg: '.ssh directory has incorrect permissions'
+
+    - name: Verify | Check sshuser .ssh directory exists
+      ansible.builtin.stat:
+        path: /home/sshuser/.ssh
+      register: sshuser_ssh
+      failed_when: not sshuser_ssh.stat.exists
+
+    # =========================================================================
+    # SSH KEYS VERIFICATION
+    # =========================================================================
+    - name: Verify | Check sshuser authorized_keys exists
+      ansible.builtin.stat:
+        path: /home/sshuser/.ssh/authorized_keys
+      register: sshuser_authkeys
+      failed_when: not sshuser_authkeys.stat.exists
+
+    - name: Verify | Check authorized_keys permissions
+      ansible.builtin.assert:
+        that:
+          - sshuser_authkeys.stat.mode == '0600'
+          - sshuser_authkeys.stat.pw_name == 'sshuser'
+          - sshuser_authkeys.stat.gr_name == 'sshuser'
+        fail_msg: 'authorized_keys has incorrect permissions'
+
+    - name: Verify | Read sshuser authorized_keys
+      ansible.builtin.slurp:
+        src: /home/sshuser/.ssh/authorized_keys
+      register: authkeys_content
+
+    - name: Verify | Check authorized_keys contains SSH keys
+      ansible.builtin.assert:
+        that:
+          - "'test1@example.com' in (authkeys_content.content | b64decode)"
+          - "'test2@example.com' in (authkeys_content.content | b64decode)"
+        fail_msg: 'authorized_keys does not contain expected keys'
+
+    - name: Verify | Count SSH keys
+      ansible.builtin.shell:
+        cmd: grep -c '^ssh-' /home/sshuser/.ssh/authorized_keys || true
+      register: key_count
+      changed_when: false
+
+    - name: Verify | Check SSH key count (exclusive mode)
+      ansible.builtin.assert:
+        that:
+          - key_count.stdout | int == 2
+        fail_msg: 'authorized_keys should have exactly 2 keys (exclusive mode)'
+
+    # =========================================================================
+    # GENERATED SSH KEY VERIFICATION
+    # =========================================================================
+    - name: Verify | Check genuser has SSH key directory
+      ansible.builtin.stat:
+        path: /home/genuser/.ssh
+      register: genuser_ssh
+      failed_when: not genuser_ssh.stat.exists
+
+    - name: Verify | Check genuser private key exists
+      ansible.builtin.stat:
+        path: /home/genuser/.ssh/id_ed25519
+      register: genuser_privkey
+      failed_when: not genuser_privkey.stat.exists
+
+    - name: Verify | Check genuser private key permissions
+      ansible.builtin.assert:
+        that:
+          - genuser_privkey.stat.mode == '0600'
+          - genuser_privkey.stat.pw_name == 'genuser'
+        fail_msg: 'generated private key has incorrect permissions'
+
+    - name: Verify | Check genuser public key exists
+      ansible.builtin.stat:
+        path: /home/genuser/.ssh/id_ed25519.pub
+      register: genuser_pubkey
+      failed_when: not genuser_pubkey.stat.exists
+
+    - name: Verify | Check genuser public key permissions
+      ansible.builtin.assert:
+        that:
+          - genuser_pubkey.stat.mode == '0644'
+        fail_msg: 'generated public key has incorrect permissions'
+
+    - name: Verify | Verify SSH key type
+      ansible.builtin.command:
+        cmd: ssh-keygen -l -f /home/genuser/.ssh/id_ed25519.pub
+      register: key_type
+      changed_when: false
+      failed_when: "'ED25519' not in key_type.stdout"
+
+    # =========================================================================
+    # PRIMARY GROUP VERIFICATION
+    # =========================================================================
+    - name: Verify | Check basicuser primary group
+      ansible.builtin.command:
+        cmd: id -gn basicuser
+      register: basicuser_primary
+      changed_when: false
+      failed_when: basicuser_primary.stdout != 'basicuser'
+
+    - name: Verify | Check devuser primary group
+      ansible.builtin.command:
+        cmd: id -gn devuser
+      register: devuser_primary
+      changed_when: false
+      failed_when: devuser_primary.stdout != 'devuser'
+
+    # =========================================================================
+    # PASSWORD VERIFICATION
+    # =========================================================================
+    - name: Verify | Check lockeduser password status
+      ansible.builtin.command:
+        cmd: passwd -S lockeduser
+      register: locked_status
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Check user is locked
+      ansible.builtin.assert:
+        that:
+          - "'L' in locked_status.stdout or 'locked' in locked_status.stdout.lower()"
+        fail_msg: 'lockeduser should have locked password'
+      when: locked_status.rc == 0
+
+    # =========================================================================
+    # EXCLUSIVE MODE VERIFICATION
+    # =========================================================================
+    - name: Verify | Check orphanuser was removed by exclusive mode
+      ansible.builtin.getent:
+        database: passwd
+        key: orphanuser
+      register: orphanuser_check
+      failed_when: false
+
+    - name: Verify | Assert orphanuser no longer exists
+      ansible.builtin.assert:
+        that:
+          - orphanuser_check.ansible_facts.getent_passwd.orphanuser is not defined
+        fail_msg: 'orphanuser should have been removed by exclusive mode'
+
+    # =========================================================================
+    # FUNCTIONAL TESTS
+    # =========================================================================
+    - name: Verify | Test user can be switched to
+      ansible.builtin.command:
+        cmd: su - basicuser -c 'whoami'
+      register: switch_user
+      changed_when: false
+      failed_when: switch_user.stdout != 'basicuser'
+
+    - name: Verify | Test user home from passwd
+      ansible.builtin.assert:
+        that:
+          - basicuser.ansible_facts.getent_passwd.basicuser[4] == '/home/basicuser'
+        fail_msg: 'basicuser has incorrect home directory in passwd'
+
+    - name: Verify | List all test users
+      ansible.builtin.command:
+        cmd: getent passwd
+      register: all_users
+      changed_when: false
+
+    - name: Verify | Check all test users in passwd
+      ansible.builtin.assert:
+        that:
+          - "'basicuser' in all_users.stdout"
+          - "'devuser' in all_users.stdout"
+          - "'sshuser' in all_users.stdout"
+          - "'genuser' in all_users.stdout"
+          - "'serviceuser' in all_users.stdout"
+          - "'customhome' in all_users.stdout"
+          - "'lockeduser' in all_users.stdout"
+        fail_msg: 'Not all test users found in passwd'
+
+    # =========================================================================
+    # PROFILE IMAGES VERIFICATION
+    # =========================================================================
+    - name: Verify | Check AccountsService icons directory exists
+      ansible.builtin.stat:
+        path: /var/lib/AccountsService/icons
+      register: icons_dir
+      failed_when: not icons_dir.stat.exists or not icons_dir.stat.isdir
+
+    - name: Verify | Check basicuser profile image exists
+      ansible.builtin.stat:
+        path: /var/lib/AccountsService/icons/basicuser
+      register: basicuser_icon
+
+    - name: Verify | Assert basicuser profile image properties
+      ansible.builtin.assert:
+        that:
+          - basicuser_icon.stat.exists
+          - basicuser_icon.stat.mode == '0644'
+        fail_msg: 'basicuser profile image missing or has incorrect permissions'
+
+    - name: Verify | Check AccountsService user config exists
+      ansible.builtin.stat:
+        path: /var/lib/AccountsService/users/basicuser
+      register: basicuser_accounts
+
+    - name: Verify | Assert AccountsService user config properties
+      ansible.builtin.assert:
+        that:
+          - basicuser_accounts.stat.exists
+          - basicuser_accounts.stat.mode == '0644'
+        fail_msg: 'AccountsService user config missing or has incorrect permissions'
+
+    - name: Verify | Read AccountsService user config
+      ansible.builtin.slurp:
+        src: /var/lib/AccountsService/users/basicuser
+      register: basicuser_accounts_content
+
+    - name: Verify | Assert AccountsService config contains Icon
+      ansible.builtin.assert:
+        that:
+          - "'[User]' in (basicuser_accounts_content.content | b64decode)"
+          - "'Icon=/var/lib/AccountsService/icons/basicuser' in (basicuser_accounts_content.content | b64decode)"
+        fail_msg: 'AccountsService config does not contain expected Icon setting'
+
+    - name: Verify | Check ~/.face symlink exists
+      ansible.builtin.stat:
+        path: /home/basicuser/.face
+      register: basicuser_face
+
+    - name: Verify | Assert ~/.face symlink properties
+      ansible.builtin.assert:
+        that:
+          - basicuser_face.stat.exists
+          - basicuser_face.stat.islnk
+          - basicuser_face.stat.lnk_source == '/var/lib/AccountsService/icons/basicuser'
+        fail_msg: '~/.face symlink missing or points to wrong target'
+
+    - name: Verify | Check devuser has no profile image (no PNG file)
+      ansible.builtin.stat:
+        path: /var/lib/AccountsService/icons/devuser
+      register: devuser_icon
+      failed_when: devuser_icon.stat.exists

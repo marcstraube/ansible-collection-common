@@ -1,0 +1,13 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Update Unbound Root Hints Timer
+Documentation=https://www.internic.net/domain/named.root
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target

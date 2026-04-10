@@ -1,0 +1,38 @@
+---
+# =============================================================================
+# ArchLinux-specific variables for AIDE
+# =============================================================================
+
+__aide_package: 'aide'
+
+# AIDE is only available in the AUR on Arch Linux
+__aide_aur: true
+
+__aide_config_file: '/etc/aide.conf'
+
+# GPG keys required to verify AUR package sources
+__aide_gpg_keys:
+  - '18EE86386022EF57'
+
+__aide_init_command: 'aide --init'
+
+__aide_database_directive: 'database_in'
+
+__aide_supports_log_level: true
+
+__aide_dir_owner: 'root'
+__aide_dir_group: 'root'
+
+# OS-specific paths to exclude from monitoring
+__aide_os_exclude_paths:
+  - '/var/lib/pacman'
+  - '/usr/src'
+  - '/usr/tmp'
+
+# OS-specific important config files to monitor with FIPSR rule
+__aide_os_critical_configs:
+  - '/etc/pacman.conf'
+  - '/etc/pacman.d'
+  - '/etc/makepkg.conf'
+  - '/etc/mkinitcpio.conf'
+  - '/etc/mkinitcpio.d'

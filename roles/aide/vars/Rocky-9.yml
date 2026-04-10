@@ -1,0 +1,38 @@
+---
+# =============================================================================
+# Rocky Linux 9 specific variables for AIDE
+# =============================================================================
+# Rocky 9 ships AIDE 0.16 which uses different directives than 0.18+.
+# This file overrides the RedHat.yml defaults for Rocky 9 only.
+# Rocky 10+ ships AIDE 0.18 and falls through to RedHat.yml.
+
+__aide_package: 'aide'
+
+__aide_aur: false
+
+__aide_config_file: '/etc/aide.conf'
+
+__aide_init_command: 'aide --init'
+
+# AIDE 0.16 uses 'database' instead of 'database_in'
+__aide_database_directive: 'database'
+
+# AIDE 0.16 does not support log_level/report_level directives
+__aide_supports_log_level: false
+
+__aide_dir_owner: 'root'
+__aide_dir_group: 'root'
+
+# OS-specific paths to exclude from monitoring
+__aide_os_exclude_paths:
+  - '/var/lib/rpm'
+  - '/var/cache/yum'
+  - '/var/cache/dnf'
+  - '/usr/src'
+  - '/usr/tmp'
+
+# OS-specific important config files to monitor with FIPSR rule
+__aide_os_critical_configs:
+  - '/etc/yum.conf'
+  - '/etc/yum.repos.d'
+  - '/etc/dnf'

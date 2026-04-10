@@ -1,0 +1,21 @@
+---
+# =============================================================================
+# PKI Handlers
+# =============================================================================
+
+- name: Update CA trust
+  ansible.builtin.command:
+    cmd: '{{ __pki_update_ca_trust_cmd }}'
+  changed_when: false
+
+- name: Restart OCSP responder
+  ansible.builtin.systemd:
+    name: pki-ocsp.service
+    state: restarted
+    daemon_reload: true
+
+- name: Restart cert check timer
+  ansible.builtin.systemd:
+    name: pki-cert-check.timer
+    state: restarted
+    daemon_reload: true

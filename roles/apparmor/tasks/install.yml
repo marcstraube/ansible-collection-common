@@ -1,0 +1,27 @@
+---
+# =============================================================================
+# AppArmor Installation Tasks
+# =============================================================================
+
+- name: Install AppArmor packages
+  ansible.builtin.package:
+    name: '{{ __apparmor_packages }}'
+    state: present
+
+- name: Install AppArmor utilities
+  ansible.builtin.package:
+    name: '{{ __apparmor_utils_packages }}'
+    state: present
+  when: apparmor_utils_enabled | bool
+
+- name: Install extra profiles
+  ansible.builtin.package:
+    name: '{{ __apparmor_extra_profiles_package }}'
+    state: present
+  when: apparmor_extra_profiles | bool
+
+- name: Install apparmor-notify
+  ansible.builtin.package:
+    name: '{{ __apparmor_notify_package }}'
+    state: present
+  when: apparmor_notify_package | bool

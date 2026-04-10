@@ -1,0 +1,12 @@
+---
+# =============================================================================
+# Kernel Module Blacklisting
+# =============================================================================
+
+- name: Modules | Deploy kernel module blacklist
+  ansible.builtin.template:
+    src: modprobe-blacklist.conf.j2
+    dest: '{{ __hardening_modprobe_path }}/hardening-blacklist.conf'
+    owner: root
+    group: root
+    mode: '0644'

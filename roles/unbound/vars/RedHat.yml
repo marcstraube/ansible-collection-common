@@ -1,0 +1,15 @@
+---
+# =============================================================================
+# Unbound - RedHat Variables (Rocky 10+)
+# =============================================================================
+
+__unbound_packages:
+  - 'unbound'
+  - 'unbound-anchor'
+
+__unbound_service_name: 'unbound.service'
+__unbound_user: 'unbound'
+__unbound_group: 'unbound'
+
+__unbound_root_key: '/var/lib/unbound/root.key'
+__unbound_tls_cert_bundle: '/etc/pki/tls/certs/ca-bundle.crt'

@@ -1,0 +1,10 @@
+---
+__fail2ban_packages:
+  - 'fail2ban'
+__fail2ban_service_name: 'fail2ban'
+__fail2ban_config_dir: '/etc/fail2ban'
+__fail2ban_jail_d_dir: '/etc/fail2ban/jail.d'
+__fail2ban_filter_d_dir: '/etc/fail2ban/filter.d'
+__fail2ban_banaction: 'nftables-multiport'
+__fail2ban_banaction_allports: 'nftables-allports'
+__fail2ban_apparmor_profile: 'usr.bin.fail2ban-server'

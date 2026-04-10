@@ -1,0 +1,157 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    - name: Verify | Check SNMP package is installed
+      ansible.builtin.package:
+        name: '{{ __snmp_packages[0] }}'
+        state: present
+      check_mode: true
+      register: pkg_check
+      failed_when: pkg_check.changed
+
+    - name: Verify | Check configuration file exists
+      ansible.builtin.stat:
+        path: '{{ __snmp_config_file }}'
+      register: config_stat
+      failed_when: not config_stat.stat.exists
+
+    - name: Verify | Check configuration file permissions
+      ansible.builtin.assert:
+        that:
+          - config_stat.stat.mode == '0600'
+        fail_msg: 'Config file mode is {{ config_stat.stat.mode }}, expected 0600'
+
+    - name: Verify | Read configuration file
+      ansible.builtin.slurp:
+        src: '{{ __snmp_config_file }}'
+      register: __snmp_config_content
+
+    - name: Verify | Set config content fact
+      ansible.builtin.set_fact:
+        __snmp_config: '{{ __snmp_config_content.content | b64decode }}'
+
+    - name: Verify | Check ansible_managed header
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in __snmp_config"
+        fail_msg: 'Configuration file missing ansible_managed header'
+
+    - name: Verify | Check snmpd service is enabled
+      ansible.builtin.systemd:
+        name: '{{ __snmp_service_name }}'
+      register: service_status
+      failed_when: service_status.status.UnitFileState != 'enabled'
+
+    - name: Verify | Configuration contains sysContact
+      ansible.builtin.assert:
+        that:
+          - "'sysContact' in __snmp_config"
+
+    - name: Verify | Configuration contains v2c community
+      ansible.builtin.assert:
+        that:
+          - "'rocommunity  testcommunity' in __snmp_config"
+
+    - name: Verify | Configuration contains v2c rw community
+      ansible.builtin.assert:
+        that:
+          - "'rwcommunity  testprivate' in __snmp_config"
+
+    - name: Verify | Configuration contains v3 user
+      ansible.builtin.assert:
+        that:
+          - "'createUser  testuser' in __snmp_config"
+
+    - name: Verify | SNMPv3 checksum file exists
+      ansible.builtin.stat:
+        path: '{{ __snmp_config_dir }}/.snmpv3_users.sha256'
+      register: checksum_stat
+      failed_when: not checksum_stat.stat.exists
+
+    - name: Verify | Configuration contains com2sec directive
+      ansible.builtin.assert:
+        that:
+          - "'com2sec  mynet' in __snmp_config"
+
+    - name: Verify | Configuration contains group directive
+      ansible.builtin.assert:
+        that:
+          - "'group  mygroup' in __snmp_config"
+
+    - name: Verify | Configuration contains access directive
+      ansible.builtin.assert:
+        that:
+          - "'access  mygroup' in __snmp_config"
+
+    - name: Verify | Configuration contains trapsink directive
+      ansible.builtin.assert:
+        that:
+          - "'trapsink  127.0.0.1' in __snmp_config"
+
+    - name: Verify | Configuration contains smuxpeer directive
+      ansible.builtin.assert:
+        that:
+          - "'smuxpeer  .1.3.6.1.4.1.674.10893.1' in __snmp_config"
+
+    - name: Verify | Configuration contains dontLogTCPWrappersConnects
+      ansible.builtin.assert:
+        that:
+          - "'dontLogTCPWrappersConnects  yes' in __snmp_config"
+
+    - name: Verify | Configuration contains disk monitor
+      ansible.builtin.assert:
+        that:
+          - "'disk  /  10%' in __snmp_config"
+
+    - name: Verify | Configuration contains process monitor
+      ansible.builtin.assert:
+        that:
+          - "'proc  systemd' in __snmp_config"
+
+    - name: Verify | Configuration contains custom load thresholds
+      ansible.builtin.assert:
+        that:
+          - "'load  16  12  8' in __snmp_config"
+
+    - name: Verify | Configuration contains extend script
+      ansible.builtin.assert:
+        that:
+          - "'extend  testextend  /bin/echo test' in __snmp_config"
+
+    - name: Verify | Configuration contains AgentX
+      ansible.builtin.assert:
+        that:
+          - "'master  agentx' in __snmp_config"
+
+    - name: Verify | Check systemd override (Arch)
+      when: ansible_facts['os_family'] == 'Archlinux'
+      block:
+        - name: Verify | Systemd override file exists
+          ansible.builtin.stat:
+            path: /etc/systemd/system/snmpd.service.d/override.conf
+          register: override_stat
+          failed_when: not override_stat.stat.exists
+
+        - name: Verify | Read systemd override file
+          ansible.builtin.slurp:
+            src: /etc/systemd/system/snmpd.service.d/override.conf
+          register: __snmp_override_content
+
+        - name: Verify | Systemd override contains ansible_managed
+          ansible.builtin.assert:
+            that:
+              - "'Ansible managed' in (__snmp_override_content.content | b64decode)"

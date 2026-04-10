@@ -1,0 +1,105 @@
+---
+# marcstraube.common.apparmor/molecule/default/molecule.yml
+
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    ignore-errors: true
+
+driver:
+  name: default
+  options:
+    managed: false
+    login_cmd_template: bash -c 'cd ${MOLECULE_EPHEMERAL_DIRECTORY} && vagrant ssh {instance}'
+
+platforms:
+  - name: apparmor-archlinux
+    groups:
+      - test_hosts
+  - name: apparmor-debian-trixie
+    groups:
+      - test_hosts
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks,timer
+      stdout_callback: default
+      result_format: yaml
+      inject_facts_as_vars: false
+  inventory:
+    host_vars:
+      apparmor-archlinux:
+        ansible_port: 2222
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/apparmor-archlinux/virtualbox/private_key
+      apparmor-debian-trixie:
+        ansible_port: 2223
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/apparmor-debian-trixie/virtualbox/private_key
+    group_vars:
+      all:
+        ansible_connection: ssh
+        ansible_user: vagrant
+        ansible_host: 127.0.0.1
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+
+        # Centralized test configuration variables
+        apparmor_enabled: true
+        apparmor_mode: 'enforce'
+        apparmor_utils_enabled: true
+
+        # Test profiles
+        apparmor_enforce_profiles:
+          - '/usr/sbin/tcpdump'
+          - '/usr/bin/man'
+
+        # Test tunables
+        apparmor_tunables:
+          MYAPP_DATA: '/srv/myapp/data'
+
+        # Test custom profile (ABI 4.0 syntax)
+        apparmor_custom_profiles:
+          - name: 'test.myapp'
+            enforce: true
+            content: |
+              abi <abi/4.0>,
+              include <tunables/global>
+
+              /usr/bin/myapp {
+                include <abstractions/base>
+
+                /etc/myapp/** r,
+                /var/log/myapp/** w,
+              }
+
+  playbooks:
+    create: create.yml
+    destroy: destroy.yml
+    prepare: prepare.yml
+    converge: converge.yml
+    verify: verify.yml
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy

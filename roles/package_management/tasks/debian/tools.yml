@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# Additional Tools (Debian/Ubuntu)
+# =============================================================================
+
+- name: Install apt-file for command-not-found
+  ansible.builtin.apt:
+    name: apt-file
+    state: present
+  when: apt_install_apt_file | bool
+  notify: 'apt-file installed'
+
+- name: Install needrestart
+  ansible.builtin.apt:
+    name: needrestart
+    state: present
+  when: apt_install_needrestart | bool
+
+- name: Configure needrestart mode
+  ansible.builtin.lineinfile:
+    path: '/etc/needrestart/needrestart.conf'
+    regexp: "^#?\\$nrconf\\{restart\\}"
+    line: "$nrconf{restart} = '{{ apt_needrestart_mode }}';"
+    owner: root
+    group: root
+    mode: '0644'
+  when: apt_install_needrestart | bool
+
+- name: Install debsums for package integrity checking
+  ansible.builtin.apt:
+    name: debsums
+    state: present
+  when: apt_install_debsums | bool
+
+- name: Install debian-goodies
+  ansible.builtin.apt:
+    name: debian-goodies
+    state: present
+  when: apt_install_debian_goodies | bool

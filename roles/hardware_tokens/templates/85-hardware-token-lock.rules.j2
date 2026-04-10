@@ -1,0 +1,7 @@
+{{ ansible_managed | comment }}
+# Lock screen when hardware token is removed
+
+{% for device in hardware_tokens_lock_on_removal_devices %}
+# {{ device.name }}
+ACTION=="remove", SUBSYSTEM=="usb", ENV{ID_VENDOR_ID}=="{{ device.vendor }}", ENV{ID_MODEL_ID}=="{{ device.product }}", RUN+="/usr/local/bin/hardware-token-lock.sh"
+{% endfor %}

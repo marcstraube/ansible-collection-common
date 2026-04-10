@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# Lynis - Installation Tasks
+# =============================================================================
+
+- name: Install | Install lynis package
+  ansible.builtin.package:
+    name: '{{ __lynis_package }}'
+    state: present
+  when:
+    - lynis_enabled | bool
+    - lynis_install_method == 'package'
+
+- name: Install | Install git for lynis download
+  ansible.builtin.package:
+    name: git
+    state: present
+  when:
+    - lynis_enabled | bool
+    - lynis_install_method == 'git'
+
+- name: Install | Clone lynis from GitHub
+  ansible.builtin.git:
+    repo: '{{ lynis_git_repo }}'
+    dest: '{{ lynis_install_dir }}'
+    version: '{{ lynis_version }}'
+    update: true
+  when:
+    - lynis_enabled | bool
+    - lynis_install_method == 'git'
+
+- name: Install | Create lynis symlink
+  ansible.builtin.file:
+    src: '{{ lynis_install_dir }}/lynis'
+    dest: '/usr/local/bin/lynis'
+    state: link
+  when:
+    - lynis_enabled | bool
+    - lynis_install_method == 'git'

@@ -1,0 +1,45 @@
+---
+namespace: marcstraube
+name: common
+version: 1.0.0
+readme: README.md
+authors:
+  - Marc Straube <email@marcstraube.de>
+description: >-
+  37 shared Ansible roles for multi-OS infrastructure management.
+  Covers base system, security hardening, networking, package management,
+  user management, editors, and more. Supports Arch Linux, Debian Trixie,
+  and Rocky Linux 9/10. Built for ansible-core 2.17+.
+license_file: LICENSE
+tags:
+  - linux
+  - system
+  - archlinux
+  - debian
+  - rocky
+  - security
+  - hardening
+  - networking
+  - firewall
+  - users
+  - packages
+repository: https://github.com/marcstraube/ansible-collection-common
+documentation: https://github.com/marcstraube/ansible-collection-common
+homepage: https://github.com/marcstraube/ansible-collection-common
+issues: https://github.com/marcstraube/ansible-collection-common/issues
+build_ignore:
+  - '*.tar.gz'
+  - '.git'
+  - '.github'
+  - '.gitlab-ci.yml'
+  - '.ansible'
+  - '.claude'
+  - '.venv'
+  - '*.pyc'
+  - '__pycache__'
+  - 'roles/*/molecule'
+dependencies:
+  community.general: '>=8.0.0'
+  community.crypto: '>=2.9.0'
+  ansible.posix: '>=1.5.0'
+  kewlfft.aur: '>=0.11.0'

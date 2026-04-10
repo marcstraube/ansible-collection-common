@@ -1,0 +1,268 @@
+---
+# =============================================================================
+# Podman - Container Runtime
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SERVICE CONTROL
+# -----------------------------------------------------------------------------
+
+# Enable or disable the podman role
+podman_enabled: true
+
+# -----------------------------------------------------------------------------
+# INSTALLATION
+# -----------------------------------------------------------------------------
+
+# Install podman-compose for docker-compose compatibility
+podman_compose_enabled: true
+
+# Install podman-docker for Docker CLI compatibility
+podman_docker_enabled: true
+
+# Install podlet (generate Quadlet files from containers)
+podman_podlet_enabled: false
+
+# Install Podman Desktop GUI (Arch Linux only — AUR package)
+podman_desktop_enabled: false
+
+# Install additional container tools (buildah, skopeo, etc.)
+podman_tools:
+  - 'buildah'
+  - 'skopeo'
+
+# -----------------------------------------------------------------------------
+# DOCKER COMPATIBILITY
+# -----------------------------------------------------------------------------
+
+# Create docker/docker-compose shell aliases in /etc/profile.d/
+podman_docker_alias: true
+
+# Create docker.sock symlink for socket compatibility
+podman_docker_socket_symlink: true
+
+# -----------------------------------------------------------------------------
+# ROOTLESS CONFIGURATION
+# -----------------------------------------------------------------------------
+
+# Enable rootless podman for specified users
+# Each entry requires: username, optional: subuid_start, subuid_count,
+#   subgid_start, subgid_count, linger
+podman_rootless_users: []
+# Example:
+#   - username: 'developer'
+#     subuid_start: 100000
+#     subuid_count: 65536
+#     subgid_start: 100000
+#     subgid_count: 65536
+#     linger: true
+
+# Default subuid/subgid range size when not specified per user
+podman_subid_count: 65536
+
+# -----------------------------------------------------------------------------
+# REGISTRIES (registries.conf)
+# -----------------------------------------------------------------------------
+
+# Unqualified search registries (V2 format: unqualified-search-registries)
+podman_registries_search:
+  - 'docker.io'
+  - 'quay.io'
+  - 'ghcr.io'
+
+# Short-name mode: enforcing, permissive, or disabled
+podman_short_name_mode: 'permissive'
+
+# Registry configurations with optional mirrors and settings
+# Uses V2 [[registry]] format
+podman_registries: []
+# Example:
+#   - prefix: 'docker.io'
+#     location: 'docker.io'
+#     insecure: false
+#     blocked: false
+#     mirrors:
+#       - location: 'mirror.gcr.io'
+#         insecure: false
+
+# Blocked registries (convenience list — adds blocked=true [[registry]] entries)
+podman_registries_blocked: []
+
+# Registry authentication credentials (deployed to /root/.config/containers/auth.json)
+podman_registries_auth: []
+# Example:
+#   - registry: 'ghcr.io'
+#     username: 'user'
+#     password: 'token'
+
+# Credential helpers for registry authentication
+podman_credential_helpers:
+  - 'containers-auth.json'
+
+# -----------------------------------------------------------------------------
+# STORAGE (storage.conf)
+# -----------------------------------------------------------------------------
+
+# Storage driver (overlay, vfs, btrfs, zfs)
+podman_storage_driver: 'overlay'
+
+# Root storage location
+podman_storage_root: '/var/lib/containers/storage'
+
+# Run root location (temporary writable content)
+podman_storage_runroot: '/run/containers/storage'
+
+# Rootless storage location (supports $HOME substitution)
+podman_storage_rootless: '$HOME/.local/share/containers/storage'
+
+# Transient store mode (faster but no persistence across reboots)
+podman_storage_transient: false
+
+# Additional image stores (read-only, e.g. NFS shares)
+podman_storage_additional_stores: []
+
+# Storage driver options
+podman_storage_options:
+  overlay:
+    mountopt: 'nodev,metacopy=on'
+
+# -----------------------------------------------------------------------------
+# NETWORK (containers.conf [network])
+# -----------------------------------------------------------------------------
+
+# Network backend (netavark or cni)
+podman_network_backend: 'netavark'
+
+# Default subnet for podman networks
+podman_default_subnet: '10.88.0.0/16'
+
+# Firewall driver for netavark (firewalld, nftables, iptables, none)
+podman_firewall_driver: 'firewalld'
+
+# DNS servers for containers (empty = use host DNS)
+podman_dns_servers: []
+
+# DNS port for aardvark-dns in rootful bridge mode
+podman_dns_bind_port: 53
+
+# Default rootless network command (pasta or slirp4netns)
+podman_rootless_network_cmd: 'pasta'
+
+# pasta options for rootless networking
+podman_pasta_options: []
+
+# -----------------------------------------------------------------------------
+# CONTAINERS (containers.conf [containers])
+# -----------------------------------------------------------------------------
+
+# Default OCI runtime (crun or runc)
+podman_runtime: 'crun'
+
+# Default ulimits for containers
+podman_default_ulimits:
+  nofile: '65536:65536'
+
+# Default capabilities for containers (Podman defaults, fewer than Docker)
+podman_default_capabilities:
+  - 'CHOWN'
+  - 'DAC_OVERRIDE'
+  - 'FOWNER'
+  - 'FSETID'
+  - 'KILL'
+  - 'NET_BIND_SERVICE'
+  - 'SETFCAP'
+  - 'SETGID'
+  - 'SETPCAP'
+  - 'SETUID'
+  - 'SYS_CHROOT'
+
+# Default sysctls for containers
+podman_default_sysctls:
+  - 'net.ipv4.ping_group_range=0 0'
+
+# Container log driver (journald, k8s-file, none, passthrough)
+podman_log_driver: 'journald'
+
+# Maximum log size (-1 = unlimited)
+podman_log_size_max: -1
+
+# Default pids limit per container
+podman_default_pids_limit: 2048
+
+# Default user namespace mode (auto, host, keep-id, nomap)
+podman_userns_mode: 'auto'
+
+# Cgroup namespace mode (private or host)
+podman_cgroupns: 'private'
+
+# AppArmor profile for containers
+podman_apparmor_profile: 'container-default'
+
+# Enable SELinux/MAC container separation
+podman_label: true
+
+# Enable seccomp profile
+podman_seccomp_enabled: true
+
+# Custom seccomp profile path (empty = use default)
+podman_seccomp_profile: '/usr/share/containers/seccomp.json'
+
+# Default timezone for containers (empty = host tz, or IANA tz)
+podman_tz: ''
+
+# Init process in containers
+podman_init: false
+
+# HTTP proxy passthrough to containers
+podman_http_proxy: true
+
+# -----------------------------------------------------------------------------
+# ENGINE (containers.conf [engine])
+# -----------------------------------------------------------------------------
+
+# Cgroup manager (systemd or cgroupfs)
+podman_cgroup_manager: 'systemd'
+
+# Events logger (journald, file, none)
+podman_events_logger: 'journald'
+
+# Image default format (oci, v2s2, v2s1)
+podman_image_format: 'oci'
+
+# Retry count for pulling/pushing images
+podman_retry: 3
+
+# Compression format for pushing images (gzip, zstd, zstd:chunked)
+podman_compression_format: 'gzip'
+
+# Database backend (empty = auto, boltdb, sqlite)
+podman_database_backend: ''
+
+# -----------------------------------------------------------------------------
+# SYSTEMD INTEGRATION
+# -----------------------------------------------------------------------------
+
+# Enable podman socket for API access
+podman_socket_enabled: true
+
+# Enable podman auto-update timer (uses built-in podman-auto-update.timer)
+podman_auto_update_enabled: false
+
+# Enable podman system prune timer
+podman_prune_enabled: false
+
+# Prune schedule (systemd OnCalendar format)
+podman_prune_schedule: 'weekly'
+
+# Prune all unused images (not just dangling)
+podman_prune_all: true
+
+# Prune volumes during system prune
+podman_prune_volumes: true
+
+# -----------------------------------------------------------------------------
+# BTRFS
+# -----------------------------------------------------------------------------
+
+# Enable BTRFS optimizations for container storage (NoCOW + subvolume)
+podman_btrfs_enabled: true

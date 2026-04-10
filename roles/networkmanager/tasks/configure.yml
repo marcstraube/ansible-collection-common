@@ -1,0 +1,26 @@
+---
+# marcstraube.networkmanager/tasks/configure.yml
+
+- name: Configure | Deploy NetworkManager daemon configuration
+  ansible.builtin.template:
+    src: networkmanager.conf.j2
+    dest: /etc/NetworkManager/conf.d/00-ansible.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart NetworkManager
+
+- name: Configure | Remove legacy dhcp-send-hostname config (migrated to 00-ansible.conf)
+  ansible.builtin.file:
+    path: /etc/NetworkManager/conf.d/dhcp-send-hostname.conf
+    state: absent
+  notify: Restart NetworkManager
+
+- name: Configure | Remove legacy unmanaged devices config (migrated to 00-ansible.conf)
+  ansible.builtin.file:
+    path: /etc/NetworkManager/conf.d/unmanaged.conf
+    state: absent
+  notify: Restart NetworkManager
+
+- name: Configure | Flush handlers to apply configuration
+  ansible.builtin.meta: flush_handlers

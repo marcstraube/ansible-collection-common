@@ -1,0 +1,17 @@
+{{ ansible_managed | comment }}
+[main]
+gpgcheck=1
+installonly_limit=3
+clean_requirements_on_remove={{ dnf_clean_requirements_on_remove | bool | ternary('True', 'False') }}
+best={{ dnf_best | bool | ternary('True', 'False') }}
+skip_if_unavailable={{ dnf_skip_if_unavailable | bool | ternary('True', 'False') }}
+install_weak_deps={{ dnf_install_weak_deps | bool | ternary('True', 'False') }}
+max_parallel_downloads={{ dnf_max_parallel_downloads }}
+{% if dnf_fastestmirror | bool %}
+fastestmirror=1
+{% endif %}
+keepcache={{ dnf_keepcache | bool | ternary('True', 'False') }}
+defaultyes={{ dnf_defaultyes | bool | ternary('True', 'False') }}
+{% if dnf_proxy | length > 0 %}
+proxy={{ dnf_proxy }}
+{% endif %}

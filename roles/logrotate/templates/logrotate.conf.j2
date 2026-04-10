@@ -1,0 +1,88 @@
+{{ ansible_managed | comment }}
+#
+# see "man logrotate" for details
+
+# rotate log files {{ logrotate_frequency }}
+{{ logrotate_frequency }}
+
+# keep {{ logrotate_rotate }} rotations
+rotate {{ logrotate_rotate }}
+{% if logrotate_create %}
+
+# create new (empty) log files after rotating old ones
+create
+{% endif %}
+{% if logrotate_dateext %}
+
+# use date as a suffix of the rotated file
+dateext
+dateformat {{ logrotate_dateformat }}
+{% endif %}
+{% if logrotate_compress %}
+
+# compress rotated files
+compress
+{% endif %}
+{% if logrotate_delaycompress %}
+
+# delay compression to next rotation cycle
+delaycompress
+{% endif %}
+{% if logrotate_notifempty %}
+
+# do not rotate empty log files
+notifempty
+{% endif %}
+{% if logrotate_nomail %}
+
+# do not mail rotated logs
+nomail
+{% endif %}
+{% if logrotate_missingok %}
+
+# missing log files are not an error
+missingok
+{% endif %}
+{% if logrotate_sharedscripts %}
+
+# run pre/postrotate scripts once (not per matching file)
+sharedscripts
+{% endif %}
+{% if logrotate_su | length > 0 %}
+
+# run logrotate as specific user/group
+su {{ logrotate_su }}
+{% endif %}
+{% if logrotate_olddir | length > 0 %}
+
+# move rotated files to separate directory
+olddir {{ logrotate_olddir }}
+{% endif %}
+{% if logrotate_tabooext | length > 0 %}
+
+# additional file extensions to skip
+tabooext + {{ logrotate_tabooext }}
+{% endif %}
+{% if logrotate_maxage | string | length > 0 and logrotate_maxage != '' %}
+
+# remove rotated files older than this many days
+maxage {{ logrotate_maxage }}
+{% endif %}
+{% if logrotate_minsize | length > 0 %}
+
+# do not rotate until this size is reached
+minsize {{ logrotate_minsize }}
+{% endif %}
+{% if logrotate_maxsize | length > 0 %}
+
+# rotate when this size is reached regardless of interval
+maxsize {{ logrotate_maxsize }}
+{% endif %}
+{% if logrotate_size | length > 0 %}
+
+# size-based rotation instead of time-based
+size {{ logrotate_size }}
+{% endif %}
+
+# drop-in configuration directory
+include {{ __logrotate_config_dir }}

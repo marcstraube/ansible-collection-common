@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# Unbound - Debian Variables
+# =============================================================================
+
+__unbound_packages:
+  - 'unbound'
+  - 'dns-root-data'
+
+__unbound_service_name: 'unbound.service'
+__unbound_user: 'unbound'
+__unbound_group: 'unbound'
+
+__unbound_root_key: '/var/lib/unbound/root.key'
+__unbound_tls_cert_bundle: '/etc/ssl/certs/ca-certificates.crt'
+__unbound_apparmor_profile: 'usr.sbin.unbound'

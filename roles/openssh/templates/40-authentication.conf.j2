@@ -1,0 +1,36 @@
+{{ ansible_managed | comment }}
+# Authentication settings
+
+LoginGraceTime {{ openssh_server_login_grace_time }}
+PermitRootLogin {{ openssh_server_permit_root_login }}
+StrictModes {{ openssh_server_strict_modes | ternary('yes', 'no') }}
+MaxAuthTries {{ openssh_server_max_auth_tries }}
+MaxSessions {{ openssh_server_max_sessions }}
+MaxStartups {{ openssh_server_max_startups }}
+{% if openssh_server_authentication_methods | length > 0 %}
+
+AuthenticationMethods {{ openssh_server_authentication_methods }}
+{% endif %}
+
+PubkeyAuthentication {{ openssh_server_pubkey_authentication | ternary('yes', 'no') }}
+HostbasedAuthentication {{ openssh_server_hostbased_authentication | ternary('yes', 'no') }}
+PasswordAuthentication {{ openssh_server_password_authentication | ternary('yes', 'no') }}
+PermitEmptyPasswords {{ openssh_server_permit_empty_passwords | ternary('yes', 'no') }}
+KbdInteractiveAuthentication {{ openssh_server_kbd_interactive_authentication | ternary('yes', 'no') }}
+UsePAM {{ openssh_server_use_pam | ternary('yes', 'no') }}
+
+# Authorized keys
+AuthorizedKeysFile {{ openssh_server_authorized_keys_file }}{% for file in openssh_server_authorized_keys_files %} {{ file }}{% endfor %}
+
+{% if openssh_server_authorized_keys_command | length > 0 %}
+AuthorizedKeysCommand {{ openssh_server_authorized_keys_command }}
+AuthorizedKeysCommandUser {{ openssh_server_authorized_keys_command_user }}
+{% endif %}
+{% if openssh_server_trusted_user_ca_keys | length > 0 %}
+
+TrustedUserCAKeys {{ openssh_server_trusted_user_ca_keys }}
+{% endif %}
+{% if openssh_server_revoked_keys | length > 0 %}
+
+RevokedKeys {{ openssh_server_revoked_keys }}
+{% endif %}

@@ -1,0 +1,31 @@
+{{ ansible_managed | comment }}
+#
+# Podman Storage Configuration
+# See containers-storage.conf(5) for details.
+#
+# Config precedence: /usr/share/containers/ -> /etc/containers/ -> $HOME/.config/containers/
+
+[storage]
+driver = "{{ podman_storage_driver }}"
+graphroot = "{{ podman_storage_root }}"
+runroot = "{{ podman_storage_runroot }}"
+rootless_storage_path = "{{ podman_storage_rootless }}"
+{% if podman_storage_transient %}
+transient_store = true
+{% endif %}
+
+[storage.options]
+{% if podman_storage_additional_stores | length > 0 %}
+additionalimagestores = [
+{% for store in podman_storage_additional_stores %}
+  "{{ store }}",
+{% endfor %}
+]
+{% endif %}
+{% if podman_storage_driver == 'overlay' %}
+
+[storage.options.overlay]
+{% for key, value in (podman_storage_options.overlay | default({})).items() %}
+{{ key }} = "{{ value }}"
+{% endfor %}
+{% endif %}

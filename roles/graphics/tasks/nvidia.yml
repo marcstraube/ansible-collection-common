@@ -1,0 +1,49 @@
+---
+# =============================================================================
+# NVIDIA GPU Driver Installation
+# =============================================================================
+
+- name: NVIDIA | Determine driver package
+  ansible.builtin.set_fact:
+    __nvidia_driver_package: >-
+      {%- if graphics_nvidia_legacy_version | length > 0 -%}
+        {{ __graphics_nvidia_legacy_packages[graphics_nvidia_legacy_version] | default('') }}
+      {%- elif graphics_nvidia_driver == 'open' -%}
+        {{ __graphics_nvidia_open }}
+      {%- elif graphics_nvidia_driver == 'proprietary' -%}
+        {{ __graphics_nvidia_proprietary }}
+      {%- elif graphics_nvidia_driver == 'nouveau' -%}
+        {{ __graphics_nvidia_nouveau }}
+      {%- else -%}
+        {{ __graphics_nvidia_open }}
+      {%- endif -%}
+
+- name: NVIDIA | Build package list
+  ansible.builtin.set_fact:
+    __nvidia_packages: >-
+      {{
+        ([__nvidia_driver_package] if __nvidia_driver_package | length > 0 else []) +
+        ([__graphics_nvidia_utils]
+         if graphics_nvidia_driver != 'nouveau' and __graphics_nvidia_utils | length > 0
+         else []) +
+        (graphics_nvidia_32bit | bool | ternary([__graphics_nvidia_utils_32bit], [])) +
+        (graphics_nvidia_cuda | bool | ternary([__graphics_nvidia_cuda], []))
+      }}
+
+- name: NVIDIA | Warn about legacy AUR package
+  ansible.builtin.debug:
+    msg: >-
+      Legacy NVIDIA driver {{ graphics_nvidia_legacy_version }} requires AUR package.
+      Install manually with AUR helper: {{ __nvidia_driver_package }}
+  when:
+    - graphics_nvidia_legacy_version | length > 0
+    - __graphics_nvidia_legacy_aur | default(false)
+    - ansible_facts['os_family'] == 'Archlinux'
+
+- name: NVIDIA | Install packages
+  ansible.builtin.package:
+    name: '{{ __nvidia_packages }}'
+    state: present
+  when:
+    - __nvidia_packages | length > 0
+    - not (graphics_nvidia_legacy_version | length > 0 and __graphics_nvidia_legacy_aur | default(false))

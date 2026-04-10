@@ -1,0 +1,17 @@
+---
+__clamav_packages:
+  - 'clamav'
+  - 'clamav-update'
+  - 'clamd'
+__clamav_milter_packages:
+  - 'clamav-milter'
+__clamav_daemon_service: 'clamd@scan'
+__clamav_freshclam_service: 'clamav-freshclam'
+__clamav_milter_service: 'clamav-milter'
+__clamav_config_dir: '/etc/clamd.d'
+__clamav_clamd_config: '/etc/clamd.d/scan.conf'
+__clamav_freshclam_config: '/etc/freshclam.conf'
+__clamav_milter_config: '/etc/mail/clamav-milter.conf'
+__clamav_user: 'clamscan'
+__clamav_group: 'clamscan'
+__clamav_apparmor_profile: ''  # not applicable (SELinux)

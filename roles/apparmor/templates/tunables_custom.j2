@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+#
+# Custom AppArmor tunables managed by Ansible.
+# Placed in /etc/apparmor.d/tunables/custom so apparmor_parser picks them up
+# automatically via the default tunables/global include chain.
+#
+{% for key, value in apparmor_tunables.items() %}
+@{{ '{' }}{{ key }}{{ '}' }} = {{ value }}
+{% endfor %}

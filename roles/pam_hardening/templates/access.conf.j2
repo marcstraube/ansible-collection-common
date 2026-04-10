@@ -1,0 +1,24 @@
+{{ ansible_managed | comment }}
+#
+# Login access control table.
+# See access.conf(5) for full documentation.
+#
+# Format: permission:users:origins
+#   permission  + (grant) or - (deny)
+#   users       login names, (group) names, or ALL
+#   origins     tty names, host names, IP addresses, ALL, LOCAL
+#
+# Examples:
+#   +:wheel:ALL              allow wheel group from anywhere
+#   +:root:LOCAL             allow root only from local logins
+#   +:(users):LOCAL          allow users group from local logins
+#   -:ALL:ALL                deny everyone else
+
+{% if pam_access_rules | length > 0 %}
+{% for rule in pam_access_rules %}
+{{ rule }}
+{% endfor %}
+
+# Default deny all (only applied when explicit allow rules are defined above)
+-:ALL:ALL
+{% endif %}

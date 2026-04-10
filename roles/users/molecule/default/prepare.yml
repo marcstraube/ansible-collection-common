@@ -1,0 +1,34 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # Install required packages for SSH key management
+    - name: Install openssh package (Arch)
+      community.general.pacman:
+        name: openssh
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Install openssh package (Debian)
+      ansible.builtin.apt:
+        name: openssh-client
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install openssh package (RedHat)
+      ansible.builtin.dnf:
+        name: openssh
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Create orphan user for exclusive mode test
+    - name: Create orphan user for exclusive mode test
+      ansible.builtin.user:
+        name: 'orphanuser'
+        uid: 3099
+        state: present

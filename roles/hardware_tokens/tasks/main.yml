@@ -1,0 +1,54 @@
+---
+# =============================================================================
+# Hardware Tokens Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  when: hardware_tokens_enabled | bool
+  tags: [hardware-tokens, hardware-tokens:vars]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: hardware_tokens_enabled | bool
+  tags: [hardware-tokens, hardware-tokens:install]
+
+- name: Main | Import udev tasks
+  ansible.builtin.import_tasks: udev.yml
+  when:
+    - hardware_tokens_enabled | bool
+    - hardware_tokens_udev_rules | bool
+  tags: [hardware-tokens, hardware-tokens:udev]
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  when: hardware_tokens_enabled | bool
+  tags: [hardware-tokens, hardware-tokens:service]
+
+- name: Main | Import users tasks
+  ansible.builtin.import_tasks: users.yml
+  when:
+    - hardware_tokens_enabled | bool
+    - hardware_tokens_users | length > 0
+  tags: [hardware-tokens, hardware-tokens:users]
+
+- name: Main | Import PAM U2F tasks
+  ansible.builtin.import_tasks: pam_u2f.yml
+  when:
+    - hardware_tokens_enabled | bool
+    - hardware_tokens_pam_u2f | bool
+  tags: [hardware-tokens, hardware-tokens:pam]
+
+- name: Main | Import lock on removal tasks
+  ansible.builtin.import_tasks: lock_on_removal.yml
+  when:
+    - hardware_tokens_enabled | bool
+    - hardware_tokens_lock_on_removal | bool
+  tags: [hardware-tokens, hardware-tokens:lock]

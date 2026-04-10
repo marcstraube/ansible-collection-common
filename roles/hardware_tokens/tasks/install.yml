@@ -1,0 +1,65 @@
+---
+# =============================================================================
+# Hardware Tokens Installation
+# =============================================================================
+
+- name: Install | CCID smart card driver
+  ansible.builtin.package:
+    name: '{{ __hardware_tokens_ccid_package }}'
+    state: present
+
+- name: Install | FIDO2 packages
+  ansible.builtin.package:
+    name: '{{ __hardware_tokens_fido2_packages }}'
+    state: present
+  when: hardware_tokens_fido2 | bool
+
+- name: Install | Smartcard packages
+  ansible.builtin.package:
+    name: '{{ __hardware_tokens_smartcard_packages }}'
+    state: present
+  when: hardware_tokens_smartcard | bool
+
+- name: Install | OpenSC
+  ansible.builtin.package:
+    name: '{{ __hardware_tokens_opensc_package }}'
+    state: present
+  when: hardware_tokens_opensc | bool
+
+- name: Install | NitroKey packages
+  ansible.builtin.package:
+    name: '{{ __hardware_tokens_nitrokey_packages }}'
+    state: present
+  when:
+    - hardware_tokens_nitrokey | bool
+    - __hardware_tokens_nitrokey_packages | length > 0
+
+- name: Install | NitroKey App
+  ansible.builtin.package:
+    name: '{{ __hardware_tokens_nitrokey_app_package }}'
+    state: present
+  when:
+    - hardware_tokens_nitrokey | bool
+    - hardware_tokens_nitrokey_app | bool
+    - __hardware_tokens_nitrokey_app_package | length > 0
+
+- name: Install | YubiKey packages
+  ansible.builtin.package:
+    name: '{{ __hardware_tokens_yubikey_packages }}'
+    state: present
+  when: hardware_tokens_yubikey | bool
+
+- name: Install | YubiKey Manager
+  ansible.builtin.package:
+    name: '{{ __hardware_tokens_yubikey_manager_package }}'
+    state: present
+  when:
+    - hardware_tokens_yubikey | bool
+    - hardware_tokens_yubikey_manager | bool
+    - __hardware_tokens_yubikey_manager_package | length > 0
+
+- name: Install | PAM U2F
+  ansible.builtin.package:
+    name: '{{ __hardware_tokens_pam_u2f_package }}'
+    state: present
+  when: hardware_tokens_pam_u2f | bool

@@ -1,0 +1,84 @@
+---
+# marcstraube.common.wireguard/molecule/default/create.yml
+
+- name: Create Vagrant instances
+  hosts: localhost
+  gather_facts: false
+  vars:
+    molecule_scenario_directory: "{{ lookup('env', 'MOLECULE_SCENARIO_DIRECTORY') }}"
+    molecule_ephemeral_directory: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
+    platform_name: "{{ lookup('env', 'MOLECULE_PLATFORM_NAME') }}"
+    all_platforms:
+      - name: wireguard-archlinux
+        port: 2222
+      - name: wireguard-debian-trixie
+        port: 2223
+      - name: wireguard-rocky-9
+        port: 2224
+      - name: wireguard-rocky-10
+        port: 2225
+  tasks:
+    - name: Check if Vagrant is installed
+      ansible.builtin.command: vagrant --version
+      register: vagrant_version
+      changed_when: false
+      failed_when: false
+
+    - name: Fail if Vagrant is not installed
+      ansible.builtin.fail:
+        msg: Vagrant is not installed. Please install Vagrant first.
+      when: vagrant_version.rc != 0
+
+    - name: Copy Vagrantfile to ephemeral directory
+      ansible.builtin.copy:
+        src: "{{ molecule_scenario_directory }}/Vagrantfile"
+        dest: "{{ molecule_ephemeral_directory }}/Vagrantfile"
+        mode: "0644"
+
+    - name: Check if VMs already exist
+      ansible.builtin.command:
+        cmd: vagrant status --machine-readable
+        chdir: "{{ molecule_ephemeral_directory }}"
+      register: vagrant_status_check
+      changed_when: false
+      failed_when: false
+
+    - name: Destroy existing VMs if poweroff or aborted
+      ansible.builtin.command:
+        cmd: vagrant destroy -f
+        chdir: "{{ molecule_ephemeral_directory }}"
+      when:
+        - vagrant_status_check.rc == 0
+        - "'poweroff' in vagrant_status_check.stdout or 'aborted' in vagrant_status_check.stdout"
+      register: vagrant_destroy_result
+      failed_when: false
+      changed_when: vagrant_destroy_result.rc == 0
+
+    - name: Set platforms to create
+      ansible.builtin.set_fact:
+        active_platforms: >-
+          {{ all_platforms | selectattr('name', 'eq', platform_name) | list
+          if platform_name | length > 0
+          else all_platforms }}
+
+    - name: Start Vagrant VMs
+      ansible.builtin.command:
+        cmd: vagrant up
+        chdir: "{{ molecule_ephemeral_directory }}"
+      register: vagrant_up
+      changed_when: "'already running' not in vagrant_up.stderr"
+
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: "{{ item.port }}"
+        delay: 5
+        timeout: 300
+        state: started
+      loop: "{{ active_platforms }}"
+      loop_control:
+        label: "{{ item.name }} (port {{ item.port }})"
+
+    - name: Display instance information
+      ansible.builtin.debug:
+        msg: "Vagrant instances running: {{ active_platforms | map(attribute='name') | join(', ') }}"

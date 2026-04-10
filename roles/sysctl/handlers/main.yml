@@ -1,0 +1,11 @@
+---
+# =============================================================================
+# Sysctl - Handlers
+# =============================================================================
+
+- name: Reload sysctl
+  ansible.builtin.command:
+    cmd: sysctl -p {{ sysctl_config_file | default('/etc/sysctl.d/90-ansible.conf') }}
+  changed_when: false
+  failed_when: false
+  when: sysctl_apply_immediately | default(true) | bool

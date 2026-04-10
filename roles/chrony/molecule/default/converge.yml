@@ -1,0 +1,19 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    chrony_enabled: true
+    chrony_ntp_servers:
+      - server: 'de.pool.ntp.org'
+        options: 'iburst'
+      - server: '0.pool.ntp.org'
+        options: 'iburst'
+    chrony_minsources: 1
+
+  tasks:
+    - name: Include chrony role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

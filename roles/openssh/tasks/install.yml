@@ -1,0 +1,18 @@
+---
+- name: Install OpenSSH packages
+  ansible.builtin.package:
+    name: "{{ __openssh_packages }}"
+    state: present
+
+- name: Install ssh-audit
+  ansible.builtin.package:
+    name: "{{ __openssh_ssh_audit_package }}"
+    state: present
+  when: openssh_install_ssh_audit | bool
+  failed_when: false
+
+- name: Install askpass package
+  ansible.builtin.package:
+    name: "{{ openssh_askpass_package | default(__openssh_askpass_package) }}"
+    state: present
+  when: openssh_askpass_enabled | bool

@@ -1,0 +1,305 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # HOSTNAME VERIFICATION
+    # =========================================================================
+    - name: Verify | Check hostname
+      ansible.builtin.command:
+        cmd: hostnamectl hostname
+      register: base_hostname_check
+      changed_when: false
+      failed_when: base_hostname_check.stdout != 'testhost'
+
+    - name: Verify | Check pretty hostname
+      ansible.builtin.command:
+        cmd: hostnamectl --pretty
+      register: base_pretty_hostname_check
+      changed_when: false
+      failed_when: base_pretty_hostname_check.stdout != 'Test Desktop'
+
+    - name: Verify | Check chassis type
+      ansible.builtin.command:
+        cmd: hostnamectl chassis
+      register: base_chassis_check
+      changed_when: false
+      failed_when: base_chassis_check.stdout != 'desktop'
+
+    - name: Verify | Check machine-info file exists
+      ansible.builtin.stat:
+        path: /etc/machine-info
+      register: base_machine_info
+      failed_when: not base_machine_info.stat.exists
+
+    - name: Verify | Read machine-info content
+      ansible.builtin.slurp:
+        src: /etc/machine-info
+      register: base_machine_info_content
+
+    - name: Verify | Check machine-info contains expected fields
+      ansible.builtin.assert:
+        that:
+          - "'PRETTY_HOSTNAME=' in (base_machine_info_content.content | b64decode)"
+          - "'CHASSIS=' in (base_machine_info_content.content | b64decode)"
+        fail_msg: 'machine-info missing expected fields'
+
+    - name: Verify | Check /etc/hosts contains hostname
+      ansible.builtin.command:
+        cmd: grep '127.0.1.1.*testhost' /etc/hosts
+      register: base_hosts_check
+      changed_when: false
+      failed_when: base_hosts_check.rc != 0
+
+    # =========================================================================
+    # LOCALE VERIFICATION
+    # =========================================================================
+    - name: Verify | Check locale.conf exists
+      ansible.builtin.stat:
+        path: /etc/locale.conf
+      register: base_locale_conf
+      failed_when: not base_locale_conf.stat.exists
+
+    - name: Verify | Read locale.conf
+      ansible.builtin.slurp:
+        src: /etc/locale.conf
+      register: base_locale_conf_content
+
+    - name: Verify | Check LANG is set in locale.conf
+      ansible.builtin.assert:
+        that:
+          - "'LANG=en_US.UTF-8' in (base_locale_conf_content.content | b64decode)"
+        fail_msg: 'LANG not set correctly in /etc/locale.conf'
+
+    - name: Verify | Check locale is generated
+      ansible.builtin.command:
+        cmd: locale -a
+      register: base_locale_list
+      changed_when: false
+
+    - name: Verify | Check en_US.UTF-8 locale exists
+      ansible.builtin.assert:
+        that:
+          - "'en_US.utf8' in base_locale_list.stdout or 'en_US.UTF-8' in base_locale_list.stdout"
+        fail_msg: 'en_US.UTF-8 locale not generated'
+
+    - name: Verify | Check de_DE.UTF-8 locale exists
+      ansible.builtin.assert:
+        that:
+          - "'de_DE.utf8' in base_locale_list.stdout or 'de_DE.UTF-8' in base_locale_list.stdout"
+        fail_msg: 'de_DE.UTF-8 locale not generated'
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    # =========================================================================
+    # TIMEZONE VERIFICATION
+    # =========================================================================
+    - name: Verify | Check timezone symlink
+      ansible.builtin.stat:
+        path: /etc/localtime
+      register: base_localtime
+      failed_when: not base_localtime.stat.exists
+
+    - name: Verify | Check timezone is Europe/Berlin
+      ansible.builtin.command:
+        cmd: timedatectl show --property=Timezone --value
+      register: base_timezone_check
+      changed_when: false
+      failed_when: base_timezone_check.stdout != 'Europe/Berlin'
+
+    # =========================================================================
+    # KEYBOARD VERIFICATION
+    # =========================================================================
+    - name: Verify | Check vconsole.conf exists
+      ansible.builtin.stat:
+        path: /etc/vconsole.conf
+      register: base_vconsole
+
+    - name: Verify | Read vconsole.conf
+      ansible.builtin.slurp:
+        src: /etc/vconsole.conf
+      register: base_vconsole_content
+      when: base_vconsole.stat.exists
+
+    - name: Verify | Check keymap is set
+      ansible.builtin.assert:
+        that:
+          - "'KEYMAP=us' in (base_vconsole_content.content | b64decode)"
+        fail_msg: 'Console keymap not set correctly in vconsole.conf'
+      when: base_vconsole.stat.exists
+
+    - name: Verify | Check X11 keyboard config exists
+      ansible.builtin.stat:
+        path: /etc/X11/xorg.conf.d/00-keyboard.conf
+      register: base_keyboard_conf
+      failed_when: not base_keyboard_conf.stat.exists
+
+    - name: Verify | Read X11 keyboard config
+      ansible.builtin.slurp:
+        src: /etc/X11/xorg.conf.d/00-keyboard.conf
+      register: base_keyboard_content
+
+    - name: Verify | Check X11 keyboard layout
+      ansible.builtin.assert:
+        that:
+          - "'XkbLayout' in (base_keyboard_content.content | b64decode)"
+        fail_msg: 'X11 keyboard layout not configured'
+
+    # =========================================================================
+    # PACKAGES VERIFICATION
+    # =========================================================================
+    - name: Verify | Check common packages installed
+      ansible.builtin.package:
+        name: '{{ item }}'
+        state: present
+      check_mode: true
+      register: base_pkg_check
+      failed_when: base_pkg_check.changed
+      loop:
+        - 'bash-completion'
+        - 'htop'
+        - 'man-db'
+        - 'tmux'
+        - 'wget'
+        - 'curl'
+        - 'rsync'
+        - 'tree'
+        - 'unzip'
+        - 'zip'
+
+    - name: Verify | Check man-pages installed (Arch/RedHat)
+      ansible.builtin.package:
+        name: 'man-pages'
+        state: present
+      check_mode: true
+      register: base_manpages_check
+      failed_when: base_manpages_check.changed
+      when: ansible_facts['os_family'] in ['Archlinux', 'RedHat']
+
+    - name: Verify | Check manpages installed (Debian)
+      ansible.builtin.package:
+        name: 'manpages'
+        state: present
+      check_mode: true
+      register: base_manpages_deb_check
+      failed_when: base_manpages_deb_check.changed
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Check extra package (vim) installed
+      ansible.builtin.package:
+        name: vim
+        state: present
+      check_mode: true
+      register: base_vim_check
+      failed_when: base_vim_check.changed
+
+    # =========================================================================
+    # BINARIES VERIFICATION
+    # =========================================================================
+    - name: Verify | Check key binaries exist
+      ansible.builtin.shell:
+        cmd: 'command -v {{ item }}'
+      register: base_bin_check
+      changed_when: false
+      failed_when: base_bin_check.rc != 0
+      loop:
+        - 'htop'
+        - 'tmux'
+        - 'curl'
+        - 'wget'
+        - 'rsync'
+        - 'tree'
+
+    # Sysctl verification skipped — not testable in Docker (procfs read-only)
+    # Tested by dedicated sysctl role
+
+    # =========================================================================
+    # SYSTEMD VERIFICATION
+    # =========================================================================
+    - name: Verify | Check journald override config exists
+      ansible.builtin.stat:
+        path: /etc/systemd/journald.conf.d/ansible.conf
+      register: base_journald_conf
+      failed_when: not base_journald_conf.stat.exists
+
+    - name: Verify | Read journald config
+      ansible.builtin.slurp:
+        src: /etc/systemd/journald.conf.d/ansible.conf
+      register: base_journald_content
+
+    - name: Verify | Check journald max use setting
+      ansible.builtin.assert:
+        that:
+          - "'SystemMaxUse=500M' in (base_journald_content.content | b64decode)"
+          - "'MaxRetentionSec=1month' in (base_journald_content.content | b64decode)"
+        fail_msg: 'Journald settings not configured correctly'
+
+    - name: Verify | Check coredump override config exists
+      ansible.builtin.stat:
+        path: /etc/systemd/coredump.conf.d/ansible.conf
+      register: base_coredump_conf
+      failed_when: not base_coredump_conf.stat.exists
+
+    - name: Verify | Read coredump config
+      ansible.builtin.slurp:
+        src: /etc/systemd/coredump.conf.d/ansible.conf
+      register: base_coredump_content
+
+    - name: Verify | Check coredump storage disabled
+      ansible.builtin.assert:
+        that:
+          - "'Storage=none' in (base_coredump_content.content | b64decode)"
+          - "'Compress=yes' in (base_coredump_content.content | b64decode)"
+        fail_msg: 'Coredump settings not configured correctly'
+
+    # =========================================================================
+    # TEMPLATE HEADERS
+    # =========================================================================
+    - name: Verify | Check ansible_managed header in locale.conf
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (base_locale_conf_content.content | b64decode)"
+        fail_msg: 'locale.conf missing ansible_managed header'
+
+    - name: Verify | Check ansible_managed header in journald config
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (base_journald_content.content | b64decode)"
+        fail_msg: 'journald config missing ansible_managed header'
+
+    # =========================================================================
+    # KERNEL TASKS NOT RUN ON NON-ARCH
+    # =========================================================================
+    - name: Verify | Check mkinitcpio not present on RedHat/Debian
+      ansible.builtin.shell:
+        cmd: command -v mkinitcpio
+      register: base_mkinitcpio_check
+      changed_when: false
+      failed_when: base_mkinitcpio_check.rc == 0
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    # =========================================================================
+    # FUNCTIONAL TESTS
+    # =========================================================================
+    - name: Verify | Test timedatectl works
+      ansible.builtin.command:
+        cmd: timedatectl status
+      register: base_timedatectl
+      changed_when: false
+      failed_when: base_timedatectl.rc != 0
+
+    - name: Verify | Test localectl works
+      ansible.builtin.command:
+        cmd: localectl status
+      register: base_localectl
+      changed_when: false
+      failed_when: base_localectl.rc != 0
+
+    - name: Verify | Test hostnamectl works
+      ansible.builtin.command:
+        cmd: hostnamectl status
+      register: base_hostnamectl
+      changed_when: false
+      failed_when: base_hostnamectl.rc != 0

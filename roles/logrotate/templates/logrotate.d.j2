@@ -1,0 +1,67 @@
+{{ ansible_managed | comment }}
+#
+# {{ item.name }} log rotation
+
+{{ item.path }} {
+{% if item.options.frequency is defined %}
+    {{ item.options.frequency }}
+{% endif %}
+{% if item.options.rotate is defined %}
+    rotate {{ item.options.rotate }}
+{% endif %}
+{% if item.options.compress | default(false) %}
+    compress
+{% endif %}
+{% if item.options.delaycompress | default(false) %}
+    delaycompress
+{% endif %}
+{% if item.options.missingok | default(false) %}
+    missingok
+{% endif %}
+{% if item.options.notifempty | default(false) %}
+    notifempty
+{% endif %}
+{% if item.options.create is defined %}
+    create {{ item.options.create }}
+{% endif %}
+{% if item.options.sharedscripts | default(false) %}
+    sharedscripts
+{% endif %}
+{% if item.options.copytruncate | default(false) %}
+    copytruncate
+{% endif %}
+{% if item.options.dateext | default(false) %}
+    dateext
+{% endif %}
+{% if item.options.dateformat is defined %}
+    dateformat {{ item.options.dateformat }}
+{% endif %}
+{% if item.options.su is defined %}
+    su {{ item.options.su }}
+{% endif %}
+{% if item.options.olddir is defined %}
+    olddir {{ item.options.olddir }}
+{% endif %}
+{% if item.options.maxage is defined %}
+    maxage {{ item.options.maxage }}
+{% endif %}
+{% if item.options.minsize is defined %}
+    minsize {{ item.options.minsize }}
+{% endif %}
+{% if item.options.maxsize is defined %}
+    maxsize {{ item.options.maxsize }}
+{% endif %}
+{% if item.options.size is defined %}
+    size {{ item.options.size }}
+{% endif %}
+{% if item.prerotate is defined and item.prerotate | length > 0 %}
+    prerotate
+{{ item.prerotate | indent(8, true) }}
+    endscript
+{% endif %}
+{% if item.postrotate is defined and item.postrotate | length > 0 %}
+    postrotate
+{{ item.postrotate | indent(8, true) }}
+    endscript
+{% endif %}
+}

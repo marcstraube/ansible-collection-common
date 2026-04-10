@@ -1,0 +1,25 @@
+---
+# =============================================================================
+# NODE.JS - Arch Linux Variables
+# =============================================================================
+
+# Map nodejs_version to Arch LTS package names
+# Arch 'nodejs' tracks Current (odd-numbered), LTS versions have dedicated packages
+__nodejs_version_package_map:
+  '20': 'nodejs-lts-iron'
+  '22': 'nodejs-lts-jod'
+  '24': 'nodejs-lts-krypton'
+
+__nodejs_packages:
+  - "{{ __nodejs_version_package_map[nodejs_version] | default('nodejs') }}"
+  - 'npm'
+
+__nodejs_nvm_packages:
+  - 'nvm'
+
+__nodejs_prerequisite_packages: []
+
+# Arch repos are current enough, NodeSource not needed
+__nodejs_nodesource_supported: false
+__nodejs_nodesource_key_url: ''
+__nodejs_nodesource_repo: ''

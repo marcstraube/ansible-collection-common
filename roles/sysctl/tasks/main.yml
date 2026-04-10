@@ -1,0 +1,25 @@
+---
+# =============================================================================
+# Sysctl - Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags: [sysctl]
+
+- name: Main | Install packages
+  ansible.builtin.import_tasks:
+    file: install.yml
+  tags: [sysctl, sysctl:install]
+
+- name: Main | Configure sysctl
+  ansible.builtin.import_tasks:
+    file: configure.yml
+  tags: [sysctl, sysctl:configure]

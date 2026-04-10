@@ -1,0 +1,40 @@
+---
+# =============================================================================
+# System-wide OpenSSL Configuration Tasks
+# =============================================================================
+
+# RHEL/Rocky: use crypto-policies for system-wide TLS settings
+- name: Configure | Query current crypto policy (RHEL)
+  ansible.builtin.command:
+    cmd: update-crypto-policies --show
+  register: _pki_current_crypto_policy
+  changed_when: false
+  when: __pki_crypto_policies | bool
+
+- name: Configure | Set crypto policy (RHEL)
+  ansible.builtin.command:
+    cmd: 'update-crypto-policies --set {{ pki_crypto_policy }}'
+  changed_when: true
+  when:
+    - __pki_crypto_policies | bool
+    - _pki_current_crypto_policy.stdout | trim != pki_crypto_policy
+  notify: Update CA trust
+
+# Arch/Debian: deploy system-wide OpenSSL defaults via conf.d
+- name: Configure | Ensure OpenSSL conf.d directory exists
+  ansible.builtin.file:
+    path: '{{ __pki_openssl_conf_dir }}/openssl.cnf.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: not (__pki_crypto_policies | bool)
+
+- name: Configure | Deploy system-wide OpenSSL defaults
+  ansible.builtin.template:
+    src: 'openssl-system-default.conf.j2'
+    dest: '{{ __pki_openssl_conf_dir }}/openssl.cnf.d/01-system-default.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  when: not (__pki_crypto_policies | bool)

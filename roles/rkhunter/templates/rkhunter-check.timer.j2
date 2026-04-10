@@ -1,0 +1,16 @@
+{{ ansible_managed | comment }}
+#
+# rkhunter Rootkit Check Systemd Timer
+#
+
+[Unit]
+Description=rkhunter Rootkit Check Timer
+Documentation=man:rkhunter(8)
+
+[Timer]
+OnCalendar={{ rkhunter_timer_oncalendar }}
+Persistent=true
+RandomizedDelaySec={{ rkhunter_timer_randomized_delay }}
+
+[Install]
+WantedBy=timers.target

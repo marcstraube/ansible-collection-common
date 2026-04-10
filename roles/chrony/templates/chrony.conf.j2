@@ -1,0 +1,137 @@
+{{ ansible_managed | comment }}
+#
+# chrony.conf — NTP client/server configuration
+# See chrony.conf(5) for details.
+
+# =============================================================================
+# NTP SOURCES
+# =============================================================================
+
+{% for server in chrony_ntp_servers %}
+server {{ server.server }} {{ server.options | default('iburst') }}
+{% endfor %}
+{% for pool in chrony_ntp_pools %}
+pool {{ pool.pool }} {{ pool.options | default('iburst') }}
+{% endfor %}
+
+# =============================================================================
+# SOURCE SELECTION
+# =============================================================================
+{% if chrony_minsources > 0 %}
+
+minsources {{ chrony_minsources }}
+{% endif %}
+
+# =============================================================================
+# DRIFT FILE
+# =============================================================================
+
+driftfile {{ chrony_drift_file }}
+
+# =============================================================================
+# TIMING
+# =============================================================================
+
+# Step clock if offset > {{ chrony_makestep_threshold }}s in first {{ chrony_makestep_limit }} updates
+makestep {{ chrony_makestep_threshold }} {{ chrony_makestep_limit }}
+{% if chrony_max_slew_rate > 0 %}
+
+maxslewrate {{ chrony_max_slew_rate }}
+{% endif %}
+{% if chrony_max_offset > 0 %}
+
+# Exit/log if offset exceeds {{ chrony_max_offset }}s after {{ chrony_maxchange_start }} updates
+maxchange {{ chrony_max_offset }} {{ chrony_maxchange_start }} {{ '1' if chrony_maxchange_ignore | bool else '0' }}
+{% endif %}
+
+# =============================================================================
+# RTC
+# =============================================================================
+{% if chrony_rtcsync | bool %}
+
+rtcsync
+{% endif %}
+{% if not chrony_rtc_local | bool %}
+rtconutc
+{% endif %}
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+
+logdir {{ chrony_log_dir }}
+{% if chrony_log_options | length > 0 %}
+log {{ chrony_log_options | join(' ') }}
+{% endif %}
+
+# =============================================================================
+# ACCESS CONTROL
+# =============================================================================
+{% if chrony_allow_networks | length > 0 %}
+
+# Allow these networks to query this server
+{% for network in chrony_allow_networks %}
+allow {{ network }}
+{% endfor %}
+{% endif %}
+{% if chrony_deny_networks | length > 0 %}
+
+# Deny these networks
+{% for network in chrony_deny_networks %}
+deny {{ network }}
+{% endfor %}
+{% endif %}
+{% if chrony_local_stratum > 0 %}
+
+# Serve time even when not synchronized (stratum {{ chrony_local_stratum }})
+local stratum {{ chrony_local_stratum }}
+{% endif %}
+
+# Bind command interface
+bindcmdaddress {{ chrony_bind_cmd_address }}
+bindcmdaddress ::1
+
+# =============================================================================
+# KEYS
+# =============================================================================
+{% if chrony_keys_file %}
+
+keyfile {{ chrony_keys_file }}
+{% endif %}
+
+# =============================================================================
+# NTS (NETWORK TIME SECURITY)
+# =============================================================================
+{% if chrony_nts_server_enabled | bool %}
+
+ntsservercert {{ chrony_nts_server_cert }}
+ntsserverkey {{ chrony_nts_server_key }}
+ntsdumpdir {{ chrony_ntsdumpdir }}
+{% endif %}
+
+# =============================================================================
+# HARDWARE TIMESTAMPING
+# =============================================================================
+
+{% for iface in chrony_hw_timestamp_interfaces %}
+hwtimestamp {{ iface }}
+{% endfor %}
+
+# =============================================================================
+# LEAP SECONDS
+# =============================================================================
+{% if chrony_leapsectz %}
+
+leapsectz {{ chrony_leapsectz }}
+{% endif %}
+{% if chrony_leapseclist %}
+leapseclist {{ chrony_leapseclist }}
+{% endif %}
+
+# =============================================================================
+# EXTRA CONFIGURATION
+# =============================================================================
+
+{% for line in chrony_extra_config %}
+{{ line }}
+{% endfor %}

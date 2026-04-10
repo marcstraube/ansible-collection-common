@@ -1,0 +1,12 @@
+---
+# =============================================================================
+# Avahi - Firewall Tasks
+# =============================================================================
+
+- name: Firewall | Allow mDNS service
+  ansible.posix.firewalld:
+    service: mdns
+    zone: '{{ avahi_firewalld_zone }}'
+    permanent: true
+    immediate: true
+    state: enabled

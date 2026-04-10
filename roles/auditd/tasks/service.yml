@@ -1,0 +1,11 @@
+---
+# =============================================================================
+# Auditd Service Tasks
+# =============================================================================
+
+- name: Enable and start auditd service
+  ansible.builtin.systemd:
+    name: '{{ __auditd_service_name }}'
+    enabled: true
+    state: started
+    daemon_reload: true

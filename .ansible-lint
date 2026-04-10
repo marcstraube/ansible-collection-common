@@ -1,0 +1,12 @@
+---
+# ansible-lint configuration for marcstraube.common collection
+
+# Skip var-naming for roles where semantic prefixes make more sense than role prefixes
+# Examples: pacman_*, apt_*, dnf_* in package_management role
+skip_list:
+  - var-naming[no-role-prefix]
+  - command-instead-of-shell  # command -v is a shell built-in, requires shell
+  - role-name[path]  # molecule converge uses {{ playbook_dir }}/../.. by design
+
+warn_list:
+  - experimental

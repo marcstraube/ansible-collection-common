@@ -1,0 +1,256 @@
+---
+# marcstraube.networkmanager/tasks/dispatcher.yml
+
+- name: Dispatcher | Ensure timezone dispatcher script is installed
+  ansible.builtin.template:
+    src: dispatcher.d/09-timezone.sh.j2
+    dest: /etc/NetworkManager/dispatcher.d/09-timezone.sh
+    owner: root
+    group: root
+    mode: "0755"
+  when: networkmanager_configure_timezone
+
+- name: Dispatcher | Ensure timezone dispatcher script is removed
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/09-timezone.sh
+    state: absent
+  when: not networkmanager_configure_timezone
+
+- name: Dispatcher | Ensure VPN auto-connect dispatcher script is installed
+  ansible.builtin.template:
+    src: dispatcher.d/20-vpn-autoconnect.sh.j2
+    dest: /etc/NetworkManager/dispatcher.d/20-vpn-autoconnect.sh
+    owner: root
+    group: root
+    mode: "0755"
+  when: networkmanager_vpn_autoconnect.enabled | default(false) | bool
+  vars:
+    network_connections_data: "{{ all_network_connections }}"
+
+- name: Dispatcher | Ensure VPN auto-connect dispatcher script is removed
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/20-vpn-autoconnect.sh
+    state: absent
+  when: not (networkmanager_vpn_autoconnect.enabled | default(false) | bool)
+
+- name: Dispatcher | Build unique SMB user and credentials lists
+  ansible.builtin.set_fact:
+    __networkmanager_smb_user_names: >-
+      {{ networkmanager_smb_shares
+         | map(attribute='users') | flatten
+         | map(attribute='name') | unique | list }}
+    __networkmanager_smb_credentials: >-
+      {% set seen = {} -%}
+      {% set result = [] -%}
+      {% for share in networkmanager_smb_shares -%}
+        {% for user in share.users -%}
+          {% set key = user.name ~ ':' ~ share.credentials_name -%}
+          {% if key not in seen -%}
+            {% set _ = seen.update({key: true}) -%}
+            {% set _ = result.append({
+              'credentials_name': share.credentials_name,
+              'user': user}) -%}
+          {% endif -%}
+        {% endfor -%}
+      {% endfor -%}
+      {{ result }}
+  when: networkmanager_smb_shares | length > 0
+  no_log: true
+
+- name: Dispatcher | Ensure per-user SMB credentials directories exist
+  ansible.builtin.file:
+    path: "{{ (users_list | selectattr('name', 'equalto', item) | first).home |
+      default('/home/' + item) }}/{{ networkmanager_smb_credentials_dir }}"
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ (users_list | selectattr('name', 'equalto', item) | first).group |
+      default(item) }}"
+    mode: "0700"
+  loop: "{{ __networkmanager_smb_user_names | default([]) }}"
+  loop_control:
+    label: "{{ item }}:{{ networkmanager_smb_credentials_dir }}"
+
+- name: Dispatcher | Deploy per-user SMB credentials files
+  ansible.builtin.copy:
+    content: |
+      username={{ item.user.smb_username }}
+      password={{ item.user.smb_password }}
+      {% if item.user.smb_domain is defined %}domain={{ item.user.smb_domain }}{% endif %}
+    dest: "{{ (users_list | selectattr('name', 'equalto', item.user.name) | first).home |
+      default('/home/' + item.user.name) }}/{{ networkmanager_smb_credentials_dir }}/{{
+      item.credentials_name }}-credentials"
+    owner: "{{ item.user.name }}"
+    group: "{{ (users_list | selectattr('name', 'equalto', item.user.name) | first).group |
+      default(item.user.name) }}"
+    mode: "0600"
+  loop: "{{ __networkmanager_smb_credentials | default([]) }}"
+  loop_control:
+    label: "{{ item.user.name }}:{{ item.credentials_name }}"
+  no_log: true
+
+- name: Dispatcher | Ensure per-user SMB mount point directories exist
+  ansible.builtin.file:
+    path: "{{ (users_list | selectattr('name', 'equalto', item.1.name) | first).home |
+      default('/home/' + item.1.name) }}/{{ item.0.mount_subpath }}"
+    state: directory
+    owner: "{{ item.1.name }}"
+    group: "{{ (users_list | selectattr('name', 'equalto', item.1.name) | first).group |
+      default(item.1.name) }}"
+    mode: "0755"
+  loop: "{{ networkmanager_smb_shares | subelements('users') }}"
+  loop_control:
+    label: "{{ item.1.name }}:{{ item.0.mount_subpath }}"
+  when: networkmanager_smb_shares | length > 0
+
+- name: Dispatcher | Ensure SMB dispatcher scripts are installed
+  ansible.builtin.template:
+    src: dispatcher.d/{{ item }}
+    dest: /etc/NetworkManager/dispatcher.d/{{ item | regex_replace(".j2$", "") }}
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - 30-mount-smb.sh.j2
+    - 40-umount-smb.sh.j2
+  when: networkmanager_smb_shares | length > 0
+  vars:
+    network_connections_data: "{{ all_network_connections }}"
+
+- name: Dispatcher | Ensure SMB dispatcher scripts are removed
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/{{ item }}
+    state: absent
+  loop:
+    - 30-mount-smb.sh
+    - 40-umount-smb.sh
+  when: networkmanager_smb_shares | length == 0
+
+- name: Dispatcher | Ensure SMB pre-down dispatcher script is installed
+  ansible.builtin.template:
+    src: dispatcher.d/pre-down.d/30-umount-smb.sh.j2
+    dest: /etc/NetworkManager/dispatcher.d/pre-down.d/30-umount-smb.sh
+    owner: root
+    group: root
+    mode: "0755"
+  when: networkmanager_smb_shares | length > 0
+  vars:
+    network_connections_data: "{{ all_network_connections }}"
+
+- name: Dispatcher | Ensure SMB pre-down dispatcher script is removed
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/pre-down.d/30-umount-smb.sh
+    state: absent
+  when: networkmanager_smb_shares | length == 0
+
+- name: Dispatcher | Ensure SSHFS dispatcher scripts are installed
+  ansible.builtin.template:
+    src: dispatcher.d/{{ item }}
+    dest: /etc/NetworkManager/dispatcher.d/{{ item | regex_replace(".j2$", "") }}
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - 30-mount-sshfs.sh.j2
+    - 40-umount-sshfs.sh.j2
+  when: networkmanager_sshfs_shares | length > 0
+  vars:
+    network_connections_data: "{{ all_network_connections }}"
+
+- name: Dispatcher | Ensure SSHFS dispatcher scripts are removed
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/{{ item }}
+    state: absent
+  loop:
+    - 30-mount-sshfs.sh
+    - 40-umount-sshfs.sh
+  when: networkmanager_sshfs_shares | length == 0
+
+- name: Dispatcher | Ensure SSHFS pre-down dispatcher script is installed
+  ansible.builtin.template:
+    src: dispatcher.d/pre-down.d/30-umount-sshfs.sh.j2
+    dest: /etc/NetworkManager/dispatcher.d/pre-down.d/30-umount-sshfs.sh
+    owner: root
+    group: root
+    mode: "0755"
+  when: networkmanager_sshfs_shares | length > 0
+  vars:
+    network_connections_data: "{{ all_network_connections }}"
+
+- name: Dispatcher | Ensure SSHFS pre-down dispatcher script is removed
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/pre-down.d/30-umount-sshfs.sh
+    state: absent
+  when: networkmanager_sshfs_shares | length == 0
+
+- name: Dispatcher | Remove old VPN dispatcher script (migration - now using connection.secondaries)
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/40-vpn.sh
+    state: absent
+
+- name: Dispatcher | Ensure VPN-SMB mount dispatcher script is installed
+  ansible.builtin.template:
+    src: dispatcher.d/50-vpn-mount-smb.sh.j2
+    dest: /etc/NetworkManager/dispatcher.d/50-vpn-mount-smb.sh
+    owner: root
+    group: root
+    mode: "0755"
+  when: (networkmanager_smb_shares | selectattr('depends_on', 'defined') |
+    map(attribute='depends_on') | flatten |
+    intersect(networkmanager_connections.vpn.keys() | list) | list | length > 0)
+  vars:
+    network_connections_data: "{{ all_network_connections }}"
+
+- name: Dispatcher | Ensure VPN-SMB mount dispatcher script is removed
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/50-vpn-mount-smb.sh
+    state: absent
+  when: not (networkmanager_smb_shares | selectattr('depends_on', 'defined') |
+    map(attribute='depends_on') | flatten | intersect(networkmanager_connections.vpn.keys() |
+    list) | list | length > 0)
+
+- name: Dispatcher | Ensure VPN-SMB umount dispatcher script is installed
+  ansible.builtin.template:
+    src: dispatcher.d/60-vpn-umount-smb.sh.j2
+    dest: /etc/NetworkManager/dispatcher.d/60-vpn-umount-smb.sh
+    owner: root
+    group: root
+    mode: "0755"
+  when: (networkmanager_smb_shares | selectattr('depends_on', 'defined') |
+    map(attribute='depends_on') | flatten |
+    intersect(networkmanager_connections.vpn.keys() | list) | list | length > 0)
+  vars:
+    network_connections_data: "{{ all_network_connections }}"
+
+- name: Dispatcher | Ensure VPN-SMB umount dispatcher script is removed
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/60-vpn-umount-smb.sh
+    state: absent
+  when: not (networkmanager_smb_shares | selectattr('depends_on', 'defined') |
+    map(attribute='depends_on') | flatten | intersect(networkmanager_connections.vpn.keys() |
+    list) | list | length > 0)
+
+- name: Dispatcher | Remove old VPN-SMB script (migration)
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/50-vpn-smb-mount.sh
+    state: absent
+
+- name: Dispatcher | Ensure WiFi auto-toggle dispatcher script is installed
+  ansible.builtin.template:
+    src: dispatcher.d/99-wifi-auto-toggle.sh.j2
+    dest: /etc/NetworkManager/dispatcher.d/99-wifi-auto-toggle.sh
+    owner: root
+    group: root
+    mode: "0755"
+  when: (networkmanager_connections.ethernet | dict2items |
+    selectattr('value.toggle_wifi', 'defined') | selectattr('value.toggle_wifi')) |
+    list | length > 0
+  vars:
+    network_connections_data: "{{ all_network_connections }}"
+
+- name: Dispatcher | Ensure WiFi auto-toggle dispatcher script is removed
+  ansible.builtin.file:
+    path: /etc/NetworkManager/dispatcher.d/99-wifi-auto-toggle.sh
+    state: absent
+  when: not ((networkmanager_connections.ethernet | dict2items |
+    selectattr('value.toggle_wifi', 'defined') | selectattr('value.toggle_wifi')) |
+    list | length > 0)

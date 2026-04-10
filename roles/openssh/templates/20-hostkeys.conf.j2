@@ -1,0 +1,6 @@
+{{ ansible_managed | comment }}
+# Host keys
+
+{% for keytype in openssh_server_host_key_types %}
+HostKey {{ __openssh_host_keys_dir }}/ssh_host_{{ keytype }}_key
+{% endfor %}

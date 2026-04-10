@@ -1,0 +1,12 @@
+---
+# =============================================================================
+# Chrony - Firewall Tasks
+# =============================================================================
+
+- name: Firewall | Allow NTP service
+  ansible.posix.firewalld:
+    service: ntp
+    zone: '{{ chrony_firewalld_zone }}'
+    permanent: true
+    immediate: true
+    state: enabled

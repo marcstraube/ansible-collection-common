@@ -1,0 +1,12 @@
+---
+# =============================================================================
+# Restic - Debian Variables
+# =============================================================================
+
+__restic_packages:
+  - 'restic'
+
+__restic_binary_packages:
+  - 'bzip2'
+
+__restic_mail_package: 'mailutils'

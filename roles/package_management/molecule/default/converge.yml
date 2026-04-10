@@ -1,0 +1,85 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Full system update (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update apt cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Update dnf cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Create test user for makepkg (Arch only)
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Create disabled test user (Arch only)
+      ansible.builtin.user:
+        name: disableduser
+        state: present
+        create_home: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+  vars:
+    package_management_enabled: true
+
+    # ArchLinux specific
+    pacman_parallel_downloads: 5
+    pacman_color: true
+    pacman_ilovecandy: true
+    pacman_check_space: true
+    reflector_enabled: true
+    reflector:
+      countries: []
+      protocol: 'https'
+      latest: 5
+      sort: 'rate'
+      score: ''
+      age: 24
+    aur_helper: ''  # Skip AUR helper in tests
+    paccache_enabled: true
+    pacman_install_pkgfile: true
+    makepkg_users:
+      - username: 'testuser'
+        mode: 'managed'
+        packager: 'Test User <test@example.com>'
+        gpg_key: 'ABCDEF1234567890'
+      - username: 'disableduser'
+        mode: 'disabled'
+
+    # Debian/Ubuntu specific
+    apt_periodic_enabled: true
+    apt_periodic_update: 1
+    apt_install_recommends: true
+    apt_unattended_upgrades: false
+    apt_install_apt_file: true
+    apt_install_needrestart: true
+
+    # RedHat/Fedora specific
+    dnf_fastestmirror: true
+    dnf_max_parallel_downloads: 10
+    dnf_best: true
+    dnf_epel_enabled: true
+    dnf_automatic_enabled: false
+    dnf_install_utils: true
+
+  tasks:
+    - name: Include package_management role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

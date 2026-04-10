@@ -1,0 +1,71 @@
+---
+# =============================================================================
+# WireGuard - Key Generation Tasks
+# =============================================================================
+
+- name: Keys | Check if private key exists
+  ansible.builtin.stat:
+    path: '{{ wireguard_config_dir }}/{{ wireguard_interface }}_private.key'
+  register: __wireguard_privkey_file
+
+- name: Keys | Generate private key
+  ansible.builtin.command:
+    cmd: 'wg genkey'
+  register: __wireguard_generated_privkey
+  changed_when: true
+  when:
+    - not __wireguard_privkey_file.stat.exists
+    - wireguard_private_key | length == 0
+  no_log: true
+
+- name: Keys | Save private key to file
+  ansible.builtin.copy:
+    content: '{{ __wireguard_generated_privkey.stdout }}'
+    dest: '{{ wireguard_config_dir }}/{{ wireguard_interface }}_private.key'
+    owner: root
+    group: root
+    mode: '0600'
+  when:
+    - not __wireguard_privkey_file.stat.exists
+    - wireguard_private_key | length == 0
+    - __wireguard_generated_privkey.stdout is defined
+  no_log: true
+
+- name: Keys | Read existing private key
+  ansible.builtin.slurp:
+    src: '{{ wireguard_config_dir }}/{{ wireguard_interface }}_private.key'
+  register: __wireguard_privkey_content
+  when: __wireguard_privkey_file.stat.exists
+  no_log: true
+
+- name: Keys | Set private key fact
+  ansible.builtin.set_fact:
+    __wireguard_private_key: >-
+      {{ wireguard_private_key if wireguard_private_key | length > 0
+         else (__wireguard_generated_privkey.stdout if __wireguard_generated_privkey is changed
+         else __wireguard_privkey_content.content | b64decode | trim) }}
+  no_log: true
+
+- name: Keys | Generate public key
+  ansible.builtin.command:
+    cmd: 'wg pubkey'
+    stdin: '{{ __wireguard_private_key }}'
+  register: __wireguard_generated_pubkey
+  changed_when: false
+  no_log: true
+
+- name: Keys | Save public key to file
+  ansible.builtin.copy:
+    content: '{{ __wireguard_generated_pubkey.stdout }}'
+    dest: '{{ wireguard_config_dir }}/{{ wireguard_interface }}_public.key'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Keys | Set public key fact
+  ansible.builtin.set_fact:
+    __wireguard_public_key: '{{ __wireguard_generated_pubkey.stdout }}'
+
+- name: Keys | Display public key
+  ansible.builtin.debug:
+    msg: 'WireGuard public key: {{ __wireguard_public_key }}'

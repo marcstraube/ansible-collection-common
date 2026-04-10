@@ -1,0 +1,31 @@
+#jinja2:lstrip_blocks: True
+#!/bin/sh
+{{ ansible_managed | comment }}
+
+# This script automatically unmounts SSHFS shares when the last network connection goes down.
+# It serves as a fallback for shutdown/restart scenarios where pre-down might not run.
+
+LOG_PREFIX="NM-SSHFS-Umount"
+
+if [ "$2" = "down" ]; then
+  # Give the system a moment to settle its connection states
+  sleep 2
+
+  # Check if there are any active connections left
+  ACTIVE_CONNECTIONS=$(nmcli -t -f STATE,TYPE connection show --active | grep -c "activated")
+
+  if [ "$ACTIVE_CONNECTIONS" -eq 0 ]; then
+    echo "$LOG_PREFIX: Last network connection is down. Unmounting all SSHFS shares."
+{% if networkmanager_sshfs_shares is defined and networkmanager_sshfs_shares | length > 0 %}
+  {% for share in networkmanager_sshfs_shares %}
+    # Check if the share is mounted
+    if mountpoint -q "{{ share.dest }}"; then
+      echo "$LOG_PREFIX: Unmounting '{{ share.name }}' from {{ share.dest }}"
+      fusermount -u "{{ share.dest }}"
+    fi
+  {% endfor %}
+{% endif %}
+  else
+    echo "$LOG_PREFIX: A network connection went down, but other connections are still active. Skipping unmount."
+  fi
+fi

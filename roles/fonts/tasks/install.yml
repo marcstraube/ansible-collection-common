@@ -1,0 +1,60 @@
+---
+# =============================================================================
+# Font Package Installation
+# =============================================================================
+
+- name: Install | Install fontconfig dependency
+  ansible.builtin.package:
+    name: fontconfig
+    state: present
+
+- name: Install | Build base font package list
+  ansible.builtin.set_fact:
+    __fonts_packages: >-
+      {{
+        (fonts_dejavu | bool | ternary([__fonts_dejavu_package], [])) +
+        (fonts_liberation | bool | ternary([__fonts_liberation_package], [])) +
+        (fonts_noto | bool | ternary([__fonts_noto_package], [])) +
+        (fonts_noto_emoji | bool | ternary([__fonts_noto_emoji_package], [])) +
+        (fonts_noto_cjk | bool | ternary([__fonts_noto_cjk_package], []))
+      }}
+  when: fonts_base | bool
+
+- name: Install | Initialize empty package list
+  ansible.builtin.set_fact:
+    __fonts_packages: []
+  when: not (fonts_base | bool)
+
+- name: Install | Add coding fonts to package list
+  ansible.builtin.set_fact:
+    __fonts_packages: >-
+      {{
+        __fonts_packages +
+        (fonts_coding_families | map('extract', __fonts_coding_packages) | select('string') | list)
+      }}
+  when: fonts_coding | bool
+
+- name: Install | Add Nerd Fonts to package list
+  ansible.builtin.set_fact:
+    __fonts_packages: >-
+      {{
+        __fonts_packages +
+        (fonts_nerd_families | map('extract', __fonts_nerd_packages) | select('string') | list)
+      }}
+  when: fonts_nerd | bool
+
+- name: Install | Add extra packages to list
+  ansible.builtin.set_fact:
+    __fonts_packages: '{{ __fonts_packages + fonts_extra_packages }}'
+  when: fonts_extra_packages | length > 0
+
+- name: Install | Filter empty package names
+  ansible.builtin.set_fact:
+    __fonts_packages: '{{ __fonts_packages | select("string") | reject("equalto", "") | list }}'
+
+- name: Install | Install font packages
+  ansible.builtin.package:
+    name: '{{ __fonts_packages }}'
+    state: present
+  when: __fonts_packages | length > 0
+  notify: Rebuild font cache

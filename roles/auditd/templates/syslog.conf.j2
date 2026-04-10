@@ -1,0 +1,11 @@
+{{ ansible_managed | comment }}
+#
+# Syslog Plugin Configuration
+#
+
+active = yes
+direction = out
+path = builtin_syslog
+type = builtin
+args = {{ auditd_syslog_priority }} {{ auditd_syslog_facility }}
+format = string

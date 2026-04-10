@@ -1,0 +1,84 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    users_enabled: true
+    users_create_ssh_dir: true
+    users_home_mode: '0750'
+    users_profile_images_enabled: true
+    users_profile_images_face_symlink: true
+    users_exclusive: true
+
+    # Test groups
+    users_groups:
+      - name: 'developers'
+        gid: 2000
+        system: false
+      - name: 'docker'
+        system: true
+      - name: 'testgroup'
+        gid: 2100
+
+    # Test users with various configurations
+    users_list:
+      # Basic user (with profile image via explicit path for molecule test)
+      - name: 'basicuser'
+        comment: 'Basic Test User'
+        uid: 3001
+        shell: '/bin/bash'
+        profile_image: '{{ playbook_dir }}/files/users/basicuser.png'
+
+      # User with groups
+      - name: 'devuser'
+        comment: 'Developer User'
+        uid: 3002
+        groups:
+          - 'developers'
+          - 'docker'
+        append_groups: true
+        shell: '/bin/bash'
+
+      # User with SSH keys
+      - name: 'sshuser'
+        comment: 'SSH User'
+        uid: 3003
+        ssh_keys:
+          - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGvX2zLhVwHxRJ9cNJqXcLcPxD5QvqJ2vCcDx/KLmNgt test1@example.com'
+          - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBvC2zLhVwHxRJ9cNJqXcLcPxD5QvqJ2vCcDx/KLmNgx test2@example.com'
+        ssh_keys_exclusive: true
+
+      # User with generated SSH key
+      - name: 'genuser'
+        comment: 'User with Generated Key'
+        uid: 3004
+        generate_ssh_key: true
+        ssh_key_type: 'ed25519'
+
+      # System user
+      - name: 'serviceuser'
+        comment: 'Service Account'
+        system: true
+        create_home: false
+        shell: '/usr/sbin/nologin'
+
+      # User with custom home
+      - name: 'customhome'
+        comment: 'Custom Home User'
+        uid: 3006
+        home: '/opt/customhome'
+        home_mode: '0755'
+
+      # User with locked password
+      - name: 'lockeduser'
+        comment: 'Locked User'
+        uid: 3007
+        password: '!'
+        password_lock: true
+
+  tasks:
+    - name: Include users role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

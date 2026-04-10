@@ -1,0 +1,66 @@
+---
+name: Update Neovim Version
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6:00 UTC
+  workflow_dispatch:       # Manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-neovim:
+    name: Check for new Neovim release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Get latest Neovim stable release
+        id: neovim
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=$(gh api repos/neovim/neovim/releases/latest --jq '.tag_name')
+          CURRENT=$(grep 'editors_neovim_version:' roles/editors/defaults/main.yml \
+            | sed "s/.*'\(.*\)'/\1/")
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "Current: $CURRENT, Latest: $LATEST"
+
+      - name: Update defaults/main.yml
+        if: steps.neovim.outputs.latest != steps.neovim.outputs.current
+        run: |
+          sed -i "s/editors_neovim_version: '.*'/editors_neovim_version: '${{ steps.neovim.outputs.latest }}'/" \
+            roles/editors/defaults/main.yml
+
+      - name: Create Pull Request
+        if: steps.neovim.outputs.latest != steps.neovim.outputs.current
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ github.token }}
+          commit-message: >-
+            chore(editors): update neovim version
+            ${{ steps.neovim.outputs.current }} →
+            ${{ steps.neovim.outputs.latest }}
+          branch: chore/update-neovim-${{ steps.neovim.outputs.latest }}
+          title: >-
+            chore(editors): update neovim version to
+            ${{ steps.neovim.outputs.latest }}
+          body: |
+            Automated update of `editors_neovim_version` in
+            `roles/editors/defaults/main.yml`.
+
+            **Previous:** `${{ steps.neovim.outputs.current }}`
+            **New:** `${{ steps.neovim.outputs.latest }}`
+
+            Release notes: https://github.com/neovim/neovim/releases/tag/${{ steps.neovim.outputs.latest }}
+
+            ---
+            This PR was created automatically by the
+            `update-neovim-version` workflow.
+          labels: dependencies
+          delete-branch: true

@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# Debian specific variables (Trixie — system pipx 1.7.1 works)
+# =============================================================================
+
+__ansible_tools_ansible_packages:
+  - 'ansible'
+
+__ansible_tools_molecule_pipx_package: 'molecule'
+
+__ansible_tools_podman_pipx_inject: 'molecule-plugins[podman]'
+
+__ansible_tools_docker_pipx_inject: 'molecule-plugins[docker]'
+
+# System pipx on Trixie is modern enough (>= 1.7.0)
+__ansible_tools_pipx_cmd: 'pipx'

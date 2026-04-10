@@ -1,0 +1,4 @@
+---
+# marcstraube.common.auditd/molecule/default/requirements.yml
+
+roles: []

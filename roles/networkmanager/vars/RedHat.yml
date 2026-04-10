@@ -1,0 +1,12 @@
+---
+# marcstraube.networkmanager/vars/RedHat.yml
+
+# NetworkManager is pre-installed on Rocky/RHEL
+__networkmanager_packages: []
+
+# Servers get nmtui (TUI); GUI applet is not typical on servers
+__networkmanager_applet_packages:
+  - NetworkManager-tui
+
+__networkmanager_service_name: NetworkManager.service
+__networkmanager_dispatcher_service: NetworkManager-dispatcher.service

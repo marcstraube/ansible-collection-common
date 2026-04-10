@@ -1,0 +1,11 @@
+#!/bin/sh
+{{ ansible_managed | comment }}
+
+# This script automatically sets the system timezone based on the current IP address
+# using the ipapi.co API when a network connection comes up.
+
+case "$2" in
+  up)
+    timedatectl set-timezone "$(curl --fail https://ipapi.co/timezone)"
+    ;;
+esac

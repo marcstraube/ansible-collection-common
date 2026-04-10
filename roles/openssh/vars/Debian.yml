@@ -1,0 +1,35 @@
+---
+# Debian/Ubuntu-specific variables for OpenSSH
+
+__openssh_packages:
+  - 'openssh-server'
+  - 'openssh-client'
+
+__openssh_server_service: 'ssh.service'
+__openssh_server_config_dir: '/etc/ssh'
+__openssh_server_config_file: '/etc/ssh/sshd_config'
+__openssh_server_config_d_dir: '/etc/ssh/sshd_config.d'
+
+__openssh_client_config_file: '/etc/ssh/ssh_config'
+__openssh_client_config_d_dir: '/etc/ssh/ssh_config.d'
+
+__openssh_moduli_file: '/etc/ssh/moduli'
+
+__openssh_host_keys_dir: '/etc/ssh'
+
+__openssh_sftp_server: '/usr/lib/openssh/sftp-server'
+
+__openssh_ssh_audit_package: 'ssh-audit'
+
+__openssh_askpass_package: 'ssh-askpass'
+
+__openssh_agent_service: 'ssh-agent.service'
+
+__openssh_apparmor_profile: '/usr/sbin/sshd'
+
+# OpenSSH 10.0p1 on Debian Trixie
+__openssh_print_lastlog_supported: false
+__openssh_required_rsa_size_supported: true
+__openssh_per_source_penalties_supported: true
+__openssh_channel_timeout_supported: true
+__openssh_unused_connection_timeout_supported: true

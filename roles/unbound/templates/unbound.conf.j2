@@ -1,0 +1,116 @@
+{{ ansible_managed | comment }}
+
+server:
+    # Network
+    do-ip4: {{ 'yes' if unbound_do_ip4 else 'no' }}
+    do-ip6: {{ 'yes' if unbound_do_ip6 else 'no' }}
+    do-tcp: {{ 'yes' if unbound_do_tcp else 'no' }}
+    do-udp: {{ 'yes' if unbound_do_udp else 'no' }}
+{% for interface in unbound_interfaces %}
+    interface: {{ interface }}
+{% endfor %}
+    port: {{ unbound_port }}
+
+    # Access control
+{% for acl in unbound_access_control %}
+    access-control: {{ acl.subnet }} {{ acl.action }}
+{% endfor %}
+    do-not-query-localhost: {{ 'yes' if unbound_do_not_query_localhost else 'no' }}
+
+    # Performance
+    num-threads: {{ __unbound_threads }}
+    msg-cache-size: {{ unbound_msg_cache_size }}
+    rrset-cache-size: {{ unbound_rrset_cache_size }}
+    key-cache-size: {{ unbound_key_cache_size }}
+    neg-cache-size: {{ unbound_neg_cache_size }}
+    infra-cache-numhosts: {{ unbound_infra_cache_numhosts }}
+    cache-min-ttl: {{ unbound_cache_min_ttl }}
+    cache-max-ttl: {{ unbound_cache_max_ttl }}
+    prefetch: {{ 'yes' if unbound_prefetch else 'no' }}
+    prefetch-key: {{ 'yes' if unbound_prefetch_key else 'no' }}
+    serve-expired: {{ 'yes' if unbound_serve_expired else 'no' }}
+{% if unbound_serve_expired %}
+    serve-expired-ttl: {{ unbound_serve_expired_ttl }}
+{% endif %}
+    rrset-roundrobin: {{ 'yes' if unbound_rrset_roundrobin else 'no' }}
+    minimal-responses: {{ 'yes' if unbound_minimal_responses else 'no' }}
+    edns-buffer-size: {{ unbound_edns_buffer_size }}
+    outgoing-range: {{ unbound_outgoing_range }}
+    num-queries-per-thread: {{ unbound_num_queries_per_thread }}
+    so-rcvbuf: {{ unbound_so_rcvbuf }}
+    so-sndbuf: {{ unbound_so_sndbuf }}
+
+    # Security
+    hide-identity: {{ 'yes' if unbound_hide_identity else 'no' }}
+    hide-version: {{ 'yes' if unbound_hide_version else 'no' }}
+    harden-glue: {{ 'yes' if unbound_harden_glue else 'no' }}
+    harden-dnssec-stripped: {{ 'yes' if unbound_harden_dnssec_stripped else 'no' }}
+    harden-below-nxdomain: {{ 'yes' if unbound_harden_below_nxdomain else 'no' }}
+    harden-referral-path: {{ 'yes' if unbound_harden_referral_path else 'no' }}
+    harden-large-queries: {{ 'yes' if unbound_harden_large_queries else 'no' }}
+    harden-algo-downgrade: {{ 'yes' if unbound_harden_algo_downgrade else 'no' }}
+    use-caps-for-id: {{ 'yes' if unbound_use_caps_for_id else 'no' }}
+    val-clean-additional: {{ 'yes' if unbound_val_clean_additional else 'no' }}
+    unwanted-reply-threshold: {{ unbound_unwanted_reply_threshold }}
+
+    # Privacy
+    qname-minimisation: {{ 'yes' if unbound_qname_minimisation else 'no' }}
+    qname-minimisation-strict: {{ 'yes' if unbound_qname_minimisation_strict else 'no' }}
+    aggressive-nsec: {{ 'yes' if unbound_aggressive_nsec else 'no' }}
+    tcp-upstream: {{ 'yes' if unbound_tcp_upstream else 'no' }}
+{% if unbound_dnssec_enabled %}
+
+    # DNSSEC
+    auto-trust-anchor-file: "{{ __unbound_root_key }}"
+{% endif %}
+{% if unbound_root_hints_update %}
+
+    # Root hints
+    root-hints: "{{ unbound_root_hints_file }}"
+{% endif %}
+
+    # Private addresses
+{% for addr in unbound_private_addresses %}
+    private-address: {{ addr }}
+{% endfor %}
+{% if unbound_private_domains | length > 0 %}
+{% for domain in unbound_private_domains %}
+    private-domain: "{{ domain }}"
+{% endfor %}
+{% endif %}
+{% if unbound_insecure_domains | length > 0 %}
+{% for domain in unbound_insecure_domains %}
+    domain-insecure: "{{ domain }}"
+{% endfor %}
+{% endif %}
+
+    # Logging
+    verbosity: {{ unbound_verbosity }}
+    use-syslog: {{ 'yes' if unbound_use_syslog else 'no' }}
+{% if unbound_logfile | length > 0 %}
+    logfile: "{{ unbound_logfile }}"
+{% endif %}
+    log-queries: {{ 'yes' if unbound_log_queries else 'no' }}
+    log-replies: {{ 'yes' if unbound_log_replies else 'no' }}
+{% if unbound_tls_upstream %}
+
+    # TLS upstream
+    tls-cert-bundle: "{{ unbound_tls_cert_bundle | default(__unbound_tls_cert_bundle) }}"
+{% endif %}
+{% if unbound_chroot | length > 0 %}
+
+    # Chroot
+    chroot: "{{ unbound_chroot }}"
+{% endif %}
+{% if unbound_username | length > 0 %}
+    username: "{{ unbound_username }}"
+{% endif %}
+
+    # Include additional configuration
+    include: "/etc/unbound/conf.d/*.conf"
+{% if unbound_remote_control %}
+
+remote-control:
+    control-enable: yes
+    control-interface: {{ unbound_control_interface }}
+{% endif %}

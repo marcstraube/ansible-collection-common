@@ -1,0 +1,15 @@
+---
+# =============================================================================
+# Avahi - Installation Tasks
+# =============================================================================
+
+- name: Install | Avahi packages
+  ansible.builtin.package:
+    name: '{{ __avahi_packages }}'
+    state: present
+
+- name: Install | NSS-mDNS packages
+  ansible.builtin.package:
+    name: '{{ __avahi_nss_packages }}'
+    state: present
+  when: avahi_nss_mdns | bool

@@ -1,0 +1,518 @@
+---
+# marcstraube.networkmanager/tasks/connections.yml
+
+- name: Connections | Check existing Ethernet connections
+  ansible.builtin.command: nmcli -t -f NAME connection show
+  register: __nm_existing_connections
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Connections | Create placeholder for Ethernet connections
+  community.general.nmcli:
+    type: ethernet
+    conn_name: "{{ item.key }}"
+    ifname: "{{ item.value.ifname }}"
+    state: present
+    autoconnect: false
+  loop: "{{ networkmanager_connections.ethernet | dict2items | default([]) }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - item.value.state | default("present") == "present"
+    - item.key not in __nm_existing_connections.stdout_lines | default([])
+
+- name: Connections | Configure NetworkManager ethernet connections
+  community.general.nmcli:
+    type: ethernet
+    conn_name: "{{ item.key }}"
+    ifname: "{{ item.value.ifname | default(omit) }}"
+    ip4: "{{ item.value.ip4 | default(omit) }}"
+    gw4: "{{ item.value.gw4 | default(omit) }}"
+    gw4_ignore_auto: "{{ item.value.gw4_ignore_auto | default(omit) }}"
+    ip6: "{{ item.value.ip6 | default(omit) }}"
+    gw6: "{{ item.value.gw6 | default(omit) }}"
+    gw6_ignore_auto: "{{ item.value.gw6_ignore_auto | default(omit) }}"
+    autoconnect: "{{ item.value.autoconnect | default(true) }}"
+    autoconnect_priority: "{{ item.value.autoconnect_priority | default(omit) }}"
+    # DNS Configuration
+    dns4: >-
+      {{ item.value.dns4 | default(
+         networkmanager_global_dns4
+         if networkmanager_apply_global_dns else omit) }}
+    dns4_search: >-
+      {{ item.value.dns4_search | default(
+         networkmanager_global_dns4_search
+         if networkmanager_apply_global_dns else omit) }}
+    dns4_ignore_auto: "{{ item.value.dns4_ignore_auto | default(omit) }}"
+    dns4_options: >-
+      {{ item.value.dns4_options | default(
+         networkmanager_global_dns4_options
+         if networkmanager_apply_global_dns else omit) }}
+    dns6: >-
+      {{ item.value.dns6 | default(
+         networkmanager_global_dns6
+         if networkmanager_apply_global_dns else omit) }}
+    dns6_search: >-
+      {{ item.value.dns6_search | default(
+         networkmanager_global_dns6_search
+         if networkmanager_apply_global_dns else omit) }}
+    dns6_ignore_auto: "{{ item.value.dns6_ignore_auto | default(omit) }}"
+    dns6_options: >-
+      {{ item.value.dns6_options | default(
+         networkmanager_global_dns6_options
+         if networkmanager_apply_global_dns else omit) }}
+    # Routing Configuration
+    routes4: "{{ item.value.routes4 | default(omit) }}"
+    routes4_extended: "{{ item.value.routes4_extended | default(omit) }}"
+    routes6: "{{ item.value.routes6 | default(omit) }}"
+    routes6_extended: "{{ item.value.routes6_extended | default(omit) }}"
+    route_metric4: "{{ item.value.route_metric4 | default(omit) }}"
+    route_metric6: "{{ item.value.route_metric6 | default(omit) }}"
+    routing_rules4: "{{ item.value.routing_rules4 | default(omit) }}"
+    # Other options
+    never_default4: "{{ item.value.never_default4 | default(omit) }}"
+    may_fail4: "{{ item.value.may_fail4 | default(omit) }}"
+    method4: "{{ item.value.method4 | default(omit) }}"
+    method6: "{{ item.value.method6 | default(omit) }}"
+    state: "{{ item.value.state | default('present') }}"
+  loop: "{{ networkmanager_connections.ethernet | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register: ethernet_connections_result
+
+- name: Connections | Force NetworkManager WiFi scan before creating WiFi connections
+  ansible.builtin.shell: |
+    nmcli device wifi rescan || true
+    sleep 2
+  when: networkmanager_connections.wifi | default({}) | length > 0
+  changed_when: false
+
+- name: Connections | Create placeholder for WiFi connections
+  community.general.nmcli:
+    type: wifi
+    conn_name: "{{ item.key }}"
+    ifname: "{{ item.value.ifname | default(omit) }}"
+    ssid: "{{ item.value.ssid }}"
+    state: present
+    autoconnect: false
+  loop: "{{ networkmanager_connections.wifi | dict2items | default([]) }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - item.value.state | default("present") == "present"
+    - item.key not in __nm_existing_connections.stdout_lines | default([])
+
+- name: Connections | Configure NetworkManager WiFi connections
+  community.general.nmcli:
+    type: wifi
+    conn_name: "{{ item.key }}"
+    ifname: "{{ item.value.ifname | default(omit) }}"
+    ssid: "{{ item.value.ssid }}"
+    ip4: "{{ item.value.ip4 | default(omit) }}"
+    gw4: "{{ item.value.gw4 | default(omit) }}"
+    gw4_ignore_auto: "{{ item.value.gw4_ignore_auto | default(omit) }}"
+    ip6: "{{ item.value.ip6 | default(omit) }}"
+    gw6: "{{ item.value.gw6 | default(omit) }}"
+    gw6_ignore_auto: "{{ item.value.gw6_ignore_auto | default(omit) }}"
+    autoconnect: "{{ item.value.autoconnect | default(true) }}"
+    autoconnect_priority: "{{ item.value.autoconnect_priority | default(omit) }}"
+    # DNS Configuration
+    dns4: >-
+      {{ item.value.dns4 | default(
+         networkmanager_global_dns4
+         if networkmanager_apply_global_dns else omit) }}
+    dns4_search: >-
+      {{ item.value.dns4_search | default(
+         networkmanager_global_dns4_search
+         if networkmanager_apply_global_dns else omit) }}
+    dns4_ignore_auto: "{{ item.value.dns4_ignore_auto | default(omit) }}"
+    dns4_options: >-
+      {{ item.value.dns4_options | default(
+         networkmanager_global_dns4_options
+         if networkmanager_apply_global_dns else omit) }}
+    dns6: >-
+      {{ item.value.dns6 | default(
+         networkmanager_global_dns6
+         if networkmanager_apply_global_dns else omit) }}
+    dns6_search: >-
+      {{ item.value.dns6_search | default(
+         networkmanager_global_dns6_search
+         if networkmanager_apply_global_dns else omit) }}
+    dns6_ignore_auto: "{{ item.value.dns6_ignore_auto | default(omit) }}"
+    dns6_options: >-
+      {{ item.value.dns6_options | default(
+         networkmanager_global_dns6_options
+         if networkmanager_apply_global_dns else omit) }}
+    # Routing Configuration
+    routes4: "{{ item.value.routes4 | default(omit) }}"
+    routes4_extended: "{{ item.value.routes4_extended | default(omit) }}"
+    routes6: "{{ item.value.routes6 | default(omit) }}"
+    routes6_extended: "{{ item.value.routes6_extended | default(omit) }}"
+    route_metric4: "{{ item.value.route_metric4 | default(omit) }}"
+    route_metric6: "{{ item.value.route_metric6 | default(omit) }}"
+    routing_rules4: "{{ item.value.routing_rules4 | default(omit) }}"
+    # Other options
+    never_default4: "{{ item.value.never_default4 | default(omit) }}"
+    may_fail4: "{{ item.value.may_fail4 | default(omit) }}"
+    method4: "{{ item.value.method4 | default(omit) }}"
+    method6: "{{ item.value.method6 | default(omit) }}"
+    state: "{{ item.value.state | default('present') }}"
+  loop: "{{ networkmanager_connections.wifi | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register: wifi_connections_result
+
+- name: Connections | Check current ipv4.dhcp-send-hostname for connections
+  ansible.builtin.shell: |
+    set -o pipefail
+    nmcli -t -f ipv4.dhcp-send-hostname connection show "{{ item.key }}" | cut -d: -f2
+  args:
+    executable: /bin/bash
+  loop: "{{ ((networkmanager_connections.ethernet | dict2items) + (networkmanager_connections.wifi | dict2items)) }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - item.value.state | default("present") == "present"
+    - item.value.dhcp_send_hostname_ipv4 is defined
+  register: current_ipv4_dhcp_send_hostname
+  changed_when: false
+  failed_when: false
+
+- name: Connections | Set ipv4.dhcp-send-hostname for connections
+  ansible.builtin.command:
+    cmd: >-
+      nmcli connection modify "{{ item.item.key }}"
+      ipv4.dhcp-send-hostname
+      "{{ '1' if item.item.value.dhcp_send_hostname_ipv4 else '0' }}"
+  loop: "{{ current_ipv4_dhcp_send_hostname.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - not item.skipped | default(false)
+    - item.stdout | trim != ('1' if item.item.value.dhcp_send_hostname_ipv4 else '0')
+  changed_when: true
+  notify: Reload NetworkManager connection
+
+- name: Connections | Check current ipv6.dhcp-send-hostname for connections
+  ansible.builtin.shell: |
+    set -o pipefail
+    nmcli -t -f ipv6.dhcp-send-hostname connection show "{{ item.key }}" | cut -d: -f2
+  args:
+    executable: /bin/bash
+  loop: "{{ ((networkmanager_connections.ethernet | dict2items) + (networkmanager_connections.wifi | dict2items)) }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - item.value.state | default("present") == "present"
+    - item.value.dhcp_send_hostname_ipv6 is defined
+  register: current_ipv6_dhcp_send_hostname
+  changed_when: false
+  failed_when: false
+
+- name: Connections | Set ipv6.dhcp-send-hostname for connections
+  ansible.builtin.command:
+    cmd: >-
+      nmcli connection modify "{{ item.item.key }}"
+      ipv6.dhcp-send-hostname
+      "{{ '1' if item.item.value.dhcp_send_hostname_ipv6 else '0' }}"
+  loop: "{{ current_ipv6_dhcp_send_hostname.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - not item.skipped | default(false)
+    - item.stdout | trim != ('1' if item.item.value.dhcp_send_hostname_ipv6 else '0')
+  changed_when: true
+  notify: Reload NetworkManager connection
+
+- name: Connections | Create placeholder for WireGuard connections
+  community.general.nmcli:
+    type: wireguard
+    conn_name: "{{ item.key }}"
+    ifname: "{{ item.value.ifname | default('wg0') }}"
+    state: present
+    autoconnect: false
+  loop: "{{ networkmanager_connections.wireguard | dict2items | default([]) }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - item.value.state | default("present") == "present"
+    - item.key not in __nm_existing_connections.stdout_lines | default([])
+
+- name: Connections | Configure NetworkManager WireGuard connections
+  community.general.nmcli:
+    type: wireguard
+    conn_name: "{{ item.key }}"
+    ifname: "{{ item.value.ifname | default('wg0') }}"
+    ip4: "{{ item.value.addresses | first | default(omit) }}"
+    dns4: "{{ item.value.dns | default(omit) }}"
+    autoconnect: "{{ item.value.autoconnect | default(false) }}"
+    never_default4: "{{ item.value.never_default4 | default(omit) }}"
+    method6: "{{ item.value.method6 | default('disabled') }}"
+    wireguard:
+      private-key: "{{ item.value.private_key }}"
+      peer-routes: true
+    state: "{{ item.value.state | default('present') }}"
+  loop: "{{ networkmanager_connections.wireguard | dict2items | default([]) }}"
+  loop_control:
+    label: "{{ item.key }}"
+  no_log: true
+  register: wireguard_connections_result
+
+- name: Connections | Query current WireGuard peer public keys
+  ansible.builtin.shell: |
+    set -o pipefail
+    nmcli -g wireguard.peers connection show "{{ item.key }}" \
+      | grep -oP '(?<=public-key=)[^ ,]+' | sort
+  args:
+    executable: /bin/bash
+  loop: "{{ networkmanager_connections.wireguard | dict2items | default([]) }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - item.value.state | default("present") == "present"
+    - item.value.peers is defined
+    - item.value.peers | length > 0
+  register: __networkmanager_current_wg_peers
+  changed_when: false
+  failed_when: false
+
+- name: Connections | Configure WireGuard peers
+  ansible.builtin.shell: |
+    set -euo pipefail
+    {% for peer in item.item.value.peers %}
+    {% set pa = [peer.public_key] %}
+    {% if peer.endpoint is defined %}
+    {% set _ = pa.append('endpoint=' + peer.endpoint) %}
+    {% endif %}
+    {% if peer.allowed_ips is defined %}
+    {% set _ = pa.append('allowed-ips=' + peer.allowed_ips | replace(',', ';')) %}
+    {% endif %}
+    {% if peer.persistent_keepalive is defined %}
+    {% set _ = pa.append('persistent-keepalive=' + peer.persistent_keepalive | string) %}
+    {% endif %}
+    {% if peer.preshared_key is defined %}
+    {% set _ = pa.append('preshared-key=' + peer.preshared_key) %}
+    {% endif %}
+    nmcli connection modify "{{ item.item.key }}" \
+      {{ '' if loop.first else '+' }}wireguard.peers \
+      "{{ pa | join(' ') }}"
+    {% endfor %}
+  args:
+    executable: /bin/bash
+  loop: "{{ __networkmanager_current_wg_peers.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - not item.skipped | default(false)
+    - item.item.value.peers | map(attribute='public_key') | sort | list
+      != item.stdout_lines | default([]) | sort | list
+  changed_when: true
+  no_log: true
+  notify: Reload NetworkManager connection
+
+- name: Connections | Ensure NetworkManager VPN connections exist
+  community.general.nmcli:
+    type: vpn
+    conn_name: "{{ item.key }}"
+    vpn: "{{ item.value.vpn | default({}) }}"
+    autoconnect: "{{ item.value.autoconnect | default(true) }}"
+    state: "{{ item.value.state | default('present') }}"
+  loop: "{{ networkmanager_connections.vpn | dict2items | default([]) }}"
+  no_log: true
+  register: vpn_connections_result
+
+- name: Connections | Initialize all_network_connections
+  ansible.builtin.set_fact:
+    all_network_connections:
+      ethernet: {}
+      wifi: {}
+      wireguard: {}
+      vpn: {}
+
+- name: Connections | Get UUIDs for connections
+  ansible.builtin.shell: |
+    set -o pipefail
+    nmcli -t -f connection.uuid connection show "{{ item.item.key }}" | cut -d":" -f2
+  args:
+    executable: /bin/bash
+  loop: >-
+    {{
+      (ethernet_connections_result.results | default([])) +
+      (wifi_connections_result.results | default([])) +
+      (wireguard_connections_result.results | default([]))
+    }}
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - item.item.value.state | default("present") == "present"
+  register: all_uuids
+  changed_when: false
+  failed_when: false
+
+- name: Connections | Add type to UUID results
+  ansible.builtin.set_fact:
+    all_uuids_with_type: >-
+      {{
+        all_uuids_with_type | default([]) + [
+          item | combine({
+            'type': 'wireguard' if item.item.item.value.peers is defined
+                    else ('wifi' if item.item.item.value.ssid is defined else 'ethernet')
+          })
+        ]
+      }}
+  loop: "{{ all_uuids.results }}"
+  loop_control:
+    label: "{{ item.item.item.key }}"
+
+- name: Connections | Collect connection details with UUIDs
+  ansible.builtin.set_fact:
+    all_network_connections: >-
+      {{
+        all_network_connections | combine({
+          item.type: all_network_connections[item.type] | combine({
+            item.item.item.key: item.item.item.value | combine({
+              "type": item.type,
+              "uuid": item.stdout | trim
+            })
+          })
+        }, recursive=true)
+      }}
+  loop: "{{ all_uuids_with_type | default([]) }}"
+  loop_control:
+    label: "{{ item.item.item.key }}"
+  when:
+    - item.rc == 0
+    - item.stdout is defined
+    - item.stdout | trim | length > 0
+
+- name: Connections | Get UUIDs for VPN connections
+  ansible.builtin.shell: |
+    set -o pipefail
+    nmcli -t -f connection.uuid connection show "{{ item.item.key }}" | cut -d":" -f2
+  args:
+    executable: /bin/bash
+  loop: "{{ vpn_connections_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - item.item.value.state | default("present") == "present"
+  register: vpn_uuids
+  changed_when: false
+  failed_when: false
+
+- name: Connections | Collect VPN connection details
+  ansible.builtin.set_fact:
+    all_network_connections: >-
+      {{
+        all_network_connections | combine({
+          "vpn": all_network_connections.vpn | combine({
+            item.item.item.key: item.item.item.value | combine({
+              "type": "vpn",
+              "name": item.item.item.key,
+              "uuid": item.stdout | trim
+            })
+          })
+        }, recursive=true)
+      }}
+  loop: "{{ vpn_uuids.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.item.key }}"
+  when:
+    - vpn_uuids.results is defined
+    - vpn_uuids.results | length > 0
+    - item.rc == 0
+    - item.stdout is defined
+    - item.stdout | trim | length > 0
+
+- name: Connections | Build VPN UUID list for Ethernet connections
+  ansible.builtin.set_fact:
+    vpn_uuids_for_connection: >-
+      {{ item.value.vpn
+         | map('extract', all_network_connections.vpn)
+         | map(attribute='uuid') | join(',') }}
+  loop: "{{ networkmanager_connections.ethernet | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - item.value.vpn is defined
+    - item.value.vpn | length > 0
+    - item.value.state | default('present') == 'present'
+  register: ethernet_vpn_uuid_list
+
+- name: Connections | Check current connection.secondaries for Ethernet connections
+  ansible.builtin.shell: |
+    set -o pipefail
+    nmcli -t -f connection.secondaries connection show "{{ item.item.key }}" | cut -d: -f2
+  args:
+    executable: /bin/bash
+  loop: "{{ ethernet_vpn_uuid_list.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - not item.skipped | default(false)
+    - item.ansible_facts is defined
+    - item.ansible_facts.vpn_uuids_for_connection is defined
+  register: current_ethernet_secondaries
+  changed_when: false
+  failed_when: false
+
+- name: Connections | Configure VPN auto-connect via connection.secondaries for Ethernet connections
+  ansible.builtin.command:
+    cmd: >-
+      nmcli connection modify "{{ item.item.item.key }}"
+      connection.secondaries
+      "{{ item.item.ansible_facts.vpn_uuids_for_connection }}"
+  loop: "{{ current_ethernet_secondaries.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.item.key }}"
+  when:
+    - not item.skipped | default(false)
+    - item.stdout | trim != item.item.ansible_facts.vpn_uuids_for_connection
+  changed_when: true
+
+- name: Connections | Build VPN UUID list for WiFi connections
+  ansible.builtin.set_fact:
+    vpn_uuids_for_connection: >-
+      {{ item.value.vpn
+         | map('extract', all_network_connections.vpn)
+         | map(attribute='uuid') | join(',') }}
+  loop: "{{ networkmanager_connections.wifi | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - item.value.vpn is defined
+    - item.value.vpn | length > 0
+    - item.value.state | default('present') == 'present'
+  register: wifi_vpn_uuid_list
+
+- name: Connections | Check current connection.secondaries for WiFi connections
+  ansible.builtin.shell: |
+    set -o pipefail
+    nmcli -t -f connection.secondaries connection show "{{ item.item.key }}" | cut -d: -f2
+  args:
+    executable: /bin/bash
+  loop: "{{ wifi_vpn_uuid_list.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - not item.skipped | default(false)
+    - item.ansible_facts is defined
+    - item.ansible_facts.vpn_uuids_for_connection is defined
+  register: current_wifi_secondaries
+  changed_when: false
+  failed_when: false
+
+- name: Connections | Configure VPN auto-connect via connection.secondaries for WiFi connections
+  ansible.builtin.command:
+    cmd: >-
+      nmcli connection modify "{{ item.item.item.key }}"
+      connection.secondaries
+      "{{ item.item.ansible_facts.vpn_uuids_for_connection }}"
+  loop: "{{ current_wifi_secondaries.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.item.key }}"
+  when:
+    - not item.skipped | default(false)
+    - item.stdout | trim != item.item.ansible_facts.vpn_uuids_for_connection
+  changed_when: true

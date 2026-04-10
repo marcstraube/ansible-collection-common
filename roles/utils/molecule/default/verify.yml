@@ -1,0 +1,292 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # PACKAGE INSTALLATION VERIFICATION
+    # =========================================================================
+
+    - name: Verify | Check htop package installed
+      ansible.builtin.package:
+        name: htop
+        state: present
+      check_mode: true
+      register: _utils_htop_pkg
+      failed_when: _utils_htop_pkg.changed
+
+    - name: Verify | Check btop package installed
+      ansible.builtin.package:
+        name: btop
+        state: present
+      check_mode: true
+      register: _utils_btop_pkg
+      failed_when: _utils_btop_pkg.changed
+
+    - name: Verify | Check tmux package installed
+      ansible.builtin.package:
+        name: tmux
+        state: present
+      check_mode: true
+      register: _utils_tmux_pkg
+      failed_when: _utils_tmux_pkg.changed
+
+    - name: Verify | Check rsync package installed
+      ansible.builtin.package:
+        name: rsync
+        state: present
+      check_mode: true
+      register: _utils_rsync_pkg
+      failed_when: _utils_rsync_pkg.changed
+
+    - name: Verify | Set ripgrep package name
+      ansible.builtin.set_fact:
+        _utils_ripgrep_pkg_name: "{{ 'ripgrep' }}"
+
+    - name: Verify | Check ripgrep package installed
+      ansible.builtin.package:
+        name: '{{ _utils_ripgrep_pkg_name }}'
+        state: present
+      check_mode: true
+      register: _utils_ripgrep_pkg
+      failed_when: _utils_ripgrep_pkg.changed
+
+    - name: Verify | Set fd package name
+      ansible.builtin.set_fact:
+        _utils_fd_pkg_name: "{{ 'fd' if ansible_facts['os_family'] == 'Archlinux' else 'fd-find' }}"
+
+    - name: Verify | Check fd package installed
+      ansible.builtin.package:
+        name: '{{ _utils_fd_pkg_name }}'
+        state: present
+      check_mode: true
+      register: _utils_fd_pkg
+      failed_when: _utils_fd_pkg.changed
+
+    - name: Verify | Check fastfetch package installed
+      ansible.builtin.package:
+        name: fastfetch
+        state: present
+      check_mode: true
+      register: _utils_fastfetch_pkg
+      failed_when: _utils_fastfetch_pkg.changed
+
+    - name: Verify | Check cowsay package installed
+      ansible.builtin.package:
+        name: cowsay
+        state: present
+      check_mode: true
+      register: _utils_cowsay_pkg
+      failed_when: _utils_cowsay_pkg.changed
+
+    - name: Verify | Check figlet package installed
+      ansible.builtin.package:
+        name: figlet
+        state: present
+      check_mode: true
+      register: _utils_figlet_pkg
+      failed_when: _utils_figlet_pkg.changed
+
+    - name: Verify | Check sl package installed
+      ansible.builtin.package:
+        name: sl
+        state: present
+      check_mode: true
+      register: _utils_sl_pkg
+      failed_when: _utils_sl_pkg.changed
+
+    # =========================================================================
+    # BINARY AVAILABILITY IN PATH
+    # =========================================================================
+
+    - name: Verify | Check htop binary exists
+      ansible.builtin.command:
+        cmd: which htop
+      register: _utils_htop_bin
+      changed_when: false
+      failed_when: _utils_htop_bin.rc != 0
+
+    - name: Verify | Check btop binary exists
+      ansible.builtin.command:
+        cmd: which btop
+      register: _utils_btop_bin
+      changed_when: false
+      failed_when: _utils_btop_bin.rc != 0
+
+    - name: Verify | Check tmux binary exists
+      ansible.builtin.command:
+        cmd: which tmux
+      register: _utils_tmux_bin
+      changed_when: false
+      failed_when: _utils_tmux_bin.rc != 0
+
+    - name: Verify | Check rsync binary exists
+      ansible.builtin.command:
+        cmd: which rsync
+      register: _utils_rsync_bin
+      changed_when: false
+      failed_when: _utils_rsync_bin.rc != 0
+
+    - name: Verify | Check fastfetch binary exists
+      ansible.builtin.command:
+        cmd: which fastfetch
+      register: _utils_fastfetch_bin
+      changed_when: false
+      failed_when: _utils_fastfetch_bin.rc != 0
+
+    - name: Verify | Check rg binary exists
+      ansible.builtin.command:
+        cmd: which rg
+      register: _utils_rg_bin
+      changed_when: false
+      failed_when: _utils_rg_bin.rc != 0
+
+    - name: Verify | Set fd binary name
+      ansible.builtin.set_fact:
+        _utils_fd_binary: "{{ 'fd' if ansible_facts['os_family'] != 'Debian' else 'fdfind' }}"
+
+    - name: Verify | Check fd binary exists
+      ansible.builtin.command:
+        cmd: "which {{ _utils_fd_binary }}"
+      register: _utils_fd_bin
+      changed_when: false
+      failed_when: _utils_fd_bin.rc != 0
+
+    - name: Verify | Set cowsay binary path
+      ansible.builtin.set_fact:
+        _utils_cowsay_path: "{{ '/usr/games/cowsay' if ansible_facts['os_family'] == 'Debian' else 'cowsay' }}"
+
+    - name: Verify | Check cowsay binary exists
+      ansible.builtin.command:
+        cmd: "which {{ _utils_cowsay_path }}"
+      register: _utils_cowsay_bin
+      changed_when: false
+      failed_when: _utils_cowsay_bin.rc != 0
+
+    - name: Verify | Check figlet binary exists
+      ansible.builtin.command:
+        cmd: which figlet
+      register: _utils_figlet_bin
+      changed_when: false
+      failed_when: _utils_figlet_bin.rc != 0
+
+    - name: Verify | Set sl binary path
+      ansible.builtin.set_fact:
+        _utils_sl_path: "{{ '/usr/games/sl' if ansible_facts['os_family'] == 'Debian' else 'sl' }}"
+
+    - name: Verify | Check sl binary exists
+      ansible.builtin.command:
+        cmd: "which {{ _utils_sl_path }}"
+      register: _utils_sl_bin
+      changed_when: false
+      failed_when: _utils_sl_bin.rc != 0
+
+    # =========================================================================
+    # FUNCTIONALITY TESTS
+    # =========================================================================
+
+    - name: Verify | Check htop version
+      ansible.builtin.command:
+        cmd: htop --version
+      register: _utils_htop_version
+      changed_when: false
+      failed_when: _utils_htop_version.rc != 0
+
+    - name: Verify | Verify htop version output
+      ansible.builtin.assert:
+        that:
+          - "'htop' in _utils_htop_version.stdout"
+        fail_msg: htop version output unexpected
+
+    - name: Verify | Check tmux version
+      ansible.builtin.command:
+        cmd: tmux -V
+      register: _utils_tmux_version
+      changed_when: false
+      failed_when: _utils_tmux_version.rc != 0
+
+    - name: Verify | Verify tmux version output
+      ansible.builtin.assert:
+        that:
+          - "'tmux' in _utils_tmux_version.stdout"
+        fail_msg: tmux version output unexpected
+
+    - name: Verify | Check rsync version  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: rsync --version
+      register: _utils_rsync_version
+      changed_when: false
+      failed_when: _utils_rsync_version.rc != 0
+
+    - name: Verify | Verify rsync version output
+      ansible.builtin.assert:
+        that:
+          - "'rsync' in _utils_rsync_version.stdout"
+        fail_msg: rsync version output unexpected
+
+    - name: Verify | Test cowsay functionality
+      ansible.builtin.command:
+        cmd: "{{ _utils_cowsay_path }} Test"
+      environment:
+        COWPATH: '/usr/share/cowsay/cows'
+      register: _utils_cowsay_test
+      changed_when: false
+      failed_when: _utils_cowsay_test.rc != 0
+
+    - name: Verify | Verify cowsay output contains expected text
+      ansible.builtin.assert:
+        that:
+          - "'Test' in _utils_cowsay_test.stdout"
+        fail_msg: cowsay functional test failed
+
+    - name: Verify | Test figlet functionality
+      ansible.builtin.command:
+        cmd: figlet "Test"
+      register: _utils_figlet_test
+      changed_when: false
+      failed_when: _utils_figlet_test.rc != 0
+
+    - name: Verify | Verify figlet output is not empty
+      ansible.builtin.assert:
+        that:
+          - _utils_figlet_test.stdout | length > 0
+        fail_msg: figlet functional test failed
+
+    - name: Verify | Check rg version
+      ansible.builtin.command:
+        cmd: rg --version
+      register: _utils_rg_version
+      changed_when: false
+      failed_when: _utils_rg_version.rc != 0
+
+    - name: Verify | Verify rg version output
+      ansible.builtin.assert:
+        that:
+          - "'ripgrep' in _utils_rg_version.stdout"
+        fail_msg: ripgrep version output unexpected
+
+    - name: Verify | Check fd version
+      ansible.builtin.command:
+        cmd: "{{ _utils_fd_binary }} --version"
+      register: _utils_fd_version
+      changed_when: false
+      failed_when: _utils_fd_version.rc != 0
+
+    - name: Verify | Verify fd version output
+      ansible.builtin.assert:
+        that:
+          - "'fd' in _utils_fd_version.stdout"
+        fail_msg: fd version output unexpected
+
+    # =========================================================================
+    # DISABLED PACKAGES VERIFICATION
+    # =========================================================================
+
+    - name: Verify | Check screen is not installed
+      ansible.builtin.command:
+        cmd: which screen
+      register: _utils_screen_bin
+      changed_when: false
+      failed_when: _utils_screen_bin.rc == 0

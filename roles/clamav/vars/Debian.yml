@@ -1,0 +1,17 @@
+---
+__clamav_packages:
+  - 'clamav'
+  - 'clamav-daemon'
+  - 'clamav-freshclam'
+__clamav_milter_packages:
+  - 'clamav-milter'
+__clamav_daemon_service: 'clamav-daemon'
+__clamav_freshclam_service: 'clamav-freshclam'
+__clamav_milter_service: 'clamav-milter'
+__clamav_config_dir: '/etc/clamav'
+__clamav_clamd_config: '/etc/clamav/clamd.conf'
+__clamav_freshclam_config: '/etc/clamav/freshclam.conf'
+__clamav_milter_config: '/etc/clamav/clamav-milter.conf'
+__clamav_user: 'clamav'
+__clamav_group: 'clamav'
+__clamav_apparmor_profile: 'usr.sbin.clamd'

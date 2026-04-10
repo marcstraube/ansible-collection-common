@@ -1,0 +1,75 @@
+{{ ansible_managed | comment }}
+#
+# Clam AntiVirus - clamav-milter configuration file
+# See clamav-milter.conf(5) and https://docs.clamav.net/ for details.
+
+# =============================================================================
+# Socket
+# =============================================================================
+
+MilterSocket {{ clamav_milter_socket }}
+MilterSocketMode {{ clamav_milter_socket_mode }}
+{% if clamav_milter_socket_group %}
+MilterSocketGroup {{ clamav_milter_socket_group }}
+{% endif %}
+
+User {{ clamav_user | default(__clamav_user, true) }}
+
+# =============================================================================
+# Clamd Connection
+# =============================================================================
+
+ClamdSocket unix:{{ clamav_socket }}
+
+# =============================================================================
+# Actions
+# =============================================================================
+
+OnClean {{ clamav_milter_on_clean }}
+OnInfected {{ clamav_milter_on_infected }}
+OnFail {{ clamav_milter_on_fail }}
+AddHeader {{ clamav_milter_add_header }}
+RejectMsg {{ clamav_milter_reject_msg }}
+
+# =============================================================================
+# Logging
+# =============================================================================
+
+LogInfected {{ clamav_milter_log_infected }}
+LogClean {{ clamav_milter_log_clean }}
+{% if clamav_log_syslog %}
+
+LogSyslog yes
+LogFacility {{ clamav_log_facility }}
+{% endif %}
+{% if clamav_log_time %}
+LogTime yes
+{% endif %}
+{% if clamav_log_verbose %}
+LogVerbose yes
+{% endif %}
+
+# =============================================================================
+# Limits
+# =============================================================================
+
+MaxFileSize {{ clamav_milter_max_filesize }}
+{% if clamav_milter_timeout != 0 %}
+TimeOut {{ clamav_milter_timeout }}
+{% endif %}
+
+# =============================================================================
+# Whitelist
+# =============================================================================
+
+{% for host in clamav_milter_whitelist_hosts %}
+Whitelist {{ host }}
+{% endfor %}
+
+# =============================================================================
+# Extra Configuration
+# =============================================================================
+
+{% for key, value in clamav_milter_extra_config.items() %}
+{{ key }} {{ value }}
+{% endfor %}

@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# Sysctl - Installation Tasks
+# =============================================================================
+
+- name: Install | Sysctl packages
+  ansible.builtin.package:
+    name: '{{ __sysctl_packages }}'
+    state: present
+
+- name: Install | Load br_netfilter module for Docker profile
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+    persistent: present
+  when: sysctl_profile_docker | default(false) | bool

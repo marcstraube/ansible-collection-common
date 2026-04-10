@@ -1,0 +1,17 @@
+{{ ansible_managed | comment('c') }}
+// APT Configuration
+
+// Install recommendations
+APT::Install-Recommends "{{ apt_install_recommends | bool | lower }}";
+APT::Install-Suggests "{{ apt_install_suggests | bool | lower }}";
+{% if apt_assume_yes | default(true) | bool %}
+
+// Non-interactive mode
+APT::Get::Assume-Yes "true";
+{% endif %}
+{% if apt_allow_downgrades | default(true) | bool %}
+APT::Get::allow-downgrades "true";
+{% endif %}
+
+// Translation downloads
+Acquire::Languages "{{ apt_languages }}";

@@ -1,0 +1,16 @@
+{{ ansible_managed | comment }}
+{% if base_pretty_hostname %}
+PRETTY_HOSTNAME="{{ base_pretty_hostname }}"
+{% endif %}
+{% if base_chassis %}
+CHASSIS="{{ base_chassis }}"
+{% endif %}
+{% if base_deployment %}
+DEPLOYMENT="{{ base_deployment }}"
+{% endif %}
+{% if base_icon_name %}
+ICON_NAME="{{ base_icon_name }}"
+{% endif %}
+{% if base_location %}
+LOCATION="{{ base_location }}"
+{% endif %}

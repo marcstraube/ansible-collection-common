@@ -1,0 +1,33 @@
+{{ ansible_managed | comment }}
+#
+# audisp-remote configuration
+#
+
+remote_server = {{ auditd_remote_server }}
+port = {{ auditd_remote_port }}
+local_port = {{ auditd_remote_local_port }}
+transport = {{ auditd_remote_transport }}
+mode = {{ auditd_remote_mode }}
+queue_file = {{ auditd_remote_queue_file }}
+queue_depth = {{ auditd_remote_queue_depth }}
+format = {{ auditd_remote_format }}
+network_retry_time = {{ auditd_remote_network_retry_time }}
+max_tries_per_record = {{ auditd_remote_max_tries_per_record }}
+max_time_per_record = {{ auditd_remote_max_time_per_record }}
+heartbeat_timeout = {{ auditd_remote_heartbeat_timeout }}
+network_failure_action = {{ auditd_remote_network_failure_action }}
+disk_low_action = {{ auditd_remote_disk_low_action }}
+disk_full_action = {{ auditd_remote_disk_full_action }}
+disk_error_action = {{ auditd_remote_disk_error_action }}
+remote_ending_action = {{ auditd_remote_remote_ending_action }}
+generic_error_action = {{ auditd_remote_generic_error_action }}
+generic_warning_action = {{ auditd_remote_generic_warning_action }}
+queue_error_action = {{ auditd_remote_queue_error_action }}
+overflow_action = {{ auditd_remote_overflow_action }}
+startup_failure_action = {{ auditd_remote_startup_failure_action }}
+{% if auditd_remote_transport == 'krb5' %}
+enable_krb5 = yes
+krb5_principal = {{ auditd_remote_krb5_principal }}
+krb5_client_name = {{ auditd_remote_krb5_client_name }}
+krb5_key_file = {{ auditd_remote_krb5_key_file }}
+{% endif %}

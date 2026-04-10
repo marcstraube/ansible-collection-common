@@ -1,0 +1,209 @@
+# marcstraube.common.package_management
+
+Configure package managers, repositories, and related tools across multiple OS families.
+
+## Description
+
+Manages package manager configuration, third-party repositories, and related tools across
+Arch Linux, Debian, and RHEL/Rocky. Includes pacman/reflector/paru (Arch),
+apt/unattended-upgrades (Debian), and dnf/EPEL/RPM Fusion (RHEL/Rocky) with dnf5
+support for Rocky 10.
+
+## Requirements
+
+- `ansible-core >= 2.20`
+- Collections: `community.general`, `kewlfft.aur` (Arch only)
+
+## Supported Platforms
+
+- **Arch Linux**: pacman, reflector, makepkg, paru (AUR helper), paccache, pkgfile
+- **Debian/Ubuntu**: apt, apt-file, needrestart, unattended-upgrades, debsums
+- **RHEL/Rocky 9**: dnf4, EPEL, Remi, RPM Fusion, ELRepo, dnf-automatic
+- **RHEL/Rocky 10**: dnf5 (modularity removed, packages gated per version)
+
+## Role Variables
+
+### Global
+
+| Variable                     | Default | Description                |
+| ---------------------------- | ------- | -------------------------- |
+| `package_management_enabled` | `true`  | Enable/disable entire role |
+
+### Arch Linux - Pacman
+
+| Variable                     | Default                     | Description                           |
+| ---------------------------- | --------------------------- | ------------------------------------- |
+| `pacman_parallel_downloads`  | `5`                         | Number of parallel downloads (1-10)   |
+| `pacman_color`               | `true`                      | Enable color output                   |
+| `pacman_verbose_pkg_lists`   | `true`                      | Verbose package lists during upgrades |
+| `pacman_check_space`         | `true`                      | Check available disk space            |
+| `pacman_ilovecandy`          | `true`                      | Animated pacman easter egg            |
+| `pacman_sig_level`           | `Required DatabaseOptional` | Package signature verification        |
+| `pacman_hold_packages`       | `[pacman, glibc]`           | Packages that won't be removed        |
+| `pacman_ignore_packages`     | `[]`                        | Packages that won't be upgraded       |
+| `pacman_testing_repos`       | `false`                     | Enable testing repositories           |
+| `pacman_multilib`            | `false`                     | Enable 32-bit multilib support        |
+| `pacman_custom_repositories` | `[]`                        | Custom repository definitions         |
+| `pacman_download_user`       | `alpm`                      | Sandboxed download user               |
+| `pacman_hook_dir`            | `/etc/pacman.d/hooks`       | Custom hook directory                 |
+
+### Arch Linux - Reflector
+
+| Variable                  | Default | Description                                                          |
+| ------------------------- | ------- | -------------------------------------------------------------------- |
+| `reflector_enabled`       | `true`  | Enable reflector mirror management                                   |
+| `reflector`               | dict    | Mirror configuration (countries, protocol, latest, sort, age, score) |
+| `reflector_timer_enabled` | `true`  | Enable periodic mirror updates                                       |
+
+### Arch Linux - Makepkg
+
+| Variable           | Default      | Description                                     |
+| ------------------ | ------------ | ----------------------------------------------- |
+| `makepkg_packager` | `''`         | Packager name/email for built packages          |
+| `makepkg_cflags`   | `''`         | Custom C compiler flags (empty = Arch defaults) |
+| `makepkg_ltoflags` | `-flto=auto` | LTO flags                                       |
+| `makepkg_ccache`   | `false`      | Enable ccache                                   |
+| `makepkg_distcc`   | `false`      | Enable distcc                                   |
+| `makepkg_check`    | `true`       | Run check() in PKGBUILDs                        |
+| `makepkg_sign`     | `false`      | Sign built packages                             |
+| `makepkg_debug`    | `true`       | Build with debug symbols                        |
+| `makepkg_lto`      | `true`       | Build with LTO                                  |
+
+### Arch Linux - Paru (AUR Helper)
+
+| Variable                | Default                 | Description                      |
+| ----------------------- | ----------------------- | -------------------------------- |
+| `aur_helper`            | `paru`                  | AUR helper (paru, yay, or empty) |
+| `aur_builder_user`      | `aur_builder`           | System user for AUR builds       |
+| `paru_clone_dir`        | `/var/cache/paru/clone` | Shared clone directory           |
+| `paru_clean_after`      | `true`                  | Remove untracked build files     |
+| `paru_remove_make`      | `true`                  | Remove makedepends after build   |
+| `paru_bottom_up`        | `true`                  | Show newest results at bottom    |
+| `paru_sudo_loop`        | `false`                 | Keep sudo alive during builds    |
+| `paru_devel`            | `false`                 | Check VCS packages for updates   |
+| `paru_news_on_upgrade`  | `false`                 | Show Arch news on upgrade        |
+| `paru_combined_upgrade` | `true`                  | Combined repo+AUR upgrade menu   |
+| `paru_batch_install`    | `true`                  | Queue builds, install together   |
+| `paru_pgp_fetch`        | `true`                  | Auto-import PGP keys             |
+| `paru_skip_review`      | `false`                 | Skip PKGBUILD review             |
+| `paru_fail_fast`        | `true`                  | Exit on first build failure      |
+| `paru_upgrade_menu`     | `true`                  | Detailed upgrade menu            |
+| `paru_provides`         | `true`                  | Search for provider packages     |
+| `paru_sort_by`          | `votes`                 | Sort search results              |
+| `paru_search_by`        | `name-desc`             | Search by field                  |
+| `paru_shared_users`     | `[]`                    | Users sharing AUR clone cache    |
+
+### Arch Linux - Tools
+
+| Variable                          | Default | Description                          |
+| --------------------------------- | ------- | ------------------------------------ |
+| `paccache_enabled`                | `true`  | Enable paccache timer                |
+| `paccache_args`                   | `-rk2`  | Paccache arguments                   |
+| `pacman_install_rebuild_detector` | `true`  | Install rebuild-detector             |
+| `pacman_install_pkgfile`          | `true`  | Install pkgfile (command-not-found)  |
+| `pacman_install_informant`        | `false` | Install informant (AUR news blocker) |
+
+### Debian/Ubuntu - APT
+
+| Variable                  | Default | Description                  |
+| ------------------------- | ------- | ---------------------------- |
+| `apt_install_recommends`  | `true`  | Install recommended packages |
+| `apt_install_suggests`    | `false` | Install suggested packages   |
+| `apt_assume_yes`          | `true`  | Non-interactive mode         |
+| `apt_allow_downgrades`    | `true`  | Allow package downgrades     |
+| `apt_languages`           | `none`  | Translation downloads        |
+| `apt_periodic_enabled`    | `true`  | Enable periodic updates      |
+| `apt_periodic_update`     | `1`     | Update interval (days)       |
+| `apt_periodic_autoclean`  | `7`     | Auto-clean interval (days)   |
+| `apt_preferences`         | `[]`    | Package pinning rules        |
+| `apt_unattended_upgrades` | `false` | Enable unattended-upgrades   |
+| `apt_install_apt_file`    | `true`  | Install apt-file             |
+| `apt_install_needrestart` | `true`  | Install needrestart          |
+| `apt_install_debsums`     | `false` | Install debsums              |
+
+### Debian/Ubuntu - Repositories
+
+| Variable                | Default | Description                   |
+| ----------------------- | ------- | ----------------------------- |
+| `apt_backports_enabled` | `false` | Enable Debian Backports       |
+| `apt_docker_repo`       | `false` | Docker CE repository          |
+| `apt_postgresql_repo`   | `false` | PostgreSQL PGDG repository    |
+| `apt_php_sury_repo`     | `false` | PHP Sury repository           |
+| `apt_grafana_repo`      | `false` | Grafana repository            |
+| `apt_kubernetes_repo`   | `false` | Kubernetes repository         |
+| `apt_custom_repos`      | `[]`    | Custom repository definitions |
+
+### RHEL/Rocky - DNF
+
+| Variable                           | Default | Description                   |
+| ---------------------------------- | ------- | ----------------------------- |
+| `dnf_fastestmirror`                | `true`  | Enable fastest mirror         |
+| `dnf_max_parallel_downloads`       | `10`    | Maximum parallel downloads    |
+| `dnf_best`                         | `true`  | Install only best versions    |
+| `dnf_install_weak_deps`            | `true`  | Install weak dependencies     |
+| `dnf_keepcache`                    | `false` | Keep downloaded packages      |
+| `dnf_clean_requirements_on_remove` | `true`  | Auto-remove unneeded deps     |
+| `dnf_proxy`                        | `''`    | HTTP proxy for downloads      |
+| `dnf_automatic_enabled`            | `false` | Enable dnf-automatic          |
+| `dnf_install_utils`                | `true`  | Install dnf-utils (dnf4 only) |
+| `dnf_install_needs_restarting`     | `true`  | Install yum-utils (dnf4 only) |
+
+### RHEL/Rocky - Repositories
+
+| Variable                 | Default | Description                                 |
+| ------------------------ | ------- | ------------------------------------------- |
+| `dnf_epel_enabled`       | `true`  | Enable EPEL                                 |
+| `dnf_powertools_enabled` | `false` | Enable CRB/PowerTools                       |
+| `dnf_remi_enabled`       | `false` | Enable Remi (PHP module streams, dnf4 only) |
+| `dnf_rpmfusion_free`     | `false` | Enable RPM Fusion Free                      |
+| `dnf_rpmfusion_nonfree`  | `false` | Enable RPM Fusion Nonfree                   |
+| `dnf_elrepo_enabled`     | `false` | Enable ELRepo                               |
+| `dnf_docker_repo`        | `false` | Docker CE repository                        |
+| `dnf_copr_repos`         | `[]`    | COPR repositories                           |
+| `dnf_custom_repos`       | `[]`    | Custom repository definitions               |
+
+## Tags
+
+| Tag                            | Scope                         |
+| ------------------------------ | ----------------------------- |
+| `package-management`           | All tasks                     |
+| `package-management:install`   | AUR helper installation       |
+| `package-management:configure` | Package manager configuration |
+| `package-management:repos`     | Repository management         |
+| `package-management:tools`     | Additional tool installation  |
+
+## Rocky 10 / dnf5 Notes
+
+- `dnf-plugins-core`, `dnf-utils`, `yum-utils` are automatically skipped (removed in dnf5)
+- `fastestmirror` is built into dnf5 (no plugin needed, config option still works)
+- Remi PHP module streams use dnf4 modularity (removed in dnf5, gated with version check)
+
+## Example Playbook
+
+```yaml
+- name: Configure package management
+  hosts: all
+  become: true
+  tasks:
+    - name: Include package_management role
+      ansible.builtin.include_role:
+        name: marcstraube.common.package_management
+      tags: [package-management]
+```
+
+## Testing
+
+```bash
+cd roles/package_management
+molecule test
+```
+
+Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+## License
+
+MIT
+
+## Author
+
+Marc Straube

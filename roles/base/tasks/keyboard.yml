@@ -1,0 +1,30 @@
+---
+# =============================================================================
+# Keyboard Configuration Tasks
+# =============================================================================
+
+- name: Configure console keymap
+  ansible.builtin.template:
+    src: 'vconsole.conf.j2'
+    dest: '/etc/vconsole.conf'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure X11 xorg.conf.d directory exists
+  ansible.builtin.file:
+    path: '/etc/X11/xorg.conf.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: base_xkb_layout | length > 0
+
+- name: Configure X11 keyboard layout
+  ansible.builtin.template:
+    src: '00-keyboard.conf.j2'
+    dest: '/etc/X11/xorg.conf.d/00-keyboard.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  when: base_xkb_layout | length > 0

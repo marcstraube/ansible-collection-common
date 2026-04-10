@@ -1,0 +1,63 @@
+---
+# =============================================================================
+# Certificate Signing Request Tasks
+# =============================================================================
+
+- name: CSR | Generate private keys for CSRs (EC)
+  community.crypto.openssl_privatekey:
+    path: '{{ item.dest_key }}'
+    type: 'ECC'
+    curve: '{{ item.key_curve | default(pki_server_key_curve) }}'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '{{ item.key_mode | default(pki_server_key_mode) }}'
+  loop: '{{ pki_csrs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: (item.key_type | default(pki_server_key_type)) == 'ec'
+
+- name: CSR | Generate private keys for CSRs (RSA)
+  community.crypto.openssl_privatekey:
+    path: '{{ item.dest_key }}'
+    type: 'RSA'
+    size: '{{ item.key_size | default(pki_server_key_size) }}'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '{{ item.key_mode | default(pki_server_key_mode) }}'
+  loop: '{{ pki_csrs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: (item.key_type | default(pki_server_key_type)) == 'rsa'
+
+- name: CSR | Generate private keys for CSRs (Ed25519)
+  community.crypto.openssl_privatekey:
+    path: '{{ item.dest_key }}'
+    type: 'Ed25519'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '{{ item.key_mode | default(pki_server_key_mode) }}'
+  loop: '{{ pki_csrs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: (item.key_type | default(pki_server_key_type)) == 'ed25519'
+
+- name: CSR | Generate CSRs
+  community.crypto.openssl_csr:
+    path: '{{ item.dest_csr }}'
+    privatekey_path: '{{ item.dest_key }}'
+    common_name: '{{ item.common_name }}'
+    country_name: '{{ item.country | default(omit, true) }}'
+    state_or_province_name: '{{ item.state | default(omit, true) }}'
+    locality_name: '{{ item.locality | default(omit, true) }}'
+    organization_name: '{{ item.organization | default(omit, true) }}'
+    organizational_unit_name: '{{ item.organizational_unit | default(omit, true) }}'
+    email_address: '{{ item.email | default(omit, true) }}'
+    subject_alt_name: '{{ item.san | default(omit) }}'
+    key_usage: '{{ item.key_usage | default(["digitalSignature", "keyEncipherment"]) }}'
+    extended_key_usage: '{{ item.extended_key_usage | default(["serverAuth"]) }}'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '0644'
+  loop: '{{ pki_csrs }}'
+  loop_control:
+    label: '{{ item.name }}'

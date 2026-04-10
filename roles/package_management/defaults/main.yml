@@ -1,0 +1,724 @@
+---
+# =============================================================================
+# Package Management - Multi-OS Support
+# =============================================================================
+# Role: marcstraube.common.package_management
+# Supports: ArchLinux, Debian/Ubuntu, RHEL/Fedora/Rocky
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+package_management_enabled: true
+
+# =============================================================================
+# PACMAN - GENERAL OPTIONS
+# =============================================================================
+
+# Hold packages (won't be removed accidentally)
+pacman_hold_packages:
+  - 'pacman'
+  - 'glibc'
+
+# Ignored packages (won't be upgraded)
+pacman_ignore_packages: []
+
+# Ignored groups (won't be upgraded)
+pacman_ignore_groups: []
+
+# Files to never extract (supports globs)
+pacman_no_extract:
+  - 'etc/pacman.d/mirrorlist'
+
+# Files to never upgrade (supports globs)
+pacman_no_upgrade: []
+
+# =============================================================================
+# PACMAN - DOWNLOAD OPTIONS
+# =============================================================================
+
+# Number of parallel downloads (1-10, 0 = disable)
+pacman_parallel_downloads: 5
+
+# Download user for sandboxed downloads (alpm = recommended)
+# Set to empty string to disable sandboxing
+pacman_download_user: 'alpm'
+
+# Disable filesystem sandboxing (not recommended)
+pacman_disable_sandbox_filesystem: false
+
+# Disable syscall sandboxing (not recommended)
+pacman_disable_sandbox_syscalls: false
+
+# Custom transfer command (empty = use internal)
+# Examples:
+#   '/usr/bin/curl -L -C - -f -o %o %u'
+#   '/usr/bin/wget --passive-ftp -c -O %o %u'
+#   '/usr/bin/aria2c --allow-overwrite=true --continue=true -o %o %u'
+pacman_xfer_command: ''
+
+# =============================================================================
+# PACMAN - MISC OPTIONS
+# =============================================================================
+
+# Enable color output
+pacman_color: true
+
+# Log to syslog
+pacman_use_syslog: false
+
+# Show progress bar
+pacman_progress_bar: true
+
+# Verbose package lists during upgrades
+pacman_verbose_pkg_lists: true
+
+# Check available disk space
+pacman_check_space: true
+
+# Easter egg: animated pacman
+pacman_ilovecandy: true
+
+# =============================================================================
+# PACMAN - SIGNATURE LEVELS
+# =============================================================================
+
+# Global signature level
+# Options: Required, Optional, Never, TrustedOnly, TrustAll
+# Can combine: 'Required DatabaseOptional'
+pacman_sig_level: 'Required DatabaseOptional'
+
+# Local file signature level
+pacman_local_file_sig_level: 'Optional'
+
+# Remote file signature level (empty = inherit from SigLevel)
+pacman_remote_file_sig_level: ''
+
+# =============================================================================
+# PACMAN - REPOSITORIES
+# =============================================================================
+
+# Enable testing repositories
+pacman_testing_repos: false
+
+# Enable multilib (32-bit support)
+pacman_multilib: false
+
+# Enable multilib-testing
+pacman_multilib_testing: false
+
+# Custom repositories
+# Example:
+#   pacman_custom_repositories:
+#     - name: 'myrepo'
+#       server: 'https://myrepo.example.com/$arch'
+#       sig_level: 'Optional TrustAll'  # optional
+#     - name: 'chaotic-aur'
+#       server: 'https://cdn-mirror.chaotic.cx/$repo/$arch'
+#       key_id: '3056513887B78AEB'  # optional, will import key
+#       keyserver: 'keyserver.ubuntu.com'  # optional
+pacman_custom_repositories: []
+
+# =============================================================================
+# PACMAN - HOOKS
+# =============================================================================
+
+# Hook directory
+pacman_hook_dir: '/etc/pacman.d/hooks'
+
+# Install custom hooks (list of hook files from files/ directory)
+pacman_custom_hooks: []
+
+# =============================================================================
+# REFLECTOR - MIRROR MANAGEMENT
+# =============================================================================
+
+# Enable Reflector for automatic mirror management
+reflector_enabled: true
+
+# Reflector configuration dict
+# Same format as archlinux_reflector in the installer role
+reflector:
+  countries: []
+  protocol: 'https'
+  latest: 10
+  sort: 'rate'
+  score: ''
+  age: 24
+
+# Enable Reflector timer for periodic updates
+reflector_timer_enabled: true
+
+# =============================================================================
+# MAKEPKG - PACKAGER INFO
+# =============================================================================
+
+# Packager name and email (for built packages)
+# Example: 'John Doe <john@doe.com>'
+makepkg_packager: ''
+
+# GPG key for signing packages (key ID)
+makepkg_gpg_key: ''
+
+# =============================================================================
+# MAKEPKG - PER-USER CONFIG
+# =============================================================================
+# Per-user ~/.makepkg.conf deployment that overrides system /etc/makepkg.conf.
+#
+# Mode controls deployment behavior:
+#   managed  — deploy config on every run (Ansible owns the file)
+#   initial  — deploy only when user is newly created
+#   disabled — skip config deployment for this user
+#
+# Each user entry may contain:
+#   packager: 'Name <email>'       # PACKAGER identity
+#   gpg_key: 'KEYID'               # GPG key for signing
+#   builddir: '/tmp/makepkg'       # Build directory
+#   pkgdest: '~/packages'          # Package destination
+#   srcdest: '~/sources'           # Source cache
+#   srcpkgdest: '~/srcpackages'    # Source package destination
+#   logdest: '~/logs'              # Log destination
+#   makeflags: '-j8'               # Custom make flags
+#   ccache: true                   # Enable ccache
+#   extra: ''                      # Extra raw config lines
+makepkg_users: []
+# makepkg_users:
+#   - username: 'johndoe'
+#     mode: 'managed'
+#     packager: 'John Doe <john@example.com>'
+
+# Default mode when user entry has no 'mode' key
+makepkg_user_config_mode: 'managed'
+
+# =============================================================================
+# MAKEPKG - COMPILER FLAGS
+# =============================================================================
+
+# C preprocessor flags
+makepkg_cppflags: ''
+
+# C compiler flags (empty = Arch defaults)
+# Arch default: -march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions ...
+makepkg_cflags: ''
+
+# C++ compiler flags (empty = inherit from CFLAGS)
+makepkg_cxxflags: ''
+
+# Linker flags (empty = Arch defaults)
+makepkg_ldflags: ''
+
+# LTO flags
+makepkg_ltoflags: '-flto=auto'
+
+# Rust flags
+makepkg_rustflags: '-Cforce-frame-pointers=yes'
+
+# Make flags (empty = auto-detect CPU cores)
+# Example: '-j8' for 8 parallel jobs
+makepkg_makeflags: ''
+
+# Debug C flags
+makepkg_debug_cflags: '-g'
+
+# Debug C++ flags
+makepkg_debug_cxxflags: ''
+
+# Debug Rust flags
+makepkg_debug_rustflags: '-C debuginfo=2'
+
+# =============================================================================
+# MAKEPKG - BUILD ENVIRONMENT
+# =============================================================================
+
+# Use distcc for distributed compilation
+makepkg_distcc: false
+
+# Distcc hosts (if distcc enabled)
+makepkg_distcc_hosts: ''
+
+# Use ccache for compilation caching
+makepkg_ccache: false
+
+# Use sccache for Rust compilation caching
+makepkg_sccache: false
+
+# Run check() function in PKGBUILDs
+makepkg_check: true
+
+# Color output
+makepkg_color: true
+
+# Sign built packages
+makepkg_sign: false
+
+# Build directory (empty = in source dir)
+# Example: '/tmp/makepkg'
+makepkg_builddir: ''
+
+# =============================================================================
+# MAKEPKG - PACKAGE OPTIONS
+# =============================================================================
+
+# Strip symbols from binaries
+makepkg_strip: true
+
+# Save documentation
+makepkg_docs: true
+
+# Remove libtool files
+makepkg_remove_libtool: true
+
+# Remove static libraries
+makepkg_remove_staticlibs: true
+
+# Keep empty directories
+makepkg_emptydirs: true
+
+# Compress man pages
+makepkg_zipman: true
+
+# Purge unwanted files
+makepkg_purge: true
+
+# Build with debug symbols
+makepkg_debug: true
+
+# Build with LTO
+makepkg_lto: true
+
+# Automatic dependency detection
+makepkg_autodeps: false
+
+# =============================================================================
+# MAKEPKG - INTEGRITY & OUTPUT
+# =============================================================================
+
+# Integrity check algorithms
+makepkg_integrity_check:
+  - 'sha256'
+
+# Package extension
+makepkg_pkg_ext: '.pkg.tar.zst'
+
+# Source package extension
+makepkg_src_ext: '.src.tar.gz'
+
+# =============================================================================
+# MAKEPKG - OUTPUT DIRECTORIES (optional)
+# =============================================================================
+
+# Package destination (empty = build directory)
+makepkg_pkgdest: ''
+
+# Source cache directory
+makepkg_srcdest: ''
+
+# Source package destination
+makepkg_srcpkgdest: ''
+
+# Log destination
+makepkg_logdest: ''
+
+# =============================================================================
+# MAKEPKG - COMPRESSION
+# =============================================================================
+
+# Zstd compression level (1-19, or 'ultra -20' for max)
+makepkg_zstd_level: '--ultra -20'
+
+# Zstd threads (0 = auto)
+makepkg_zstd_threads: 0
+
+# XZ threads (0 = auto)
+makepkg_xz_threads: 0
+
+# =============================================================================
+# AUR HELPER
+# =============================================================================
+
+# AUR helper to install: paru, yay, or empty to skip
+aur_helper: 'paru'
+
+# AUR builder user name
+aur_builder_user: 'aur_builder'
+
+# AUR builder home directory
+aur_builder_home: '/var/cache/aur_builder'
+
+# =============================================================================
+# PARU CONFIGURATION
+# =============================================================================
+
+# Shared clone directory for AUR package sources
+# Both aur_builder and regular users share this directory to avoid
+# duplicate clones and enable faster updates (git pull instead of fresh clone)
+paru_clone_dir: '/var/cache/paru/clone'
+
+# Remove untracked build files after installation
+# VCS directories (.git) are kept so git pull works on next update
+paru_clean_after: true
+
+# Remove makedepends after building (true, false, or 'ask')
+paru_remove_make: true
+
+# Show packages from bottom up (newest at bottom)
+paru_bottom_up: true
+
+# Keep sudo credential loop alive during builds
+# Set to true for boolean, or string for custom args (e.g. '--timeout 300')
+paru_sudo_loop: false
+
+# Check VCS (-git, -svn, etc.) packages for updates
+paru_devel: false
+
+# Suffixes that mark packages as VCS/development
+paru_devel_suffixes:
+  - '-git'
+  - '-cvs'
+  - '-svn'
+  - '-bzr'
+  - '-darcs'
+  - '-always'
+  - '-hg'
+
+# Show Arch Linux news on sysupgrade
+paru_news_on_upgrade: false
+
+# Combine repo and AUR upgrades in a single menu
+paru_combined_upgrade: true
+
+# Queue all AUR builds, then install together
+paru_batch_install: true
+
+# Import unknown PGP keys from PKGBUILDs automatically
+paru_pgp_fetch: true
+
+# Skip PKGBUILD review before building
+paru_skip_review: false
+
+# Exit on first AUR build failure
+paru_fail_fast: true
+
+# Show detailed upgrade menu (skip packages by number range)
+paru_upgrade_menu: true
+
+# Search for provider packages (true, false, or 'all')
+paru_provides: true
+
+# Sort search results: votes, popularity, name, base, submitted, modified, id
+paru_sort_by: 'votes'
+
+# Search by field: name, name-desc, maintainer, depends, makedepends, optdepends
+paru_search_by: 'name-desc'
+
+# Max search results (0 = unlimited)
+paru_limit: 0
+
+# AUR completion cache refresh interval in days (0 = every time, -1 = never)
+paru_completion_interval: 7
+
+# Users to add to the shared AUR clone group (in addition to aur_builder)
+# These users can run paru manually and share the clone cache
+paru_shared_users: []
+# Example: ['johndoe']
+
+# =============================================================================
+# PARU - [bin] SECTION
+# =============================================================================
+
+# Extra flags passed to makepkg
+paru_mflags: ''
+
+# Pager command (empty = default)
+paru_pager: ''
+
+# Sudo command (empty = default)
+paru_sudo: ''
+
+# File manager for reviewing PKGBUILDs (empty = default)
+paru_file_manager: ''
+
+# =============================================================================
+# PACKAGE CACHE CLEANUP
+# =============================================================================
+
+# Enable paccache timer for automatic cleanup
+paccache_enabled: true
+
+# Paccache arguments
+# -r: remove, -k: keep versions, -u: uninstalled only
+# Examples:
+#   '-rk1' = keep 1 version of installed packages
+#   '-rk2' = keep 2 versions
+#   '-ruk0' = remove all uninstalled packages
+paccache_args: '-rk2'
+
+# =============================================================================
+# ADDITIONAL PACKAGES
+# =============================================================================
+
+# Install rebuild-detector for AUR dependency tracking
+pacman_install_rebuild_detector: true
+
+# Install pkgfile for command-not-found
+pacman_install_pkgfile: true
+
+# Install informant for Arch news (blocks upgrades until news is read)
+pacman_install_informant: false
+
+# #############################################################################
+#                           DEBIAN / UBUNTU
+# #############################################################################
+
+# =============================================================================
+# APT - GENERAL OPTIONS
+# =============================================================================
+
+# Enable periodic updates (background downloads)
+apt_periodic_enabled: true
+
+# Update interval in days (0 = disable)
+apt_periodic_update: 1
+
+# Download interval in days (0 = disable)
+apt_periodic_download: 1
+
+# Auto-clean interval in days (0 = disable)
+apt_periodic_autoclean: 7
+
+# Install suggested packages
+apt_install_suggests: false
+
+# Install recommended packages
+apt_install_recommends: true
+
+# Auto-answer yes for non-interactive use
+apt_assume_yes: true
+
+# Allow package downgrades
+apt_allow_downgrades: true
+
+# Download translations (list of language codes, or 'none' to disable)
+apt_languages: 'none'
+
+# APT preferences for package pinning
+# Example:
+#   apt_preferences:
+#     - package: '*'
+#       pin: 'release a=stable'
+#       priority: 500
+#     - package: 'nginx'
+#       pin: 'origin nginx.org'
+#       priority: 1000
+apt_preferences: []
+
+# =============================================================================
+# APT - EXTERNAL REPOSITORIES
+# =============================================================================
+
+# Enable Debian Backports (Debian only)
+apt_backports_enabled: false
+
+# PPAs to add (Ubuntu only)
+# Example: ['ppa:ondrej/php', 'ppa:graphics-drivers/ppa']
+apt_ppas: []
+
+# Docker CE repository
+apt_docker_repo: false
+
+# PostgreSQL PGDG repository
+apt_postgresql_repo: false
+
+# PHP Sury repository (deb.sury.org for Debian, PPA for Ubuntu)
+apt_php_sury_repo: false
+
+# Grafana repository
+apt_grafana_repo: false
+
+# Kubernetes repository
+apt_kubernetes_repo: false
+apt_kubernetes_version: '1.29'
+
+# Custom repositories
+# Example:
+#   apt_custom_repos:
+#     - name: 'myrepo'
+#       repo: 'deb [signed-by=/etc/apt/keyrings/myrepo.asc] https://repo.example.com stable main'
+#       gpg_key: 'https://repo.example.com/gpg.key'  # optional
+apt_custom_repos: []
+
+# =============================================================================
+# APT - UNATTENDED UPGRADES
+# =============================================================================
+
+# Enable unattended-upgrades
+apt_unattended_upgrades: false
+
+# Origins to auto-upgrade (default: security only)
+apt_unattended_origins:
+  - '${distro_id}:${distro_codename}-security'
+
+# Auto-reboot if needed
+apt_unattended_auto_reboot: false
+
+# Reboot time (if auto-reboot enabled)
+apt_unattended_reboot_time: '02:00'
+
+# Email for notifications (empty = disable)
+apt_unattended_mail: ''
+
+# Only send mail on errors
+apt_unattended_mail_on_error: true
+
+# Remove unused dependencies
+apt_unattended_autoremove: true
+
+# =============================================================================
+# APT - ADDITIONAL TOOLS
+# =============================================================================
+
+# Install apt-file (command-not-found functionality)
+apt_install_apt_file: true
+
+# Install needrestart (check for required restarts)
+apt_install_needrestart: true
+
+# Needrestart mode: 'a' = auto, 'i' = interactive, 'l' = list only
+apt_needrestart_mode: 'a'
+
+# Install debsums (package integrity checking)
+apt_install_debsums: false
+
+# Install debian-goodies (checkrestart, etc.)
+apt_install_debian_goodies: true
+
+# #############################################################################
+#                        RHEL / FEDORA / ROCKY
+# #############################################################################
+
+# =============================================================================
+# DNF - GENERAL OPTIONS
+# =============================================================================
+
+# Enable fastest mirror plugin
+dnf_fastestmirror: true
+
+# Maximum parallel downloads
+dnf_max_parallel_downloads: 10
+
+# Keep downloaded packages in cache
+dnf_keepcache: false
+
+# Enable makecache timer
+dnf_makecache_timer: true
+
+# Default answer for yes/no questions
+dnf_defaultyes: true
+
+# Clean requirements on remove
+dnf_clean_requirements_on_remove: true
+
+# Install only best versions
+dnf_best: true
+
+# Install weak dependencies (recommended packages)
+dnf_install_weak_deps: true
+
+# Skip packages with broken dependencies
+dnf_skip_if_unavailable: false
+
+# HTTP proxy for package downloads (empty = no proxy)
+# Example: http://proxy.example.com:3128
+dnf_proxy: ''
+
+# =============================================================================
+# DNF - EXTERNAL REPOSITORIES
+# =============================================================================
+
+# Enable PowerTools/CRB (CodeReady Builder)
+dnf_powertools_enabled: false
+
+# Enable EPEL repository
+dnf_epel_enabled: true
+
+# Enable Remi repository (PHP, MariaDB)
+dnf_remi_enabled: false
+# Remi PHP version to enable (e.g., '8.2', '8.3')
+dnf_remi_php_version: ''
+
+# Enable RPM Fusion Free
+dnf_rpmfusion_free: false
+
+# Enable RPM Fusion Nonfree
+dnf_rpmfusion_nonfree: false
+
+# Enable ELRepo (kernels, hardware drivers)
+dnf_elrepo_enabled: false
+
+# Docker CE repository
+dnf_docker_repo: false
+
+# PostgreSQL PGDG repository
+dnf_postgresql_repo: false
+
+# Grafana repository
+dnf_grafana_repo: false
+
+# Kubernetes repository
+dnf_kubernetes_repo: false
+dnf_kubernetes_version: '1.29'
+
+# COPR repositories to enable
+# Example: ['kwizart/fedy', 'atim/lazygit']
+dnf_copr_repos: []
+
+# Custom repositories
+# Example:
+#   dnf_custom_repos:
+#     - name: 'myrepo'
+#       description: 'My Custom Repository'
+#       baseurl: 'https://repo.example.com/el$releasever/$basearch/'
+#       gpgkey: 'https://repo.example.com/RPM-GPG-KEY'
+#       gpgcheck: true
+dnf_custom_repos: []
+
+# =============================================================================
+# DNF - AUTOMATIC UPDATES
+# =============================================================================
+
+# Enable dnf-automatic
+dnf_automatic_enabled: false
+
+# Apply updates automatically (false = notify only)
+dnf_automatic_apply_updates: false
+
+# Update type: default, security
+dnf_automatic_upgrade_type: 'default'
+
+# Email settings
+dnf_automatic_email_from: 'root@localhost'
+dnf_automatic_email_to: 'root'
+dnf_automatic_email_host: 'localhost'
+
+# Emit via: email, stdio, motd
+dnf_automatic_emit_via: 'stdio'
+
+# =============================================================================
+# DNF - ADDITIONAL TOOLS
+# =============================================================================
+
+# Install dnf-utils
+dnf_install_utils: true
+
+# Install yum-utils (needs-restarting)
+dnf_install_needs_restarting: true
+
+# Install rpm-build and rpmdevtools
+dnf_install_rpmbuild: false
+
+# Install mock for chroot building
+dnf_install_mock: false
+
+# Users to add to mock group
+dnf_mock_users: []

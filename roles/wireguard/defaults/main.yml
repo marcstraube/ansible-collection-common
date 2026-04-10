@@ -1,0 +1,149 @@
+---
+# =============================================================================
+# WireGuard - VPN Configuration
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SERVICE CONTROL
+# -----------------------------------------------------------------------------
+wireguard_enabled: true
+
+# -----------------------------------------------------------------------------
+# INTERFACE CONFIGURATION
+# -----------------------------------------------------------------------------
+# Interface name (wg0, wg1, etc.)
+wireguard_interface: 'wg0'
+
+# Server's WireGuard IP address (CIDR notation)
+wireguard_address: '10.100.0.1/24'
+
+# IPv6 address (optional)
+wireguard_address_ipv6: ''
+
+# Listen port
+wireguard_port: 51820
+
+# Private key (auto-generated if empty)
+wireguard_private_key: ''
+
+# DNS servers for clients
+wireguard_dns:
+  - '10.100.0.1'
+
+# -----------------------------------------------------------------------------
+# SERVER MODE
+# -----------------------------------------------------------------------------
+# Enable server mode (IP forwarding, firewalld masquerade)
+wireguard_server_mode: true
+
+# Enable IP forwarding
+wireguard_ip_forward: true
+
+# -----------------------------------------------------------------------------
+# PEERS
+# -----------------------------------------------------------------------------
+wireguard_peers: []
+# Example:
+#   - name: 'laptop'
+#     public_key: 'abc123...'
+#     # Preshared key for additional security (optional)
+#     preshared_key: ''
+#     # Allowed IPs for this peer
+#     allowed_ips: '10.100.0.2/32'
+#     # Endpoint for site-to-site (optional)
+#     endpoint: ''
+#     # Persistent keepalive (seconds, 0 = disabled)
+#     persistent_keepalive: 25
+#     # Description/comment
+#     description: 'Work laptop'
+
+# -----------------------------------------------------------------------------
+# CLIENT MODE
+# (When this host connects to another WireGuard server)
+# -----------------------------------------------------------------------------
+wireguard_client_mode: false
+
+# Server endpoint (IP:Port)
+wireguard_client_endpoint: ''
+
+# Server's public key
+wireguard_client_server_pubkey: ''
+
+# Preshared key (optional)
+wireguard_client_preshared_key: ''
+
+# Allowed IPs to route through VPN
+# Use '0.0.0.0/0, ::/0' for full tunnel
+wireguard_client_allowed_ips: '10.100.0.0/24'
+
+# Persistent keepalive (for NAT traversal)
+wireguard_client_persistent_keepalive: 25
+
+# -----------------------------------------------------------------------------
+# FIREWALL
+# -----------------------------------------------------------------------------
+# Automatically configure firewalld
+wireguard_firewalld_enabled: true
+
+# Zone for WireGuard interface
+wireguard_firewalld_zone: 'public'
+
+# -----------------------------------------------------------------------------
+# KEY MANAGEMENT
+# -----------------------------------------------------------------------------
+# Directory for storing keys
+wireguard_config_dir: '/etc/wireguard'
+
+# Generate keys automatically
+wireguard_generate_keys: true
+
+# Permissions for config files
+wireguard_config_mode: '0600'
+
+# -----------------------------------------------------------------------------
+# LIFECYCLE SCRIPTS
+# Custom commands executed by wg-quick on tunnel up/down.
+# Use this for NAT/masquerade when not using firewalld, or any other
+# tunnel lifecycle hooks. %i expands to the interface name.
+# -----------------------------------------------------------------------------
+wireguard_preup: []
+# Examples:
+#   - 'sysctl -w net.ipv4.conf.%i.rp_filter=2'
+
+wireguard_postup: []
+# Examples:
+#   - 'iptables -t nat -A POSTROUTING -s 10.100.0.0/24 -o eth0 -j MASQUERADE'
+#   - 'iptables -A FORWARD -i %i -j ACCEPT'
+
+wireguard_predown: []
+# Examples:
+#   - 'echo "Shutting down %i"'
+
+wireguard_postdown: []
+# Examples:
+#   - 'iptables -t nat -D POSTROUTING -s 10.100.0.0/24 -o eth0 -j MASQUERADE'
+#   - 'iptables -D FORWARD -i %i -j ACCEPT'
+
+# -----------------------------------------------------------------------------
+# SAVE CONFIG
+# -----------------------------------------------------------------------------
+# Save runtime config on shutdown (wg-quick SaveConfig directive)
+wireguard_saveconfig: false
+
+# -----------------------------------------------------------------------------
+# FIREWALL MARK
+# -----------------------------------------------------------------------------
+# Firewall mark for outgoing WireGuard packets (empty = disabled)
+wireguard_fwmark: ''
+
+# -----------------------------------------------------------------------------
+# MTU
+# -----------------------------------------------------------------------------
+# MTU for WireGuard interface (0 = auto)
+wireguard_mtu: 0
+
+# -----------------------------------------------------------------------------
+# TABLE
+# -----------------------------------------------------------------------------
+# Routing table (auto, off, or table number)
+wireguard_table: 'auto'

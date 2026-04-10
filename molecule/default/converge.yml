@@ -1,0 +1,48 @@
+---
+# Collection-level smoke test for marcstraube.common
+# Tests Docker-compatible roles with default values
+#
+# Roles NOT tested here (require kernel/network/AUR features):
+#   hardening, sysctl, auditd, apparmor, hardware_tokens, networkmanager
+#   package_management (AUR helper needs network + makepkg)
+#   chrony (NTP daemon needs kernel clock access, fails in CI containers)
+
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update apt cache (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Update pacman cache (Arch Linux)
+      community.general.pacman:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+      changed_when: false
+
+  roles:
+    - role: marcstraube.common.sudo
+      vars:
+        sudo_enabled: true
+
+    - role: marcstraube.common.users
+      vars:
+        users_create: []
+
+    - role: marcstraube.common.editors
+      vars:
+        editors_vim_enabled: true
+
+    - role: marcstraube.common.chrony
+      vars:
+        chrony_enabled: false
+
+  post_tasks:
+    - name: Verify smoke test completed
+      ansible.builtin.debug:
+        msg: "Common collection smoke test completed successfully"

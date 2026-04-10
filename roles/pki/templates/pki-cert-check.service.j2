@@ -1,0 +1,10 @@
+{{ ansible_managed | comment }}
+#
+# Certificate expiry check service
+
+[Unit]
+Description=PKI Certificate Expiry Check
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pki-cert-check

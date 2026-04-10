@@ -1,0 +1,23 @@
+---
+# =============================================================================
+# rkhunter Handlers
+# =============================================================================
+
+- name: Update rkhunter database
+  ansible.builtin.command:
+    cmd: 'rkhunter --propupd'
+  changed_when: true
+  listen: Update rkhunter database
+
+- name: Reload rkhunter systemd units
+  ansible.builtin.systemd:
+    daemon_reload: true
+  failed_when: false
+  listen: Reload rkhunter systemd units
+
+- name: Restart rkhunter timer
+  ansible.builtin.systemd:
+    name: rkhunter-check.timer
+    state: restarted
+  listen: Restart rkhunter timer
+  when: rkhunter_timer_enabled | default(true) | bool

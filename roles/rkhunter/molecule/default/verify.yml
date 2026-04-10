@@ -1,0 +1,255 @@
+---
+# =============================================================================
+# Molecule Verify Tests for rkhunter Role
+# =============================================================================
+
+- name: Verify rkhunter installation and configuration
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # PACKAGE VERIFICATION
+    # =========================================================================
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Verify rkhunter package is installed
+      ansible.builtin.assert:
+        that:
+          - "'rkhunter' in ansible_facts.packages"
+        fail_msg: "rkhunter package not installed"
+        success_msg: "rkhunter package installed"
+
+    # =========================================================================
+    # BINARY VERIFICATION
+    # =========================================================================
+
+    - name: Check rkhunter binary exists
+      ansible.builtin.stat:
+        path: '/usr/bin/rkhunter'
+      register: __rkhunter_binary
+
+    - name: Verify rkhunter binary
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_binary.stat.exists
+          - __rkhunter_binary.stat.executable
+        fail_msg: "rkhunter binary not found or not executable"
+        success_msg: "rkhunter binary found at /usr/bin/rkhunter"
+
+    # =========================================================================
+    # CONFIGURATION VERIFICATION
+    # =========================================================================
+
+    - name: Check rkhunter config exists
+      ansible.builtin.stat:
+        path: '/etc/rkhunter.conf'
+      register: __rkhunter_config
+
+    - name: Verify rkhunter config
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_config.stat.exists
+          - __rkhunter_config.stat.isreg
+          - __rkhunter_config.stat.mode == '0600'
+        fail_msg: "rkhunter config missing or wrong permissions"
+        success_msg: "rkhunter config exists with correct permissions"
+
+    - name: Read rkhunter config content
+      ansible.builtin.slurp:
+        src: '/etc/rkhunter.conf'
+      register: __rkhunter_config_content
+
+    - name: Set config content fact
+      ansible.builtin.set_fact:
+        __rkhunter_config_decoded: "{{ __rkhunter_config_content.content | b64decode }}"
+
+    - name: Verify rkhunter config content
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in __rkhunter_config_decoded"
+          - "'MIRRORS_MODE=' in __rkhunter_config_decoded"
+          - "'HASH_CMD=SHA256' in __rkhunter_config_decoded"
+          - "'ALLOW_SSH_ROOT_USER=' in __rkhunter_config_decoded"
+          - "'WARN_ON_OS_CHANGE=' in __rkhunter_config_decoded"
+        fail_msg: "rkhunter config missing essential directives"
+        success_msg: "rkhunter config contains required directives"
+
+    - name: Verify OS-specific PKGMGR setting
+      ansible.builtin.assert:
+        that:
+          - "'PKGMGR=DPKG' in __rkhunter_config_decoded"
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify OS-specific PKGMGR setting
+      ansible.builtin.assert:
+        that:
+          - "'PKGMGR=RPM' in __rkhunter_config_decoded"
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify OS-specific PKGMGR setting
+      ansible.builtin.assert:
+        that:
+          - "'PKGMGR=NONE' in __rkhunter_config_decoded"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    # =========================================================================
+    # CONFIG CHECK
+    # =========================================================================
+
+    - name: Test rkhunter configuration check
+      ansible.builtin.command:
+        cmd: rkhunter --config-check
+      register: __rkhunter_config_check
+      changed_when: false
+      failed_when: false
+
+    - name: Verify rkhunter config check
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_config_check.rc == 0
+        fail_msg: >-
+          rkhunter config check failed:
+          {{ __rkhunter_config_check.stdout | default('') }}
+          {{ __rkhunter_config_check.stderr | default('') }}
+        success_msg: "rkhunter configuration is valid"
+
+    # =========================================================================
+    # CHECK SCRIPT VERIFICATION
+    # =========================================================================
+
+    - name: Check rkhunter check script exists
+      ansible.builtin.stat:
+        path: '/usr/local/bin/rkhunter-check.sh'
+      register: __rkhunter_script
+
+    - name: Verify rkhunter check script
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_script.stat.exists
+          - __rkhunter_script.stat.isreg
+          - __rkhunter_script.stat.mode == '0755'
+          - __rkhunter_script.stat.executable
+        fail_msg: "rkhunter check script missing or not executable"
+        success_msg: "rkhunter check script exists and is executable"
+
+    - name: Read check script content
+      ansible.builtin.slurp:
+        src: '/usr/local/bin/rkhunter-check.sh'
+      register: __rkhunter_script_content
+
+    - name: Verify check script content
+      ansible.builtin.set_fact:
+        __rkhunter_script_decoded: "{{ __rkhunter_script_content.content | b64decode }}"
+
+    - name: Verify check script has required content
+      ansible.builtin.assert:
+        that:
+          - "'#!/bin/bash' in __rkhunter_script_decoded"
+          - "'Ansible managed' in __rkhunter_script_decoded"
+          - "'set -euo pipefail' in __rkhunter_script_decoded"
+          - "'rkhunter --check' in __rkhunter_script_decoded"
+        fail_msg: "rkhunter check script missing required content"
+        success_msg: "rkhunter check script has correct content"
+
+    # =========================================================================
+    # SYSTEMD TIMER VERIFICATION
+    # =========================================================================
+
+    - name: Check systemd service unit exists
+      ansible.builtin.stat:
+        path: '/etc/systemd/system/rkhunter-check.service'
+      register: __rkhunter_service_unit
+
+    - name: Verify systemd service unit
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_service_unit.stat.exists
+          - __rkhunter_service_unit.stat.mode == '0644'
+        fail_msg: "rkhunter systemd service unit missing"
+        success_msg: "rkhunter systemd service unit exists"
+
+    - name: Check systemd timer unit exists
+      ansible.builtin.stat:
+        path: '/etc/systemd/system/rkhunter-check.timer'
+      register: __rkhunter_timer_unit
+
+    - name: Verify systemd timer unit
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_timer_unit.stat.exists
+          - __rkhunter_timer_unit.stat.mode == '0644'
+        fail_msg: "rkhunter systemd timer unit missing"
+        success_msg: "rkhunter systemd timer unit exists"
+
+    - name: Check rkhunter timer is enabled  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: systemctl is-enabled rkhunter-check.timer
+      register: __rkhunter_timer_enabled
+      changed_when: false
+      failed_when: false
+
+    - name: Verify rkhunter timer is enabled
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_timer_enabled.stdout == 'enabled'
+        fail_msg: "rkhunter timer is not enabled"
+        success_msg: "rkhunter timer is enabled"
+
+    # =========================================================================
+    # DIRECTORY VERIFICATION
+    # =========================================================================
+
+    - name: Check rkhunter database directory
+      ansible.builtin.stat:
+        path: '/var/lib/rkhunter/db'
+      register: __rkhunter_db_dir
+
+    - name: Verify rkhunter database directory
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_db_dir.stat.exists
+          - __rkhunter_db_dir.stat.isdir
+          - __rkhunter_db_dir.stat.mode == '0700'
+        fail_msg: "rkhunter database directory missing or wrong permissions"
+        success_msg: "rkhunter database directory exists with correct permissions"
+
+    - name: Check rkhunter tmp directory
+      ansible.builtin.stat:
+        path: '/var/lib/rkhunter/tmp'
+      register: __rkhunter_tmp_dir
+
+    - name: Verify rkhunter tmp directory
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_tmp_dir.stat.exists
+          - __rkhunter_tmp_dir.stat.isdir
+          - __rkhunter_tmp_dir.stat.mode == '0700'
+        fail_msg: "rkhunter tmp directory missing or wrong permissions"
+        success_msg: "rkhunter tmp directory exists with correct permissions"
+
+    # =========================================================================
+    # SERVICE UNIT CONTENT VERIFICATION
+    # =========================================================================
+
+    - name: Read service unit content
+      ansible.builtin.slurp:
+        src: '/etc/systemd/system/rkhunter-check.service'
+      register: __rkhunter_service_content
+
+    - name: Verify service unit hardening
+      ansible.builtin.set_fact:
+        __rkhunter_service_decoded: "{{ __rkhunter_service_content.content | b64decode }}"
+
+    - name: Verify service has security hardening
+      ansible.builtin.assert:
+        that:
+          - "'NoNewPrivileges=true' in __rkhunter_service_decoded"
+          - "'ProtectKernelTunables=true' in __rkhunter_service_decoded"
+          - "'MemoryDenyWriteExecute=true' in __rkhunter_service_decoded"
+        fail_msg: "rkhunter service unit missing security hardening"
+        success_msg: "rkhunter service unit has security hardening"

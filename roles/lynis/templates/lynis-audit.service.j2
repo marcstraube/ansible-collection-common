@@ -1,0 +1,21 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Lynis Security Audit
+Documentation=man:lynis(8)
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/lynis-audit.sh
+StandardOutput=journal
+StandardError=journal
+Nice=19
+IOSchedulingClass=idle
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

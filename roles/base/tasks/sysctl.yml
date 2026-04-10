@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# Sysctl Configuration Tasks
+# =============================================================================
+
+- name: Configure sysctl settings
+  ansible.posix.sysctl:
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+    sysctl_file: '/etc/sysctl.d/50-ansible.conf'
+    state: present
+    reload: true
+  loop: '{{ base_sysctl | dict2items }}'
+  loop_control:
+    label: '{{ item.key }}'
+  when: base_sysctl | length > 0

@@ -1,0 +1,261 @@
+---
+# =============================================================================
+# Unbound - DNS Resolver Configuration
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SERVICE CONTROL
+# -----------------------------------------------------------------------------
+unbound_enabled: true
+
+# -----------------------------------------------------------------------------
+# NETWORK SETTINGS
+# -----------------------------------------------------------------------------
+# Interfaces to listen on
+unbound_interfaces:
+  - '127.0.0.1'
+  - '::1'
+
+# Port to listen on
+unbound_port: 53
+
+# Enable/disable IP protocols
+unbound_do_ip4: true
+unbound_do_ip6: true
+
+# Enable/disable TCP/UDP
+unbound_do_tcp: true
+unbound_do_udp: true
+
+# Access control (who can query)
+unbound_access_control:
+  - subnet: '127.0.0.0/8'
+    action: 'allow'
+  - subnet: '::1/128'
+    action: 'allow'
+# Example for LAN:
+#   - subnet: '10.0.0.0/8'
+#     action: 'allow'
+#   - subnet: '192.168.0.0/16'
+#     action: 'allow'
+
+# Do not query localhost for upstream (useful when forwarding)
+unbound_do_not_query_localhost: true
+
+# -----------------------------------------------------------------------------
+# PERFORMANCE
+# -----------------------------------------------------------------------------
+# Number of threads (0 = auto, based on CPU cores)
+unbound_num_threads: 0
+
+# Cache settings
+unbound_msg_cache_size: '64m'
+unbound_rrset_cache_size: '128m'
+unbound_key_cache_size: '32m'
+unbound_neg_cache_size: '16m'
+
+# Infrastructure cache (number of hosts to cache)
+unbound_infra_cache_numhosts: 10000
+
+# Cache TTL overrides
+unbound_cache_min_ttl: 300
+unbound_cache_max_ttl: 86400
+
+# Prefetch (proactive cache refresh)
+unbound_prefetch: true
+unbound_prefetch_key: true
+
+# Serve expired cache entries while refreshing
+unbound_serve_expired: true
+# TTL for served expired entries (seconds, 0 = unlimited)
+unbound_serve_expired_ttl: 86400
+
+# Round-robin rotation of RRsets in answers
+unbound_rrset_roundrobin: true
+
+# Minimal responses (only answer section, no authority/additional)
+unbound_minimal_responses: true
+
+# EDNS reassembly buffer size (bytes)
+unbound_edns_buffer_size: 1232
+
+# Outgoing range (increase for busy servers)
+unbound_outgoing_range: 4096
+
+# Number of queries per thread
+unbound_num_queries_per_thread: 1024
+
+# Socket receive/send buffer
+unbound_so_rcvbuf: '4m'
+unbound_so_sndbuf: '4m'
+
+# -----------------------------------------------------------------------------
+# SECURITY / DNSSEC
+# -----------------------------------------------------------------------------
+# Enable DNSSEC validation
+unbound_dnssec_enabled: true
+
+# Clean additional section of insecure data
+unbound_val_clean_additional: true
+
+# Hide identity and version
+unbound_hide_identity: true
+unbound_hide_version: true
+
+# Harden against various attacks
+unbound_harden_glue: true
+unbound_harden_dnssec_stripped: true
+unbound_harden_below_nxdomain: true
+unbound_harden_referral_path: false
+unbound_harden_large_queries: true
+unbound_harden_algo_downgrade: true
+
+# 0x20-encoded random bits in query name for spoofing resistance
+unbound_use_caps_for_id: true
+
+# Threshold for unwanted replies (0 = disabled)
+unbound_unwanted_reply_threshold: 10000
+
+# QNAME minimisation (privacy)
+unbound_qname_minimisation: true
+unbound_qname_minimisation_strict: true
+
+# -----------------------------------------------------------------------------
+# PRIVACY
+# -----------------------------------------------------------------------------
+# Use TCP for upstream queries (more private but slower)
+unbound_tcp_upstream: false
+
+# Aggressive NSEC (reduces queries for non-existent domains)
+unbound_aggressive_nsec: true
+
+# -----------------------------------------------------------------------------
+# UPSTREAM DNS
+# -----------------------------------------------------------------------------
+# Forward zones
+unbound_forward_zones: []
+# Example for forwarding all queries:
+#   - name: '.'
+#     forward_addresses:
+#       - '1.1.1.1@853#cloudflare-dns.com'
+#       - '1.0.0.1@853#cloudflare-dns.com'
+#       - '9.9.9.9@853#dns.quad9.net'
+#       - '149.112.112.112@853#dns.quad9.net'
+#     forward_tls_upstream: true
+#     forward_first: false
+
+# DNS over TLS upstream (privacy - encrypt DNS queries)
+unbound_tls_upstream: true
+# TLS certificate bundle path (auto-detected per OS, override via inventory)
+# unbound_tls_cert_bundle: '/etc/ssl/certs/ca-certificates.crt'
+
+# -----------------------------------------------------------------------------
+# LOCAL DATA
+# -----------------------------------------------------------------------------
+# Local zones (for internal DNS)
+unbound_local_zones: []
+# Example:
+#   - name: 'example.local.'
+#     type: 'static'
+#     records:
+#       - 'server1.example.local. IN A 10.0.0.1'
+#       - 'server2.example.local. IN A 10.0.0.2'
+
+# Local data (simple A/AAAA records)
+unbound_local_data: []
+# Example:
+#   - name: 'myserver.local'
+#     type: 'A'
+#     value: '192.168.1.100'
+
+# PTR records for local data
+unbound_local_data_ptr: []
+# Example:
+#   - ip: '192.168.1.100'
+#     name: 'myserver.local'
+
+# -----------------------------------------------------------------------------
+# BLOCKLIST / AD BLOCKING
+# -----------------------------------------------------------------------------
+# Enable ad/tracker blocking
+unbound_blocklist_enabled: false
+
+# Blocklist URLs (downloaded and converted)
+unbound_blocklist_urls:
+  - 'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts'
+
+# Blocklist update schedule (systemd OnCalendar expression)
+unbound_blocklist_schedule: '*-*-* 04:00:00'
+
+# -----------------------------------------------------------------------------
+# LOGGING
+# -----------------------------------------------------------------------------
+# Verbosity (0-5, 0 = errors only)
+unbound_verbosity: 1
+
+# Log queries (for debugging, high I/O)
+unbound_log_queries: false
+
+# Log replies
+unbound_log_replies: false
+
+# Log to syslog or file
+unbound_use_syslog: true
+unbound_logfile: ''
+
+# -----------------------------------------------------------------------------
+# ROOT HINTS
+# -----------------------------------------------------------------------------
+# Auto-update root hints via systemd timer
+unbound_root_hints_update: true
+unbound_root_hints_file: '/var/lib/unbound/root.hints'
+
+# -----------------------------------------------------------------------------
+# REMOTE CONTROL
+# -----------------------------------------------------------------------------
+# Enable unbound-control (required for reload, stats queries)
+unbound_remote_control: true
+unbound_control_interface: '/run/unbound/control'
+
+# -----------------------------------------------------------------------------
+# ADVANCED
+# -----------------------------------------------------------------------------
+# Private addresses (not forwarded)
+unbound_private_addresses:
+  - '10.0.0.0/8'
+  - '172.16.0.0/12'
+  - '192.168.0.0/16'
+  - '169.254.0.0/16'
+  - 'fd00::/8'
+  - 'fe80::/10'
+
+# Private domains (always resolve locally)
+unbound_private_domains: []
+
+# Insecure domains (disable DNSSEC validation)
+unbound_insecure_domains: []
+
+# Chroot directory (empty string = no chroot)
+unbound_chroot: ''
+
+# Username to drop privileges to (empty = OS default)
+unbound_username: ''
+
+# -----------------------------------------------------------------------------
+# BTRFS
+# -----------------------------------------------------------------------------
+# Enable BTRFS NoCOW for data directory (/var/lib/unbound/)
+unbound_btrfs_enabled: true
+
+# -----------------------------------------------------------------------------
+# FIREWALL
+# -----------------------------------------------------------------------------
+# Enable firewalld integration for DNS port
+unbound_firewalld_enabled: false
+unbound_firewalld_zone: 'public'
+
+# -----------------------------------------------------------------------------
+# APPARMOR
+# -----------------------------------------------------------------------------
+# Enable AppArmor profile enforcement (Arch/Debian only)
+unbound_apparmor_enabled: false

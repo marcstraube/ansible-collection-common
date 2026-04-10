@@ -1,0 +1,59 @@
+---
+# =============================================================================
+# Makepkg Tasks - Build System Configuration
+# =============================================================================
+
+- name: Install base-devel
+  community.general.pacman:
+    name: 'base-devel'
+    state: present
+
+- name: Configure makepkg
+  ansible.builtin.template:
+    src: 'archlinux/makepkg.conf.j2'
+    dest: '/etc/makepkg.conf'
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+
+- name: Install ccache
+  community.general.pacman:
+    name: 'ccache'
+    state: present
+  when: makepkg_ccache | bool
+
+- name: Install sccache
+  community.general.pacman:
+    name: 'sccache'
+    state: present
+  when: makepkg_sccache | bool
+
+- name: Install distcc
+  community.general.pacman:
+    name: 'distcc'
+    state: present
+  when: makepkg_distcc | bool
+
+# =============================================================================
+# Per-User makepkg.conf
+# =============================================================================
+
+- name: Deploy user makepkg.conf
+  ansible.builtin.template:
+    src: 'archlinux/makepkg.user.conf.j2'
+    dest: '{{ __makepkg_user.home | default("/home/" + __makepkg_user.username) }}/.makepkg.conf'
+    owner: '{{ __makepkg_user.username }}'
+    group: '{{ __makepkg_user.group | default(__makepkg_user.username) }}'
+    mode: '0644'
+  loop: '{{ makepkg_users }}'
+  loop_control:
+    loop_var: __makepkg_user
+    label: '{{ __makepkg_user.username }}'
+  when:
+    - makepkg_users | length > 0
+    - (__makepkg_user.mode | default(makepkg_user_config_mode)) != 'disabled'
+    - >-
+      (__makepkg_user.mode | default(makepkg_user_config_mode)) == 'managed'
+      or ((__makepkg_user.mode | default(makepkg_user_config_mode)) == 'initial'
+          and __makepkg_user.username in (__users_newly_created | default([])))

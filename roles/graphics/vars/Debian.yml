@@ -1,0 +1,44 @@
+---
+# =============================================================================
+# Debian-specific variables for graphics
+# =============================================================================
+
+# Intel packages
+__graphics_intel_mesa: 'mesa-vulkan-drivers'
+__graphics_intel_mesa_32bit: 'mesa-vulkan-drivers:i386'
+__graphics_intel_vulkan: 'mesa-vulkan-drivers'
+__graphics_intel_vulkan_32bit: 'mesa-vulkan-drivers:i386'
+__graphics_intel_vaapi_modern: 'intel-media-va-driver'
+__graphics_intel_vaapi_legacy: 'i965-va-driver'
+
+# AMD packages
+__graphics_amd_mesa: 'mesa-vulkan-drivers'
+__graphics_amd_mesa_32bit: 'mesa-vulkan-drivers:i386'
+__graphics_amd_vulkan: 'mesa-vulkan-drivers'
+__graphics_amd_vulkan_32bit: 'mesa-vulkan-drivers:i386'
+
+# NVIDIA packages
+__graphics_nvidia_open: 'nvidia-open-kernel-dkms'
+__graphics_nvidia_proprietary: 'nvidia-driver'
+__graphics_nvidia_utils: 'nvidia-driver'
+__graphics_nvidia_utils_32bit: 'nvidia-driver-libs:i386'
+__graphics_nvidia_nouveau: 'xserver-xorg-video-nouveau'
+__graphics_nvidia_cuda: 'nvidia-cuda-toolkit'
+
+# Legacy NVIDIA (nvidia-tesla-470 dropped from Trixie)
+__graphics_nvidia_legacy_packages:
+  '580xx': ''
+  '470xx': ''
+  '390xx': ''
+__graphics_nvidia_legacy_aur: false
+
+# Common packages
+__graphics_vulkan_icd_loader: 'libvulkan1'
+__graphics_vulkan_tools: 'vulkan-tools'
+__graphics_vaapi_tools: 'vainfo'
+__graphics_vdpau_tools: 'vdpau-driver-all'
+__graphics_mesa_utils: 'mesa-utils'
+
+# Hybrid graphics
+__graphics_hybrid_prime_run: ''
+__graphics_hybrid_switcheroo: 'switcheroo-control'

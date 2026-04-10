@@ -1,0 +1,6 @@
+{{ ansible_managed | comment }}
+
+# NVIDIA Dynamic Power Management for RTD3
+# 0x02 = fine-grained (Turing/pre-Ampere)
+# 0x03 = coarse-grained (Ampere and newer)
+options nvidia "NVreg_DynamicPowerManagement={{ graphics_hybrid_nvidia_rtd3_level }}"

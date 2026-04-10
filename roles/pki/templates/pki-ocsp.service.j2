@@ -1,0 +1,36 @@
+{{ ansible_managed | comment }}
+#
+# OCSP Responder systemd service
+
+[Unit]
+Description=PKI OCSP Responder
+After=network.target
+
+[Service]
+Type=simple
+{% if pki_intermediate_ca_enabled | bool %}
+{% set _ocsp_ca_dir = pki_intermediate_ca_dir %}
+{% set _ocsp_ca_cert = pki_intermediate_ca_dir + '/certs/intermediate.crt' %}
+{% else %}
+{% set _ocsp_ca_dir = pki_ca_dir %}
+{% set _ocsp_ca_cert = pki_ca_dir + '/certs/ca.crt' %}
+{% endif %}
+ExecStart=/usr/bin/openssl ocsp \
+    -index {{ _ocsp_ca_dir }}/index.txt \
+    -port {{ pki_ocsp_port }} \
+    -rsigner {{ _ocsp_ca_dir }}/certs/ocsp.crt \
+    -rkey {{ _ocsp_ca_dir }}/private/ocsp.key \
+    -CA {{ _ocsp_ca_cert }} \
+    -text
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths={{ _ocsp_ca_dir }}
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

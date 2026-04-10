@@ -1,0 +1,24 @@
+# NitroKey udev rules
+# Allow access for users in plugdev group
+
+# NitroKey Pro
+SUBSYSTEM=="usb", ATTR{idVendor}=="20a0", ATTR{idProduct}=="4108", MODE="0660", GROUP="plugdev"
+
+# NitroKey Storage
+SUBSYSTEM=="usb", ATTR{idVendor}=="20a0", ATTR{idProduct}=="4109", MODE="0660", GROUP="plugdev"
+
+# NitroKey HSM
+SUBSYSTEM=="usb", ATTR{idVendor}=="20a0", ATTR{idProduct}=="4230", MODE="0660", GROUP="plugdev"
+
+# NitroKey Start
+SUBSYSTEM=="usb", ATTR{idVendor}=="20a0", ATTR{idProduct}=="4211", MODE="0660", GROUP="plugdev"
+
+# NitroKey FIDO U2F
+SUBSYSTEM=="usb", ATTR{idVendor}=="20a0", ATTR{idProduct}=="4287", MODE="0660", GROUP="plugdev"
+
+# NitroKey FIDO2
+SUBSYSTEM=="usb", ATTR{idVendor}=="20a0", ATTR{idProduct}=="42b1", MODE="0660", GROUP="plugdev"
+
+# NitroKey 3
+SUBSYSTEM=="usb", ATTR{idVendor}=="20a0", ATTR{idProduct}=="42b2", MODE="0660", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTR{idVendor}=="20a0", ATTR{idProduct}=="42b3", MODE="0660", GROUP="plugdev"

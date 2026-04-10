@@ -1,0 +1,13 @@
+---
+__python_packages:
+  - 'python'
+
+__python_pip_packages:
+  - 'python-pip'
+
+__python_pipx_packages:
+  - 'python-pipx'
+
+__python_bootstrap_pipx: false
+
+__python_venv_command: 'python3 -m venv'

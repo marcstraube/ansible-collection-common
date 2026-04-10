@@ -1,0 +1,57 @@
+{{ ansible_managed | comment }}
+{% if fail2ban_postfix_enabled %}
+
+# Mail server jails
+[postfix]
+enabled = true
+port = {{ fail2ban_postfix_port }}
+logpath = {{ fail2ban_postfix_logpath }}
+maxretry = {{ fail2ban_postfix_maxretry }}
+bantime = {{ fail2ban_postfix_bantime }}
+mode = {{ fail2ban_postfix_mode }}
+{% endif %}
+{% if fail2ban_postfix_sasl_enabled %}
+
+[postfix-sasl]
+enabled = true
+port = {{ fail2ban_postfix_sasl_port }}
+logpath = {{ fail2ban_postfix_sasl_logpath }}
+maxretry = {{ fail2ban_postfix_sasl_maxretry }}
+bantime = {{ fail2ban_postfix_sasl_bantime }}
+{% endif %}
+{% if fail2ban_postfix_rbl_enabled %}
+
+[postfix-rbl]
+enabled = true
+port = {{ fail2ban_postfix_rbl_port }}
+logpath = {{ fail2ban_postfix_rbl_logpath }}
+maxretry = {{ fail2ban_postfix_rbl_maxretry }}
+bantime = {{ fail2ban_postfix_rbl_bantime }}
+{% endif %}
+{% if fail2ban_dovecot_enabled %}
+
+[dovecot]
+enabled = true
+port = {{ fail2ban_dovecot_port }}
+logpath = {{ fail2ban_dovecot_logpath }}
+maxretry = {{ fail2ban_dovecot_maxretry }}
+bantime = {{ fail2ban_dovecot_bantime }}
+{% endif %}
+{% if fail2ban_sogo_enabled %}
+
+[sogo-auth]
+enabled = true
+port = {{ fail2ban_sogo_port }}
+logpath = {{ fail2ban_sogo_logpath }}
+maxretry = {{ fail2ban_sogo_maxretry }}
+bantime = {{ fail2ban_sogo_bantime }}
+{% endif %}
+{% if fail2ban_roundcube_enabled %}
+
+[roundcube-auth]
+enabled = true
+port = {{ fail2ban_roundcube_port }}
+logpath = {{ fail2ban_roundcube_logpath }}
+maxretry = {{ fail2ban_roundcube_maxretry }}
+bantime = {{ fail2ban_roundcube_bantime }}
+{% endif %}

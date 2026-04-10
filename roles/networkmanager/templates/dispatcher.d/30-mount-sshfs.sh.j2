@@ -1,0 +1,28 @@
+#jinja2:lstrip_blocks: True
+#!/bin/sh
+{{ ansible_managed | comment }}
+
+# This script automatically mounts SSHFS shares when a network connection comes up.
+
+LOG_PREFIX="NM-SSHFS-Mount"
+
+if [ "$2" = "up" ]; then
+{% if networkmanager_sshfs_shares is defined and networkmanager_sshfs_shares | length > 0 %}
+  {% for share in networkmanager_sshfs_shares %}
+  # Check if the share is already mounted
+  if ! mountpoint -q "{{ share.dest }}"; then
+    echo "$LOG_PREFIX: A network connection is up. Mounting '{{ share.name }}' to {{ share.dest }}"
+    mkdir -p "{{ share.dest }}"
+    SSH_AUTH_SOCK=$(find /run/user/$(id -u {{ share.user }})/ -maxdepth 2 -type s -name 'ssh' -print -quit)
+    if [ -n "$SSH_AUTH_SOCK" ]; then
+      export SSH_AUTH_SOCK
+      su "{{ share.user }}" -c "sshfs '{{ share.src }}' '{{ share.dest }}' -o reconnect,ServerAliveInterval=15,ServerAliveCountMax=3"
+    else
+      echo "$LOG_PREFIX: Warning: Could not find SSH_AUTH_SOCK for user {{ share.user }}. Cannot mount {{ share.name }}." >&2
+    fi
+  else
+    echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ share.dest }}) already mounted."
+  fi
+  {% endfor %}
+{% endif %}
+fi

@@ -1,0 +1,68 @@
+---
+# =============================================================================
+# Base System Playbook
+# =============================================================================
+# Foundation system configuration for all hosts.
+#
+# Usage:
+#   ansible-playbook marcstraube.common.base_system -i inventory/
+#
+# Configure roles via inventory variables (group_vars/host_vars).
+# See each role's defaults/main.yml for available variables.
+# =============================================================================
+
+- name: Configure Base System
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Include base role
+      ansible.builtin.include_role:
+        name: marcstraube.common.base
+      when: base_enabled | default(true) | bool
+
+    - name: Include package_management role
+      ansible.builtin.include_role:
+        name: marcstraube.common.package_management
+      when: package_management_enabled | default(true) | bool
+
+    - name: Include users role
+      ansible.builtin.include_role:
+        name: marcstraube.common.users
+      when: users_enabled | default(true) | bool
+
+    - name: Include sudo role
+      ansible.builtin.include_role:
+        name: marcstraube.common.sudo
+      when: sudo_enabled | default(true) | bool
+
+    - name: Include editors role
+      ansible.builtin.include_role:
+        name: marcstraube.common.editors
+      when: editors_enabled | default(true) | bool
+
+    - name: Include utils role
+      ansible.builtin.include_role:
+        name: marcstraube.common.utils
+      when: utils_enabled | default(true) | bool
+
+    - name: Include chrony role
+      ansible.builtin.include_role:
+        name: marcstraube.common.chrony
+      when: chrony_enabled | default(true) | bool
+
+    - name: Include logrotate role
+      ansible.builtin.include_role:
+        name: marcstraube.common.logrotate
+      when: logrotate_enabled | default(true) | bool
+
+    - name: Include sysctl role
+      ansible.builtin.include_role:
+        name: marcstraube.common.sysctl
+      when: sysctl_enabled | default(true) | bool
+
+    - name: Include openssh role
+      ansible.builtin.include_role:
+        name: marcstraube.common.openssh
+      when: openssh_enabled | default(true) | bool

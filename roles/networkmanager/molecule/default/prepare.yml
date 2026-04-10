@@ -1,0 +1,197 @@
+---
+# marcstraube.networkmanager/molecule/default/prepare.yml
+
+- name: Prepare instances
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    # =========================================================================
+    # BASE PREPARATION (all platforms)
+    # =========================================================================
+
+    - name: Gather facts after Python installation
+      ansible.builtin.setup:
+
+    # =========================================================================
+    # ARCH LINUX PREPARATION
+    # =========================================================================
+
+    - name: Initialize pacman keyring (Arch Linux)
+      ansible.builtin.raw: |
+        pacman-key --init
+        pacman-key --populate archlinux
+      when: ansible_facts['os_family'] == 'Archlinux'
+      changed_when: false
+
+    - name: Update archlinux-keyring first (Arch Linux)
+      community.general.pacman:
+        name:
+          - archlinux-keyring
+        state: latest
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+      retries: 3
+      delay: 10
+      register: keyring_update
+      until: keyring_update is succeeded
+
+    - name: Full system update (Arch Linux)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+      retries: 3
+      delay: 10
+      register: system_update
+      until: system_update is succeeded
+
+    - name: Ensure Python is installed (Arch Linux)
+      community.general.pacman:
+        name:
+          - python
+        state: present
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    # =========================================================================
+    # DEBIAN PREPARATION
+    # =========================================================================
+
+    - name: Update apt cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install base packages (Debian)
+      ansible.builtin.apt:
+        name:
+          - systemd
+          - procps
+          - network-manager
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # =========================================================================
+    # REDHAT PREPARATION
+    # =========================================================================
+
+    - name: Install base packages (RedHat)
+      ansible.builtin.dnf:
+        name:
+          - systemd
+          - procps-ng
+          - NetworkManager
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # =========================================================================
+    # WIFI SIMULATION (Arch Linux only)
+    # =========================================================================
+
+    - name: Ensure iw package is installed (Arch Linux)
+      community.general.pacman:
+        name: iw
+        state: present
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Unload mac80211_hwsim module if already loaded
+      ansible.builtin.shell: |
+        set -o pipefail
+        if lsmod | grep -q mac80211_hwsim; then
+          modprobe -r mac80211_hwsim || true
+        fi
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Load mac80211_hwsim kernel module with 4 radios
+      ansible.builtin.shell: |
+        # Create 4 radios: 2 for APs (wlan0, wlan1) and 2 for clients (wlan2, wlan3)
+        modprobe mac80211_hwsim radios=4
+        sleep 2
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify WiFi interfaces were created
+      ansible.builtin.command: iw dev
+      register: wifi_devices
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Display created WiFi interfaces
+      ansible.builtin.debug:
+        msg: "{{ wifi_devices.stdout_lines }}"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Ensure hostapd is installed (Arch Linux)
+      community.general.pacman:
+        name: hostapd
+        state: present
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Bring wlan interfaces up
+      ansible.builtin.command: ip link set {{ item }} up
+      loop:
+        - wlan0
+        - wlan1
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Create hostapd configuration for Office WiFi
+      ansible.builtin.copy:
+        dest: /tmp/hostapd_office.conf
+        content: |
+          interface=wlan0
+          driver=nl80211
+          ssid=Office-Network
+          hw_mode=g
+          channel=6
+          wmm_enabled=0
+          macaddr_acl=0
+          auth_algs=1
+          ignore_broadcast_ssid=0
+        mode: "0644"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Create hostapd configuration for Home WiFi
+      ansible.builtin.copy:
+        dest: /tmp/hostapd_home.conf
+        content: |
+          interface=wlan1
+          driver=nl80211
+          ssid=Home-Network
+          hw_mode=g
+          channel=11
+          wmm_enabled=0
+          macaddr_acl=0
+          auth_algs=1
+          ignore_broadcast_ssid=0
+        mode: "0644"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Start hostapd for Office WiFi in background
+      ansible.builtin.shell: |
+        nohup hostapd /tmp/hostapd_office.conf > /tmp/hostapd_office.log 2>&1 &
+        sleep 2
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Start hostapd for Home WiFi in background
+      ansible.builtin.shell: |
+        nohup hostapd /tmp/hostapd_home.conf > /tmp/hostapd_home.log 2>&1 &
+        sleep 2
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Bring client WiFi interfaces up
+      ansible.builtin.command: ip link set {{ item }} up
+      loop:
+        - wlan2
+        - wlan3
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Wait for WiFi APs to be fully operational
+      ansible.builtin.pause:
+        seconds: 5
+      when: ansible_facts['os_family'] == 'Archlinux'

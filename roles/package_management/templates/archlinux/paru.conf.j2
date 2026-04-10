@@ -1,0 +1,81 @@
+{{ ansible_managed | comment }}
+#
+# /etc/paru.conf - System-wide paru configuration
+#
+
+[options]
+CloneDir = {{ paru_clone_dir }}
+{% if paru_clean_after | bool %}
+CleanAfter
+{% endif %}
+{% if paru_remove_make is sameas true %}
+RemoveMake
+{% elif paru_remove_make == 'ask' %}
+RemoveMake = ask
+{% endif %}
+{% if paru_bottom_up | bool %}
+BottomUp
+{% endif %}
+{% if paru_sudo_loop is sameas true %}
+SudoLoop
+{% elif paru_sudo_loop is string and paru_sudo_loop | length > 0 %}
+SudoLoop = {{ paru_sudo_loop }}
+{% endif %}
+{% if paru_devel | bool %}
+Devel
+DevelSuffixes = {{ paru_devel_suffixes | join(' ') }}
+{% endif %}
+{% if paru_news_on_upgrade | bool %}
+NewsOnUpgrade
+{% endif %}
+{% if paru_combined_upgrade | bool %}
+CombinedUpgrade
+{% endif %}
+{% if paru_batch_install | bool %}
+BatchInstall
+{% endif %}
+{% if paru_pgp_fetch | bool %}
+PgpFetch
+{% endif %}
+{% if paru_skip_review | bool %}
+SkipReview
+{% endif %}
+{% if paru_fail_fast | bool %}
+FailFast
+{% endif %}
+{% if paru_upgrade_menu | bool %}
+UpgradeMenu
+{% endif %}
+{% if paru_provides is sameas true %}
+Provides
+{% elif paru_provides == 'all' %}
+Provides = all
+{% endif %}
+{% if paru_sort_by != 'votes' %}
+SortBy = {{ paru_sort_by }}
+{% endif %}
+{% if paru_search_by != 'name-desc' %}
+SearchBy = {{ paru_search_by }}
+{% endif %}
+{% if paru_limit | int > 0 %}
+Limit = {{ paru_limit }}
+{% endif %}
+{% if paru_completion_interval | int != 7 %}
+CompletionInterval = {{ paru_completion_interval }}
+{% endif %}
+{% if paru_mflags | length > 0 or paru_pager | length > 0 or paru_sudo | length > 0 or paru_file_manager | length > 0 %}
+
+[bin]
+{% if paru_mflags | length > 0 %}
+MFlags = {{ paru_mflags }}
+{% endif %}
+{% if paru_pager | length > 0 %}
+Pager = {{ paru_pager }}
+{% endif %}
+{% if paru_sudo | length > 0 %}
+Sudo = {{ paru_sudo }}
+{% endif %}
+{% if paru_file_manager | length > 0 %}
+FileManager = {{ paru_file_manager }}
+{% endif %}
+{% endif %}

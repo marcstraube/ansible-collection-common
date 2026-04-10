@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# Podman - Handlers
+# =============================================================================
+
+- name: Reload podman systemd units
+  ansible.builtin.systemd:
+    daemon_reload: true
+  failed_when: false
+  listen: 'reload podman systemd units'
+
+- name: Restart podman socket
+  ansible.builtin.systemd:
+    name: '{{ __podman_socket_service }}'
+    state: restarted
+  listen: 'restart podman socket'

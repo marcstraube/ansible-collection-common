@@ -1,0 +1,193 @@
+---
+# =============================================================================
+# Users and Groups Management
+# =============================================================================
+# Role: marcstraube.common.users
+# Description: Manage system users, groups, and SSH keys
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+users_enabled: true
+
+# =============================================================================
+# GROUPS
+# =============================================================================
+
+# Groups to create
+# Example:
+#   users_groups:
+#     - name: 'developers'
+#       gid: 2000
+#       system: false
+#     - name: 'docker'
+#       system: true
+users_groups: []
+
+# =============================================================================
+# USERS
+# =============================================================================
+
+# Users to create/manage
+#
+# SPECIAL HANDLING:
+# - name: 'root' → Only password/shell updated (no useradd, no home creation)
+# - default: true → This user's password is used for ansible_become_password
+#
+# DEFAULT USER LOGIC:
+# 1. User with 'default: true' → this user
+# 2. Multiple with 'default: true' → first one (+ warning)
+# 3. None with 'default: true' → first non-root user in list
+#
+# Example:
+#   users_list:
+#     - name: 'root'               # Special: only password/shell, no create
+#       password: "{{ vault_users.root }}"
+#       shell: '/bin/zsh'          # Optional
+#
+#     - name: 'johndoe'
+#       comment: 'John Doe'
+#       default: true              # → become_password uses this user's password
+#       uid: 1001
+#       group: 'johndoe'           # Primary group
+#       groups: ['wheel', 'docker'] # Additional groups
+#       append_groups: true        # Append to groups (don't replace)
+#       shell: '/bin/bash'
+#       home: '/home/johndoe'
+#       create_home: true
+#       move_home: false
+#       skeleton: '/etc/skel'
+#       password: "{{ vault_users.johndoe }}"
+#       password_lock: false
+#       update_password: 'on_create' # on_create, always
+#       expires: -1                # Never expires (-1) or epoch timestamp
+#       system: false
+#       ssh_keys:
+#         - 'ssh-ed25519 AAAA... user@host'
+#       ssh_keys_exclusive: false  # Remove unlisted keys
+#       generate_ssh_key: false
+#       ssh_key_type: 'ed25519'
+#       ssh_key_bits: 4096         # For RSA
+#       ssh_key_comment: ''
+#       ssh_key_passphrase: ''
+#       profile_image: ''          # Path to image file
+#       state: 'present'           # present, absent
+users_list: []
+
+# =============================================================================
+# USER DEFAULTS
+# =============================================================================
+
+# Default shell for new users
+users_default_shell: '/bin/bash'
+
+# Default home base directory
+users_default_home_base: '/home'
+
+# Default skeleton directory
+users_default_skeleton: '/etc/skel'
+
+# Create home directory by default
+users_default_create_home: true
+
+# Default primary group (empty = same as username)
+users_default_group: ''
+
+# Default additional groups
+users_default_groups: []
+
+# Append to groups by default (vs replace)
+users_default_append_groups: true
+
+# Default password update policy: on_create, always
+users_default_update_password: 'always'
+
+# Default SSH key type for generated keys
+users_default_ssh_key_type: 'ed25519'
+
+# =============================================================================
+# SSH KEY MANAGEMENT
+# =============================================================================
+
+# Base directory for SSH authorized_keys
+users_ssh_authorized_keys_dir: '.ssh'
+
+# Authorized keys file name
+users_ssh_authorized_keys_file: 'authorized_keys'
+
+# SSH directory permissions
+users_ssh_dir_mode: '0700'
+
+# Authorized keys file permissions
+users_ssh_authorized_keys_mode: '0600'
+
+# =============================================================================
+# PASSWORD POLICY
+# =============================================================================
+
+# Hash algorithm for passwords: sha512, sha256
+users_password_hash_algo: 'sha512'
+
+# Password salt for idempotent hashing (store in vault!)
+# If set, passwords are hashed with this salt → same hash each run → idempotent
+# Generate with: tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 16
+users_password_salt: '{{ vault_users_password_salt | default("") }}'
+
+# Generate random password for users without one
+users_generate_random_password: false
+
+# Random password length
+users_random_password_length: 24
+
+# Store generated passwords to file (empty = don't store)
+# WARNING: Contains plaintext passwords!
+users_password_store_file: ''
+
+# =============================================================================
+# HOME DIRECTORY
+# =============================================================================
+
+# Home directory permissions
+users_home_mode: '0700'
+
+# Create .ssh directory
+users_create_ssh_dir: true
+
+# =============================================================================
+# USER REMOVAL
+# =============================================================================
+
+# Remove home directory when user is removed
+users_remove_home: false
+
+# Force removal of user even if logged in
+users_force_remove: false
+
+# =============================================================================
+# PROFILE IMAGES
+# =============================================================================
+
+# Enable user profile images (for display managers)
+users_profile_images_enabled: false
+
+# Profile images directory
+users_profile_images_dir: '/var/lib/AccountsService/icons'
+
+# Create ~/.face symlink for SDDM/LightDM compatibility
+users_profile_images_face_symlink: false
+
+# =============================================================================
+# ADVANCED
+# =============================================================================
+
+# Exclusive management: remove users not in list
+# WARNING: Dangerous! Only enable if you know what you're doing
+users_exclusive: false
+
+# Users to never remove (when exclusive mode)
+users_keep:
+  - 'root'
+  - 'nobody'
+  - '{{ ansible_user | default("") }}'

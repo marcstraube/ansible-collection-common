@@ -1,0 +1,245 @@
+---
+# marcstraube.common.auditd/molecule/default/verify.yml
+
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # PACKAGE INSTALLATION
+    # =========================================================================
+    - name: Verify | Check audit package installed (Arch)
+      ansible.builtin.package:
+        name: audit
+        state: present
+      check_mode: true
+      register: audit_pkg_arch
+      failed_when: audit_pkg_arch.changed
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check auditd package installed (Debian)
+      ansible.builtin.package:
+        name: auditd
+        state: present
+      check_mode: true
+      register: auditd_pkg
+      failed_when: auditd_pkg.changed
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Check audit package installed (RedHat)
+      ansible.builtin.package:
+        name: audit
+        state: present
+      check_mode: true
+      register: audit_pkg
+      failed_when: audit_pkg.changed
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # =========================================================================
+    # BINARY VERIFICATION
+    # =========================================================================
+    - name: Verify | Check auditd binary exists
+      ansible.builtin.shell:
+        cmd: command -v auditd
+      register: auditd_binary
+      changed_when: false
+      failed_when: auditd_binary.rc != 0
+
+    - name: Verify | Check auditctl binary exists
+      ansible.builtin.shell:
+        cmd: command -v auditctl
+      register: auditctl_binary
+      changed_when: false
+      failed_when: auditctl_binary.rc != 0
+
+    - name: Verify | Check ausearch binary exists
+      ansible.builtin.shell:
+        cmd: command -v ausearch
+      register: ausearch_binary
+      changed_when: false
+      failed_when: ausearch_binary.rc != 0
+
+    - name: Verify | Check aureport binary exists
+      ansible.builtin.shell:
+        cmd: command -v aureport
+      register: aureport_binary
+      changed_when: false
+      failed_when: aureport_binary.rc != 0
+
+    # =========================================================================
+    # CONFIGURATION FILES
+    # =========================================================================
+    - name: Verify | Check auditd.conf exists
+      ansible.builtin.stat:
+        path: /etc/audit/auditd.conf
+      register: auditd_conf
+      failed_when: not auditd_conf.stat.exists
+
+    - name: Verify | Check auditd.conf permissions
+      ansible.builtin.assert:
+        that:
+          - auditd_conf.stat.mode == '0640'
+          - auditd_conf.stat.pw_name == 'root'
+          - auditd_conf.stat.gr_name == 'root'
+        fail_msg: 'auditd.conf has incorrect permissions'
+
+    - name: Verify | Read auditd.conf
+      ansible.builtin.slurp:
+        src: /etc/audit/auditd.conf
+      register: auditd_conf_content
+
+    - name: Verify | Check auditd.conf contains expected settings
+      ansible.builtin.assert:
+        that:
+          - "'log_format = ENRICHED' in (auditd_conf_content.content | b64decode)"
+          - "'num_logs = 5' in (auditd_conf_content.content | b64decode)"
+          - "'max_log_file = 8' in (auditd_conf_content.content | b64decode)"
+        fail_msg: 'auditd.conf missing expected settings'
+
+    # =========================================================================
+    # AUDIT RULES
+    # =========================================================================
+    - name: Verify | Check audit rules file exists
+      ansible.builtin.stat:
+        path: /etc/audit/rules.d/audit.rules
+      register: audit_rules
+      failed_when: not audit_rules.stat.exists
+
+    - name: Verify | Check audit rules permissions
+      ansible.builtin.assert:
+        that:
+          - audit_rules.stat.mode == '0640'
+        fail_msg: 'audit.rules has incorrect permissions'
+
+    - name: Verify | Read audit rules
+      ansible.builtin.slurp:
+        src: /etc/audit/rules.d/audit.rules
+      register: audit_rules_content
+
+    - name: Verify | Check audit rules contain time change monitoring
+      ansible.builtin.assert:
+        that:
+          - "'time-change' in (audit_rules_content.content | b64decode)"
+        fail_msg: 'audit rules missing time-change monitoring'
+
+    - name: Verify | Check audit rules contain identity monitoring
+      ansible.builtin.assert:
+        that:
+          - "'/etc/passwd' in (audit_rules_content.content | b64decode)"
+          - "'/etc/shadow' in (audit_rules_content.content | b64decode)"
+        fail_msg: 'audit rules missing identity monitoring'
+
+    - name: Verify | Check custom watch for sshd_config
+      ansible.builtin.assert:
+        that:
+          - "'/etc/ssh/sshd_config' in (audit_rules_content.content | b64decode)"
+          - "'sshd_config' in (audit_rules_content.content | b64decode)"
+        fail_msg: 'custom sshd_config watch not found'
+
+    # =========================================================================
+    # SERVICE VERIFICATION
+    # =========================================================================
+    - name: Verify | Check auditd service exists
+      ansible.builtin.stat:
+        path: /usr/lib/systemd/system/auditd.service
+      register: auditd_service_file
+
+    - name: Verify | Check auditd service is enabled
+      ansible.builtin.systemd:
+        name: auditd.service
+      register: auditd_service
+      failed_when: auditd_service.status.UnitFileState != 'enabled'
+
+    - name: Verify | Check auditd service is running
+      ansible.builtin.systemd:
+        name: auditd.service
+      register: auditd_status
+      failed_when: auditd_status.status.ActiveState != 'active'
+
+    # =========================================================================
+    # LOG DIRECTORY
+    # =========================================================================
+    - name: Verify | Check audit log directory exists
+      ansible.builtin.stat:
+        path: /var/log/audit
+      register: audit_log_dir
+      failed_when: not audit_log_dir.stat.exists
+
+    - name: Verify | Check audit log directory permissions
+      ansible.builtin.assert:
+        that:
+          - audit_log_dir.stat.mode == '0700'
+          - audit_log_dir.stat.pw_name == 'root'
+        fail_msg: 'audit log directory has incorrect permissions'
+
+    - name: Verify | Check audit.log exists
+      ansible.builtin.stat:
+        path: /var/log/audit/audit.log
+      register: audit_log
+      failed_when: not audit_log.stat.exists
+
+    # =========================================================================
+    # FUNCTIONAL TESTS (kernel audit subsystem available in VM)
+    # =========================================================================
+    - name: Verify | Test auditctl status
+      ansible.builtin.command:
+        cmd: auditctl -s
+      register: auditctl_status
+      changed_when: false
+      failed_when: auditctl_status.rc != 0
+
+    - name: Verify | Check auditctl status shows enabled
+      ansible.builtin.assert:
+        that:
+          - "'enabled' in auditctl_status.stdout"
+        fail_msg: 'auditd not enabled according to auditctl'
+
+    - name: Verify | Test auditctl list rules
+      ansible.builtin.command:
+        cmd: auditctl -l
+      register: auditctl_rules
+      changed_when: false
+      failed_when: auditctl_rules.rc != 0
+
+    - name: Verify | Check rules are loaded
+      ansible.builtin.assert:
+        that:
+          - auditctl_rules.stdout_lines | length > 10
+        fail_msg: 'Not enough audit rules loaded'
+
+    - name: Verify | Test ausearch functionality
+      ansible.builtin.command:
+        cmd: ausearch -m USER_START -i --just-one
+      register: ausearch_test
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Test aureport functionality
+      ansible.builtin.command:
+        cmd: aureport --start today --summary
+      register: aureport_test
+      changed_when: false
+      failed_when: aureport_test.rc != 0
+
+    # =========================================================================
+    # PLUGIN VERIFICATION
+    # =========================================================================
+    - name: Verify | Check syslog plugin config exists
+      ansible.builtin.stat:
+        path: /etc/audit/plugins.d/syslog.conf
+      register: syslog_plugin
+      failed_when: not syslog_plugin.stat.exists
+
+    - name: Verify | Read syslog plugin config
+      ansible.builtin.slurp:
+        src: /etc/audit/plugins.d/syslog.conf
+      register: syslog_plugin_content
+
+    - name: Verify | Check syslog plugin is active and configured
+      ansible.builtin.assert:
+        that:
+          - "'active = yes' in (syslog_plugin_content.content | b64decode)"
+          - "'LOG_INFO LOG_LOCAL6' in (syslog_plugin_content.content | b64decode)"
+        fail_msg: 'syslog plugin not active or missing facility/priority'

@@ -1,0 +1,7 @@
+---
+# =============================================================================
+# Hardening OS-independent variables
+# =============================================================================
+# modprobe config path is identical across Arch Linux, Debian, and Rocky Linux.
+
+__hardening_modprobe_path: '/etc/modprobe.d'

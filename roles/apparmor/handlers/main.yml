@@ -1,0 +1,9 @@
+---
+# =============================================================================
+# AppArmor Handlers
+# =============================================================================
+
+- name: Reload AppArmor
+  ansible.builtin.systemd:
+    name: '{{ __apparmor_service_name }}'
+    state: reloaded

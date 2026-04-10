@@ -1,0 +1,50 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Full system update (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Install dependencies on Archlinux
+      community.general.pacman:
+        name:
+          - which
+          - sudo
+        state: present
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Install dependencies on Debian
+      ansible.builtin.apt:
+        name:
+          - curl
+          - gnupg
+          - ca-certificates
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Replace curl-minimal with curl (RedHat Docker)  # noqa: command-instead-of-module
+      ansible.builtin.command: dnf swap -y curl-minimal curl
+      changed_when: false
+      failed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+  vars:
+    nodejs_enabled: true
+    # Arch will auto-fallback to 'package'
+    nodejs_install_method: 'nodesource'
+    nodejs_version: '24'
+    nodejs_package_managers:
+      - yarn
+
+  tasks:
+    - name: Include nodejs role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

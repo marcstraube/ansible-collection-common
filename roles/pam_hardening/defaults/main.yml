@@ -1,0 +1,260 @@
+---
+# =============================================================================
+# PAM Hardening Configuration
+# =============================================================================
+# Role: marcstraube.common.pam_hardening
+# Description: Harden PAM (Pluggable Authentication Modules) configuration
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+# Enable or disable the entire role
+pam_hardening_enabled: true
+
+# =============================================================================
+# PASSWORD QUALITY (pwquality.conf)
+# =============================================================================
+
+# Enable password quality checking via pam_pwquality
+pam_pwquality_enabled: true
+
+# Minimum password length (NIST 800-63B Rev 4: SHALL >= 15 single-factor)
+pam_pwquality_minlen: 15
+
+# Number of characters that must differ from the old password
+pam_pwquality_difok: 2
+
+# Enforce character class composition rules (CIS requires, NIST prohibits)
+# When true: require at least 1 of each class (lower, upper, digit, special)
+# When false: rely on minlen + dictcheck instead (NIST 800-63B approach)
+pam_pwquality_composition_rules: true
+
+# Minimum number of lowercase characters (negative = required minimum)
+pam_pwquality_lcredit: -1
+
+# Minimum number of uppercase characters (negative = required minimum)
+pam_pwquality_ucredit: -1
+
+# Minimum number of digits (negative = required minimum)
+pam_pwquality_dcredit: -1
+
+# Minimum number of special characters (negative = required minimum)
+pam_pwquality_ocredit: -1
+
+# Minimum number of required character classes (0 = disabled)
+pam_pwquality_minclass: 0
+
+# Maximum number of consecutive same characters (0 = disabled)
+pam_pwquality_maxrepeat: 3
+
+# Maximum length of monotonic character sequences like "1234" (0 = disabled)
+pam_pwquality_maxsequence: 0
+
+# Maximum number of consecutive characters of the same class (0 = disabled)
+pam_pwquality_maxclassrepeat: 4
+
+# Check if password contains the username in some form
+pam_pwquality_usercheck: true
+
+# Minimum substring length of username to reject (0 = disabled, needs usercheck)
+pam_pwquality_usersubstr: 0
+
+# Check for words from the GECOS field of the user
+pam_pwquality_gecoscheck: true
+
+# Check against cracklib dictionary
+pam_pwquality_dictcheck: true
+
+# Space-separated list of additional prohibited words
+pam_pwquality_badwords: ''
+
+# Path to custom cracklib dictionaries (empty = cracklib default)
+pam_pwquality_dictpath: ''
+
+# Reject password on failed check (true) or warn only (false)
+pam_pwquality_enforcing: true
+
+# Prompt user N times before returning error
+pam_pwquality_retry: 3
+
+# Enforce quality checks for root user password changes
+pam_pwquality_enforce_for_root: true
+
+# Only check local users in /etc/passwd (skip LDAP/NIS)
+pam_pwquality_local_users_only: false
+
+# =============================================================================
+# ACCOUNT LOCKOUT (faillock.conf)
+# =============================================================================
+
+# Enable account lockout on failed attempts via pam_faillock
+pam_faillock_enabled: true
+
+# Directory for failure record files
+pam_faillock_dir: '/var/run/faillock'
+
+# Number of consecutive failed attempts before lockout
+pam_faillock_deny: 5
+
+# Lockout duration in seconds (0 = manual unlock required)
+pam_faillock_unlock_time: 900
+
+# Time window for counting failures (seconds)
+pam_faillock_fail_interval: 900
+
+# Apply lockout to root account (CIS 5.3.2)
+# WARNING: can lock out root after failed sudo during Ansible runs.
+# Only enable on systems with console/IPMI/iLO access.
+pam_faillock_even_deny_root: false
+
+# Root account lockout duration in seconds (implies even_deny_root)
+pam_faillock_root_unlock_time: 60
+
+# Log username to syslog if user not found
+pam_faillock_audit: true
+
+# Suppress lockout messages to user
+pam_faillock_silent: false
+
+# Suppress informative messages via syslog
+pam_faillock_no_log_info: false
+
+# Only track local /etc/passwd users (skip AD/LDAP)
+pam_faillock_local_users_only: false
+
+# Do not enforce delay after authentication failures
+pam_faillock_nodelay: false
+
+# Group members treated like root for lockout (empty = disabled)
+pam_faillock_admin_group: ''
+
+# =============================================================================
+# PASSWORD HISTORY
+# =============================================================================
+
+# Number of old passwords to remember (0 = disabled)
+# Uses pam_pwhistory on Arch/RedHat, pam_unix remember= on Debian
+pam_password_remember: 5
+
+# =============================================================================
+# PASSWORD AGING (login.defs)
+# =============================================================================
+
+# Enable password aging enforcement
+# NIST/BSI/ANSSI recommend against forced rotation
+pam_password_aging_enabled: false
+
+# Maximum password age in days (99999 = no forced rotation per NIST 800-63B)
+pam_password_max_age: 99999
+
+# Minimum password age in days
+pam_password_min_age: 0
+
+# Warning period before password expiration in days
+pam_password_warn_age: 7
+
+# Inactive period after password expiration in days (-1 = disabled)
+pam_password_inactive: -1
+
+# =============================================================================
+# PASSWORD HASHING (login.defs + pam_unix)
+# =============================================================================
+
+# Password hashing algorithm
+# yescrypt: memory-hard (recommended, default on Arch/Debian 12+/Fedora 35+)
+# sha512:   CPU-only, vulnerable to GPU attacks (use for DISA STIG compliance)
+pam_password_hash: 'yescrypt'
+
+# Hash cost parameter
+# yescrypt: cost factor 1-11 (default 5, higher = slower but more resistant)
+# sha512:   iteration rounds (recommended 65536+, STIG minimum 5000)
+pam_password_rounds: 5
+
+# =============================================================================
+# SESSION LIMITS (limits.d/99-hardening.conf)
+# =============================================================================
+
+# Enable session limits via pam_limits
+pam_limits_enabled: true
+
+# Maximum number of simultaneous logins per user
+pam_limits_maxlogins: 10
+
+# Maximum number of processes per user
+# Server:  1024 (restrictive, prevents fork bombs)
+# Desktop: 65536 (GUI sessions with browsers/IDEs need more threads)
+pam_limits_nproc: 1024
+
+# Core dump size limit in KB (0 = disabled, security best practice)
+pam_limits_core: 0
+
+# Custom limits entries
+# Each item: domain, type (soft/hard/-), item, value
+pam_limits_custom: []
+#  - domain: '@users'
+#    type: hard
+#    item: nproc
+#    value: 50
+
+# =============================================================================
+# ACCESS CONTROL (access.conf)
+# =============================================================================
+
+# Enable access control via pam_access
+pam_access_enabled: true
+
+# Access control rules (deny-all appended automatically when rules are set)
+# Format: +|-:users/groups:origins
+pam_access_rules:
+  - '+:wheel:ALL'
+  - '+:root:LOCAL'
+
+# =============================================================================
+# UMASK (login.defs + pam_umask)
+# =============================================================================
+
+# Default umask for user sessions (0077 = restrictive, 0022 = permissive)
+pam_umask: '0077'
+
+# Enable usergroups mode (umask 002 for users whose primary group = username)
+pam_umask_usergroups: false
+
+# =============================================================================
+# LOGIN SECURITY
+# =============================================================================
+
+# Delay after failed login attempt in microseconds (Debian/Arch only)
+pam_delay: 4000000
+
+# Allow null/empty password authentication
+pam_permit_empty_passwords: false
+
+# Enable securetty restriction for root login
+# Deprecated on RHEL (removed since RHEL 8), not enabled in Arch pambase
+pam_securetty_enabled: false
+
+# Allowed secure TTYs for root login
+pam_securetty_ttys:
+  - tty1
+  - tty2
+  - tty3
+  - tty4
+  - tty5
+  - tty6
+
+# =============================================================================
+# TWO-FACTOR AUTHENTICATION (Google Authenticator)
+# =============================================================================
+
+# Enable TOTP 2FA with Google Authenticator
+pam_2fa_enabled: false
+
+# Allow 2FA to be optional per user (nullok — users without setup bypass 2FA)
+pam_2fa_optional: false
+
+# Services requiring 2FA
+pam_2fa_services:
+  - sshd
+  - sudo

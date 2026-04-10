@@ -1,0 +1,20 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+#
+# rkhunter scheduled check script
+
+set -euo pipefail
+{% if rkhunter_update_before_scan %}
+
+# Update rkhunter signatures
+/usr/bin/rkhunter --update --quiet || true
+{% endif %}
+
+# Run rkhunter check (exit code 1 = warnings found, not a failure)
+if /usr/bin/rkhunter --check --skip-keypress{{ ' --report-warnings-only' if rkhunter_report_warnings_only | bool else '' }}; then
+    echo "rkhunter check completed - no warnings"
+else
+    EXIT_CODE=$?
+    echo "rkhunter check completed with warnings (exit code: ${EXIT_CODE})"
+    exit "${EXIT_CODE}"
+fi

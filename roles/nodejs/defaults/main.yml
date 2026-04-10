@@ -1,0 +1,67 @@
+---
+# =============================================================================
+# NODE.JS ROLE - DEFAULT VARIABLES
+# =============================================================================
+# This role installs and configures the Node.js runtime.
+# Supports installation via NodeSource repository, system packages, or nvm.
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+nodejs_enabled: true
+
+# =============================================================================
+# INSTALLATION METHOD
+# =============================================================================
+
+# Installation method: nodesource | package | nvm
+# - nodesource: Install from NodeSource repository (Debian/RedHat only,
+#               Arch auto-fallback to package)
+# - package:    Install from distribution repositories
+# - nvm:        Install via Node Version Manager (per-user)
+nodejs_install_method: 'nodesource'
+
+# Major version (e.g. '20', '22', '24')
+# LTS versions: '20' (Iron), '22' (Jod), '24' (Krypton)
+# Current (non-LTS): use the actual major version (e.g. '25')
+# On Arch: LTS versions map to nodejs-lts-* packages, non-LTS installs 'nodejs' (Current)
+# On Debian/RedHat: uses NodeSource repository for the specified version
+nodejs_version: '24'
+
+# =============================================================================
+# NPM CONFIGURATION
+# =============================================================================
+
+# HTTP(S) proxy for npm (empty = no proxy)
+# Example: http://proxy.example.com:3128
+nodejs_npm_proxy: ''
+
+# Additional npm config key-value pairs
+# Example:
+#   nodejs_npm_config:
+#     registry: 'https://registry.npmjs.org/'
+#     loglevel: 'warn'
+nodejs_npm_config: {}
+
+# =============================================================================
+# PACKAGE MANAGERS
+# =============================================================================
+
+# Additional package managers to install via npm
+# Supported: pnpm, yarn
+nodejs_package_managers: []
+
+# =============================================================================
+# NVM SETTINGS (only when nodejs_install_method is 'nvm')
+# =============================================================================
+
+# nvm version to install ('latest' or specific tag like 'v0.40.1')
+nodejs_nvm_version: 'latest'
+
+# Users to install nvm for (list of usernames)
+nodejs_nvm_users: []
+
+# Node.js version to install via nvm ('lts', 'current', or specific like '20.11.0')
+nodejs_nvm_node_version: 'lts'

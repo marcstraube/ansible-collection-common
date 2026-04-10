@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+{{ ansible_managed | comment('xml') }}
+<service>
+  <short>{{ item.short | default(item.name) }}</short>
+{% if item.description is defined %}
+  <description>{{ item.description }}</description>
+{% endif %}
+{% for port in item.ports | default([]) %}
+  <port protocol="{{ port.protocol }}" port="{{ port.port }}"/>
+{% endfor %}
+{% for port in item.source_ports | default([]) %}
+  <source-port protocol="{{ port.protocol }}" port="{{ port.port }}"/>
+{% endfor %}
+{% for helper in item.helpers | default([]) %}
+  <helper name="{{ helper }}"/>
+{% endfor %}
+{% for include in item.includes | default([]) %}
+  <include service="{{ include }}"/>
+{% endfor %}
+{% if item.destination is defined %}
+{% if item.destination.ipv4 is defined and item.destination.ipv6 is defined %}
+  <destination ipv4="{{ item.destination.ipv4 }}" ipv6="{{ item.destination.ipv6 }}"/>
+{% elif item.destination.ipv4 is defined %}
+  <destination ipv4="{{ item.destination.ipv4 }}"/>
+{% elif item.destination.ipv6 is defined %}
+  <destination ipv6="{{ item.destination.ipv6 }}"/>
+{% endif %}
+{% endif %}
+</service>

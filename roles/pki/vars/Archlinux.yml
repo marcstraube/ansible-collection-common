@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# ArchLinux-specific variables for PKI
+# =============================================================================
+
+__pki_packages:
+  - 'openssl'
+  - 'ca-certificates'
+  - 'ca-certificates-utils'
+__pki_config_file: '/etc/ssl/openssl.cnf'
+__pki_certs_dir: '/etc/ssl/certs'
+__pki_private_dir: '/etc/ssl/private'
+__pki_ca_certificates_path: '/etc/ca-certificates/trust-source/anchors'
+__pki_update_ca_trust_cmd: 'update-ca-trust'
+__pki_crypto_policies: false
+__pki_openssl_conf_dir: '/etc/ssl'

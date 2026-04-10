@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+#
+# Override snmpd ExecStart to use agentaddress from snmpd.conf
+# instead of hardcoded "udp: udp6:" in upstream unit file.
+#
+
+[Service]
+ExecStart=
+ExecStart=/usr/bin/snmpd -p /run/snmpd.pid

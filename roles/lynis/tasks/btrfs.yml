@@ -1,0 +1,29 @@
+---
+# =============================================================================
+# Lynis - BTRFS Tasks
+# =============================================================================
+# NoCOW for write-heavy report directory
+
+- name: BTRFS | Check parent directory filesystem type
+  ansible.builtin.command:
+    cmd: stat -f -c %T {{ lynis_report_dir | dirname }}
+  register: __lynis_report_fstype
+  changed_when: false
+  failed_when: false
+
+- name: BTRFS | Create report directory
+  ansible.builtin.file:
+    path: '{{ lynis_report_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  when:
+    - __lynis_report_fstype.stdout | default('') == 'btrfs'
+
+- name: BTRFS | Set NoCOW attribute on report directory
+  ansible.builtin.command:
+    cmd: chattr +C {{ lynis_report_dir }}
+  when:
+    - __lynis_report_fstype.stdout | default('') == 'btrfs'
+  changed_when: false

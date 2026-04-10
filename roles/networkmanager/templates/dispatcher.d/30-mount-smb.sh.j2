@@ -1,0 +1,74 @@
+#jinja2:lstrip_blocks: True
+#!/bin/sh
+{{ ansible_managed | comment }}
+
+# This script automatically mounts SMB shares based on the active NetworkManager connection.
+# It checks if the current active network connection (Ethernet, Wi-Fi, or WireGuard) is a
+# dependency for any defined SMB share.
+# Shares that depend on legacy VPN connections are excluded and handled by the VPN-specific mount script.
+# Each share is mounted per user into their home directory.
+
+# NM_UUID is provided by NetworkManager dispatcher.
+LOG_PREFIX="NM-SMB-Mount"
+
+{% set uuid_map = {} -%}
+{% set vpn_connection_names = [] -%}
+{% for conn_type in ['ethernet', 'wifi', 'wireguard'] -%}
+  {% if network_connections_data[conn_type] is defined -%}
+    {% for conn_name, conn_details in network_connections_data[conn_type].items() -%}
+      {% if conn_details.uuid is defined -%}
+        {% set _ = uuid_map.update({conn_name: conn_details.uuid}) -%}
+      {% endif -%}
+    {% endfor -%}
+  {% endif -%}
+{% endfor -%}
+{% if network_connections_data.vpn is defined -%}
+  {% for vpn_name in network_connections_data.vpn.keys() -%}
+    {% set _ = vpn_connection_names.append(vpn_name) -%}
+  {% endfor -%}
+{% endif -%}
+{% set user_homes = {} -%}
+{% for user in users_list | default([]) -%}
+  {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
+{% endfor -%}
+if [ "$2" = "up" ]; then
+{% if networkmanager_smb_shares is defined and networkmanager_smb_shares is not none and networkmanager_smb_shares | length > 0 %}
+  {% for share in networkmanager_smb_shares %}
+    {% if share.depends_on is defined and share.depends_on | length > 0 %}
+      {% set dependency_uuids_for_this_share = [] %}
+      {% set ns = namespace(has_vpn_dependency=false) %}
+
+      {% for dependency_name in share.depends_on %}
+        {% if dependency_name in vpn_connection_names %}
+          {% set ns.has_vpn_dependency = true %}
+        {% elif uuid_map[dependency_name] is defined %}
+          {% set _ = dependency_uuids_for_this_share.append(uuid_map[dependency_name]) %}
+        {% endif %}
+      {% endfor %}
+
+      {% if not ns.has_vpn_dependency and dependency_uuids_for_this_share | length > 0 %}
+  # Check if the current NM_UUID matches any of the share's network connection dependencies
+  if {% for uuid in dependency_uuids_for_this_share %}[ "$NM_UUID" = "{{ uuid }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
+        {% for smb_user in share.users %}
+          {% set user_home = user_homes[smb_user.name] | default('/home/' + smb_user.name) %}
+          {% set mount_point = user_home + '/' + share.mount_subpath %}
+          {% set creds_path = user_home + '/' + networkmanager_smb_credentials_dir + '/' + share.credentials_name + '-credentials' %}
+          {% set opts = ['uid=$(id -u ' + smb_user.name + ')', 'gid=$(id -g ' + smb_user.name + ')', 'credentials=' + creds_path] %}
+          {% for key, value in (share.mount_options | default({})).items() %}
+            {% set _ = opts.append(key + '=' + value | string) %}
+          {% endfor %}
+    # Mount for user {{ smb_user.name }}
+    if ! mountpoint -q "{{ mount_point }}"; then
+      echo "$LOG_PREFIX: Current connection (UUID: $NM_UUID) is a dependency for share '{{ share.name }}'. Mounting {{ mount_point }} for {{ smb_user.name }}"
+      mkdir -p "{{ mount_point }}"
+      mount -t cifs -o {{ opts | join(',') }} {{ share.src }} "{{ mount_point }}"
+    else
+      echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ mount_point }}) already mounted for {{ smb_user.name }}."
+    fi
+        {% endfor %}
+  fi
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+fi

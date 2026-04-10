@@ -1,0 +1,294 @@
+---
+# =============================================================================
+# Auditd Configuration - System Auditing for Compliance
+# =============================================================================
+# Role: marcstraube.common.auditd
+# Description: Configure auditd for system auditing and compliance
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+auditd_enabled: true
+
+# =============================================================================
+# AUDITD CONFIGURATION
+# =============================================================================
+
+# Log file location
+auditd_log_file: '/var/log/audit/audit.log'
+
+# Log format: RAW, ENRICHED
+auditd_log_format: 'ENRICHED'
+
+# Log group
+auditd_log_group: 'root'
+
+# Priority boost (0 = disabled, 1-4 = boost level)
+auditd_priority_boost: 4
+
+# Flush: none, incremental, incremental_async, data, sync
+auditd_flush: 'incremental_async'
+
+# Frequency (number of records)
+auditd_freq: 50
+
+# Number of log files to keep
+auditd_num_logs: 10
+
+# Maximum log file size (MB)
+auditd_max_log_file: 50
+
+# Action when max_log_file is reached: ignore, syslog, exec, suspend, rotate, keep_logs
+# Note: 'exec' requires audit >= 4.0.3 (runs a custom script)
+auditd_max_log_file_action: 'rotate'
+
+# Space left on disk (MB or percentage) before action
+auditd_space_left: 75
+
+# Action when space_left threshold: ignore, syslog, rotate, email, exec, suspend, single, halt
+auditd_space_left_action: 'syslog'
+
+# Admin space left (MB or percentage)
+auditd_admin_space_left: 50
+
+# Action when admin_space_left: ignore, syslog, rotate, email, exec, suspend, single, halt
+auditd_admin_space_left_action: 'suspend'
+
+# Disk full action: ignore, syslog, rotate, exec, suspend, single, halt
+auditd_disk_full_action: 'suspend'
+
+# Disk error action: ignore, syslog, exec, suspend, single, halt
+auditd_disk_error_action: 'suspend'
+
+# Use libwrap (tcp_wrappers) - only effective if auditd compiled with --with-libwrap
+auditd_use_libwrap: true
+
+# TCP listen port for remote logging receiver (unset = disabled)
+# auditd_tcp_listen_port: 60
+
+# TCP listen queue
+auditd_tcp_listen_queue: 5
+
+# TCP max connections per address
+auditd_tcp_max_per_addr: 1
+
+# TCP client ports range (unset = disabled)
+# auditd_tcp_client_ports: '1024-65535'
+
+# TCP client max idle (seconds, 0 = disabled)
+auditd_tcp_client_max_idle: 0
+
+# Automatic state report interval (audit >= 4.0.3 only)
+# Time string with optional suffix: m=minutes, h=hours, d=days, M=months
+# 0 = disabled. Reports written to /run/audit/auditd.state
+# auditd_report_interval: 0
+
+# =============================================================================
+# AUDIT RULES
+# =============================================================================
+
+# Enable audit rules
+auditd_rules_enabled: true
+
+# Buffer size
+auditd_buffer_size: 8192
+
+# Backlog wait time
+auditd_backlog_wait_time: 60000
+
+# Enable failure mode (0=silent, 1=printk, 2=panic)
+auditd_failure_mode: 1
+
+# Rules immutability (lock rules, requires reboot to change)
+# CIS 4.1.17: Prevents runtime rule manipulation
+auditd_rules_immutable: true
+
+# =============================================================================
+# COMPLIANCE PRESETS
+# =============================================================================
+
+# Enable PCI-DSS rules (PCI-DSS 10.2 compliance)
+auditd_pci_dss: true
+
+# Enable HIPAA rules (HIPAA §164.312 compliance)
+auditd_hipaa: true
+
+# Enable NIST 800-53 rules
+auditd_nist: true
+
+# Enable STIG rules
+auditd_stig: true
+
+# =============================================================================
+# SYSTEM CALL RULES
+# =============================================================================
+
+# Monitor time changes
+auditd_time_change: true
+
+# Monitor user/group changes
+auditd_identity_change: true
+
+# Monitor network configuration changes
+auditd_network_change: true
+
+# Monitor system locale changes
+auditd_system_locale: true
+
+# Monitor SELinux/AppArmor changes
+auditd_mac_policy: true
+
+# Monitor login/logout events
+auditd_logins: true
+
+# Monitor session initiation
+auditd_session: true
+
+# Monitor permission changes (chmod, chown, etc.)
+auditd_perm_mod: true
+
+# Monitor unsuccessful file access
+auditd_access: true
+
+# Monitor file deletions
+auditd_delete: true
+
+# Monitor sudoers changes
+auditd_scope: true
+
+# Monitor sudo usage
+auditd_actions: true
+
+# Monitor kernel modules
+auditd_modules: true
+
+# =============================================================================
+# FILE WATCHES
+# =============================================================================
+
+# Additional file watches (paths already covered by compliance sections above
+# should NOT be repeated here — augenrules rejects duplicate rules)
+auditd_watches:
+  - path: '/var/log/auth.log'
+    permissions: 'wa'
+    key: 'logins'
+
+# Additional custom watches
+# Examples for hardening-focused monitoring:
+#   - path: '/etc/cron.d'
+#     permissions: 'wa'
+#     key: 'cron_changes'
+#   - path: '/etc/sysctl.conf'
+#     permissions: 'wa'
+#     key: 'sysctl_changes'
+#   - path: '/etc/modprobe.d'
+#     permissions: 'wa'
+#     key: 'modprobe_changes'
+auditd_custom_watches: []
+
+# =============================================================================
+# BTRFS SUPPORT
+# =============================================================================
+
+# Create BTRFS subvolume for audit log directory with NoCOW attribute
+# Only applies when audit log directory is on a BTRFS filesystem
+# Subvolume is only created if the directory is empty (fresh install)
+auditd_btrfs_subvolume: true
+
+# =============================================================================
+# REMOTE LOGGING (audisp-remote)
+# =============================================================================
+
+# Enable remote logging (send logs to remote server)
+auditd_remote_logging: false
+
+# Remote server (hostname or IP)
+auditd_remote_server: ''
+
+# Remote port
+auditd_remote_port: 60
+
+# Local port (any = let OS choose)
+auditd_remote_local_port: 'any'
+
+# Transport: tcp, krb5
+auditd_remote_transport: 'tcp'
+
+# Mode: immediate (real-time), forward (store-and-forward)
+auditd_remote_mode: 'immediate'
+
+# Queue file for forward mode
+auditd_remote_queue_file: '/var/spool/audit/remote.log'
+
+# Queue depth
+auditd_remote_queue_depth: 10240
+
+# Record format: managed, ascii
+auditd_remote_format: 'managed'
+
+# Network retry time (seconds)
+auditd_remote_network_retry_time: 1
+
+# Max tries per record
+auditd_remote_max_tries_per_record: 3
+
+# Max time per record (seconds)
+auditd_remote_max_time_per_record: 5
+
+# Heartbeat timeout (seconds, 0 = disabled)
+auditd_remote_heartbeat_timeout: 0
+
+# Failure actions: ignore, syslog, exec, warn_once, warn_once_continue, suspend, single, halt, stop
+auditd_remote_network_failure_action: 'stop'
+auditd_remote_disk_low_action: 'ignore'
+auditd_remote_disk_full_action: 'warn_once'
+auditd_remote_disk_error_action: 'warn_once'
+auditd_remote_remote_ending_action: 'reconnect'
+auditd_remote_generic_error_action: 'syslog'
+auditd_remote_generic_warning_action: 'syslog'
+auditd_remote_queue_error_action: 'stop'
+auditd_remote_overflow_action: 'syslog'
+auditd_remote_startup_failure_action: 'warn_once_continue'
+
+# Kerberos settings (only used when transport = krb5)
+auditd_remote_krb5_principal: ''
+auditd_remote_krb5_client_name: 'auditd'
+auditd_remote_krb5_key_file: '/etc/audit/audisp-remote.key'
+
+# =============================================================================
+# FIREWALL
+# =============================================================================
+
+# Enable firewalld rule for audit remote logging (port 60/tcp)
+auditd_firewalld_enabled: false
+
+# Firewalld zone for audit remote logging
+auditd_firewalld_zone: 'public'
+
+# =============================================================================
+# EMAIL ALERTS
+# =============================================================================
+
+# Enable email alert warnings
+auditd_email_enabled: true
+
+# Email recipient for action_mail_acct in auditd.conf
+# Used when *_action is set to 'email' (e.g. space_left_action: email)
+# Use a local user ('root') or RFC-compliant address ('admin@example.com')
+# Note: audit 4.x rejects non-RFC addresses like 'root@localhost'
+auditd_email_address: 'root'
+
+# =============================================================================
+# PLUGINS
+# =============================================================================
+
+# Enable syslog plugin
+auditd_plugin_syslog: true
+
+# Syslog facility: LOG_LOCAL0-LOG_LOCAL7, LOG_AUTH, LOG_AUTHPRIV, LOG_DAEMON, LOG_SYSLOG, LOG_USER
+auditd_syslog_facility: 'LOG_LOCAL6'
+
+# Syslog priority: LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARNING, LOG_ERR, LOG_CRIT, LOG_ALERT, LOG_EMERG
+auditd_syslog_priority: 'LOG_INFO'

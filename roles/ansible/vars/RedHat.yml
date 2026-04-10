@@ -1,0 +1,18 @@
+---
+# =============================================================================
+# RedHat specific variables (Rocky 10+, Fedora — EPEL pipx works)
+# =============================================================================
+
+__ansible_tools_ansible_packages:
+  - 'ansible-core'
+
+__ansible_tools_epel_required: true
+
+__ansible_tools_molecule_pipx_package: 'molecule'
+
+__ansible_tools_podman_pipx_inject: 'molecule-plugins[podman]'
+
+__ansible_tools_docker_pipx_inject: 'molecule-plugins[docker]'
+
+# EPEL pipx on Rocky 10+ / Fedora is modern enough (>= 1.7.0)
+__ansible_tools_pipx_cmd: 'pipx'

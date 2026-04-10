@@ -1,0 +1,118 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Check restic is installed
+      ansible.builtin.command:
+        cmd: 'restic version'
+      register: __restic_version
+      changed_when: false
+      failed_when: __restic_version.rc != 0
+
+    - name: Verify | Check configuration directory exists
+      ansible.builtin.stat:
+        path: '/etc/restic/test'
+      register: __restic_config_dir
+      failed_when: not __restic_config_dir.stat.exists
+
+    - name: Verify | Check configuration directory permissions
+      ansible.builtin.assert:
+        that:
+          - __restic_config_dir.stat.mode == '0700'
+        fail_msg: 'Configuration directory has incorrect permissions'
+
+    - name: Verify | Check password file exists
+      ansible.builtin.stat:
+        path: '/etc/restic/test/password'
+      register: __restic_password_file
+      failed_when: not __restic_password_file.stat.exists
+
+    - name: Verify | Check password file permissions
+      ansible.builtin.assert:
+        that:
+          - __restic_password_file.stat.mode == '0600'
+        fail_msg: 'Password file has incorrect permissions'
+
+    - name: Verify | Check environment file exists
+      ansible.builtin.stat:
+        path: '/etc/restic/test/environment'
+      register: __restic_env_file
+      failed_when: not __restic_env_file.stat.exists
+
+    - name: Verify | Check environment file permissions
+      ansible.builtin.assert:
+        that:
+          - __restic_env_file.stat.mode == '0600'
+        fail_msg: 'Environment file has incorrect permissions'
+
+    - name: Verify | Check exclude file exists
+      ansible.builtin.stat:
+        path: '/etc/restic/test/excludes'
+      register: __restic_excludes_file
+      failed_when: not __restic_excludes_file.stat.exists
+
+    - name: Verify | Check backup script exists
+      ansible.builtin.stat:
+        path: '/usr/local/bin/restic-backup-test'
+      register: __restic_backup_script
+      failed_when: not __restic_backup_script.stat.exists
+
+    - name: Verify | Check backup script is executable
+      ansible.builtin.assert:
+        that:
+          - __restic_backup_script.stat.executable
+        fail_msg: 'Backup script is not executable'
+
+    - name: Verify | Check backup script has ansible_managed header
+      ansible.builtin.command:
+        cmd: 'head -3 /usr/local/bin/restic-backup-test'
+      register: __restic_script_header
+      changed_when: false
+      failed_when: "'Ansible managed' not in __restic_script_header.stdout"
+
+    - name: Verify | Check systemd service exists
+      ansible.builtin.stat:
+        path: '/etc/systemd/system/restic-backup-test.service'
+      register: __restic_service_file
+      failed_when: not __restic_service_file.stat.exists
+
+    - name: Verify | Check systemd service has ansible_managed header
+      ansible.builtin.command:
+        cmd: 'head -3 /etc/systemd/system/restic-backup-test.service'
+      register: __restic_service_header
+      changed_when: false
+      failed_when: "'Ansible managed' not in __restic_service_header.stdout"
+
+    - name: Verify | Check systemd timer exists
+      ansible.builtin.stat:
+        path: '/etc/systemd/system/restic-backup-test.timer'
+      register: __restic_timer_file
+      failed_when: not __restic_timer_file.stat.exists
+
+    - name: Verify | Check timer is enabled
+      ansible.builtin.systemd:
+        name: 'restic-backup-test.timer'
+      register: __restic_timer_status
+      failed_when: __restic_timer_status.status.UnitFileState != 'enabled'
+
+    - name: Verify | Check repository was initialized
+      ansible.builtin.stat:
+        path: '/tmp/restic-test-repo/config'
+      register: __restic_repo_config
+      failed_when: not __restic_repo_config.stat.exists
+
+    - name: Verify | Check log directory does NOT exist (log_to_file disabled)
+      ansible.builtin.stat:
+        path: '/var/log/restic'
+      register: __restic_log_dir
+      failed_when: __restic_log_dir.stat.exists
+
+    - name: Verify | Check systemd service hardening
+      ansible.builtin.command:
+        cmd: 'grep -c NoNewPrivileges /etc/systemd/system/restic-backup-test.service'
+      register: __restic_hardening
+      changed_when: false
+      failed_when: __restic_hardening.rc != 0

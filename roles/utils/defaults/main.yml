@@ -1,0 +1,148 @@
+---
+# =============================================================================
+# System Utilities Configuration
+# =============================================================================
+# Role: marcstraube.common.utils
+# Description: Install common system utilities (monitors, multiplexers,
+#              file transfer, system info, fun terminal tools)
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+# Enable the utils role
+utils_enabled: true
+
+# =============================================================================
+# SYSTEM MONITORS
+# =============================================================================
+
+# Interactive process viewer (htop)
+utils_monitor_htop: true
+
+# Modern resource monitor with TUI (btop++)
+utils_monitor_btop: false
+
+# System monitor with historical data (bottom)
+utils_monitor_bottom: false
+
+# Advanced system & process monitor with logging (atop)
+utils_monitor_atop: false
+
+# =============================================================================
+# TERMINAL MULTIPLEXERS
+# =============================================================================
+
+# Terminal multiplexer (tmux)
+utils_mux_tmux: true
+
+# Modern terminal multiplexer written in Rust (zellij)
+# Not available on Debian or Rocky
+utils_mux_zellij: false
+
+# GNU Screen terminal multiplexer
+utils_mux_screen: false
+
+# =============================================================================
+# FILE TRANSFER
+# =============================================================================
+
+# Fast file copying tool (rsync)
+utils_transfer_rsync: true
+
+# =============================================================================
+# SEARCH TOOLS
+# =============================================================================
+
+# Install ripgrep (fast grep replacement)
+utils_search_ripgrep: false
+
+# Install fd (fast find replacement)
+utils_search_fd: false
+
+# =============================================================================
+# SYSTEM INFO (FETCH TOOLS)
+# =============================================================================
+
+# Fast system information tool written in C (fastfetch)
+utils_fetch_fastfetch: false
+
+# Maintained neofetch fork with pride flag support (hyfetch)
+# Available on Arch and Debian only
+utils_fetch_hyfetch: false
+
+# Customizable system info script (archey4)
+# Arch: AUR only
+utils_fetch_archey4: false
+
+# CPU architecture fetching tool (cpufetch)
+# Arch only
+utils_fetch_cpufetch: false
+
+# =============================================================================
+# FUN TOOLS (ASCII ART & TERMINAL ENTERTAINMENT)
+# =============================================================================
+
+# Configurable talking cow (cowsay)
+utils_fun_cowsay: false
+
+# Random fortune cookies (fortune-mod)
+utils_fun_fortune: false
+
+# Rainbow text colorizer (lolcat)
+# Not available on Rocky
+utils_fun_lolcat: false
+
+# Pony version of cowsay (ponysay)
+# Not available on Rocky
+utils_fun_ponysay: false
+
+# Display large text banners (figlet)
+utils_fun_figlet: false
+
+# Display large colored text (toilet)
+utils_fun_toilet: false
+
+# Steam locomotive animation (sl)
+utils_fun_sl: false
+
+# Terminal Matrix screensaver (cmatrix)
+# Not available on Rocky 10
+utils_fun_cmatrix: false
+
+# Bonsai tree generator (cbonsai)
+# Arch: AUR only. Not available on Rocky 10
+utils_fun_cbonsai: false
+
+# ASCII aquarium animation (asciiquarium)
+# Not available on Rocky 10
+utils_fun_asciiquarium: false
+
+# Terminal Nyan Cat animation (nyancat)
+# Not available on Rocky 10
+utils_fun_nyancat: false
+
+# Recreate the "decrypting text" effect from Sneakers (no-more-secrets)
+# Arch: AUR only. Not available on Rocky 10
+utils_fun_no_more_secrets: false
+
+# Digital clock for the terminal (tty-clock)
+# Arch: AUR only. Not available on Rocky 10
+utils_fun_tty_clock: false
+
+# Animated pipes screensaver (pipes.sh)
+# Arch: AUR only. Not available on Debian or Rocky
+utils_fun_pipes: false
+
+# Pokemon color scripts for the terminal (pokemon-colorscripts)
+# Arch: AUR only. Not available on Debian or Rocky
+utils_fun_pokemon_colorscripts: false
+
+# Pokemon version of cowsay (pokemonsay)
+# Arch: AUR only. Not available on Debian or Rocky
+utils_fun_pokemonsay: false
+
+# Fake Hollywood hacker terminal (hollywood)
+# Not available on Rocky
+utils_fun_hollywood: false

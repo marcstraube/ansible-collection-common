@@ -1,0 +1,100 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update package cache and install iptables (Archlinux)
+      community.general.pacman:
+        name:
+          - which
+          - iptables
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update package cache and install iptables (Debian)
+      ansible.builtin.apt:
+        name:
+          - iptables
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install iptables (RedHat)
+      ansible.builtin.dnf:
+        name:
+          - iptables
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Containers lack syslog — create auth log files for sshd jail
+    - name: Create system auth log (container)
+      ansible.builtin.copy:
+        content: ''
+        dest: "{{ '/var/log/secure' if ansible_facts['os_family'] == 'RedHat' else '/var/log/auth.log' }}"
+        owner: root
+        group: root
+        mode: '0640'
+        force: false
+
+  vars:
+    # SSH jail
+    fail2ban_sshd_enabled: true
+    fail2ban_sshd_maxretry: 3
+    fail2ban_sshd_bantime: '30m'
+    fail2ban_sshd_mode: 'aggressive'
+    # SSH DDoS jail
+    fail2ban_sshd_ddos_enabled: true
+    fail2ban_sshd_ddos_maxretry: 4
+    # Custom ignoreip
+    fail2ban_ignoreip:
+      - '127.0.0.1/8'
+      - '::1'
+      - '10.0.0.0/8'
+    # Global settings
+    fail2ban_bantime: '2h'
+    fail2ban_findtime: '15m'
+    fail2ban_maxretry: 3
+    # Progressive ban
+    fail2ban_bantime_increment: true
+    fail2ban_bantime_factor: 2
+    fail2ban_bantime_maxtime: '4w'
+    # Database settings
+    fail2ban_dbpurgeage: '2d'
+    fail2ban_dbmaxmatches: 15
+    # Recidive
+    fail2ban_recidive_enabled: true
+    fail2ban_recidive_bantime: '2w'
+    # Custom jail
+    fail2ban_custom_jails:
+      - name: 'test-jail'
+        enabled: false
+        port: '8080'
+        protocol: 'tcp'
+        filter: 'sshd'
+        logpath: '/var/log/auth.log'
+        maxretry: 5
+    # Custom filter
+    fail2ban_custom_filters:
+      - name: 'test-filter'
+        definition: |
+          [Definition]
+          failregex = ^Test failed from <HOST>
+          ignoreregex =
+    # Custom action
+    fail2ban_custom_actions:
+      - name: 'test-action'
+        definition: |
+          [Definition]
+          actionstart =
+          actionstop =
+          actioncheck =
+          actionban = /bin/true <ip>
+          actionunban = /bin/true <ip>
+
+  tasks:
+    - name: Include fail2ban role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

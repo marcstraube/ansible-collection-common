@@ -1,0 +1,67 @@
+{{ ansible_managed | comment }}
+#
+# Lynis Custom Profile
+# Place customizations here — never edit default.prf (overwritten on upgrade)
+#
+
+# Machine role and scan mode
+machine-role={{ lynis_machine_role }}
+test-scan-mode={{ lynis_scan_mode }}
+{% if lynis_auditor | length > 0 %}
+
+# Auditor identity
+auditor={{ lynis_auditor }}
+{% endif %}
+
+# Output
+{% if lynis_colors %}
+colors=yes
+{% else %}
+colors=no
+{% endif %}
+{% if lynis_quick_mode %}
+quick=yes
+{% endif %}
+{% if lynis_verbose %}
+verbose=yes
+{% endif %}
+{% if lynis_debug %}
+debug=yes
+{% endif %}
+{% if lynis_show_warnings_only %}
+show-warnings-only=yes
+{% endif %}
+{% if lynis_pause_between_tests | int > 0 %}
+
+# Pause between tests (seconds)
+pause-between-tests={{ lynis_pause_between_tests }}
+{% endif %}
+{% if lynis_skip_plugins %}
+
+# Disable all plugins
+skip-plugins=yes
+{% endif %}
+{% if lynis_plugins | length > 0 %}
+
+# Enabled plugins
+{% for plugin in lynis_plugins %}
+plugin={{ plugin }}
+{% endfor %}
+{% endif %}
+{% if lynis_skip_tests | length > 0 %}
+
+# Skipped tests
+{% for test in lynis_skip_tests %}
+skip-test={{ test }}
+{% endfor %}
+{% endif %}
+{% if lynis_compliance_enabled and lynis_compliance_standards | length > 0 %}
+
+# Compliance standards
+compliance-standards={{ lynis_compliance_standards | join(',') }}
+{% endif %}
+{% if lynis_upload_results %}
+
+# Lynis Enterprise upload
+upload=yes
+{% endif %}

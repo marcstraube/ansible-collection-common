@@ -1,0 +1,33 @@
+---
+- name: AppArmor | Check if AppArmor is active
+  ansible.builtin.stat:
+    path: /sys/kernel/security/apparmor
+  register: __openssh_apparmor_active
+
+- name: AppArmor | Get current profile status
+  ansible.builtin.command:
+    cmd: aa-status --json
+  register: __openssh_aa_status
+  changed_when: false
+  failed_when: false
+  when: __openssh_apparmor_active.stat.exists
+
+- name: AppArmor | Build enforce set
+  ansible.builtin.set_fact:
+    __openssh_apparmor_enforce_set: >-
+      {{ (__openssh_aa_status.stdout | default('{}') | from_json).get('profiles', {})
+         | dict2items | selectattr('value', 'eq', 'enforce')
+         | map(attribute='key') | list }}
+  when:
+    - __openssh_apparmor_active.stat.exists
+    - __openssh_aa_status.rc == 0
+
+- name: AppArmor | Enforce sshd profile
+  ansible.builtin.command:
+    cmd: 'aa-enforce {{ __openssh_apparmor_profile }}'
+  when:
+    - __openssh_apparmor_active.stat.exists
+    - >-
+      __openssh_apparmor_profile not in __openssh_apparmor_enforce_set | default([])
+      and (__openssh_apparmor_profile | basename) not in __openssh_apparmor_enforce_set | default([])
+  changed_when: true

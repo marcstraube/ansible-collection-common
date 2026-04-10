@@ -1,0 +1,119 @@
+{{ ansible_managed | comment }}
+#
+# /etc/sudoers
+#
+# This file MUST be edited with the 'visudo' command as root.
+# Failure to use 'visudo' may result in syntax or permission errors
+# that prevent sudo from running.
+#
+# See the man page for sudoers(5) for the details on how to write
+# a sudoers file.
+#
+
+##
+## Defaults specification
+##
+{% if sudo_require_tty %}
+
+# Require TTY for sudo sessions
+Defaults    requiretty
+{% endif %}
+{% if sudo_use_pty %}
+
+# Allocate pseudo-terminal for sudo sessions
+Defaults    use_pty
+{% endif %}
+{% if sudo_env_reset %}
+
+# Reset environment variables
+Defaults    env_reset
+{% endif %}
+{% if sudo_always_set_home %}
+
+# Always set HOME to target user's home directory
+Defaults    always_set_home
+{% endif %}
+
+# Secure PATH for sudo commands
+Defaults    secure_path="{{ sudo_secure_path }}"
+
+# Password/authentication defaults
+Defaults    passwd_timeout={{ sudo_passwd_timeout }}
+Defaults    timestamp_timeout={{ sudo_timestamp_timeout }}
+Defaults    passwd_tries={{ sudo_passwd_tries }}
+{% if sudo_pwfeedback %}
+
+# Show asterisks when typing password
+Defaults    pwfeedback
+{% else %}
+Defaults    !pwfeedback
+{% endif %}
+Defaults    lecture={{ sudo_lecture }}
+{% if sudo_insults %}
+
+# Show insults on wrong password
+Defaults    insults
+{% endif %}
+{% if sudo_log_syslog %}
+
+# Log to syslog
+Defaults    syslog=auth
+{% endif %}
+{% if sudo_logfile %}
+
+# Log to file
+Defaults    logfile="{{ sudo_logfile }}"
+{% endif %}
+{% if sudo_log_input %}
+
+# Log input of sudo sessions
+Defaults    log_input
+{% endif %}
+{% if sudo_log_output %}
+
+# Log output of sudo sessions
+Defaults    log_output
+{% endif %}
+{% if sudo_mailto %}
+
+# Mail notifications
+Defaults    mailto="{{ sudo_mailto }}"
+{% for mail_event in sudo_mail_on %}
+Defaults    mail_{{ mail_event }}
+{% endfor %}
+{% endif %}
+
+# Editor for visudo
+Defaults    editor="{{ sudo_editor }}"
+{% if sudo_env_keep | length > 0 %}
+
+# Preserve environment variables
+Defaults    env_keep += "{{ sudo_env_keep | join(' ') }}"
+{% endif %}
+{% for extra_default in sudo_extra_defaults %}
+
+Defaults    {{ extra_default }}
+{% endfor %}
+
+##
+## User privilege specification
+##
+
+# Root can run anything
+root    ALL=(ALL:ALL) ALL
+{% if sudo_wheel_group | bool %}
+
+# Allow members of {{ __sudo_group }} group to execute any command
+{% if sudo_wheel_requires_password %}
+%{{ __sudo_group }} ALL=(ALL:ALL) ALL
+{% else %}
+%{{ __sudo_group }} ALL=(ALL:ALL) NOPASSWD: ALL
+{% endif %}
+{% endif %}
+
+##
+## Include sudoers.d directory
+##
+
+# Include drop-in files from /etc/sudoers.d
+@includedir /etc/sudoers.d

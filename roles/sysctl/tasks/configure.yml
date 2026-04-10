@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# Sysctl - Configuration Tasks
+# =============================================================================
+
+- name: Configure | Build combined sysctl parameters
+  ansible.builtin.set_fact:
+    __sysctl_combined_parameters: >-
+      {{
+        (sysctl_profile_security | default(true) | bool) |
+        ternary(sysctl_security_parameters, {}) |
+        combine((sysctl_profile_network_performance | default(false) | bool) |
+        ternary(sysctl_network_performance_parameters, {})) |
+        combine((sysctl_profile_database | default(false) | bool) |
+        ternary(sysctl_database_parameters, {})) |
+        combine((sysctl_profile_webserver | default(false) | bool) |
+        ternary(sysctl_webserver_parameters, {})) |
+        combine((sysctl_profile_docker | default(false) | bool) |
+        ternary(sysctl_docker_parameters, {})) |
+        combine(sysctl_parameters)
+      }}
+
+- name: Configure | Ensure sysctl.d directory exists
+  ansible.builtin.file:
+    path: '{{ sysctl_config_file | dirname }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Configure | Deploy sysctl configuration
+  ansible.builtin.template:
+    src: sysctl.conf.j2
+    dest: '{{ sysctl_config_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload sysctl
+  when: __sysctl_combined_parameters | length > 0

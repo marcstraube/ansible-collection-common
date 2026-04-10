@@ -1,0 +1,244 @@
+---
+# =============================================================================
+# Base System Configuration
+# =============================================================================
+# Role: marcstraube.common.base
+# Description: Configure locale, timezone, hostname, and basic system settings
+# Supported: Archlinux, RedHat, Debian
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+base_enabled: true
+
+# =============================================================================
+# HOSTNAME
+# =============================================================================
+
+# System hostname
+base_hostname: '{{ inventory_hostname }}'
+
+# Pretty hostname (shown in UI)
+base_pretty_hostname: ''
+
+# Chassis type: desktop, laptop, server, tablet, handset, vm, container
+base_chassis: 'desktop'
+
+# Deployment environment: development, integration, staging, production
+base_deployment: ''
+
+# Icon name (XDG Icon Naming Spec)
+base_icon_name: ''
+
+# Physical location description
+base_location: ''
+
+# =============================================================================
+# LOCALE
+# =============================================================================
+
+# System locale (LANG)
+base_locale: 'en_US.UTF-8'
+
+# Additional locales to generate
+base_locales:
+  - 'en_US.UTF-8 UTF-8'
+
+# Language-specific locale overrides (optional)
+# Example: base_locale_lc_time: 'de_DE.UTF-8'
+base_locale_lc_ctype: ''
+base_locale_lc_numeric: ''
+base_locale_lc_time: ''
+base_locale_lc_collate: ''
+base_locale_lc_monetary: ''
+base_locale_lc_messages: ''
+base_locale_lc_paper: ''
+base_locale_lc_name: ''
+base_locale_lc_address: ''
+base_locale_lc_telephone: ''
+base_locale_lc_measurement: ''
+base_locale_lc_identification: ''
+
+# =============================================================================
+# TIMEZONE
+# =============================================================================
+
+# System timezone
+base_timezone: 'UTC'
+
+# Enable NTP time synchronization (false = managed by dedicated role like chrony)
+base_ntp_enabled: false
+
+# NTP servers (empty = use systemd-timesyncd defaults)
+base_ntp_servers: []
+
+# Fallback NTP servers
+base_ntp_fallback_servers: []
+
+# =============================================================================
+# KEYBOARD
+# =============================================================================
+
+# Console keymap
+base_keymap: 'de-latin1'
+
+# Console font
+base_console_font: ''
+
+# Console font map
+base_console_font_map: ''
+
+# X11 keyboard layout
+base_xkb_layout: 'de'
+
+# X11 keyboard model
+base_xkb_model: ''
+
+# X11 keyboard variant
+base_xkb_variant: 'nodeadkeys'
+
+# X11 keyboard options
+base_xkb_options: ''
+
+# =============================================================================
+# KERNEL
+# =============================================================================
+
+# Kernel package to install
+base_kernel: 'linux'
+
+# Additional kernel packages (headers, etc.)
+base_kernel_extra_packages:
+  - '{{ base_kernel }}-headers'
+
+# Microcode package (auto-detected if empty)
+# Options: 'intel-ucode', 'amd-ucode', 'auto', ''
+base_microcode: 'auto'
+
+# =============================================================================
+# BOOTLOADER
+# =============================================================================
+
+# Bootloader type: systemd-boot, grub, none
+base_bootloader: 'systemd-boot'
+
+# GRUB timeout in seconds
+base_grub_timeout: 5
+
+# GRUB default entry
+base_grub_default: '0'
+
+# Additional kernel parameters appended to GRUB_CMDLINE_LINUX_DEFAULT
+# Example: ['quiet', 'splash', 'loglevel=3']
+#
+# Security hardening parameters (see marcstraube.common.hardening README):
+#   - 'lockdown=integrity'       # Prevent runtime kernel modification
+#   - 'lockdown=confidentiality' # Also block kernel memory reads (breaks hibernation)
+#   - 'init_on_alloc=1'          # Zero memory at allocation (~1% perf cost)
+#   - 'init_on_free=1'           # Zero memory at free (~5% cost, skip on DB servers)
+#   - 'vsyscall=none'            # Disable legacy vsyscall (safe on glibc 2.14+)
+#   - 'debugfs=off'              # Prevent mounting debugfs
+#   - 'page_alloc.shuffle=1'     # Randomize page allocator free lists
+#   - 'iommu=force'              # Force IOMMU isolation (5-15% I/O cost, skip in VMs)
+base_kernel_parameters: []
+
+# systemd-boot loader timeout in seconds (empty = no timeout, boot default)
+base_systemd_boot_timeout: 3
+
+# systemd-boot console mode: auto, max, keep, 0, 1, 2, ...
+base_systemd_boot_console_mode: 'max'
+
+# systemd-boot editor: allow editing kernel parameters at boot (security risk)
+base_systemd_boot_editor: false
+
+# =============================================================================
+# BASIC PACKAGES
+# =============================================================================
+
+# Install dialog (TUI menus and input boxes)
+base_dialog: true
+
+# Essential system packages (OS-specific defaults from vars/)
+base_packages: '{{ __base_default_packages | default([]) }}'
+
+# Additional packages to install
+base_extra_packages: []
+
+# Packages to remove
+base_remove_packages: []
+
+# =============================================================================
+# SERVICES
+# =============================================================================
+
+# Services to enable (timesyncd is managed by timezone tasks via base_ntp_enabled)
+base_services_enabled: []
+
+# Services to disable
+base_services_disabled: []
+
+# =============================================================================
+# SYSCTL
+# =============================================================================
+
+# Sysctl settings (dictionary)
+# Example:
+#   base_sysctl:
+#     'vm.swappiness': 10
+#     'net.ipv4.tcp_fastopen': 3
+base_sysctl: {}
+
+# =============================================================================
+# MKINITCPIO
+# =============================================================================
+
+# Mkinitcpio modules
+base_mkinitcpio_modules: []
+
+# Mkinitcpio binaries
+base_mkinitcpio_binaries: []
+
+# Mkinitcpio files
+base_mkinitcpio_files: []
+
+# Mkinitcpio hooks — auto-detected from running system by default.
+# Set explicitly to override auto-detection.
+# Auto-detection reads current /etc/mkinitcpio.conf hooks (set by installer).
+# Example override:
+#   base_mkinitcpio_hooks:
+#     - 'base'
+#     - 'systemd'
+#     - 'autodetect'
+#     - 'modconf'
+#     - 'kms'
+#     - 'keyboard'
+#     - 'sd-vconsole'
+#     - 'block'
+#     - 'sd-encrypt'
+#     - 'filesystems'
+#     - 'fsck'
+base_mkinitcpio_hooks: []
+
+# Mkinitcpio compression
+base_mkinitcpio_compression: 'zstd'
+
+# =============================================================================
+# SYSTEMD
+# =============================================================================
+
+# Journald max disk usage
+base_journald_max_use: '500M'
+
+# Journald max retention time
+base_journald_max_retention: '1month'
+
+# Coredump storage: none, external, journal
+base_coredump_storage: 'none'
+
+# Coredump compress
+base_coredump_compress: true
+
+# Coredump max size
+base_coredump_max_size: '2G'

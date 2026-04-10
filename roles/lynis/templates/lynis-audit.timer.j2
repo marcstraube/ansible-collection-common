@@ -1,0 +1,16 @@
+{{ ansible_managed | comment }}
+#
+# Lynis Security Audit Systemd Timer
+#
+
+[Unit]
+Description=Lynis Security Audit Timer
+Documentation=man:lynis(8)
+
+[Timer]
+OnCalendar={{ lynis_timer_oncalendar }}
+Persistent=true
+RandomizedDelaySec={{ lynis_timer_randomized_delay }}
+
+[Install]
+WantedBy=timers.target

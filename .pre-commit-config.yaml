@@ -1,0 +1,76 @@
+---
+# Pre-commit hooks for marcstraube.common collection
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # =============================================================================
+  # ANSIBLE
+  # =============================================================================
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v26.3.0
+    hooks:
+      - id: ansible-lint
+        name: Ansible Lint
+        files: \.(yaml|yml)$
+        args:
+          - --profile=production
+
+  # =============================================================================
+  # YAML
+  # =============================================================================
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: YAML Lint
+        args: [-c=.yamllint]
+
+  # =============================================================================
+  # MARKDOWN
+  # =============================================================================
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.48.0
+    hooks:
+      - id: markdownlint
+        name: Markdown Lint
+        args: [--config=.markdownlint.yml]
+
+  # =============================================================================
+  # GENERAL
+  # =============================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        args: [--markdown-linebreak-ext=md]
+
+      - id: end-of-file-fixer
+        name: Fix end of files
+
+      - id: check-yaml
+        name: Check YAML syntax
+        args: [--allow-multiple-documents]
+
+      - id: check-added-large-files
+        name: Check for large files
+        args: [--maxkb=500]
+
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+
+      - id: mixed-line-ending
+        name: Check line endings
+        args: [--fix=lf]
+
+  # =============================================================================
+  # SECRETS DETECTION
+  # =============================================================================
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        name: Detect secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: package-lock.json

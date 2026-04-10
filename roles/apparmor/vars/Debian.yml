@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# Debian/Ubuntu-specific variables for AppArmor
+# =============================================================================
+
+__apparmor_packages:
+  - 'apparmor'
+
+__apparmor_utils_packages:
+  - 'apparmor-utils'
+
+__apparmor_extra_profiles_package: 'apparmor-profiles-extra'
+
+__apparmor_notify_package: 'apparmor-notify'
+
+__apparmor_service_name: 'apparmor.service'

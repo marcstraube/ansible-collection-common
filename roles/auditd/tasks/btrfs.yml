@@ -1,0 +1,64 @@
+---
+# =============================================================================
+# Auditd BTRFS Tasks — Subvolume + NoCOW for audit log directory
+# =============================================================================
+
+- name: Check if audit log parent filesystem is BTRFS
+  ansible.builtin.command:
+    cmd: stat -f -c %T {{ (auditd_log_file | dirname) | dirname }}
+  register: __auditd_fstype
+  changed_when: false
+  failed_when: false
+
+- name: Set BTRFS detection fact
+  ansible.builtin.set_fact:
+    __auditd_is_btrfs: "{{ __auditd_fstype.stdout | default('') == 'btrfs' }}"
+
+- name: Check if audit log directory is already a BTRFS subvolume
+  ansible.builtin.command:
+    cmd: btrfs subvolume show {{ auditd_log_file | dirname }}
+  register: __auditd_subvol_check
+  changed_when: false
+  failed_when: false
+  when: __auditd_is_btrfs | bool
+
+- name: Check if audit log directory exists and has content
+  ansible.builtin.find:
+    paths: '{{ auditd_log_file | dirname }}'
+    file_type: any
+  register: __auditd_dir_contents
+  when:
+    - __auditd_is_btrfs | bool
+    - __auditd_subvol_check.rc != 0
+
+- name: Create BTRFS subvolume for audit log directory
+  when:
+    - __auditd_is_btrfs | bool
+    - __auditd_subvol_check.rc != 0
+    - __auditd_dir_contents.matched == 0
+  block:
+    - name: Remove empty audit log directory for subvolume creation
+      ansible.builtin.file:
+        path: '{{ auditd_log_file | dirname }}'
+        state: absent
+
+    - name: Create BTRFS subvolume
+      ansible.builtin.command:
+        cmd: btrfs subvolume create {{ auditd_log_file | dirname }}
+      changed_when: true
+
+    - name: Set ownership on subvolume
+      ansible.builtin.file:
+        path: '{{ auditd_log_file | dirname }}'
+        owner: root
+        group: '{{ auditd_log_group }}'
+        mode: '0700'
+        state: directory
+
+- name: Set NoCOW attribute on audit log directory
+  ansible.builtin.command:
+    cmd: chattr +C {{ auditd_log_file | dirname }}
+  register: __auditd_chattr
+  changed_when: __auditd_chattr.rc == 0
+  failed_when: false
+  when: __auditd_is_btrfs | bool

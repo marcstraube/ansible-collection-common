@@ -1,0 +1,29 @@
+---
+galaxy_info:
+  author: 'Marc Straube'
+  description: 'Configure firewalld zones, services, ports, and rich rules'
+  license: 'MIT'
+  min_ansible_version: '2.17'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - firewall
+    - firewalld
+    - security
+    - networking
+    - nftables
+
+dependencies: []
+
+collections:
+  - 'ansible.posix'

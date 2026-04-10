@@ -1,0 +1,6 @@
+---
+# marcstraube.common.hardening/molecule/default/collections.yml
+
+collections:
+  - name: community.general
+  - name: ansible.posix

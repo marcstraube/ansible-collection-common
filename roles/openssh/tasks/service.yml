@@ -1,0 +1,44 @@
+---
+- name: Enable SSH server
+  ansible.builtin.systemd:
+    name: "{{ __openssh_server_service }}"
+    enabled: true
+    daemon_reload: true
+  when: openssh_server_enabled | bool
+
+- name: Disable SSH server
+  ansible.builtin.systemd:
+    name: "{{ __openssh_server_service }}"
+    enabled: false
+  when: not (openssh_server_enabled | bool)
+
+- name: Start SSH server
+  ansible.builtin.systemd:
+    name: "{{ __openssh_server_service }}"
+    state: "{{ openssh_server_state }}"
+  when: openssh_server_enabled | bool
+
+- name: Check ssh-agent user service unit state  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    cmd: systemctl --global list-unit-files {{ __openssh_agent_service }}
+  register: __openssh_agent_unit_check
+  changed_when: false
+  failed_when: false
+
+- name: Enable global ssh-agent service
+  ansible.builtin.systemd:
+    name: "{{ __openssh_agent_service }}"
+    enabled: true
+    scope: 'global'
+  when:
+    - openssh_agent_global_service | bool
+    - "'enabled' in __openssh_agent_unit_check.stdout or 'disabled' in __openssh_agent_unit_check.stdout"
+
+- name: Disable global ssh-agent service
+  ansible.builtin.systemd:
+    name: "{{ __openssh_agent_service }}"
+    enabled: false
+    scope: 'global'
+  when:
+    - not (openssh_agent_global_service | bool)
+    - "'enabled' in __openssh_agent_unit_check.stdout"

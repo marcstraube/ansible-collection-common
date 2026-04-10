@@ -1,0 +1,18 @@
+{{ ansible_managed | comment }}
+#
+# /etc/security/limits.d/99-hardening.conf
+#
+# Session resource limits managed by pam_hardening role.
+# See limits.conf(5) for full documentation.
+#
+# Format: <domain> <type> <item> <value>
+
+*               hard    maxlogins       {{ pam_limits_maxlogins }}
+*               hard    nproc           {{ pam_limits_nproc }}
+*               soft    nproc           {{ pam_limits_nproc }}
+*               hard    core            {{ pam_limits_core }}
+{% if pam_limits_custom | length > 0 %}
+{% for limit in pam_limits_custom %}
+{{ "%-16s" | format(limit.domain) }}{{ limit.type }}    {{ "%-16s" | format(limit.item) }}{{ limit.value }}
+{% endfor %}
+{% endif %}

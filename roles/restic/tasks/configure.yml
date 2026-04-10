@@ -1,0 +1,69 @@
+---
+# =============================================================================
+# Restic - Configuration Tasks
+# =============================================================================
+
+- name: Configure | Create configuration directory
+  ansible.builtin.file:
+    path: '{{ restic_config_dir }}'
+    state: directory
+    owner: '{{ restic_user }}'
+    group: '{{ restic_group }}'
+    mode: '0700'
+
+- name: Configure | Create log directory
+  ansible.builtin.file:
+    path: '{{ restic_log_dir }}'
+    state: directory
+    owner: '{{ restic_user }}'
+    group: '{{ restic_group }}'
+    mode: '0750'
+  when: restic_log_to_file | bool
+
+- name: Configure | Create job configuration directories
+  ansible.builtin.file:
+    path: '{{ restic_config_dir }}/{{ item.name }}'
+    state: directory
+    owner: '{{ restic_user }}'
+    group: '{{ restic_group }}'
+    mode: '0700'
+  loop: '{{ restic_jobs }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Configure | Create password files
+  ansible.builtin.copy:
+    content: '{{ item.password }}'
+    dest: '{{ restic_config_dir }}/{{ item.name }}/password'
+    owner: '{{ restic_user }}'
+    group: '{{ restic_group }}'
+    mode: '0600'
+  loop: '{{ restic_jobs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: item.password is defined
+  no_log: true
+
+- name: Configure | Create exclude files
+  ansible.builtin.template:
+    src: excludes.j2
+    dest: '{{ restic_config_dir }}/{{ item.name }}/excludes'
+    owner: '{{ restic_user }}'
+    group: '{{ restic_group }}'
+    mode: '0600'
+  loop: '{{ restic_jobs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: item.excludes is defined
+
+- name: Configure | Create environment files
+  ansible.builtin.template:
+    src: environment.j2
+    dest: '{{ restic_config_dir }}/{{ item.name }}/environment'
+    owner: '{{ restic_user }}'
+    group: '{{ restic_group }}'
+    mode: '0600'
+  loop: '{{ restic_jobs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  no_log: true

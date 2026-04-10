@@ -1,0 +1,53 @@
+---
+# =============================================================================
+# Lynis - Configuration Tasks
+# =============================================================================
+
+- name: Configure | Create lynis configuration directory
+  ansible.builtin.file:
+    path: '/etc/lynis'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: lynis_enabled | bool
+
+- name: Configure | Create lynis report directory
+  ansible.builtin.file:
+    path: '{{ lynis_report_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  when: lynis_enabled | bool
+
+- name: Configure | Create custom tests directory
+  ansible.builtin.file:
+    path: '{{ lynis_custom_tests_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  when:
+    - lynis_enabled | bool
+    - lynis_custom_tests_enabled | bool
+
+- name: Configure | Deploy custom profile
+  ansible.builtin.template:
+    src: custom.prf.j2
+    dest: '/etc/lynis/custom.prf'
+    owner: root
+    group: root
+    mode: '0644'
+  when: lynis_enabled | bool
+
+- name: Configure | Deploy audit script
+  ansible.builtin.template:
+    src: lynis-audit.sh.j2
+    dest: '/usr/local/bin/lynis-audit.sh'
+    owner: root
+    group: root
+    mode: '0755'
+  when:
+    - lynis_enabled | bool
+    - lynis_timer_enabled | bool

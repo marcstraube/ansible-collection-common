@@ -1,0 +1,87 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Full system update (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Install systemd and dbus (Archlinux)
+      community.general.pacman:
+        name:
+          - systemd
+          - dbus
+          - procps-ng
+        state: present
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update apt cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install systemd and dbus (Debian)
+      ansible.builtin.apt:
+        name:
+          - systemd
+          - dbus
+          - procps
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install systemd and dbus (RedHat)
+      ansible.builtin.dnf:
+        name:
+          - systemd
+          - dbus
+          - procps-ng
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Start dbus
+      ansible.builtin.systemd:
+        name: dbus
+        state: started
+      failed_when: false
+
+  vars:
+    firewalld_enabled: true
+    firewalld_default_zone: 'public'
+    firewalld_log_denied: 'all'
+    firewalld_purge_services: true
+    firewalld_services:
+      - 'ssh'
+      - 'http'
+    firewalld_services_disabled:
+      - 'cockpit'
+    firewalld_ports:
+      - '8080/tcp'
+    firewalld_rich_rules:
+      - rule: 'rule family="ipv4" source address="10.0.0.0/8" service name="https" accept'
+    firewalld_sources:
+      - zone: 'trusted'
+        source: '192.168.1.0/24'
+    firewalld_custom_services:
+      - name: 'myapp'
+        short: 'My Application'
+        description: 'Custom test service'
+        ports:
+          - port: '9000'
+            protocol: 'tcp'
+          - port: '9001'
+            protocol: 'tcp'
+        source_ports:
+          - port: '1234'
+            protocol: 'udp'
+
+  tasks:
+    - name: Include firewalld role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

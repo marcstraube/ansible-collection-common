@@ -1,0 +1,27 @@
+---
+# =============================================================================
+# Package Installation Tasks
+# =============================================================================
+
+- name: Remove unwanted packages
+  ansible.builtin.package:
+    name: '{{ base_remove_packages }}'
+    state: absent
+  when: base_remove_packages | length > 0
+
+- name: Install base packages
+  ansible.builtin.package:
+    name: '{{ base_packages }}'
+    state: present
+
+- name: Install dialog
+  ansible.builtin.package:
+    name: '{{ __base_dialog_package }}'
+    state: present
+  when: base_dialog | bool
+
+- name: Install extra packages
+  ansible.builtin.package:
+    name: '{{ base_extra_packages }}'
+    state: present
+  when: base_extra_packages | length > 0

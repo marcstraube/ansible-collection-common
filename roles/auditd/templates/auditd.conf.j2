@@ -1,0 +1,48 @@
+{{ ansible_managed | comment }}
+#
+# This file controls the configuration of the audit daemon
+#
+
+local_events = yes
+write_logs = yes
+log_file = {{ auditd_log_file }}
+log_group = {{ auditd_log_group }}
+log_format = {{ auditd_log_format }}
+flush = {{ auditd_flush }}
+freq = {{ auditd_freq }}
+max_log_file = {{ auditd_max_log_file }}
+num_logs = {{ auditd_num_logs }}
+priority_boost = {{ auditd_priority_boost }}
+name_format = NONE
+##name = mydomain
+max_log_file_action = {{ auditd_max_log_file_action }}
+space_left = {{ auditd_space_left }}
+space_left_action = {{ auditd_space_left_action }}
+verify_email = yes
+action_mail_acct = {{ auditd_email_address }}
+admin_space_left = {{ auditd_admin_space_left }}
+admin_space_left_action = {{ auditd_admin_space_left_action }}
+disk_full_action = {{ auditd_disk_full_action }}
+disk_error_action = {{ auditd_disk_error_action }}
+use_libwrap = {{ 'yes' if auditd_use_libwrap else 'no' }}
+{% if auditd_tcp_listen_port is defined and auditd_tcp_listen_port %}
+tcp_listen_port = {{ auditd_tcp_listen_port }}
+{% endif %}
+tcp_listen_queue = {{ auditd_tcp_listen_queue }}
+tcp_max_per_addr = {{ auditd_tcp_max_per_addr }}
+{% if auditd_tcp_client_ports is defined and auditd_tcp_client_ports %}
+tcp_client_ports = {{ auditd_tcp_client_ports }}
+{% endif %}
+tcp_client_max_idle = {{ auditd_tcp_client_max_idle }}
+transport = TCP
+krb5_principal = auditd
+##krb5_key_file = /etc/audit/audit.key
+distribute_network = no
+q_depth = 2000
+overflow_action = SYSLOG
+max_restarts = 10
+plugin_dir = /etc/audit/plugins.d
+end_of_event_timeout = 2
+{% if auditd_report_interval is defined and auditd_report_interval %}
+report_interval = {{ auditd_report_interval }}
+{% endif %}

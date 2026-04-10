@@ -1,0 +1,10 @@
+{{ ansible_managed | comment }}
+#
+# Remote Logging Plugin Configuration
+#
+
+active = {{ 'yes' if auditd_remote_logging else 'no' }}
+direction = out
+path = {{ __auditd_remote_binary }}
+type = always
+format = string

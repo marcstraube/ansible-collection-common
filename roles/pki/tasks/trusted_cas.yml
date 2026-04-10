@@ -1,0 +1,41 @@
+---
+# =============================================================================
+# Trusted CA Certificates Tasks
+# =============================================================================
+
+- name: TrustedCAs | Install trusted CA certificates (from content)
+  ansible.builtin.copy:
+    content: '{{ item.cert }}'
+    dest: '{{ __pki_ca_certificates_path }}/{{ item.name }}.crt'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ pki_trusted_cas }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: item.cert is defined
+  notify: Update CA trust
+
+- name: TrustedCAs | Install trusted CA certificates (from file)
+  ansible.builtin.copy:
+    src: '{{ item.src }}'
+    dest: '{{ __pki_ca_certificates_path }}/{{ item.name }}.crt'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ pki_trusted_cas }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: item.src is defined
+  notify: Update CA trust
+
+- name: TrustedCAs | Install local CA as trusted (if enabled)
+  ansible.builtin.copy:
+    src: '{{ pki_ca_dir }}/certs/ca.crt'
+    dest: '{{ __pki_ca_certificates_path }}/local-ca.crt'
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0644'
+  when: pki_ca_enabled | bool
+  notify: Update CA trust

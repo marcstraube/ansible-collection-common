@@ -1,0 +1,19 @@
+---
+# =============================================================================
+# rkhunter - BTRFS Tasks
+# =============================================================================
+# NoCOW for rkhunter database directory (updated during --propupd/--update)
+# =============================================================================
+
+- name: BTRFS | Check if /var/lib/rkhunter/db is on BTRFS
+  ansible.builtin.command:
+    cmd: stat -f -c %T /var/lib/rkhunter/db
+  register: __rkhunter_db_fstype
+  changed_when: false
+  failed_when: false
+
+- name: BTRFS | Set NoCOW attribute on rkhunter database directory
+  ansible.builtin.command:
+    cmd: chattr +C /var/lib/rkhunter/db
+  when: __rkhunter_db_fstype.stdout | default('') == 'btrfs'
+  changed_when: false

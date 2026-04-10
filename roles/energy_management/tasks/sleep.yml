@@ -1,0 +1,20 @@
+---
+# =============================================================================
+# Energy Management - sleep.conf.d Drop-in (all systemd distros)
+# =============================================================================
+
+- name: Sleep | Create sleep.conf.d directory
+  ansible.builtin.file:
+    path: '{{ __energy_management_sleep_conf_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Sleep | Deploy energy.conf drop-in
+  ansible.builtin.template:
+    src: 'sleep-energy.conf.j2'
+    dest: '{{ __energy_management_sleep_conf_dir }}/{{ __energy_management_sleep_conf_file }}'
+    owner: root
+    group: root
+    mode: '0644'

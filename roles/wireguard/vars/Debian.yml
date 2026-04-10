@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# WireGuard - Debian/Ubuntu Variables
+# =============================================================================
+
+__wireguard_packages:
+  - 'wireguard'
+  - 'wireguard-tools'
+
+__wireguard_kernel_module: 'wireguard'

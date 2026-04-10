@@ -1,0 +1,21 @@
+{{ ansible_managed | comment }}
+
+{% for zone in unbound_local_zones %}
+# Zone: {{ zone.name }}
+local-zone: "{{ zone.name }}" {{ zone.type }}
+{% for record in zone.records | default([]) %}
+local-data: "{{ record }}"
+{% endfor %}
+
+{% endfor %}
+{% for data in unbound_local_data %}
+# Local data: {{ data.name }}
+local-data: "{{ data.name }}. IN {{ data.type }} {{ data.value }}"
+{% endfor %}
+{% if unbound_local_data_ptr | length > 0 %}
+
+{% for ptr in unbound_local_data_ptr %}
+# PTR: {{ ptr.ip }} -> {{ ptr.name }}
+local-data-ptr: "{{ ptr.ip }} {{ ptr.name }}"
+{% endfor %}
+{% endif %}

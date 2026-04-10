@@ -1,0 +1,9 @@
+---
+# =============================================================================
+# Hardening Handlers
+# =============================================================================
+
+- name: Hardening apply sysctl
+  ansible.builtin.command:
+    cmd: 'sysctl --system'
+  changed_when: false

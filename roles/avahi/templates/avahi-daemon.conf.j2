@@ -1,0 +1,50 @@
+{{ ansible_managed | comment }}
+#
+# See avahi-daemon.conf(5) for more information.
+
+[server]
+{% if avahi_hostname %}
+host-name={{ avahi_hostname }}
+{% endif %}
+domain-name={{ avahi_domain_name }}
+{% if avahi_browse_domains | length > 0 %}
+browse-domains={{ avahi_browse_domains | join(', ') }}
+{% endif %}
+use-ipv4={{ avahi_use_ipv4 | ternary('yes', 'no') }}
+use-ipv6={{ avahi_use_ipv6 | ternary('yes', 'no') }}
+{% if avahi_allow_interfaces | length > 0 %}
+allow-interfaces={{ avahi_allow_interfaces | join(', ') }}
+{% endif %}
+{% if avahi_deny_interfaces | length > 0 %}
+deny-interfaces={{ avahi_deny_interfaces | join(', ') }}
+{% endif %}
+enable-dbus={{ avahi_enable_dbus | ternary('yes', 'no') }}
+allow-point-to-point={{ avahi_allow_point_to_point | ternary('yes', 'no') }}
+disallow-other-stacks={{ avahi_disallow_other_stacks | ternary('yes', 'no') }}
+cache-entries-max={{ avahi_cache_entries_max }}
+ratelimit-interval-usec={{ avahi_ratelimit_interval_usec }}
+ratelimit-burst={{ avahi_ratelimit_burst }}
+
+[wide-area]
+enable-wide-area={{ avahi_enable_wide_area | ternary('yes', 'no') }}
+
+[publish]
+disable-publishing={{ avahi_disable_publishing | ternary('yes', 'no') }}
+disable-user-service-publishing={{ avahi_disable_user_service_publishing | ternary('yes', 'no') }}
+publish-addresses={{ avahi_publish_addresses | ternary('yes', 'no') }}
+publish-hinfo={{ avahi_publish_hinfo | ternary('yes', 'no') }}
+publish-workstation={{ avahi_publish_workstation | ternary('yes', 'no') }}
+publish-domain={{ avahi_publish_domain | ternary('yes', 'no') }}
+publish-aaaa-on-ipv4={{ avahi_publish_aaaa_on_ipv4 | ternary('yes', 'no') }}
+publish-a-on-ipv6={{ avahi_publish_a_on_ipv6 | ternary('yes', 'no') }}
+
+[reflector]
+enable-reflector={{ avahi_enable_reflector | ternary('yes', 'no') }}
+reflect-ipv={{ avahi_reflect_ipv | ternary('yes', 'no') }}
+
+[rlimits]
+rlimit-core={{ avahi_rlimit_core }}
+rlimit-data={{ avahi_rlimit_data }}
+rlimit-fsize={{ avahi_rlimit_fsize }}
+rlimit-nofile={{ avahi_rlimit_nofile }}
+rlimit-stack={{ avahi_rlimit_stack }}

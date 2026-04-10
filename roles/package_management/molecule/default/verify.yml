@@ -1,0 +1,274 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # ARCHLINUX VERIFICATION
+    # =========================================================================
+    - name: ArchLinux verification
+      when: ansible_facts['os_family'] == 'Archlinux'
+      block:
+        - name: Verify | Check pacman.conf exists
+          ansible.builtin.stat:
+            path: /etc/pacman.conf
+          register: pacman_conf
+          failed_when: not pacman_conf.stat.exists
+
+        - name: Verify | Read pacman.conf
+          ansible.builtin.slurp:
+            src: /etc/pacman.conf
+          register: pacman_content
+
+        - name: Verify | Check pacman configuration
+          ansible.builtin.assert:
+            that:
+              - "'ParallelDownloads = 5' in (pacman_content.content | b64decode)"
+              - "'Color' in (pacman_content.content | b64decode)"
+              - "'ILoveCandy' in (pacman_content.content | b64decode)"
+              - "'CheckSpace' in (pacman_content.content | b64decode)"
+            fail_msg: 'pacman.conf missing expected settings'
+
+        - name: Verify | Check makepkg.conf exists
+          ansible.builtin.stat:
+            path: /etc/makepkg.conf
+          register: makepkg_conf
+          failed_when: not makepkg_conf.stat.exists
+
+        - name: Verify | Check reflector is installed
+          ansible.builtin.package:
+            name: reflector
+            state: present
+          check_mode: true
+          register: reflector_pkg
+          failed_when: reflector_pkg.changed
+
+        - name: Verify | Check reflector service exists
+          ansible.builtin.stat:
+            path: /usr/lib/systemd/system/reflector.service
+          register: reflector_service
+
+        - name: Verify | Check reflector timer enabled
+          ansible.builtin.systemd:
+            name: reflector.timer
+          register: reflector_timer
+          failed_when: reflector_timer.status.UnitFileState != 'enabled'
+
+        - name: Verify | Check paccache timer exists
+          ansible.builtin.stat:
+            path: /usr/lib/systemd/system/paccache.timer
+          register: paccache_timer
+
+        - name: Verify | Check pkgfile is installed
+          ansible.builtin.package:
+            name: pkgfile
+            state: present
+          check_mode: true
+          register: pkgfile_pkg
+          failed_when: pkgfile_pkg.changed
+
+        - name: Verify | Test pacman command
+          ansible.builtin.command:
+            cmd: pacman --version
+          register: pacman_version
+          changed_when: false
+          failed_when: pacman_version.rc != 0
+
+        - name: Verify | Test makepkg command
+          ansible.builtin.command:
+            cmd: makepkg --version
+          register: makepkg_version
+          changed_when: false
+          failed_when: makepkg_version.rc != 0
+
+    # =========================================================================
+    # DEBIAN/UBUNTU VERIFICATION
+    # =========================================================================
+    - name: Debian/Ubuntu verification
+      when: ansible_facts['os_family'] == 'Debian'
+      block:
+        - name: Verify | Check apt.conf.d directory exists
+          ansible.builtin.stat:
+            path: /etc/apt/apt.conf.d
+          register: apt_conf_d
+          failed_when: not apt_conf_d.stat.exists
+
+        - name: Verify | Check periodic update config exists
+          ansible.builtin.stat:
+            path: /etc/apt/apt.conf.d/10periodic
+          register: periodic_conf
+          failed_when: not periodic_conf.stat.exists
+
+        - name: Verify | Read periodic config
+          ansible.builtin.slurp:
+            src: /etc/apt/apt.conf.d/10periodic
+          register: periodic_content
+
+        - name: Verify | Check periodic update settings
+          ansible.builtin.assert:
+            that:
+              - "'APT::Periodic::Update-Package-Lists' in (periodic_content.content | b64decode)"
+            fail_msg: 'periodic config missing settings'
+
+        - name: Verify | Check sources.list exists
+          ansible.builtin.stat:
+            path: /etc/apt/sources.list
+          register: sources_list
+
+        - name: Verify | Check apt-file is installed
+          ansible.builtin.package:
+            name: apt-file
+            state: present
+          check_mode: true
+          register: aptfile_pkg
+          failed_when: aptfile_pkg.changed
+
+        - name: Verify | Check needrestart is installed
+          ansible.builtin.package:
+            name: needrestart
+            state: present
+          check_mode: true
+          register: needrestart_pkg
+          failed_when: needrestart_pkg.changed
+
+        - name: Verify | Test apt-get command  # noqa: command-instead-of-module
+          ansible.builtin.command:
+            cmd: apt-get --version
+          register: apt_version
+          changed_when: false
+          failed_when: apt_version.rc != 0
+
+        - name: Verify | Test apt-cache command
+          ansible.builtin.command:
+            cmd: apt-cache --version
+          register: aptcache_version
+          changed_when: false
+          failed_when: aptcache_version.rc != 0
+
+        - name: Verify | Check APT package lists updated
+          ansible.builtin.stat:
+            path: /var/lib/apt/lists
+          register: apt_lists
+          failed_when: not apt_lists.stat.exists
+
+    # =========================================================================
+    # REDHAT/FEDORA VERIFICATION
+    # =========================================================================
+    - name: RedHat/Fedora verification
+      when: ansible_facts['os_family'] == 'RedHat'
+      block:
+        - name: Verify | Check dnf.conf exists
+          ansible.builtin.stat:
+            path: /etc/dnf/dnf.conf
+          register: dnf_conf
+          failed_when: not dnf_conf.stat.exists
+
+        - name: Verify | Read dnf.conf
+          ansible.builtin.slurp:
+            src: /etc/dnf/dnf.conf
+          register: dnf_content
+
+        - name: Verify | Check dnf configuration
+          ansible.builtin.assert:
+            that:
+              - "'max_parallel_downloads' in (dnf_content.content | b64decode)"
+              - "'fastestmirror' in (dnf_content.content | b64decode)"
+              - "'best' in (dnf_content.content | b64decode)"
+            fail_msg: 'dnf.conf missing expected settings'
+
+        - name: Verify | Check EPEL repository enabled
+          ansible.builtin.command:
+            cmd: dnf repolist --enabled
+          register: dnf_repos
+          changed_when: false
+          failed_when: "'epel' not in dnf_repos.stdout.lower()"
+
+        - name: Verify | Check dnf-utils is installed (dnf4 only)
+          ansible.builtin.package:
+            name: dnf-utils
+            state: present
+          check_mode: true
+          register: dnfutils_pkg
+          failed_when: dnfutils_pkg.changed
+          when: ansible_facts['distribution_major_version'] | int < 10
+
+        - name: Verify | Test dnf command
+          ansible.builtin.command:
+            cmd: dnf --version
+          register: dnf_version
+          changed_when: false
+          failed_when: dnf_version.rc != 0
+
+        - name: Verify | Check dnf makecache timer exists
+          ansible.builtin.stat:
+            path: /usr/lib/systemd/system/dnf-makecache.timer
+          register: dnf_timer
+
+        - name: Verify | Test repoquery command (from dnf-utils, dnf4 only)
+          ansible.builtin.command:
+            cmd: repoquery --version
+          register: repoquery_version
+          changed_when: false
+          failed_when: repoquery_version.rc != 0
+          when: ansible_facts['distribution_major_version'] | int < 10
+
+        - name: Verify | Check install_weak_deps in dnf.conf
+          ansible.builtin.assert:
+            that:
+              - "'install_weak_deps' in (dnf_content.content | b64decode)"
+            fail_msg: 'dnf.conf missing install_weak_deps setting'
+
+    # =========================================================================
+    # PER-USER MAKEPKG CONFIG (Arch only)
+    # =========================================================================
+    - name: Per-user makepkg verification
+      when: ansible_facts['os_family'] == 'Archlinux'
+      block:
+        - name: Verify | Check testuser makepkg.conf exists
+          ansible.builtin.stat:
+            path: /home/testuser/.makepkg.conf
+          register: testuser_makepkg
+
+        - name: Verify | Assert testuser makepkg.conf exists
+          ansible.builtin.assert:
+            that:
+              - testuser_makepkg.stat.exists
+              - testuser_makepkg.stat.mode == '0644'
+              - testuser_makepkg.stat.pw_name == 'testuser'
+            fail_msg: 'testuser .makepkg.conf missing or wrong permissions'
+
+        - name: Verify | Read testuser makepkg.conf
+          ansible.builtin.slurp:
+            src: /home/testuser/.makepkg.conf
+          register: testuser_makepkg_content
+
+        - name: Verify | Assert testuser makepkg.conf content
+          ansible.builtin.assert:
+            that:
+              - "'Ansible managed' in testuser_makepkg_content.content | b64decode"
+              - "'PACKAGER=\"Test User <test@example.com>\"' in testuser_makepkg_content.content | b64decode"
+              - "'GPGKEY=\"ABCDEF1234567890\"' in testuser_makepkg_content.content | b64decode"
+            fail_msg: 'testuser .makepkg.conf missing expected content'
+
+        - name: Verify | Check disableduser has no makepkg.conf
+          ansible.builtin.stat:
+            path: /home/disableduser/.makepkg.conf
+          register: disabled_makepkg
+
+        - name: Verify | Assert disableduser has no makepkg.conf
+          ansible.builtin.assert:
+            that:
+              - not disabled_makepkg.stat.exists
+            fail_msg: 'disableduser should not have .makepkg.conf (mode: disabled)'
+
+    # =========================================================================
+    # CROSS-PLATFORM VERIFICATION
+    # =========================================================================
+    - name: Verify | Test package manager works  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: curl --version
+      register: curl_version
+      changed_when: false
+      failed_when: curl_version.rc != 0

@@ -1,0 +1,15 @@
+---
+# =============================================================================
+# SNMP Handlers
+# =============================================================================
+
+- name: Reload snmp systemd units
+  ansible.builtin.systemd:
+    daemon_reload: true
+  failed_when: false
+
+- name: Restart snmpd
+  ansible.builtin.systemd:
+    name: '{{ __snmp_service_name }}'
+    state: restarted
+  when: snmp_enabled | bool

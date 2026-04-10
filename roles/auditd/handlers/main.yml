@@ -1,0 +1,32 @@
+---
+# =============================================================================
+# Auditd Handlers
+# =============================================================================
+
+# Use signal names (TERM, HUP) not aliases (stop, reload) for audit 3.x compat
+- name: Stop auditd via audit subsystem
+  ansible.builtin.command:
+    cmd: auditctl --signal TERM
+  changed_when: true
+  listen: Restart auditd
+  notify: Start auditd
+
+- name: Start auditd
+  ansible.builtin.systemd:
+    name: '{{ __auditd_service_name }}'
+    state: started
+  listen: Start auditd
+
+- name: Reload auditd config
+  ansible.builtin.command:
+    cmd: auditctl --signal HUP
+  changed_when: true
+  failed_when: false
+  listen: Reload auditd config
+
+- name: Reload auditd rules
+  ansible.builtin.command:
+    cmd: augenrules --load
+  changed_when: true
+  failed_when: false
+  listen: Reload auditd rules

@@ -1,0 +1,20 @@
+---
+# =============================================================================
+# Energy Management - Backlight
+# =============================================================================
+# Installs brightnessctl and deploys udev rules so video group
+# members can adjust backlight without root.
+
+- name: Backlight | Install backlight tools
+  ansible.builtin.package:
+    name: '{{ __energy_management_backlight_packages }}'
+    state: present
+
+- name: Backlight | Deploy udev rules
+  ansible.builtin.template:
+    src: 'backlight-udev.rules.j2'
+    dest: '{{ __energy_management_backlight_udev_rules_dir }}/{{ __energy_management_backlight_udev_rules_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 'reload udev'

@@ -1,0 +1,62 @@
+---
+# =============================================================================
+# Unbound - Installation Tasks
+# =============================================================================
+
+- name: Install | Unbound packages
+  ansible.builtin.package:
+    name: '{{ __unbound_packages }}'
+    state: present
+
+- name: Install | Ensure config directory exists
+  ansible.builtin.file:
+    path: '/etc/unbound'
+    state: directory
+    owner: root
+    group: '{{ __unbound_group }}'
+    mode: '0755'
+
+- name: Install | Ensure conf.d directory exists
+  ansible.builtin.file:
+    path: '/etc/unbound/conf.d'
+    state: directory
+    owner: root
+    group: '{{ __unbound_group }}'
+    mode: '0755'
+
+- name: Install | Download root hints
+  ansible.builtin.get_url:
+    url: 'https://www.internic.net/domain/named.root'
+    dest: '{{ unbound_root_hints_file }}'
+    owner: '{{ __unbound_user }}'
+    group: '{{ __unbound_group }}'
+    mode: '0644'
+  when: unbound_root_hints_update | bool
+
+- name: Install | Deploy root hints update systemd service
+  ansible.builtin.template:
+    src: 'unbound-root-hints.service.j2'
+    dest: '/etc/systemd/system/unbound-root-hints.service'
+    owner: root
+    group: root
+    mode: '0644'
+  when: unbound_root_hints_update | bool
+  notify: Reload unbound systemd units
+
+- name: Install | Deploy root hints update systemd timer
+  ansible.builtin.template:
+    src: 'unbound-root-hints.timer.j2'
+    dest: '/etc/systemd/system/unbound-root-hints.timer'
+    owner: root
+    group: root
+    mode: '0644'
+  when: unbound_root_hints_update | bool
+  notify: Reload unbound systemd units
+
+- name: Install | Enable and start root hints update timer
+  ansible.builtin.systemd:
+    name: unbound-root-hints.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: unbound_root_hints_update | bool

@@ -1,0 +1,6 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+
+# Set default editor for all users
+export EDITOR={{ editors_default }}
+export VISUAL={{ editors_default }}

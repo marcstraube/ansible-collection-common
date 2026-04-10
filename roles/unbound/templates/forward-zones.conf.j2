@@ -1,0 +1,16 @@
+{{ ansible_managed | comment }}
+
+{% for zone in unbound_forward_zones %}
+forward-zone:
+    name: "{{ zone.name }}"
+{% if zone.forward_first | default(false) %}
+    forward-first: yes
+{% endif %}
+{% if zone.forward_tls_upstream | default(false) %}
+    forward-tls-upstream: yes
+{% endif %}
+{% for addr in zone.forward_addresses %}
+    forward-addr: {{ addr }}
+{% endfor %}
+
+{% endfor %}

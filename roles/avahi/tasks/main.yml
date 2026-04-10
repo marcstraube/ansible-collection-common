@@ -1,0 +1,52 @@
+---
+# =============================================================================
+# Avahi - Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags: [avahi]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  tags: [avahi, avahi:install]
+
+- name: Main | Include configure tasks
+  ansible.builtin.include_tasks:
+    file: configure.yml
+    apply:
+      tags: [avahi, avahi:configure]
+  when: avahi_enabled | bool
+  tags: [avahi, avahi:configure]
+
+- name: Main | Include firewall tasks
+  ansible.builtin.include_tasks:
+    file: firewall.yml
+    apply:
+      tags: [avahi, avahi:firewall]
+  when:
+    - avahi_enabled | bool
+    - avahi_firewalld_enabled | bool
+  tags: [avahi, avahi:firewall]
+
+- name: Main | Include AppArmor tasks
+  ansible.builtin.include_tasks:
+    file: apparmor.yml
+    apply:
+      tags: [avahi, avahi:apparmor]
+  when:
+    - avahi_enabled | bool
+    - avahi_apparmor_enabled | bool
+    - ansible_facts['os_family'] != 'RedHat'
+  tags: [avahi, avahi:apparmor]
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  tags: [avahi, avahi:service]

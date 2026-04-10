@@ -1,0 +1,17 @@
+---
+# marcstraube.networkmanager/molecule/default/tasks/side_effect.yml
+# Optional: Test side effects or changes after role application
+
+- name: Side Effect Tests
+  hosts: all
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Test NetworkManager configuration changes
+      ansible.builtin.command: nmcli general status
+      register: nm_status
+      changed_when: false
+
+    - name: Display NetworkManager status
+      ansible.builtin.debug:
+        var: nm_status.stdout_lines

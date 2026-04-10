@@ -1,0 +1,54 @@
+{{ ansible_managed | comment }}
+# =============================================================================
+# TLP Configuration
+# =============================================================================
+
+# =============================================================================
+# CPU
+# =============================================================================
+
+CPU_ENERGY_PERF_POLICY_ON_AC={{ energy_management_tlp_cpu_energy_perf_policy_on_ac }}
+CPU_ENERGY_PERF_POLICY_ON_BAT={{ energy_management_tlp_cpu_energy_perf_policy_on_bat }}
+
+CPU_BOOST_ON_AC={{ energy_management_tlp_cpu_boost_on_ac }}
+CPU_BOOST_ON_BAT={{ energy_management_tlp_cpu_boost_on_bat }}
+
+# =============================================================================
+# PLATFORM
+# =============================================================================
+
+PLATFORM_PROFILE_ON_AC={{ energy_management_tlp_platform_profile_on_ac }}
+PLATFORM_PROFILE_ON_BAT={{ energy_management_tlp_platform_profile_on_bat }}
+
+# =============================================================================
+# WIFI
+# =============================================================================
+
+WIFI_PWR_ON_AC={{ energy_management_tlp_wifi_pwr_on_ac }}
+WIFI_PWR_ON_BAT={{ energy_management_tlp_wifi_pwr_on_bat }}
+
+# =============================================================================
+# USB
+# =============================================================================
+
+USB_AUTOSUSPEND={{ energy_management_tlp_usb_autosuspend }}
+
+# =============================================================================
+# RUNTIME PM
+# =============================================================================
+
+RUNTIME_PM_ON_AC={{ energy_management_tlp_runtime_pm_on_ac }}
+RUNTIME_PM_ON_BAT={{ energy_management_tlp_runtime_pm_on_bat }}
+
+# =============================================================================
+# KERNEL
+# =============================================================================
+
+NMI_WATCHDOG={{ energy_management_tlp_nmi_watchdog }}
+
+# =============================================================================
+# EXTRA SETTINGS
+# =============================================================================
+{% for key, value in energy_management_tlp_extra_settings.items() %}
+{{ key }}={{ value }}
+{% endfor %}

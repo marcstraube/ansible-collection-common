@@ -1,0 +1,9 @@
+---
+__avahi_packages:
+  - 'avahi-daemon'
+  - 'avahi-utils'
+__avahi_nss_packages:
+  - 'libnss-mdns'
+__avahi_service_name: 'avahi-daemon'
+__avahi_config_file: '/etc/avahi/avahi-daemon.conf'
+__avahi_apparmor_profile: '/usr/sbin/avahi-daemon'

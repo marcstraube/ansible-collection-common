@@ -1,0 +1,37 @@
+---
+# =============================================================================
+# Auditd Remote Logging Tasks
+# =============================================================================
+
+- name: Install remote logging packages
+  ansible.builtin.package:
+    name: '{{ __auditd_remote_packages }}'
+    state: present
+  when: __auditd_remote_packages | length > 0
+
+- name: Configure audisp-remote
+  ansible.builtin.template:
+    src: 'audisp-remote.conf.j2'
+    dest: '/etc/audit/audisp-remote.conf'
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Reload auditd config
+
+- name: Configure au-remote plugin
+  ansible.builtin.template:
+    src: 'au-remote.conf.j2'
+    dest: '/etc/audit/plugins.d/au-remote.conf'
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Reload auditd config
+
+- name: Ensure remote queue directory exists
+  ansible.builtin.file:
+    path: '{{ auditd_remote_queue_file | dirname }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: auditd_remote_mode == 'forward'

@@ -1,0 +1,25 @@
+---
+# =============================================================================
+# System Hardening Main Tasks
+# =============================================================================
+
+- name: Main | Import kernel hardening tasks
+  ansible.builtin.import_tasks: configure.yml
+  when:
+    - hardening_enabled | bool
+    - hardening_kernel_enabled | bool
+  tags: [hardening, hardening:kernel]
+
+- name: Main | Import module blacklisting tasks
+  ansible.builtin.import_tasks: modules.yml
+  when:
+    - hardening_enabled | bool
+    - hardening_modules_enabled | bool
+  tags: [hardening, hardening:modules]
+
+- name: Main | Import filesystem hardening tasks
+  ansible.builtin.import_tasks: filesystem.yml
+  when:
+    - hardening_enabled | bool
+    - hardening_fs_enabled | bool
+  tags: [hardening, hardening:filesystem]

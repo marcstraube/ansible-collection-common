@@ -1,0 +1,88 @@
+---
+# =============================================================================
+# Security Playbook
+# =============================================================================
+# Security hardening, intrusion detection, and crypto configuration.
+#
+# Usage:
+#   ansible-playbook marcstraube.common.security -i inventory/
+#
+# Configure roles via inventory variables (group_vars/host_vars).
+# See each role's defaults/main.yml for available variables.
+# =============================================================================
+
+- name: Configure Security
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Include pam_hardening role
+      ansible.builtin.include_role:
+        name: marcstraube.common.pam_hardening
+      when: pam_hardening_enabled | default(true) | bool
+
+    - name: Include hardening role
+      ansible.builtin.include_role:
+        name: marcstraube.common.hardening
+      when: hardening_enabled | default(true) | bool
+
+    - name: Include firewalld role
+      ansible.builtin.include_role:
+        name: marcstraube.common.firewalld
+      when: firewalld_enabled | default(true) | bool
+
+    - name: Include apparmor role
+      ansible.builtin.include_role:
+        name: marcstraube.common.apparmor
+      when: apparmor_enabled | default(false) | bool
+
+    - name: Include firejail role
+      ansible.builtin.include_role:
+        name: marcstraube.common.firejail
+      when: firejail_enabled | default(false) | bool
+
+    - name: Include fail2ban role
+      ansible.builtin.include_role:
+        name: marcstraube.common.fail2ban
+      when: fail2ban_enabled | default(false) | bool
+
+    - name: Include auditd role
+      ansible.builtin.include_role:
+        name: marcstraube.common.auditd
+      when: auditd_enabled | default(false) | bool
+
+    - name: Include aide role
+      ansible.builtin.include_role:
+        name: marcstraube.common.aide
+      when: aide_enabled | default(false) | bool
+
+    - name: Include lynis role
+      ansible.builtin.include_role:
+        name: marcstraube.common.lynis
+      when: lynis_enabled | default(false) | bool
+
+    - name: Include rkhunter role
+      ansible.builtin.include_role:
+        name: marcstraube.common.rkhunter
+      when: rkhunter_enabled | default(false) | bool
+
+    - name: Include clamav role
+      ansible.builtin.include_role:
+        name: marcstraube.common.clamav
+      when: clamav_enabled | default(false) | bool
+
+    - name: Include pki role
+      ansible.builtin.include_role:
+        name: marcstraube.common.pki
+      when: pki_enabled | default(false) | bool
+
+    - name: Include gnupg role
+      ansible.builtin.include_role:
+        name: marcstraube.common.gnupg
+      when: gnupg_enabled | default(false) | bool
+
+    - name: Include hardware_tokens role
+      ansible.builtin.include_role:
+        name: marcstraube.common.hardware_tokens
+      when: hardware_tokens_enabled | default(false) | bool

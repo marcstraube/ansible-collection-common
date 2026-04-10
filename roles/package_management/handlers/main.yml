@@ -1,0 +1,49 @@
+---
+# =============================================================================
+# Package Management Handlers - Multi-OS
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# ArchLinux Handlers
+# -----------------------------------------------------------------------------
+
+- name: Update pacman cache
+  community.general.pacman:
+    update_cache: true
+  listen: 'pacman configuration changed'
+
+- name: Run reflector
+  ansible.builtin.systemd:
+    name: 'reflector.service'
+    state: started
+  listen: 'reflector configuration changed'
+
+- name: Update pkgfile database
+  ansible.builtin.command:
+    cmd: pkgfile --update
+  changed_when: true
+  listen: 'pkgfile installed'
+
+# -----------------------------------------------------------------------------
+# Debian/Ubuntu Handlers
+# -----------------------------------------------------------------------------
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  listen: 'apt configuration changed'
+
+- name: Update apt-file database
+  ansible.builtin.command:
+    cmd: apt-file update
+  changed_when: true
+  listen: 'apt-file installed'
+
+# -----------------------------------------------------------------------------
+# RHEL/Fedora/Rocky Handlers
+# -----------------------------------------------------------------------------
+
+- name: Update dnf cache
+  ansible.builtin.dnf:
+    update_cache: true
+  listen: 'dnf configuration changed'

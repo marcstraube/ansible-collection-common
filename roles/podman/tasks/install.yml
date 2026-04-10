@@ -1,0 +1,57 @@
+---
+# =============================================================================
+# Podman - Installation Tasks
+# =============================================================================
+
+- name: Install | Podman packages
+  ansible.builtin.package:
+    name: '{{ __podman_packages }}'
+    state: present
+
+- name: Install | Additional tools
+  ansible.builtin.package:
+    name: '{{ podman_tools }}'
+    state: present
+  when: podman_tools | length > 0
+
+- name: Install | Podman-compose
+  ansible.builtin.package:
+    name: '{{ __podman_compose_package }}'
+    state: present
+  when: podman_compose_enabled | bool
+
+- name: Install | Podman-docker compatibility
+  ansible.builtin.package:
+    name: '{{ __podman_docker_package }}'
+    state: present
+  when: podman_docker_enabled | bool
+
+- name: Install | Podlet
+  ansible.builtin.package:
+    name: '{{ __podman_podlet_package }}'
+    state: present
+  when:
+    - podman_podlet_enabled | bool
+    - __podman_podlet_package | length > 0
+
+- name: Install | Podman Desktop
+  kewlfft.aur.aur:
+    name: '{{ __podman_desktop_package }}'
+    state: present
+  become: true
+  become_user: aur_builder
+  when:
+    - podman_desktop_enabled | bool
+    - __podman_desktop_package | length > 0
+    - ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Ensure config directories exist
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - '{{ __podman_config_dir }}'
+    - '{{ __podman_config_dir }}/registries.conf.d'

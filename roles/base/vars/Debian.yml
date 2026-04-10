@@ -1,0 +1,19 @@
+---
+# =============================================================================
+# Debian/Ubuntu specific variables
+# =============================================================================
+
+__base_default_packages:
+  - 'bash-completion'
+  - 'htop'
+  - 'man-db'
+  - 'manpages'
+  - 'tmux'
+  - 'wget'
+  - 'curl'
+  - 'rsync'
+  - 'tree'
+  - 'unzip'
+  - 'zip'
+
+__base_dialog_package: 'dialog'

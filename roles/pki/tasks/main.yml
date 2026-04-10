@@ -1,0 +1,158 @@
+---
+# =============================================================================
+# PKI Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags: [pki]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: pki_enabled | bool
+  tags: [pki, pki:install]
+
+- name: Main | Import system-wide configuration tasks
+  ansible.builtin.import_tasks: configure.yml
+  when:
+    - pki_enabled | bool
+    - pki_configure_system | bool
+  tags: [pki, pki:configure]
+
+- name: Main | Import directory setup tasks
+  ansible.builtin.import_tasks: directories.yml
+  when: pki_enabled | bool
+  tags: [pki, pki:configure]
+
+- name: Main | Import CA tasks
+  ansible.builtin.import_tasks: ca.yml
+  when:
+    - pki_enabled | bool
+    - pki_ca_enabled | bool
+  tags: [pki, pki:ca]
+
+- name: Main | Import intermediate CA tasks
+  ansible.builtin.import_tasks: intermediate_ca.yml
+  when:
+    - pki_enabled | bool
+    - pki_ca_enabled | bool
+    - pki_intermediate_ca_enabled | bool
+  tags: [pki, pki:ca]
+
+- name: Main | Compute effective signing CA
+  ansible.builtin.set_fact:
+    _pki_signing_ca_cert: >-
+      {{ pki_intermediate_ca_dir + '/certs/intermediate.crt'
+         if (pki_intermediate_ca_enabled | bool)
+         else pki_ca_dir + '/certs/ca.crt' }}
+    _pki_signing_ca_key: >-
+      {{ pki_intermediate_ca_dir + '/private/intermediate.key'
+         if (pki_intermediate_ca_enabled | bool)
+         else pki_ca_dir + '/private/ca.key' }}
+    _pki_signing_ca_passphrase: >-
+      {{ pki_intermediate_ca_passphrase
+         if (pki_intermediate_ca_enabled | bool)
+         else pki_ca_passphrase }}
+    _pki_signing_ca_chain: >-
+      {{ pki_intermediate_ca_dir + '/certs/ca-chain.crt'
+         if (pki_intermediate_ca_enabled | bool)
+         else pki_ca_dir + '/certs/ca.crt' }}
+  when:
+    - pki_enabled | bool
+    - pki_ca_enabled | bool
+  tags: [pki, pki:ca]
+
+- name: Main | Import server certificate tasks
+  ansible.builtin.import_tasks: server_certs.yml
+  when:
+    - pki_enabled | bool
+    - pki_server_certs | length > 0
+  tags: [pki, pki:certs]
+
+- name: Main | Import client certificate tasks
+  ansible.builtin.import_tasks: client_certs.yml
+  when:
+    - pki_enabled | bool
+    - pki_client_certs | length > 0
+  tags: [pki, pki:certs]
+
+- name: Main | Import CSR tasks
+  ansible.builtin.import_tasks: csr.yml
+  when:
+    - pki_enabled | bool
+    - pki_csrs | length > 0
+  tags: [pki, pki:certs]
+
+- name: Main | Import DH parameters tasks
+  ansible.builtin.import_tasks: dhparam.yml
+  when:
+    - pki_enabled | bool
+    - pki_dhparam_enabled | bool
+  tags: [pki, pki:dhparam]
+
+- name: Main | Import trusted CA tasks
+  ansible.builtin.import_tasks: trusted_cas.yml
+  when:
+    - pki_enabled | bool
+    - pki_trusted_cas | length > 0
+  tags: [pki, pki:configure]
+
+- name: Main | Import certificate deployment tasks
+  ansible.builtin.import_tasks: deploy_certs.yml
+  when:
+    - pki_enabled | bool
+    - (pki_deploy_certs | length > 0) or (pki_deploy_certs_host | length > 0)
+  tags: [pki, pki:certs]
+
+- name: Main | Import CRL tasks
+  ansible.builtin.import_tasks: crl.yml
+  when:
+    - pki_enabled | bool
+    - pki_ca_enabled | bool
+    - pki_crl_enabled | bool
+  tags: [pki, pki:ca]
+
+- name: Main | Import OCSP tasks
+  ansible.builtin.import_tasks: ocsp.yml
+  when:
+    - pki_enabled | bool
+    - pki_ca_enabled | bool
+    - pki_ocsp_enabled | bool
+  tags: [pki, pki:ocsp]
+
+- name: Main | Import renewal monitoring tasks
+  ansible.builtin.import_tasks: renewal.yml
+  when:
+    - pki_enabled | bool
+    - pki_renewal_enabled | bool
+  tags: [pki, pki:renewal]
+
+- name: Main | Include firewall tasks
+  ansible.builtin.include_tasks:
+    file: firewall.yml
+    apply:
+      tags: [pki, pki:firewall]
+  when:
+    - pki_enabled | bool
+    - pki_ocsp_enabled | bool
+    - pki_firewalld_enabled | default(false) | bool
+  tags: [pki, pki:firewall]
+
+- name: Main | Include AppArmor tasks
+  ansible.builtin.include_tasks:
+    file: apparmor.yml
+    apply:
+      tags: [pki, pki:apparmor]
+  when:
+    - pki_enabled | bool
+    - pki_ocsp_enabled | bool
+    - pki_apparmor_enabled | default(false) | bool
+    - ansible_facts['os_family'] != 'RedHat'
+  tags: [pki, pki:apparmor]

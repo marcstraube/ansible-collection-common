@@ -1,0 +1,25 @@
+---
+- name: Check if AppArmor is active
+  ansible.builtin.stat:
+    path: /sys/kernel/security/apparmor
+  register: __clamav_apparmor_active
+
+- name: Check current AppArmor profile mode for clamd
+  ansible.builtin.command:
+    cmd: aa-status --json
+  register: __clamav_aa_status
+  changed_when: false
+  when: __clamav_apparmor_active.stat.exists
+
+- name: Enforce AppArmor profile for clamd
+  ansible.builtin.command:
+    cmd: aa-enforce {{ __clamav_apparmor_profile }}
+  changed_when: true
+  when:
+    - __clamav_apparmor_active.stat.exists
+    - __clamav_apparmor_profile not in
+      ((__clamav_aa_status.stdout | default('{}') | from_json).get('profiles', {})
+      | dict2items | selectattr('value', 'eq', 'enforce') | map(attribute='key') | list)
+    - __clamav_apparmor_profile | basename not in
+      ((__clamav_aa_status.stdout | default('{}') | from_json).get('profiles', {})
+      | dict2items | selectattr('value', 'eq', 'enforce') | map(attribute='key') | list)

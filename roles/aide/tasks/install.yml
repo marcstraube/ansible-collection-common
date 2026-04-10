@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# AIDE Installation Tasks
+# =============================================================================
+
+- name: Import GPG keys for AUR package verification
+  become: true
+  become_user: 'aur_builder'
+  ansible.builtin.command:
+    cmd: 'gpg --keyserver keys.openpgp.org --recv-keys {{ item }}'
+  loop: '{{ __aide_gpg_keys | default([]) }}'
+  register: __aide_gpg_import
+  changed_when: "'imported:' in __aide_gpg_import.stderr"
+  when: __aide_aur | bool
+
+- name: Install AIDE package (AUR)
+  become: true
+  become_user: 'aur_builder'
+  kewlfft.aur.aur:
+    name: '{{ __aide_package }}'
+    state: present
+  when: __aide_aur | bool
+
+- name: Install AIDE package (official repos)
+  ansible.builtin.package:
+    name: '{{ __aide_package }}'
+    state: present
+  when: not (__aide_aur | bool)
+
+- name: Ensure AIDE directories exist
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: '{{ __aide_dir_owner }}'
+    group: '{{ __aide_dir_group }}'
+    mode: '0700'
+  loop:
+    - '{{ aide_database | dirname }}'
+    - '/var/log/aide'

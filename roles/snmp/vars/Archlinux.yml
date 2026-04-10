@@ -1,0 +1,8 @@
+---
+__snmp_packages:
+  - 'net-snmp'
+__snmp_service_name: 'snmpd.service'
+__snmp_config_dir: '/etc/snmp'
+__snmp_config_file: '/etc/snmp/snmpd.conf'
+__snmp_persistent_dir: '/var/lib/net-snmp'
+__snmp_apparmor_profile: '/usr/bin/snmpd'

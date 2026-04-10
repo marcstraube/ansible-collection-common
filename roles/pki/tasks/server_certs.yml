@@ -1,0 +1,131 @@
+---
+# =============================================================================
+# Server Certificate Tasks
+# =============================================================================
+
+- name: ServerCerts | Generate server private keys (EC)
+  community.crypto.openssl_privatekey:
+    path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
+    type: 'ECC'
+    curve: '{{ item.key_curve | default(pki_server_key_curve) }}'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '{{ item.key_mode | default(pki_server_key_mode) }}'
+  loop: '{{ pki_server_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: (item.key_type | default(pki_server_key_type)) == 'ec'
+
+- name: ServerCerts | Generate server private keys (RSA)
+  community.crypto.openssl_privatekey:
+    path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
+    type: 'RSA'
+    size: '{{ item.key_size | default(pki_server_key_size) }}'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '{{ item.key_mode | default(pki_server_key_mode) }}'
+  loop: '{{ pki_server_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: (item.key_type | default(pki_server_key_type)) == 'rsa'
+
+- name: ServerCerts | Generate server private keys (Ed25519)
+  community.crypto.openssl_privatekey:
+    path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
+    type: 'Ed25519'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '{{ item.key_mode | default(pki_server_key_mode) }}'
+  loop: '{{ pki_server_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: (item.key_type | default(pki_server_key_type)) == 'ed25519'
+
+- name: ServerCerts | Generate server CSRs  # noqa: args[module]
+  community.crypto.openssl_csr:
+    path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
+    privatekey_path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
+    common_name: '{{ item.common_name }}'
+    country_name: '{{ item.country | default(pki_ca_country) | default(omit, true) }}'
+    state_or_province_name: '{{ item.state | default(omit, true) }}'
+    locality_name: '{{ item.locality | default(omit, true) }}'
+    organization_name: '{{ item.organization | default(pki_ca_organization) | default(omit, true) }}'
+    organizational_unit_name: '{{ item.organizational_unit | default(omit, true) }}'
+    email_address: '{{ item.email | default(omit, true) }}'
+    subject_alt_name: '{{ item.san | default(omit) }}'
+    key_usage:
+      - 'digitalSignature'
+      - 'keyEncipherment'
+    key_usage_critical: true
+    extended_key_usage:
+      - 'serverAuth'
+    authority_info_access: >-
+      {{ ['OCSP;URI:' + pki_ocsp_url] if (pki_ocsp_url | default('')) else omit }}
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ pki_server_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: ServerCerts | Sign server certificates with CA
+  community.crypto.x509_certificate:
+    path: '{{ item.dest_cert | default(pki_certs_dir + "/" + item.name + ".crt") }}'
+    csr_path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
+    ownca_path: '{{ _pki_signing_ca_cert }}'
+    ownca_privatekey_path: '{{ _pki_signing_ca_key }}'
+    ownca_privatekey_passphrase: '{{ _pki_signing_ca_passphrase | default(omit, true) }}'
+    ownca_not_after: '+{{ item.validity_days | default(pki_server_validity_days) }}d'
+    provider: ownca
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '0644'
+  loop: '{{ pki_server_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - item.sign_with_ca | default(true)
+    - pki_ca_enabled | bool
+
+- name: ServerCerts | Create self-signed certificates (no CA)
+  community.crypto.x509_certificate:
+    path: '{{ item.dest_cert | default(pki_certs_dir + "/" + item.name + ".crt") }}'
+    privatekey_path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
+    csr_path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
+    provider: selfsigned
+    selfsigned_not_after: '+{{ item.validity_days | default(pki_server_validity_days) }}d'
+    owner: '{{ item.owner | default("root") }}'
+    group: '{{ item.group | default("root") }}'
+    mode: '0644'
+  loop: '{{ pki_server_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: not (item.sign_with_ca | default(true)) or not (pki_ca_enabled | bool)
+
+- name: ServerCerts | Read certificate contents for chain files
+  ansible.builtin.shell:
+    cmd: >-
+      cat "{{ item.dest_cert | default(pki_certs_dir + '/' + item.name + '.crt') }}"
+      "{{ _pki_signing_ca_chain }}"
+    executable: /bin/bash
+  register: _pki_server_chain_output
+  changed_when: false
+  check_mode: false
+  loop: '{{ pki_server_certs | selectattr("dest_chain", "defined") | list }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: pki_ca_enabled | bool
+
+- name: ServerCerts | Deploy certificate chain files
+  ansible.builtin.copy:
+    content: '{{ item.stdout }}'
+    dest: '{{ item.item.dest_chain }}'
+    owner: '{{ item.item.owner | default("root") }}'
+    group: '{{ item.item.group | default("root") }}'
+    mode: '0644'
+  loop: '{{ _pki_server_chain_output.results | default([]) }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  when:
+    - item is not skipped
+    - pki_ca_enabled | bool

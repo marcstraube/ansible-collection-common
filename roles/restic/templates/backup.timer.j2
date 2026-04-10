@@ -1,0 +1,15 @@
+{{ ansible_managed | comment }}
+#
+# Restic Backup Timer: {{ item.name }}
+#
+
+[Unit]
+Description=Timer for restic backup: {{ item.name }}
+
+[Timer]
+OnCalendar={{ item.schedule | default(restic_default_schedule) }}
+RandomizedDelaySec=1800
+Persistent=true
+
+[Install]
+WantedBy=timers.target

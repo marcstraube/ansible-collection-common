@@ -1,0 +1,8 @@
+---
+__chrony_packages:
+  - 'chrony'
+__chrony_service_name: 'chronyd.service'
+__chrony_config_file: '/etc/chrony.conf'
+__chrony_user: 'chrony'
+__chrony_group: 'chrony'
+__chrony_apparmor_profile: '/usr/bin/chronyd'

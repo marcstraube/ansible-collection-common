@@ -1,0 +1,8 @@
+{{ ansible_managed | comment }}
+#
+# Restic environment variables: {{ item.name }}
+#
+
+{% for key, value in (item.environment | default({})).items() %}
+{{ key }}="{{ value }}"
+{% endfor %}

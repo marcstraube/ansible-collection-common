@@ -1,0 +1,231 @@
+{{ ansible_managed | comment }}
+#
+# AIDE Configuration - File Integrity Monitoring
+#
+
+# =============================================================================
+# DATABASE
+# =============================================================================
+{% if aide_database_format == 'gzip' %}
+
+{{ __aide_database_directive }}=file:{{ aide_database }}.gz
+database_out=file:{{ aide_database_new }}.gz
+gzip_dbout=yes
+{% else %}
+{{ __aide_database_directive }}=file:{{ aide_database }}
+database_out=file:{{ aide_database_new }}
+{% endif %}
+
+# =============================================================================
+# REPORT
+# =============================================================================
+{% if __aide_supports_log_level %}
+
+log_level=warning
+report_level={{ aide_report_level }}
+{% else %}
+verbose={{ aide_verbose }}
+{% endif %}
+
+report_url={{ aide_report_url }}
+report_url=stdout
+{% for url in aide_report_urls %}
+report_url={{ url }}
+{% endfor %}
+
+# =============================================================================
+# RULE DEFINITIONS
+# =============================================================================
+
+# Full integrity check with strong hashes (for critical security files)
+FIPSR = p+i+n+u+g+s+m+c+acl+xattrs+sha256
+
+# Full integrity check with additional hash (for compliance)
+LSPP = FIPSR+sha512
+
+# Standard check for most files
+NORMAL = p+i+l+n+u+g+s+m+c+sha256
+
+# Directory metadata only (no content hashing)
+DIR = p+i+n+u+g+acl+xattrs
+
+# Access control only
+PERMS = p+i+u+g+acl
+
+# Data-only check (ignore inode/ctime/mtime changes from auto-updates)
+DATAONLY = p+n+u+g+s+acl+xattrs+sha256
+
+# Growing log files
+LOG = >
+
+# =============================================================================
+# EXCLUDED PATHS (must come before includes)
+# =============================================================================
+
+# Volatile system directories
+!/proc
+!/sys
+!/dev
+!/run
+!/tmp
+!/var/tmp
+
+# Dynamic data
+!/var/log
+!/var/cache
+!/var/spool
+!/var/lib/aide
+
+# OS-specific exclusions
+{% for path in __aide_os_exclude_paths | default([]) %}
+!/{{ path | regex_replace('^/', '') }}
+{% endfor %}
+
+# Custom exclusions
+{% for path in aide_exclude_paths %}
+!{{ path }}
+{% endfor %}
+
+# =============================================================================
+# MONITORED PATHS
+# =============================================================================
+{% if aide_monitor_configs | bool %}
+
+# ---------------------------------------------------------------------------
+# /etc - Configuration files
+# ---------------------------------------------------------------------------
+
+# Base directory permissions
+/etc DIR
+
+# Critical security files (FIPSR - full integrity + strong hash)
+/etc/audit/ FIPSR
+/etc/cron.allow FIPSR
+/etc/cron.deny FIPSR
+/etc/cron.d/ FIPSR
+/etc/cron.daily/ FIPSR
+/etc/cron.hourly/ FIPSR
+/etc/cron.monthly/ FIPSR
+/etc/cron.weekly/ FIPSR
+/etc/crontab FIPSR
+/etc/hosts FIPSR
+/etc/hosts.allow FIPSR
+/etc/hosts.deny FIPSR
+/etc/inittab FIPSR
+/etc/issue FIPSR
+/etc/issue.net FIPSR
+/etc/ld.so.conf FIPSR
+/etc/localtime FIPSR
+/etc/login.defs FIPSR
+/etc/pam.d FIPSR
+/etc/securetty FIPSR
+/etc/security FIPSR
+/etc/ssh/ssh_config FIPSR
+/etc/ssh/sshd_config FIPSR
+/etc/ssh/sshd_config.d FIPSR
+
+# User and authentication files
+/etc/passwd NORMAL
+/etc/group NORMAL
+/etc/shadow NORMAL
+/etc/gshadow NORMAL
+/etc/security/opasswd NORMAL
+/etc/sudoers NORMAL
+/etc/sudoers.d/ NORMAL
+
+# System configuration
+/etc/aliases FIPSR
+/etc/bashrc NORMAL
+/etc/exports NORMAL
+/etc/fstab NORMAL
+/etc/logrotate.d NORMAL
+/etc/nscd.conf NORMAL
+/etc/profile NORMAL
+/etc/profile.d/ NORMAL
+/etc/skel NORMAL
+/etc/sysctl.conf FIPSR
+/etc/sysctl.d FIPSR
+
+# Shell configuration
+/etc/zlogin NORMAL
+/etc/zlogout NORMAL
+/etc/zprofile NORMAL
+/etc/zshrc NORMAL
+
+# OS-specific critical configs
+{% for path in __aide_os_critical_configs | default([]) %}
+{{ path }} FIPSR
+{% endfor %}
+
+# Dynamic config files (data changes expected, track permissions)
+/etc/resolv.conf DATAONLY
+/etc/mtab DATAONLY
+
+# Excluded volatile config paths
+!/etc/adjtime
+!/etc/lvm/cache
+!/etc/lvm/archive
+!/etc/NetworkManager/system-connections
+!/etc/cups/subscriptions.conf
+!/etc/.*~
+{% endif %}
+{% if aide_monitor_binaries | bool %}
+
+# ---------------------------------------------------------------------------
+# System binaries
+# ---------------------------------------------------------------------------
+/usr/bin NORMAL
+/usr/sbin NORMAL
+/usr/local/bin NORMAL
+/usr/local/sbin NORMAL
+{% endif %}
+{% if aide_monitor_libraries | bool %}
+
+# ---------------------------------------------------------------------------
+# System libraries
+# ---------------------------------------------------------------------------
+/usr/lib NORMAL
+{% if ansible_facts['architecture'] == 'x86_64' %}
+/usr/lib64 NORMAL
+{% endif %}
+{% endif %}
+{% if aide_monitor_boot | bool %}
+
+# ---------------------------------------------------------------------------
+# Boot files
+# ---------------------------------------------------------------------------
+/boot NORMAL
+{% endif %}
+{% if aide_monitor_logs | bool %}
+
+# ---------------------------------------------------------------------------
+# Log files (growing file check)
+# ---------------------------------------------------------------------------
+/var/log/faillog FIPSR
+/var/log/lastlog FIPSR
+/var/spool/at FIPSR
+{% endif %}
+{% if aide_monitor_system_dirs | bool %}
+
+# ---------------------------------------------------------------------------
+# Additional system directories
+# ---------------------------------------------------------------------------
+/opt NORMAL
+/root NORMAL
+{% endif %}
+{% if aide_monitor_home_dirs | bool %}
+
+# ---------------------------------------------------------------------------
+# User home directories
+# ---------------------------------------------------------------------------
+/home NORMAL
+{% endif %}
+{% if aide_custom_rules | length > 0 %}
+
+# ---------------------------------------------------------------------------
+# Custom monitoring rules
+# ---------------------------------------------------------------------------
+{% for rule in aide_custom_rules %}
+{{ rule.path }} {{ rule.rule }}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,14 @@
+---
+# =============================================================================
+# Debian/Ubuntu-specific variables for auditd
+# =============================================================================
+
+__auditd_packages:
+  - 'auditd'
+  - 'audispd-plugins'
+
+__auditd_remote_packages: []
+
+__auditd_service_name: 'auditd.service'
+
+__auditd_remote_binary: '/usr/sbin/audisp-remote'

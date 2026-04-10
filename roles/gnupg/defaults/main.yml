@@ -1,0 +1,221 @@
+---
+# =============================================================================
+# GnuPG Configuration
+# =============================================================================
+# Role: marcstraube.common.gnupg
+# Description: Configure GnuPG for encryption and signing
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+gnupg_enabled: true
+
+# =============================================================================
+# PACKAGES
+# =============================================================================
+
+# Install GUI tools (seahorse, etc.)
+gnupg_install_gui: false
+
+# Install additional CLI tools (hopenpgp-tools, paperkey)
+gnupg_install_tools: true
+
+# =============================================================================
+# GPG CONFIGURATION (gpg.conf)
+# =============================================================================
+
+# Default key for signing (empty = no default)
+gnupg_default_key: ''
+
+# Key algorithm preferences
+gnupg_personal_cipher_preferences: 'AES256 AES192 AES'
+gnupg_personal_digest_preferences: 'SHA512 SHA384 SHA256'
+gnupg_personal_compress_preferences: 'ZLIB BZIP2 ZIP Uncompressed'
+
+# Default preference list for new keys
+gnupg_default_preference_list: 'SHA512 SHA384 SHA256 AES256 AES192 AES ZLIB BZIP2 ZIP Uncompressed'
+
+# Certificate digest algorithm
+gnupg_cert_digest_algo: 'SHA512'
+
+# Trust model: pgp, classic, tofu, tofu+pgp, direct, always, auto
+gnupg_trust_model: 'tofu+pgp'
+
+# Key ID display format: 0xshort, 0xlong, none
+gnupg_keyid_format: '0xlong'
+
+# Character set for display
+gnupg_display_charset: 'utf-8'
+
+# Suppress greeting message
+gnupg_no_greeting: true
+
+# Strip comments from output (privacy hardening)
+gnupg_no_comments: true
+
+# Omit version string from output (privacy hardening)
+gnupg_no_emit_version: true
+
+# Show fingerprints in key listings
+gnupg_with_fingerprint: true
+
+# Show UID validity in listings and verification
+gnupg_show_uid_validity: true
+
+# Hide recipient key IDs in messages (privacy hardening)
+gnupg_throw_keyids: false
+
+# Default keyserver
+gnupg_keyserver: 'hkps://keys.openpgp.org'
+
+# Auto-key-locate mechanisms (modern replacement for auto-key-retrieve)
+# Options: local, cert, pka, dane, wkd, ldap, keyserver, nodefault, clear
+gnupg_auto_key_locate: 'local,wkd'
+
+# =============================================================================
+# GPG AGENT (gpg-agent.conf)
+# =============================================================================
+
+gnupg_agent_enabled: true
+
+# Cache TTL in seconds
+gnupg_agent_default_cache_ttl: 600          # Default: 10 minutes
+gnupg_agent_max_cache_ttl: 7200             # Maximum: 2 hours
+
+# SSH key cache TTL in seconds (only when SSH support enabled)
+gnupg_agent_default_cache_ttl_ssh: 1800     # Default: 30 minutes
+gnupg_agent_max_cache_ttl_ssh: 7200         # Maximum: 2 hours
+
+# SSH support via GPG agent
+gnupg_agent_enable_ssh: false
+
+# Pinentry program (auto-detected from OS default if empty)
+# Options: pinentry-curses, pinentry-tty, pinentry-gtk-2, pinentry-qt, pinentry-gnome3
+gnupg_agent_pinentry: ''
+
+# Pinentry timeout in seconds (0 = no timeout)
+gnupg_agent_pinentry_timeout: 0
+
+# Allow loopback pinentry (needed for scripted passphrase entry)
+gnupg_agent_allow_loopback_pinentry: true
+
+# Allow preset passphrase (gpg-preset-passphrase tool)
+gnupg_agent_allow_preset_passphrase: false
+
+# Grab keyboard for pinentry (X11 anti-sniffing; default upstream is no-grab)
+gnupg_agent_grab: false
+
+# Disable external passphrase cache in pinentry
+gnupg_agent_no_allow_external_cache: false
+
+# Disable scdaemon (smartcard support)
+gnupg_agent_disable_scdaemon: false
+
+# =============================================================================
+# SCDAEMON (scdaemon.conf — smartcard daemon)
+# =============================================================================
+
+gnupg_scdaemon_enabled: true
+
+# Disable integrated CCID driver (use PC/SC only)
+gnupg_scdaemon_disable_ccid: false
+
+# Card reader port (empty = auto-detect first USB device)
+gnupg_scdaemon_reader_port: ''
+
+# Enable shared PC/SC access mode (allows multiple apps to access the card)
+gnupg_scdaemon_pcsc_shared: false
+
+# Custom PC/SC library path (empty = system default)
+gnupg_scdaemon_pcsc_driver: ''
+
+# Disable physical PIN pad on reader
+gnupg_scdaemon_disable_pinpad: false
+
+# Enable variable-length PIN pad input
+gnupg_scdaemon_enable_pinpad_varlen: false
+
+# Restrict admin card commands
+gnupg_scdaemon_deny_admin: false
+
+# Disable specific card applications (list)
+# Options: openpgp, nks, p15, geldkarte, dinsig, piv
+gnupg_scdaemon_disable_application: []
+
+# Application selection priority (GnuPG 2.4.0+, ignored on older versions)
+# Example: 'openpgp,piv'
+gnupg_scdaemon_application_priority: ''
+
+# Debug level: '' (none), 'basic', 'advanced', 'expert', 'guru'
+gnupg_scdaemon_debug_level: ''
+
+# Log file path (empty = no file logging)
+gnupg_scdaemon_log_file: ''
+
+# =============================================================================
+# DIRMNGR (dirmngr.conf — keyserver daemon)
+# =============================================================================
+
+gnupg_dirmngr_enabled: true
+
+# Keyservers list
+gnupg_keyservers:
+  - 'hkps://keys.openpgp.org'
+  - 'hkps://keyserver.ubuntu.com'
+
+# Use Tor for keyserver access
+gnupg_dirmngr_use_tor: false
+
+# DNS resolver timeout in seconds
+gnupg_dirmngr_resolver_timeout: 30
+
+# Disable IPv6 for keyserver connections
+gnupg_dirmngr_disable_ipv6: false
+
+# Honor HTTP_PROXY environment variable
+gnupg_dirmngr_honor_http_proxy: false
+
+# Explicit HTTP proxy (overrides environment variable)
+gnupg_dirmngr_http_proxy: ''
+
+# Enable OCSP support
+gnupg_dirmngr_allow_ocsp: false
+
+# =============================================================================
+# KEY MANAGEMENT
+# =============================================================================
+
+# Public keys to import (from files or keyservers)
+gnupg_import_keys: []
+# gnupg_import_keys:
+#   - keyid: '0x1234567890ABCDEF'
+#     keyserver: 'hkps://keys.openpgp.org'
+#   - file: '/path/to/key.asc'
+
+# Keys to trust (ultimate trust)
+gnupg_trust_keys: []
+# gnupg_trust_keys:
+#   - '1234567890ABCDEF1234567890ABCDEF12345678'
+
+# =============================================================================
+# USER CONFIGURATION
+# =============================================================================
+
+# Users for whom to configure GnuPG
+#
+# Mode controls deployment behavior:
+#   managed  — deploy config on every run (Ansible owns the files)
+#   initial  — deploy only when user is newly created
+#   disabled — skip config deployment for this user
+#
+gnupg_users: []
+# gnupg_users:
+#   - username: 'johndoe'
+#     mode: 'managed'
+#     default_key: '0x1234567890ABCDEF'
+#     agent_ssh: true
+
+# Default mode when user entry has no 'mode' key
+gnupg_user_config_mode: 'managed'

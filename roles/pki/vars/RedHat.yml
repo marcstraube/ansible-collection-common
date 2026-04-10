@@ -1,0 +1,17 @@
+---
+# =============================================================================
+# RHEL/Fedora/Rocky-specific variables for PKI
+# =============================================================================
+
+__pki_packages:
+  - 'openssl'
+  - 'ca-certificates'
+  - 'crypto-policies'
+  - 'crypto-policies-scripts'
+__pki_config_file: '/etc/pki/tls/openssl.cnf'
+__pki_certs_dir: '/etc/pki/tls/certs'
+__pki_private_dir: '/etc/pki/tls/private'
+__pki_ca_certificates_path: '/etc/pki/ca-trust/source/anchors'
+__pki_update_ca_trust_cmd: 'update-ca-trust'
+__pki_crypto_policies: true
+__pki_openssl_conf_dir: '/etc/pki/tls'

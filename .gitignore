@@ -1,0 +1,11 @@
+.ansible/
+.claude/
+__pycache__/
+*.py[cod]
+.molecule/
+molecule/**/instance_config.yml
+*.retry
+*.log
+*.tar.gz
+.venv/
+.cache/

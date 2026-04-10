@@ -1,0 +1,47 @@
+---
+# =============================================================================
+# Editors Installation
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# NANO
+# -----------------------------------------------------------------------------
+
+- name: Install | Nano
+  ansible.builtin.package:
+    name: '{{ __editors_nano_package }}'
+    state: present
+  when: editors_nano | bool
+
+# -----------------------------------------------------------------------------
+# VIM
+# -----------------------------------------------------------------------------
+
+- name: Install | Vim
+  ansible.builtin.package:
+    name: '{{ __editors_vim_package }}'
+    state: present
+  when: editors_vim | bool
+
+# -----------------------------------------------------------------------------
+# NEOVIM
+# -----------------------------------------------------------------------------
+
+- name: Install | Neovim
+  ansible.builtin.package:
+    name: '{{ __editors_neovim_package }}'
+    state: present
+  when:
+    - editors_neovim | bool
+    - not (editors_neovim_binary_install | default(false) | bool)
+
+- name: Install | Neovim (RedHat) via binary release
+  ansible.builtin.include_tasks:
+    file: neovim_binary.yml
+    apply:
+      tags: [editors, editors:install]
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - editors_neovim | bool
+    - editors_neovim_binary_install | bool
+  tags: [editors, editors:install]

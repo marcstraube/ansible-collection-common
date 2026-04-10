@@ -1,0 +1,64 @@
+---
+# =============================================================================
+# AIDE BTRFS Tasks — Subvolume + NoCOW for database and log directories
+# =============================================================================
+
+- name: Check if AIDE database parent filesystem is BTRFS
+  ansible.builtin.command:
+    cmd: stat -f -c %T {{ (aide_database | dirname) | dirname }}
+  register: __aide_db_fstype
+  changed_when: false
+  failed_when: false
+
+- name: Set BTRFS detection fact
+  ansible.builtin.set_fact:
+    __aide_is_btrfs: "{{ __aide_db_fstype.stdout | default('') == 'btrfs' }}"
+
+- name: Check if AIDE database directory is already a BTRFS subvolume
+  ansible.builtin.command:
+    cmd: btrfs subvolume show {{ aide_database | dirname }}
+  register: __aide_subvol_check
+  changed_when: false
+  failed_when: false
+  when: __aide_is_btrfs | bool
+
+- name: Check if AIDE database directory exists and has content
+  ansible.builtin.find:
+    paths: '{{ aide_database | dirname }}'
+    file_type: any
+  register: __aide_dir_contents
+  when:
+    - __aide_is_btrfs | bool
+    - __aide_subvol_check.rc != 0
+
+- name: Create BTRFS subvolume for AIDE database directory
+  when:
+    - __aide_is_btrfs | bool
+    - __aide_subvol_check.rc != 0
+    - __aide_dir_contents.matched == 0
+  block:
+    - name: Remove empty AIDE database directory for subvolume creation
+      ansible.builtin.file:
+        path: '{{ aide_database | dirname }}'
+        state: absent
+
+    - name: Create BTRFS subvolume
+      ansible.builtin.command:
+        cmd: btrfs subvolume create {{ aide_database | dirname }}
+      changed_when: true
+
+    - name: Set ownership on subvolume
+      ansible.builtin.file:
+        path: '{{ aide_database | dirname }}'
+        owner: '{{ __aide_dir_owner }}'
+        group: '{{ __aide_dir_group }}'
+        mode: '0700'
+        state: directory
+
+- name: Set NoCOW attribute on AIDE database directory
+  ansible.builtin.command:
+    cmd: chattr +C {{ aide_database | dirname }}
+  register: __aide_chattr
+  changed_when: __aide_chattr.rc == 0
+  failed_when: false
+  when: __aide_is_btrfs | bool

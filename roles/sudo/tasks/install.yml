@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# Sudo Installation
+# =============================================================================
+
+- name: Install sudo package
+  ansible.builtin.package:
+    name: '{{ __sudo_package }}'
+    state: present
+  when: sudo_enabled | bool

@@ -1,0 +1,14 @@
+---
+# =============================================================================
+# ArchLinux-specific variables for auditd
+# =============================================================================
+
+__auditd_packages:
+  - 'audit'
+
+__auditd_remote_packages:
+  - 'audispd-plugins'
+
+__auditd_service_name: 'auditd.service'
+
+__auditd_remote_binary: '/usr/bin/audisp-remote'

@@ -1,0 +1,23 @@
+{{ ansible_managed | comment }}
+[commands]
+upgrade_type = {{ dnf_automatic_upgrade_type }}
+random_sleep = 0
+download_updates = yes
+apply_updates = {{ dnf_automatic_apply_updates | bool | ternary('yes', 'no') }}
+
+[emitters]
+emit_via = {{ dnf_automatic_emit_via }}
+
+[email]
+email_from = {{ dnf_automatic_email_from }}
+email_to = {{ dnf_automatic_email_to }}
+email_host = {{ dnf_automatic_email_host }}
+
+[command]
+
+[command_email]
+email_from = {{ dnf_automatic_email_from }}
+email_to = {{ dnf_automatic_email_to }}
+
+[base]
+debuglevel = 1

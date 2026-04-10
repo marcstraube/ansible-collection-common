@@ -1,0 +1,33 @@
+---
+# =============================================================================
+# NODE.JS ROLE METADATA
+# =============================================================================
+
+galaxy_info:
+  author: Marc Straube
+  description: Install and configure Node.js runtime via system packages, NodeSource repository, or nvm
+  license: MIT
+  min_ansible_version: '2.17'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+
+    - name: Debian
+      versions:
+        - trixie
+
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - nodejs
+    - node
+    - npm
+    - nvm
+    - javascript
+    - runtime
+
+dependencies: []

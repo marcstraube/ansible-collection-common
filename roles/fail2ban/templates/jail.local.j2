@@ -1,0 +1,53 @@
+{{ ansible_managed | comment }}
+# Fail2ban main configuration
+
+[DEFAULT]
+# IP whitelist
+ignoreip = {{ fail2ban_ignoreip | join(' ') }}
+ignoreself = {{ fail2ban_ignoreself | lower }}
+
+# Ban settings
+bantime = {{ fail2ban_bantime }}
+findtime = {{ fail2ban_findtime }}
+maxretry = {{ fail2ban_maxretry }}
+{% if fail2ban_bantime_increment %}
+
+# Progressive ban escalation
+bantime.increment = true
+bantime.factor = {{ fail2ban_bantime_factor }}
+bantime.formula = {{ fail2ban_bantime_formula }}
+bantime.maxtime = {{ fail2ban_bantime_maxtime }}
+bantime.overalljails = {{ fail2ban_bantime_overalljails | lower }}
+{% endif %}
+
+# Ban action
+banaction = {{ fail2ban_banaction }}
+banaction_allports = {{ fail2ban_banaction_allports }}
+chain = {{ fail2ban_chain }}
+
+# Logging
+loglevel = {{ fail2ban_loglevel }}
+logtarget = {{ fail2ban_logtarget }}
+{% if fail2ban_logtarget is search('SYSLOG') %}
+syslogsocket = {{ fail2ban_syslog_target }}
+{% endif %}
+{% if fail2ban_log_date_pattern %}
+datepattern = {{ fail2ban_log_date_pattern }}
+{% endif %}
+
+# Backend
+backend = {{ fail2ban_default_backend }}
+usedns = {{ fail2ban_default_usedns }}
+logencoding = {{ fail2ban_default_logencoding }}
+
+# Mail notifications
+destemail = {{ fail2ban_destemail }}
+sender = {{ fail2ban_sender }}
+sendername = {{ fail2ban_sendername }}
+mta = {{ fail2ban_mta }}
+action = {{ fail2ban_action }}
+
+# Database
+dbfile = {{ fail2ban_dbfile }}
+dbpurgeage = {{ fail2ban_dbpurgeage }}
+dbmaxmatches = {{ fail2ban_dbmaxmatches }}

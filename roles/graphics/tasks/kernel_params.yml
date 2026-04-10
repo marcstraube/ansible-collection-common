@@ -1,0 +1,44 @@
+---
+# =============================================================================
+# Kernel Parameter Configuration (modprobe.d)
+# =============================================================================
+
+- name: Kernel Params | Deploy i915 modprobe config
+  ansible.builtin.template:
+    src: modprobe-i915.conf.j2
+    dest: /etc/modprobe.d/i915.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - __graphics_install_intel | bool
+    - (graphics_intel_kernel_params | length > 0) or (graphics_intel_guc_huc | bool)
+
+- name: Kernel Params | Remove i915 modprobe config when not needed
+  ansible.builtin.file:
+    path: /etc/modprobe.d/i915.conf
+    state: absent
+  when: >-
+    not (__graphics_install_intel | bool) or
+    (graphics_intel_kernel_params | length == 0 and not (graphics_intel_guc_huc | bool))
+
+- name: Kernel Params | Deploy nvidia modprobe config
+  ansible.builtin.template:
+    src: modprobe-nvidia.conf.j2
+    dest: /etc/modprobe.d/nvidia.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - __graphics_install_nvidia | bool
+    - graphics_nvidia_driver != 'nouveau'
+    - graphics_nvidia_kernel_params | length > 0
+
+- name: Kernel Params | Remove nvidia modprobe config when not needed
+  ansible.builtin.file:
+    path: /etc/modprobe.d/nvidia.conf
+    state: absent
+  when: >-
+    not (__graphics_install_nvidia | bool) or
+    graphics_nvidia_driver == 'nouveau' or
+    graphics_nvidia_kernel_params | length == 0

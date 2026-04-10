@@ -1,0 +1,61 @@
+{{ ansible_managed | comment }}
+#!/hint/bash
+# shellcheck disable=2034
+#
+# ~/.makepkg.conf - User-specific makepkg configuration
+#
+# This file overrides settings from /etc/makepkg.conf
+# Only non-empty values are set to allow system defaults to apply
+#
+{% if __makepkg_user.packager is defined and __makepkg_user.packager %}
+
+#-- Packager: name/email of the person building packages
+PACKAGER="{{ __makepkg_user.packager }}"
+{% endif %}
+{% if __makepkg_user.gpg_key is defined and __makepkg_user.gpg_key %}
+
+#-- GPG key for package signing
+GPGKEY="{{ __makepkg_user.gpg_key }}"
+{% endif %}
+{% if __makepkg_user.builddir is defined and __makepkg_user.builddir %}
+
+#-- Build directory
+BUILDDIR="{{ __makepkg_user.builddir }}"
+{% endif %}
+{% if __makepkg_user.pkgdest is defined and __makepkg_user.pkgdest %}
+
+#-- Package destination
+PKGDEST="{{ __makepkg_user.pkgdest }}"
+{% endif %}
+{% if __makepkg_user.srcdest is defined and __makepkg_user.srcdest %}
+
+#-- Source cache directory
+SRCDEST="{{ __makepkg_user.srcdest }}"
+{% endif %}
+{% if __makepkg_user.srcpkgdest is defined and __makepkg_user.srcpkgdest %}
+
+#-- Source package destination
+SRCPKGDEST="{{ __makepkg_user.srcpkgdest }}"
+{% endif %}
+{% if __makepkg_user.logdest is defined and __makepkg_user.logdest %}
+
+#-- Log destination
+LOGDEST="{{ __makepkg_user.logdest }}"
+{% endif %}
+{% if __makepkg_user.makeflags is defined and __makepkg_user.makeflags %}
+
+#-- Make flags
+MAKEFLAGS="{{ __makepkg_user.makeflags }}"
+{% endif %}
+{% if __makepkg_user.ccache is defined and __makepkg_user.ccache %}
+
+#-- Enable ccache
+BUILDENV=(ccache)
+{% endif %}
+{% if __makepkg_user.extra is defined and __makepkg_user.extra %}
+
+#-- Extra user-defined settings
+{{ __makepkg_user.extra }}
+{% endif %}
+
+# vim: set ft=sh ts=2 sw=2 et:

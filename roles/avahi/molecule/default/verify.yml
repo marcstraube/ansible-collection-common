@@ -1,0 +1,118 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # LOAD OS-SPECIFIC VARIABLES
+    # =========================================================================
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '{{ playbook_dir }}/../../vars'
+
+    # =========================================================================
+    # PACKAGE VERIFICATION
+    # =========================================================================
+
+    - name: Verify | Check avahi packages are installed
+      ansible.builtin.package:
+        name: '{{ item }}'
+        state: present
+      check_mode: true
+      register: _avahi_pkg
+      failed_when: _avahi_pkg is changed
+      loop: '{{ __avahi_packages }}'
+
+    - name: Verify | Check nss-mdns packages are installed
+      ansible.builtin.package:
+        name: '{{ item }}'
+        state: present
+      check_mode: true
+      register: _avahi_nss_pkg
+      failed_when: _avahi_nss_pkg is changed
+      loop: '{{ __avahi_nss_packages }}'
+
+    # =========================================================================
+    # CONFIGURATION VERIFICATION
+    # =========================================================================
+
+    - name: Verify | Check avahi config file exists
+      ansible.builtin.stat:
+        path: '{{ __avahi_config_file }}'
+      register: _avahi_config
+
+    - name: Verify | Assert config file exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - _avahi_config.stat.exists
+          - _avahi_config.stat.mode == '0644'
+        fail_msg: 'Avahi config file missing or wrong permissions'
+
+    - name: Verify | Read avahi config file
+      ansible.builtin.slurp:
+        src: '{{ __avahi_config_file }}'
+      register: _avahi_config_content
+
+    - name: Verify | Check avahi config content
+      ansible.builtin.assert:
+        that:
+          - "'[server]' in _config"
+          - "'domain-name=local' in _config"
+          - "'use-ipv4=yes' in _config"
+          - "'use-ipv6=yes' in _config"
+          - "'enable-dbus=yes' in _config"
+          - "'allow-point-to-point=no' in _config"
+          - "'cache-entries-max=4096' in _config"
+          - "'[wide-area]' in _config"
+          - "'enable-wide-area=no' in _config"
+          - "'[publish]' in _config"
+          - "'disable-publishing=no' in _config"
+          - "'publish-addresses=yes' in _config"
+          - "'publish-hinfo=no' in _config"
+          - "'publish-workstation=no' in _config"
+          - "'publish-domain=yes' in _config"
+          - "'publish-aaaa-on-ipv4=yes' in _config"
+          - "'publish-a-on-ipv6=no' in _config"
+          - "'[reflector]' in _config"
+          - "'enable-reflector=no' in _config"
+          - "'reflect-ipv=no' in _config"
+          - "'[rlimits]' in _config"
+          - "'Ansible managed' in _config"
+        fail_msg: 'Avahi configuration does not contain expected settings'
+      vars:
+        _config: '{{ _avahi_config_content.content | b64decode }}'
+
+    # =========================================================================
+    # NSSWITCH VERIFICATION
+    # =========================================================================
+
+    - name: Verify | Read nsswitch.conf
+      ansible.builtin.slurp:
+        src: /etc/nsswitch.conf
+      register: _nsswitch_content
+
+    - name: Verify | Check nsswitch.conf contains mdns_minimal
+      ansible.builtin.assert:
+        that:
+          - "'mdns_minimal' in _nsswitch_content.content | b64decode"
+        fail_msg: 'nsswitch.conf does not contain mdns_minimal'
+
+    # =========================================================================
+    # SERVICE VERIFICATION
+    # =========================================================================
+
+    - name: Verify | Check avahi service is enabled  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: 'systemctl is-enabled {{ __avahi_service_name }}'
+      register: _avahi_service
+      changed_when: false
+      failed_when: _avahi_service.stdout != 'enabled'

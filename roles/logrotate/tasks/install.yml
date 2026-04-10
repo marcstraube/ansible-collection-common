@@ -1,0 +1,17 @@
+---
+# =============================================================================
+# Logrotate - Installation Tasks
+# =============================================================================
+
+- name: Install | Logrotate packages
+  ansible.builtin.package:
+    name: '{{ __logrotate_packages }}'
+    state: present
+
+- name: Install | Ensure logrotate.d directory exists
+  ansible.builtin.file:
+    path: '{{ __logrotate_config_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'

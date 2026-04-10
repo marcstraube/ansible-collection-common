@@ -1,0 +1,58 @@
+{{ ansible_managed | comment }}
+{% if gnupg_scdaemon_disable_ccid %}
+
+# Disable integrated CCID driver (use PC/SC only)
+disable-ccid
+{% endif %}
+{% if gnupg_scdaemon_reader_port | length > 0 %}
+
+# Card reader port
+reader-port {{ gnupg_scdaemon_reader_port }}
+{% endif %}
+{% if gnupg_scdaemon_pcsc_shared %}
+
+# Shared PC/SC access mode
+pcsc-shared
+{% endif %}
+{% if gnupg_scdaemon_pcsc_driver | length > 0 %}
+
+# Custom PC/SC library
+pcsc-driver {{ gnupg_scdaemon_pcsc_driver }}
+{% endif %}
+{% if gnupg_scdaemon_disable_pinpad %}
+
+# Disable physical PIN pad
+disable-pinpad
+{% endif %}
+{% if gnupg_scdaemon_enable_pinpad_varlen %}
+
+# Variable-length PIN pad input
+enable-pinpad-varlen
+{% endif %}
+{% if gnupg_scdaemon_deny_admin %}
+
+# Restrict admin commands
+deny-admin
+{% endif %}
+{% for app in gnupg_scdaemon_disable_application %}
+{% if loop.first %}
+
+# Disabled card applications
+{% endif %}
+disable-application {{ app }}
+{% endfor %}
+{% if gnupg_scdaemon_application_priority | length > 0 %}
+
+# Application selection priority (GnuPG 2.4.0+)
+application-priority {{ gnupg_scdaemon_application_priority }}
+{% endif %}
+{% if gnupg_scdaemon_debug_level | length > 0 %}
+
+# Debug logging
+debug-level {{ gnupg_scdaemon_debug_level }}
+{% endif %}
+{% if gnupg_scdaemon_log_file | length > 0 %}
+
+# Log file
+log-file {{ gnupg_scdaemon_log_file }}
+{% endif %}

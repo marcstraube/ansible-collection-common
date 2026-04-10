@@ -1,0 +1,57 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    unbound_enabled: true
+    unbound_interfaces:
+      - '127.0.0.1'
+    unbound_port: 5353
+    unbound_dnssec_enabled: false
+    unbound_root_hints_update: false
+    unbound_remote_control: false
+    unbound_access_control:
+      - subnet: '127.0.0.0/8'
+        action: 'allow'
+    unbound_local_data:
+      - name: 'test.local'
+        type: 'A'
+        value: '192.168.1.100'
+    unbound_local_data_ptr:
+      - ip: '192.168.1.100'
+        name: 'test.local'
+    unbound_forward_zones:
+      - name: 'example.com.'
+        forward_addresses:
+          - '1.1.1.1'
+          - '1.0.0.1'
+        forward_tls_upstream: true
+        forward_first: false
+    unbound_tls_upstream: true
+    unbound_serve_expired: true
+    unbound_serve_expired_ttl: 3600
+    unbound_use_caps_for_id: true
+    unbound_private_domains:
+      - 'internal.example.com'
+    unbound_insecure_domains:
+      - 'test.example.com'
+
+  pre_tasks:
+    - name: Update apt cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+      changed_when: false
+
+    - name: Update dnf cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+      changed_when: false
+
+  tasks:
+    - name: Include unbound role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

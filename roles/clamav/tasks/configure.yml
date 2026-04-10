@@ -1,0 +1,119 @@
+---
+- name: Create ClamAV configuration directory
+  ansible.builtin.file:
+    path: '{{ __clamav_config_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create ClamAV socket directory
+  ansible.builtin.file:
+    path: '{{ clamav_socket | dirname }}'
+    state: directory
+    owner: '{{ clamav_user | default(__clamav_user, true) }}'
+    group: '{{ clamav_group | default(__clamav_group, true) }}'
+    mode: '0755'
+
+- name: Create ClamAV log directory
+  ansible.builtin.file:
+    path: '{{ clamav_log_file | dirname }}'
+    state: directory
+    owner: '{{ clamav_user | default(__clamav_user, true) }}'
+    group: '{{ clamav_group | default(__clamav_group, true) }}'
+    mode: '0755'
+
+- name: Create ClamAV database directory
+  ansible.builtin.file:
+    path: '{{ clamav_database_directory }}'
+    state: directory
+    owner: '{{ clamav_user | default(__clamav_user, true) }}'
+    group: '{{ clamav_group | default(__clamav_group, true) }}'
+    mode: '0755'
+
+# ============================================================================
+# Configuration files
+# ============================================================================
+- name: Deploy clamd.conf
+  ansible.builtin.template:
+    src: 'clamd.conf.j2'
+    dest: '{{ __clamav_clamd_config }}'
+    owner: root
+    group: '{{ clamav_group | default(__clamav_group, true) }}'
+    mode: '0644'
+  notify: Restart clamav-daemon
+
+- name: Deploy freshclam.conf
+  ansible.builtin.template:
+    src: 'freshclam.conf.j2'
+    dest: '{{ __clamav_freshclam_config }}'
+    owner: root
+    group: '{{ clamav_group | default(__clamav_group, true) }}'
+    mode: '0640'
+  notify: Restart clamav-freshclam
+
+- name: Deploy clamav-milter.conf
+  ansible.builtin.template:
+    src: 'clamav-milter.conf.j2'
+    dest: '{{ __clamav_milter_config }}'
+    owner: root
+    group: '{{ clamav_group | default(__clamav_group, true) }}'
+    mode: '0640'
+  notify: Restart clamav-milter
+  when: clamav_milter_enabled | bool
+
+# ============================================================================
+# Mail server integration
+# ============================================================================
+- name: Check if postfix user exists
+  ansible.builtin.getent:
+    database: passwd
+    key: postfix
+  register: __clamav_postfix_user
+  failed_when: false
+  when: clamav_postfix_integration | bool
+
+- name: Add postfix to clamav group
+  ansible.builtin.user:
+    name: postfix
+    groups: '{{ clamav_group | default(__clamav_group, true) }}'
+    append: true
+  when:
+    - clamav_postfix_integration | bool
+    - __clamav_postfix_user.ansible_facts.getent_passwd is defined
+    - __clamav_postfix_user.ansible_facts.getent_passwd.postfix is defined
+
+- name: Check if rspamd user exists
+  ansible.builtin.getent:
+    database: passwd
+    key: _rspamd
+  register: __clamav_rspamd_user
+  failed_when: false
+  when: clamav_rspamd_integration | bool
+
+- name: Add rspamd to clamav group
+  ansible.builtin.user:
+    name: _rspamd
+    groups: '{{ clamav_group | default(__clamav_group, true) }}'
+    append: true
+  when:
+    - clamav_rspamd_integration | bool
+    - __clamav_rspamd_user.ansible_facts.getent_passwd is defined
+    - __clamav_rspamd_user.ansible_facts.getent_passwd._rspamd is defined
+
+# ============================================================================
+# Initial database download
+# ============================================================================
+- name: Check if virus database exists
+  ansible.builtin.stat:
+    path: '{{ clamav_database_directory }}/main.cvd'
+  register: __clamav_db_check
+
+- name: Run initial freshclam update
+  ansible.builtin.command: freshclam
+  register: __clamav_freshclam_result
+  when:
+    - not __clamav_db_check.stat.exists
+    - clamav_freshclam_enabled | bool
+  changed_when: "'main.cvd updated' in (__clamav_freshclam_result.stdout | default(''))"
+  failed_when: false

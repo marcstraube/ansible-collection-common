@@ -1,0 +1,33 @@
+{{ ansible_managed | comment }}
+#
+# AppArmor profile for PKI OCSP Responder
+
+include <tunables/global>
+
+profile pki-ocsp /usr/bin/openssl {
+  include <abstractions/base>
+  include <abstractions/openssl>
+  include <abstractions/nameservice>
+
+  /usr/bin/openssl mr,
+
+  # CA directory (read-only access to certs and index)
+{% if pki_intermediate_ca_enabled | bool %}
+  {{ pki_intermediate_ca_dir }}/index.txt r,
+  {{ pki_intermediate_ca_dir }}/certs/ r,
+  {{ pki_intermediate_ca_dir }}/certs/** r,
+  {{ pki_intermediate_ca_dir }}/private/ocsp.key r,
+{% else %}
+  {{ pki_ca_dir }}/index.txt r,
+  {{ pki_ca_dir }}/certs/ r,
+  {{ pki_ca_dir }}/certs/** r,
+  {{ pki_ca_dir }}/private/ocsp.key r,
+{% endif %}
+
+  # Network access for OCSP port
+  network inet stream,
+  network inet6 stream,
+
+  # Deny everything else
+  deny /etc/ssl/private/** rw,
+}

@@ -1,0 +1,54 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+  vars:
+    podman_enabled: true
+    podman_compose_enabled: false
+    podman_docker_enabled: false
+    podman_podlet_enabled: true
+    podman_desktop_enabled: false
+    podman_docker_alias: true
+    podman_docker_socket_symlink: false
+    podman_socket_enabled: false
+    podman_auto_update_enabled: false
+    podman_prune_enabled: true
+    podman_prune_schedule: 'weekly'
+    podman_prune_all: true
+    podman_prune_volumes: true
+    podman_registries_search:
+      - 'docker.io'
+      - 'quay.io'
+    podman_short_name_mode: 'permissive'
+    podman_tools:
+      - 'buildah'
+      - 'skopeo'
+    podman_firewall_driver: 'firewalld'
+    podman_network_backend: 'netavark'
+    podman_storage_driver: 'overlay'
+    podman_runtime: 'crun'
+    podman_log_driver: 'journald'
+    podman_default_pids_limit: 2048
+    podman_userns_mode: 'auto'
+    podman_label: true
+    podman_seccomp_enabled: true
+    podman_btrfs_enabled: false
+
+  tasks:
+    - name: Include podman role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

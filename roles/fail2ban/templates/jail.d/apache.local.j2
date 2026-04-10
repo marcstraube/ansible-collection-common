@@ -1,0 +1,55 @@
+{{ ansible_managed | comment }}
+{% if fail2ban_apache_auth_enabled %}
+
+# Apache web server jails
+[apache-auth]
+enabled = true
+port = {{ fail2ban_apache_auth_port }}
+logpath = {{ fail2ban_apache_auth_logpath }}
+maxretry = {{ fail2ban_apache_auth_maxretry }}
+bantime = {{ fail2ban_apache_auth_bantime }}
+{% endif %}
+{% if fail2ban_apache_badbots_enabled %}
+
+[apache-badbots]
+enabled = true
+port = {{ fail2ban_apache_badbots_port }}
+logpath = {{ fail2ban_apache_badbots_logpath }}
+maxretry = {{ fail2ban_apache_badbots_maxretry }}
+bantime = {{ fail2ban_apache_badbots_bantime }}
+{% endif %}
+{% if fail2ban_apache_noscript_enabled %}
+
+[apache-noscript]
+enabled = true
+{% endif %}
+{% if fail2ban_apache_overflows_enabled %}
+
+[apache-overflows]
+enabled = true
+{% endif %}
+{% if fail2ban_apache_nohome_enabled %}
+
+[apache-nohome]
+enabled = true
+{% endif %}
+{% if fail2ban_apache_botsearch_enabled %}
+
+[apache-botsearch]
+enabled = true
+{% endif %}
+{% if fail2ban_apache_fakegooglebot_enabled %}
+
+[apache-fakegooglebot]
+enabled = true
+{% endif %}
+{% if fail2ban_apache_modsecurity_enabled %}
+
+[apache-modsecurity]
+enabled = true
+{% endif %}
+{% if fail2ban_apache_shellshock_enabled %}
+
+[apache-shellshock]
+enabled = true
+{% endif %}

@@ -1,0 +1,72 @@
+---
+# =============================================================================
+# Profile Images Tasks — AccountsService Integration
+# =============================================================================
+
+- name: Ensure AccountsService icons directory exists
+  ansible.builtin.file:
+    path: '{{ users_profile_images_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Check for user profile images
+  ansible.builtin.stat:
+    path: >-
+      {{ item.profile_image | default(inventory_dir ~ '/files/users/' ~ item.name ~ '.png') }}
+  delegate_to: localhost
+  become: false
+  loop: '{{ users_list }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - item.state | default('present') == 'present'
+    - item.name != 'root'
+  register: __users_profile_images_stat
+
+- name: Copy profile images to AccountsService
+  ansible.builtin.copy:
+    src: '{{ item.stat.path }}'
+    dest: '{{ users_profile_images_dir }}/{{ item.item.name }}'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ __users_profile_images_stat.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  when:
+    - item is not skipped
+    - item.stat.exists
+
+- name: Set Icon in AccountsService user config
+  community.general.ini_file:
+    path: '/var/lib/AccountsService/users/{{ item.item.name }}'
+    section: User
+    option: Icon
+    value: '{{ users_profile_images_dir }}/{{ item.item.name }}'
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+    no_extra_spaces: true
+  loop: '{{ __users_profile_images_stat.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  when:
+    - item is not skipped
+    - item.stat.exists
+
+- name: Create ~/.face symlink for display manager compatibility
+  ansible.builtin.file:
+    src: '{{ users_profile_images_dir }}/{{ item.item.name }}'
+    dest: '{{ item.item.home | default(users_default_home_base ~ "/" ~ item.item.name) }}/.face'
+    state: link
+    force: true
+  loop: '{{ __users_profile_images_stat.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  when:
+    - users_profile_images_face_symlink | bool
+    - item is not skipped
+    - item.stat.exists

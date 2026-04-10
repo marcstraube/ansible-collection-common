@@ -1,0 +1,86 @@
+---
+# =============================================================================
+# Graphics Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  when: graphics_enabled | bool
+  tags: [graphics, graphics:vars]
+
+- name: Main | Import GPU detection tasks
+  ansible.builtin.import_tasks: detect.yml
+  when:
+    - graphics_enabled | bool
+    - graphics_gpu == 'auto'
+  tags: [graphics, graphics:detect]
+
+- name: Main | Set GPU flags from detection or config
+  ansible.builtin.set_fact:
+    __graphics_install_intel: "{{
+        graphics_intel_enabled | bool or
+        graphics_gpu == 'intel' or
+        'intel' in graphics_gpus or
+        (__detected_gpus | default([]) | select('search', 'intel') | list | length > 0)
+      }}"
+    __graphics_install_amd: "{{
+        graphics_amd_enabled | bool or
+        graphics_gpu == 'amd' or
+        'amd' in graphics_gpus or
+        (__detected_gpus | default([]) | select('search', 'amd') | list | length > 0)
+      }}"
+    __graphics_install_nvidia: "{{
+        graphics_nvidia_enabled | bool or
+        graphics_gpu == 'nvidia' or
+        'nvidia' in graphics_gpus or
+        (__detected_gpus | default([]) | select('search', 'nvidia') | list | length > 0)
+      }}"
+  when: graphics_enabled | bool
+  tags: [graphics]
+
+- name: Main | Import Intel tasks
+  ansible.builtin.import_tasks: intel.yml
+  when:
+    - graphics_enabled | bool
+    - __graphics_install_intel | bool
+  tags: [graphics, graphics:intel]
+
+- name: Main | Import AMD tasks
+  ansible.builtin.import_tasks: amd.yml
+  when:
+    - graphics_enabled | bool
+    - __graphics_install_amd | bool
+  tags: [graphics, graphics:amd]
+
+- name: Main | Import NVIDIA tasks
+  ansible.builtin.import_tasks: nvidia.yml
+  when:
+    - graphics_enabled | bool
+    - __graphics_install_nvidia | bool
+  tags: [graphics, graphics:nvidia]
+
+- name: Main | Import common tools tasks
+  ansible.builtin.import_tasks: tools.yml
+  when: graphics_enabled | bool
+  tags: [graphics, graphics:tools]
+
+- name: Main | Import hybrid graphics tasks
+  ansible.builtin.import_tasks: hybrid.yml
+  when:
+    - graphics_enabled | bool
+    - graphics_hybrid_enabled | bool
+  tags: [graphics, graphics:hybrid]
+
+- name: Main | Import kernel params tasks
+  ansible.builtin.import_tasks: kernel_params.yml
+  when:
+    - graphics_enabled | bool
+    - graphics_kernel_params_enabled | bool
+  tags: [graphics, graphics:configure]

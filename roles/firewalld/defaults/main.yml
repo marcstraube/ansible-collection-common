@@ -1,0 +1,248 @@
+---
+# =============================================================================
+# Firewalld - Dynamic Firewall Manager
+# =============================================================================
+# Role: marcstraube.common.firewalld
+# Description: Configure firewalld zones, services, ports, and rich rules
+# =============================================================================
+
+# =============================================================================
+# SERVICE CONTROL
+# =============================================================================
+
+# Enable/disable firewalld service
+firewalld_enabled: true
+
+# =============================================================================
+# FIREWALLD.CONF — GLOBAL DAEMON SETTINGS
+# =============================================================================
+
+# Default zone for interfaces not explicitly assigned
+# Built-in zones: drop, block, public, external, dmz, work, home, internal, trusted
+firewalld_default_zone: 'public'
+
+# Firewall backend: nftables (default) or iptables (deprecated)
+# Empty string = use system default
+firewalld_backend: ''
+
+# Log denied packets
+# Options: off, all, unicast, broadcast, multicast
+firewalld_log_denied: 'off'
+
+# Clean up firewall rules on daemon exit
+firewalld_cleanup_on_exit: true
+
+# Clean up loaded kernel modules on daemon exit
+firewalld_cleanup_modules_on_exit: false
+
+# Lockdown mode — only whitelisted applications can modify the firewall
+firewalld_lockdown: false
+
+# Reverse path filter for IPv6
+# Options: strict, loose, strict-forward, loose-forward, no
+# Rocky 9 (1.x): only yes/no supported
+firewalld_ipv6_rpfilter: 'strict'
+
+# Use individual nft/iptables calls instead of transaction
+firewalld_individual_calls: false
+
+# Flush all rules on reload (vs only firewalld-managed rules)
+firewalld_flush_all_on_reload: true
+
+# Default policy during reload (before new rules are applied)
+# Format: CHAIN:ACTION pairs, comma-separated
+# Actions: DROP, REJECT, ACCEPT
+firewalld_reload_policy: 'INPUT:DROP,FORWARD:DROP,OUTPUT:DROP'
+
+# RFC 3964 IPv4 — automatically add rules for 6to4 and Teredo addresses
+firewalld_rfc3964_ipv4: true
+
+# Strict forward ports — require port forwarding targets to be in the same zone
+# Needed for Docker/Podman integration
+# Only available in firewalld 2.x+ (ignored on Rocky 9)
+firewalld_strict_forward_ports: false
+
+# nftables flowtable offloading — list of interfaces or 'off'
+# Only available in firewalld 2.x+ (ignored on Rocky 9)
+firewalld_nftables_flowtable: 'off'
+
+# nftables packet counters
+# Only available in firewalld 2.x+ (ignored on Rocky 9)
+firewalld_nftables_counters: false
+
+# nftables table owner flag (prevents other tools from modifying the table)
+# Only available in firewalld 2.x+ (ignored on Rocky 9)
+firewalld_nftables_table_owner: true
+
+# =============================================================================
+# ZONE MANAGEMENT
+# =============================================================================
+
+# Create or modify zones
+# Requires firewalld reload after creation before zones can be used
+firewalld_zones: []
+# Example:
+#   - name: 'myzone'
+#     target: 'default'  # default, ACCEPT, DROP, %%REJECT%%
+#   - name: 'internal'
+#     target: 'ACCEPT'
+
+# =============================================================================
+# SERVICES
+# =============================================================================
+
+# Services to enable in default zone
+firewalld_services:
+  - 'ssh'
+
+# Services to enable per zone
+firewalld_zone_services: []
+# Example:
+#   - zone: 'public'
+#     services:
+#       - 'http'
+#       - 'https'
+#   - zone: 'internal'
+#     services:
+#       - 'samba'
+#       - 'nfs'
+
+# Services to explicitly disable
+firewalld_services_disabled: []
+# Example:
+#   - 'dhcpv6-client'
+#   - 'cockpit'
+
+# Purge unconfigured services from managed zones
+# When true, services not in firewalld_services / firewalld_zone_services
+# are removed from their respective zones
+firewalld_purge_services: false
+
+# =============================================================================
+# PORTS
+# =============================================================================
+
+# Ports to open in default zone (format: port/protocol)
+firewalld_ports: []
+# Example:
+#   - '8080/tcp'
+#   - '8443/tcp'
+#   - '5000-5100/udp'
+
+# Ports to open per zone
+firewalld_zone_ports: []
+# Example:
+#   - zone: 'public'
+#     ports:
+#       - '8080/tcp'
+#   - zone: 'internal'
+#     ports:
+#       - '3306/tcp'
+
+# =============================================================================
+# RICH RULES
+# =============================================================================
+
+# Rich rules for complex firewall logic
+firewalld_rich_rules: []
+# Example:
+#   - zone: 'public'
+#     rule: 'rule family="ipv4" source address="192.168.1.0/24" service name="ssh" accept'
+#   - rule: 'rule family="ipv4" source address="10.0.0.0/8" port port="3306" protocol="tcp" accept'
+
+# =============================================================================
+# SOURCE-BASED ROUTING
+# =============================================================================
+
+# Assign source networks to zones
+firewalld_sources: []
+# Example:
+#   - zone: 'trusted'
+#     source: '192.168.1.0/24'
+#   - zone: 'internal'
+#     source: '10.0.0.0/8'
+
+# =============================================================================
+# INTERFACE ASSIGNMENT
+# =============================================================================
+
+# Assign interfaces to zones
+firewalld_interfaces: []
+# Example:
+#   - zone: 'internal'
+#     interface: 'eth1'
+#   - zone: 'public'
+#     interface: 'eth0'
+
+# =============================================================================
+# PORT FORWARDING
+# =============================================================================
+
+# Port forwarding rules
+firewalld_forwards: []
+# Example:
+#   - port: '80/tcp'
+#     to_port: '8080'
+#   - zone: 'public'
+#     port: '443/tcp'
+#     to_port: '8443'
+#     to_addr: '192.168.1.10'
+
+# =============================================================================
+# MASQUERADING (NAT)
+# =============================================================================
+
+# Enable masquerading (NAT) per zone
+firewalld_masquerade: []
+# Example:
+#   - zone: 'public'
+#     enabled: true
+
+# =============================================================================
+# ICMP BLOCKING
+# =============================================================================
+
+# ICMP types to block per zone
+firewalld_icmp_blocks: []
+# Example:
+#   - zone: 'public'
+#     icmp_types:
+#       - 'echo-request'
+#       - 'timestamp-request'
+
+# =============================================================================
+# DIRECT RULES (low-level nftables/iptables)
+# =============================================================================
+
+# Direct rules for advanced use cases
+# NOTE: Direct rules are deprecated in firewalld 2.x — prefer rich rules or policies
+firewalld_direct_rules: []
+# Example:
+#   - family: 'ipv4'
+#     table: 'filter'
+#     chain: 'INPUT'
+#     priority: 0
+#     rule: '-p tcp --dport 9999 -j ACCEPT'
+
+# =============================================================================
+# CUSTOM SERVICES
+# =============================================================================
+
+# Define custom firewalld service XML files
+firewalld_custom_services: []
+# Example:
+#   - name: 'myapp'
+#     short: 'My Application'
+#     description: 'Custom application service'
+#     ports:
+#       - port: '8080'
+#         protocol: 'tcp'
+#     source_ports:
+#       - port: '1234'
+#         protocol: 'udp'
+#     helpers:
+#       - 'ftp'
+#     includes:
+#       - 'ssh'
+#     destination:
+#       ipv4: '192.168.1.0/24'

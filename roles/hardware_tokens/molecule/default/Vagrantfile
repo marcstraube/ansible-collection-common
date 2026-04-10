@@ -1,0 +1,52 @@
+# marcstraube.common.hardware_tokens/molecule/default/Vagrantfile
+#
+# MOLECULE_PLATFORM_NAME filters which VM to create.
+
+platform = ENV['MOLECULE_PLATFORM_NAME'] || ''
+
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  if platform.empty? || platform == "hardware-tokens-archlinux"
+    config.vm.define "hardware-tokens-archlinux" do |node|
+      node.vm.box = "marcstraube/archlinux-ansible"
+      node.vm.hostname = "hardware-tokens-archlinux"
+      node.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "512"
+        vb.cpus = 1
+        vb.name = "molecule-hardware-tokens-archlinux"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "hardware-tokens-debian-trixie"
+    config.vm.define "hardware-tokens-debian-trixie" do |node|
+      node.vm.box = "cloud-image/debian-13"
+      node.vm.hostname = "hardware-tokens-debian-trixie"
+      node.vm.network "forwarded_port", guest: 22, host: 2223, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "512"
+        vb.cpus = 1
+        vb.name = "molecule-hardware-tokens-debian-trixie"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "hardware-tokens-rocky-9"
+    config.vm.define "hardware-tokens-rocky-9" do |node|
+      node.vm.box = "bento/rockylinux-9"
+      node.vm.hostname = "hardware-tokens-rocky-9"
+      node.vm.network "forwarded_port", guest: 22, host: 2224, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "512"
+        vb.cpus = 1
+        vb.name = "molecule-hardware-tokens-rocky-9"
+      end
+    end
+  end
+end

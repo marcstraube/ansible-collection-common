@@ -1,0 +1,66 @@
+# marcstraube.common.wireguard/molecule/default/Vagrantfile
+#
+# MOLECULE_PLATFORM_NAME filters which VM to create.
+
+platform = ENV['MOLECULE_PLATFORM_NAME'] || ''
+
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  if platform.empty? || platform == "wireguard-archlinux"
+    config.vm.define "wireguard-archlinux" do |node|
+      node.vm.box = "marcstraube/archlinux-ansible"
+      node.vm.hostname = "wireguard-archlinux"
+      node.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "512"
+        vb.cpus = 1
+        vb.name = "molecule-wireguard-archlinux"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "wireguard-debian-trixie"
+    config.vm.define "wireguard-debian-trixie" do |node|
+      node.vm.box = "cloud-image/debian-13"
+      node.vm.hostname = "wireguard-debian-trixie"
+      node.vm.network "forwarded_port", guest: 22, host: 2223, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "512"
+        vb.cpus = 1
+        vb.name = "molecule-wireguard-debian-trixie"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "wireguard-rocky-9"
+    config.vm.define "wireguard-rocky-9" do |node|
+      node.vm.box = "rockylinux/9"
+      node.vm.hostname = "wireguard-rocky-9"
+      node.vm.network "forwarded_port", guest: 22, host: 2224, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "512"
+        vb.cpus = 1
+        vb.name = "molecule-wireguard-rocky-9"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "wireguard-rocky-10"
+    config.vm.define "wireguard-rocky-10" do |node|
+      node.vm.box = "bento/rockylinux-10"
+      node.vm.hostname = "wireguard-rocky-10"
+      node.vm.network "forwarded_port", guest: 22, host: 2225, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "512"
+        vb.cpus = 1
+        vb.name = "molecule-wireguard-rocky-10"
+      end
+    end
+  end
+end

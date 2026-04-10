@@ -1,0 +1,37 @@
+---
+# marcstraube.networkmanager/tasks/main.yml
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags: [networkmanager]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  tags: [networkmanager, networkmanager:install]
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  tags: [networkmanager, networkmanager:configure]
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  tags: [networkmanager, networkmanager:service]
+
+- name: Main | Import connection management tasks
+  ansible.builtin.import_tasks: connections.yml
+  tags: [networkmanager, networkmanager:connections]
+
+- name: Main | Import polkit tasks
+  ansible.builtin.import_tasks: polkit.yml
+  tags: [networkmanager, networkmanager:polkit]
+
+- name: Main | Import dispatcher script management tasks
+  ansible.builtin.import_tasks: dispatcher.yml
+  tags: [networkmanager, networkmanager:dispatcher]

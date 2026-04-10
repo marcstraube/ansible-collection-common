@@ -1,0 +1,60 @@
+---
+# =============================================================================
+# Editors Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  when: editors_enabled | bool
+  tags: [editors, editors:vars]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: editors_enabled | bool
+  tags: [editors, editors:install]
+
+- name: Main | Import environment tasks
+  ansible.builtin.import_tasks: environment.yml
+  when: editors_enabled | bool
+  tags: [editors, editors:environment]
+
+- name: Main | Import nano tasks
+  ansible.builtin.import_tasks: nano.yml
+  when:
+    - editors_enabled | bool
+    - editors_nano | bool
+    - editors_nano_config_manage | bool
+  tags: [editors, editors:nano]
+
+- name: Main | Import vim tasks
+  ansible.builtin.import_tasks: vim.yml
+  when:
+    - editors_enabled | bool
+    - editors_vim | bool
+    - editors_vim_config_manage | bool
+  tags: [editors, editors:vim]
+
+- name: Main | Import neovim tasks
+  ansible.builtin.import_tasks: neovim.yml
+  when:
+    - editors_enabled | bool
+    - editors_neovim | bool
+    - editors_neovim_config_manage | bool
+  tags: [editors, editors:neovim]
+
+- name: Main | Include per-user config tasks
+  ansible.builtin.include_tasks:
+    file: users.yml
+    apply:
+      tags: [editors, editors:users]
+  when:
+    - editors_enabled | bool
+    - editors_users | length > 0
+  tags: [editors, editors:users]

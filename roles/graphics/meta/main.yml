@@ -1,0 +1,32 @@
+---
+# =============================================================================
+# Graphics Role Metadata
+# =============================================================================
+
+galaxy_info:
+  author: Marc Straube
+  description: Install GPU drivers, Vulkan, video acceleration, and hybrid graphics
+  license: MIT
+  min_ansible_version: '2.17'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - graphics
+    - gpu
+    - drivers
+    - vulkan
+    - desktop
+    - nvidia
+    - prime
+
+dependencies: []

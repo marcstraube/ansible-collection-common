@@ -1,0 +1,4 @@
+---
+# marcstraube.common.hardening/molecule/default/requirements.yml
+
+roles: []

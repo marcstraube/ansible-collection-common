@@ -1,0 +1,93 @@
+{{ ansible_managed | comment }}
+#
+# Clam AntiVirus - freshclam configuration file
+# See freshclam.conf(5) and https://docs.clamav.net/ for details.
+
+# =============================================================================
+# Database
+# =============================================================================
+
+DatabaseDirectory {{ clamav_database_directory }}
+DatabaseOwner {{ clamav_user | default(__clamav_user, true) }}
+
+# =============================================================================
+# Update Settings
+# =============================================================================
+
+Checks {{ clamav_freshclam_checks_per_day }}
+{% if clamav_freshclam_private_mirror %}
+
+PrivateMirror {{ clamav_freshclam_private_mirror }}
+{% else %}
+DatabaseMirror {{ clamav_freshclam_database_mirror }}
+{% endif %}
+
+{% for db in clamav_freshclam_extra_databases %}
+DatabaseCustomURL {{ db }}
+{% endfor %}
+
+{% for url in clamav_database_custom_url %}
+DatabaseCustomURL {{ url }}
+{% endfor %}
+
+ScriptedUpdates {{ 'yes' if clamav_freshclam_scripted_updates else 'no' }}
+{% if clamav_freshclam_compress_local_database %}
+CompressLocalDatabase yes
+{% endif %}
+TestDatabases {{ 'yes' if clamav_freshclam_test_databases else 'no' }}
+Bytecode {{ 'yes' if clamav_freshclam_bytecode else 'no' }}
+
+{% if clamav_daemon_enabled | bool %}
+
+# Notify clamd when the database is updated
+NotifyClamd {{ __clamav_clamd_config }}
+{% endif %}
+
+# =============================================================================
+# Network
+# =============================================================================
+
+ConnectTimeout {{ clamav_freshclam_connect_timeout }}
+ReceiveTimeout {{ clamav_freshclam_receive_timeout }}
+{% if clamav_freshclam_http_proxy %}
+
+HTTPProxyServer {{ clamav_freshclam_http_proxy }}
+{% if clamav_freshclam_http_proxy_port %}
+HTTPProxyPort {{ clamav_freshclam_http_proxy_port }}
+{% endif %}
+{% if clamav_freshclam_http_proxy_user %}
+HTTPProxyUsername {{ clamav_freshclam_http_proxy_user }}
+{% endif %}
+{% if clamav_freshclam_http_proxy_password %}
+HTTPProxyPassword {{ clamav_freshclam_http_proxy_password }}
+{% endif %}
+{% endif %}
+
+# =============================================================================
+# Logging
+# =============================================================================
+{% if clamav_log_syslog %}
+
+LogSyslog yes
+LogFacility {{ clamav_log_facility }}
+{% else %}
+UpdateLogFile {{ clamav_freshclam_log_file }}
+LogFileMaxSize {{ clamav_freshclam_log_filesize }}
+{% if clamav_log_rotate %}
+LogRotate yes
+{% endif %}
+{% endif %}
+{% if clamav_log_time %}
+LogTime yes
+{% endif %}
+{% if clamav_log_verbose %}
+LogVerbose yes
+{% endif %}
+
+# =============================================================================
+# Extra Configuration
+# =============================================================================
+
+{% for key, value in clamav_freshclam_extra_config.items() %}
+{{ key }} {{ value }}
+{% endfor %}

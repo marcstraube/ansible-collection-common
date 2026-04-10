@@ -1,0 +1,5 @@
+---
+__firewalld_packages:
+  - 'firewalld'
+__firewalld_service_name: 'firewalld'
+__firewalld_config_dir: '/etc/firewalld'

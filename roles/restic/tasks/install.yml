@@ -1,0 +1,49 @@
+---
+# =============================================================================
+# Restic - Installation Tasks
+# =============================================================================
+
+- name: Install | Restic from package manager
+  ansible.builtin.package:
+    name: '{{ __restic_packages }}'
+    state: present
+  when: restic_install_from_package | bool
+
+- name: Install | Download restic binary
+  when: not restic_install_from_package | bool
+  block:
+    - name: Install | Install bzip2 for binary extraction
+      ansible.builtin.package:
+        name: '{{ __restic_binary_packages }}'
+        state: present
+
+    - name: Install | Download restic archive
+      ansible.builtin.get_url:
+        url: '{{ restic_binary_url }}'
+        dest: '/tmp/restic.bz2'
+        mode: '0644'
+
+    - name: Install | Extract restic binary
+      ansible.builtin.command:
+        cmd: 'bunzip2 -f /tmp/restic.bz2'
+        creates: '/tmp/restic'
+
+    - name: Install | Install restic binary
+      ansible.builtin.copy:
+        src: '/tmp/restic'
+        dest: '{{ restic_binary_path }}'
+        owner: root
+        group: root
+        mode: '0755'
+        remote_src: true
+
+    - name: Install | Cleanup temporary files
+      ansible.builtin.file:
+        path: '/tmp/restic'
+        state: absent
+
+- name: Install | Install mail package for notifications
+  ansible.builtin.package:
+    name: '{{ __restic_mail_package }}'
+    state: present
+  when: restic_email_on_failure | bool

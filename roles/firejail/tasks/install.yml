@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# Firejail Installation Tasks
+# =============================================================================
+
+- name: Install | Firejail
+  ansible.builtin.package:
+    name: '{{ __firejail_package }}'
+    state: present
+  notify: apply firecfg

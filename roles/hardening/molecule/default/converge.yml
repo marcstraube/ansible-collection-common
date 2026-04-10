@@ -1,0 +1,12 @@
+---
+# marcstraube.common.hardening/molecule/default/converge.yml
+
+- name: Converge
+  hosts: all
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Include hardening role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

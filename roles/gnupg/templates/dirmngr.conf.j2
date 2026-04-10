@@ -1,0 +1,36 @@
+{{ ansible_managed | comment }}
+
+# Keyservers
+{% for ks in gnupg_keyservers %}
+keyserver {{ ks }}
+{% endfor %}
+
+{% if gnupg_dirmngr_use_tor %}
+
+# Tor
+use-tor
+{% endif %}
+
+# DNS resolver timeout
+resolver-timeout {{ gnupg_dirmngr_resolver_timeout }}
+
+{% if gnupg_dirmngr_disable_ipv6 %}
+
+# IPv6
+disable-ipv6
+{% endif %}
+
+{% if gnupg_dirmngr_honor_http_proxy %}
+
+# Proxy
+honor-http-proxy
+{% endif %}
+{% if gnupg_dirmngr_http_proxy | length > 0 %}
+http-proxy {{ gnupg_dirmngr_http_proxy }}
+{% endif %}
+
+{% if gnupg_dirmngr_allow_ocsp %}
+
+# OCSP
+allow-ocsp
+{% endif %}

@@ -1,0 +1,10 @@
+{{ ansible_managed | comment }}
+# Recidive jail for repeat offenders
+
+[recidive]
+enabled = true
+logpath = {{ fail2ban_logtarget }}
+banaction = %(banaction_allports)s
+bantime = {{ fail2ban_recidive_bantime }}
+findtime = {{ fail2ban_recidive_findtime }}
+maxretry = {{ fail2ban_recidive_maxretry }}

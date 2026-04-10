@@ -1,0 +1,14 @@
+{{ ansible_managed | comment }}
+# Forwarding settings
+
+AllowTcpForwarding {{ openssh_server_allow_tcp_forwarding | ternary('yes', 'no') }}
+AllowAgentForwarding {{ openssh_server_allow_agent_forwarding | ternary('yes', 'no') }}
+AllowStreamLocalForwarding {{ openssh_server_allow_stream_local_forwarding | ternary('yes', 'no') if openssh_server_allow_stream_local_forwarding is sameas true or openssh_server_allow_stream_local_forwarding is sameas false else openssh_server_allow_stream_local_forwarding }}
+PermitTunnel {{ openssh_server_permit_tunnel | ternary('yes', 'no') if openssh_server_permit_tunnel is sameas true or openssh_server_permit_tunnel is sameas false else openssh_server_permit_tunnel }}
+GatewayPorts {{ openssh_server_gateway_ports | ternary('yes', 'no') }}
+
+X11Forwarding {{ openssh_server_x11_forwarding | ternary('yes', 'no') }}
+{% if openssh_server_x11_forwarding | bool %}
+X11DisplayOffset {{ openssh_server_x11_display_offset }}
+X11UseLocalhost {{ openssh_server_x11_use_localhost | ternary('yes', 'no') }}
+{% endif %}

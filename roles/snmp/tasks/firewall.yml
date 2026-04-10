@@ -1,0 +1,12 @@
+---
+# =============================================================================
+# SNMP - Firewall Tasks
+# =============================================================================
+
+- name: Firewall | Allow SNMP service
+  ansible.posix.firewalld:
+    service: snmp
+    zone: '{{ snmp_firewalld_zone }}'
+    permanent: true
+    immediate: true
+    state: enabled

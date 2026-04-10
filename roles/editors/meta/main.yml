@@ -1,0 +1,31 @@
+---
+# =============================================================================
+# Editors Role Metadata
+# =============================================================================
+
+galaxy_info:
+  author: Marc Straube
+  description: Install and configure text editors (nano, vim, neovim)
+  license: MIT
+
+  min_ansible_version: '2.17'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - editor
+    - vim
+    - neovim
+    - nano
+    - tools
+
+dependencies: []

@@ -1,0 +1,17 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Update Unbound DNS Blocklist
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/unbound-update-blocklist
+ExecStartPost=/usr/bin/systemctl reload {{ __unbound_service_name }}
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

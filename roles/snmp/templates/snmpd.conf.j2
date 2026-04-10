@@ -1,0 +1,155 @@
+{{ ansible_managed | comment }}
+#
+# Net-SNMP agent configuration
+#
+
+# =============================================================================
+# SYSTEM INFORMATION
+# =============================================================================
+
+sysContact    {{ snmp_sys_contact }}
+sysLocation   {{ snmp_sys_location }}
+{% if snmp_sys_name %}
+sysName       {{ snmp_sys_name }}
+{% endif %}
+
+# =============================================================================
+# AGENT SETTINGS
+# =============================================================================
+
+{% for addr in snmp_listen_addresses %}
+agentaddress  udp:{{ addr }}:161
+{% endfor %}
+{% if snmp_dont_log_tcpwrappers | bool %}
+
+dontLogTCPWrappersConnects  yes
+{% endif %}
+
+# =============================================================================
+# VIEWS
+# =============================================================================
+
+{% for view in snmp_views %}
+view  {{ view.name }}  {{ view.type }}  {{ view.oid }}
+{% endfor %}
+
+{% if snmp_com2sec | length > 0 %}
+# =============================================================================
+# VACM ACCESS CONTROL
+# =============================================================================
+
+{% for entry in snmp_com2sec %}
+com2sec  {{ entry.sec_name }}  {{ entry.source }}  {{ entry.community }}
+{% endfor %}
+
+{% if snmp_groups | length > 0 %}
+{% for entry in snmp_groups %}
+group  {{ entry.name }}  {{ entry.version }}  {{ entry.sec_name }}
+{% endfor %}
+
+{% endif %}
+{% if snmp_access | length > 0 %}
+{% for entry in snmp_access %}
+access  {{ entry.group }}  "{{ entry.context | default('') }}"  {{ entry.match | default('any') }}  {{ entry.level | default('noauth') }}  {{ entry.prefix | default('exact') }}  {{ entry.read | default('none') }}  {{ entry.write | default('none') }}  {{ entry.notify | default('none') }}
+{% endfor %}
+
+{% endif %}
+{% endif %}
+{% if snmp_v2c_enabled | bool %}
+# =============================================================================
+# SNMPv2c ACCESS
+# =============================================================================
+
+{% for community in snmp_v2c_communities %}
+rocommunity  {{ community.community }}  {{ community.source | default('default') }}
+{% endfor %}
+{% for community in snmp_v2c_rw_communities %}
+rwcommunity  {{ community.community }}  {{ community.source | default('default') }}
+{% endfor %}
+{% endif %}
+{% if snmp_v3_enabled | bool and snmp_v3_users | length > 0 %}
+
+# =============================================================================
+# SNMPv3 USERS
+# =============================================================================
+
+{% for user in snmp_v3_users %}
+createUser  {{ user.username }}  {{ user.auth_protocol | default('SHA') }}  "{{ user.auth_passphrase }}"  {{ user.priv_protocol | default('AES') }}  "{{ user.priv_passphrase | default(user.auth_passphrase) }}"
+{% endfor %}
+
+{% for user in snmp_v3_users %}
+{{ user.access | default('rouser') }}  {{ user.username }}  {{ user.security_level | default('authPriv') }}
+{% endfor %}
+{% endif %}
+{% if snmp_disk_monitors | length > 0 %}
+
+# =============================================================================
+# DISK MONITORING
+# =============================================================================
+
+{% for disk in snmp_disk_monitors %}
+disk  {{ disk.path }}  {{ disk.min_free }}
+{% endfor %}
+{% endif %}
+{% if snmp_process_monitors | length > 0 %}
+
+# =============================================================================
+# PROCESS MONITORING
+# =============================================================================
+
+{% for proc in snmp_process_monitors %}
+proc  {{ proc.name }}  {{ proc.max | default(0) }}  {{ proc.min | default(1) }}
+{% endfor %}
+{% endif %}
+
+# =============================================================================
+# LOAD MONITORING
+# =============================================================================
+
+load  {{ snmp_load_thresholds.load1 }}  {{ snmp_load_thresholds.load5 }}  {{ snmp_load_thresholds.load15 }}
+
+{% if snmp_extend_scripts | length > 0 %}
+# =============================================================================
+# EXTEND SCRIPTS
+# =============================================================================
+
+{% for script in snmp_extend_scripts %}
+extend  {{ script.name }}  {{ script.command }}
+{% endfor %}
+{% endif %}
+{% if snmp_agentx_enabled | bool %}
+
+# =============================================================================
+# AGENTX
+# =============================================================================
+
+master  agentx
+{% endif %}
+{% if snmp_trapsinks | length > 0 %}
+
+# =============================================================================
+# TRAP FORWARDING
+# =============================================================================
+
+{% for trap in snmp_trapsinks %}
+trapsink  {{ trap.host }}{% if trap.community is defined %}  {{ trap.community }}{% endif %}{% if trap.port is defined %}  {{ trap.port }}{% endif %}
+
+{% endfor %}{% endif %}
+{% if snmp_smuxpeers | length > 0 %}
+# =============================================================================
+# SMUX PEERS
+# =============================================================================
+
+{% for oid in snmp_smuxpeers %}
+smuxpeer  {{ oid }}
+{% endfor %}
+{% endif %}
+{% if snmp_extra_config | length > 0 %}
+# =============================================================================
+# EXTRA CONFIGURATION
+# =============================================================================
+
+{% for line in snmp_extra_config %}
+{{ line }}
+{% endfor %}
+{% endif %}

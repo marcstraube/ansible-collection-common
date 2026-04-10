@@ -1,0 +1,12 @@
+{{ ansible_managed | comment }}
+#
+# List of terminals from which root can log in.
+# See securetty(5) for details.
+#
+# NOTE: securetty is deprecated on RHEL/Rocky (removed since RHEL 8)
+# and not enabled in default Arch pambase. Only effective when
+# pam_securetty.so is active in the PAM stack.
+
+{% for tty in pam_securetty_ttys %}
+{{ tty }}
+{% endfor %}

@@ -1,0 +1,20 @@
+{{ ansible_managed | comment }}
+# =============================================================================
+# sleep energy management drop-in
+# =============================================================================
+# System type: {{ energy_management_system_type }}
+
+[Sleep]
+AllowSuspend={{ energy_management_allow_suspend | ternary('yes', 'no') }}
+AllowHibernation={{ energy_management_allow_hibernate | ternary('yes', 'no') }}
+AllowSuspendThenHibernate={{ energy_management_allow_suspend_then_hibernate | ternary('yes', 'no') }}
+AllowHybridSleep={{ energy_management_allow_hybrid_sleep | ternary('yes', 'no') }}
+{% if energy_management_suspend_mode | length > 0 %}
+SuspendMode={{ energy_management_suspend_mode }}
+{% endif %}
+SuspendState={{ energy_management_suspend_state }}
+HibernateMode={{ energy_management_hibernate_mode }}
+HibernateState={{ energy_management_hibernate_state }}
+{% if energy_management_hibernate_delay_sec is defined and energy_management_hibernate_delay_sec | int > 0 %}
+HibernateDelaySec={{ energy_management_hibernate_delay_sec }}
+{% endif %}

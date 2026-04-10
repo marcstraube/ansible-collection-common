@@ -1,0 +1,12 @@
+---
+# =============================================================================
+# Unbound - Firewall Tasks
+# =============================================================================
+
+- name: Firewall | Allow DNS service
+  ansible.posix.firewalld:
+    service: dns
+    zone: '{{ unbound_firewalld_zone }}'
+    permanent: true
+    immediate: true
+    state: enabled

@@ -1,0 +1,157 @@
+---
+# =============================================================================
+# Intermediate CA Tasks
+# =============================================================================
+
+- name: IntermediateCA | Ensure intermediate CA directory structure exists
+  ansible.builtin.file:
+    path: '{{ pki_intermediate_ca_dir }}/{{ item }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  loop:
+    - ''
+    - 'certs'
+    - 'crl'
+    - 'newcerts'
+    - 'private'
+    - 'csr'
+
+- name: IntermediateCA | Ensure intermediate CA index file exists
+  ansible.builtin.file:
+    path: '{{ pki_intermediate_ca_dir }}/index.txt'
+    state: touch
+    owner: root
+    group: root
+    mode: '0600'
+    modification_time: preserve
+    access_time: preserve
+
+- name: IntermediateCA | Ensure intermediate CA serial file exists
+  ansible.builtin.copy:
+    content: '1000'
+    dest: '{{ pki_intermediate_ca_dir }}/serial'
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+
+- name: IntermediateCA | Ensure intermediate CA CRL number file exists
+  ansible.builtin.copy:
+    content: '1000'
+    dest: '{{ pki_intermediate_ca_dir }}/crlnumber'
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+
+- name: IntermediateCA | Check if intermediate CA private key exists
+  ansible.builtin.stat:
+    path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
+  register: _pki_intermediate_ca_key_stat
+
+- name: IntermediateCA | Generate intermediate CA private key (EC)
+  community.crypto.openssl_privatekey:
+    path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
+    type: 'ECC'
+    curve: '{{ pki_intermediate_ca_key_curve }}'
+    passphrase: '{{ pki_intermediate_ca_passphrase | default(omit, true) }}'
+    cipher: '{{ "auto" if pki_intermediate_ca_passphrase else omit }}'
+    owner: root
+    group: root
+    mode: '0400'
+  when:
+    - not _pki_intermediate_ca_key_stat.stat.exists
+    - pki_intermediate_ca_key_type == 'ec'
+
+- name: IntermediateCA | Generate intermediate CA private key (RSA)
+  community.crypto.openssl_privatekey:
+    path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
+    type: 'RSA'
+    size: '{{ pki_intermediate_ca_key_size }}'
+    passphrase: '{{ pki_intermediate_ca_passphrase | default(omit, true) }}'
+    cipher: '{{ "auto" if pki_intermediate_ca_passphrase else omit }}'
+    owner: root
+    group: root
+    mode: '0400'
+  when:
+    - not _pki_intermediate_ca_key_stat.stat.exists
+    - pki_intermediate_ca_key_type == 'rsa'
+
+- name: IntermediateCA | Generate intermediate CA private key (Ed25519)
+  community.crypto.openssl_privatekey:
+    path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
+    type: 'Ed25519'
+    passphrase: '{{ pki_intermediate_ca_passphrase | default(omit, true) }}'
+    cipher: '{{ "auto" if pki_intermediate_ca_passphrase else omit }}'
+    owner: root
+    group: root
+    mode: '0400'
+  when:
+    - not _pki_intermediate_ca_key_stat.stat.exists
+    - pki_intermediate_ca_key_type == 'ed25519'
+
+- name: IntermediateCA | Check if intermediate CA certificate exists
+  ansible.builtin.stat:
+    path: '{{ pki_intermediate_ca_dir }}/certs/intermediate.crt'
+  register: _pki_intermediate_ca_cert_stat
+
+- name: IntermediateCA | Generate intermediate CA CSR
+  community.crypto.openssl_csr:
+    path: '{{ pki_intermediate_ca_dir }}/csr/intermediate.csr'
+    privatekey_path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
+    privatekey_passphrase: '{{ pki_intermediate_ca_passphrase | default(omit, true) }}'
+    common_name: '{{ pki_intermediate_ca_common_name }}'
+    country_name: '{{ pki_ca_country | default(omit, true) }}'
+    state_or_province_name: '{{ pki_ca_state | default(omit, true) }}'
+    locality_name: '{{ pki_ca_locality | default(omit, true) }}'
+    organization_name: '{{ pki_ca_organization | default(omit, true) }}'
+    organizational_unit_name: '{{ pki_ca_organizational_unit | default(omit, true) }}'
+    email_address: '{{ pki_ca_email | default(omit, true) }}'
+    basic_constraints:
+      - 'CA:TRUE'
+      - 'pathlen:0'
+    basic_constraints_critical: true
+    key_usage:
+      - 'keyCertSign'
+      - 'cRLSign'
+      - 'digitalSignature'
+    key_usage_critical: true
+    owner: root
+    group: root
+    mode: '0600'
+  when: not _pki_intermediate_ca_cert_stat.stat.exists
+
+- name: IntermediateCA | Sign intermediate CA certificate with root CA
+  community.crypto.x509_certificate:
+    path: '{{ pki_intermediate_ca_dir }}/certs/intermediate.crt'
+    csr_path: '{{ pki_intermediate_ca_dir }}/csr/intermediate.csr'
+    ownca_path: '{{ pki_ca_dir }}/certs/ca.crt'
+    ownca_privatekey_path: '{{ pki_ca_dir }}/private/ca.key'
+    ownca_privatekey_passphrase: '{{ pki_ca_passphrase | default(omit, true) }}'
+    ownca_not_after: '+{{ pki_intermediate_ca_validity_days }}d'
+    provider: ownca
+    owner: root
+    group: root
+    mode: '0644'
+  when: not _pki_intermediate_ca_cert_stat.stat.exists
+
+- name: IntermediateCA | Read intermediate CA certificate
+  ansible.builtin.slurp:
+    src: '{{ pki_intermediate_ca_dir }}/certs/intermediate.crt'
+  register: _pki_intermediate_cert_content
+
+- name: IntermediateCA | Read root CA certificate
+  ansible.builtin.slurp:
+    src: '{{ pki_ca_dir }}/certs/ca.crt'
+  register: _pki_root_cert_content
+
+- name: IntermediateCA | Create CA chain file
+  ansible.builtin.copy:
+    content: |
+      {{ _pki_intermediate_cert_content.content | b64decode }}{{ _pki_root_cert_content.content | b64decode }}
+    dest: '{{ pki_intermediate_ca_dir }}/certs/ca-chain.crt'
+    owner: root
+    group: root
+    mode: '0644'

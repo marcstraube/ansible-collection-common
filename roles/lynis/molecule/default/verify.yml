@@ -1,0 +1,219 @@
+---
+- name: Verify Lynis installation and configuration
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # PACKAGE VERIFICATION
+    # =========================================================================
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Verify lynis package is installed (package method)
+      ansible.builtin.assert:
+        that:
+          - "'lynis' in ansible_facts.packages"
+        fail_msg: "Lynis package not installed"
+        success_msg: "Lynis package installed"
+      when: (lynis_install_method | default('package')) == 'package'
+
+    - name: Verify lynis git directory exists (git method)
+      ansible.builtin.stat:
+        path: '/usr/local/lynis/lynis'
+      register: __lynis_git_binary
+      when: (lynis_install_method | default('package')) == 'git'
+
+    - name: Verify lynis git install
+      ansible.builtin.assert:
+        that:
+          - __lynis_git_binary.stat.exists
+        fail_msg: "Lynis git install not found"
+        success_msg: "Lynis installed from git"
+      when: (lynis_install_method | default('package')) == 'git'
+
+    # =========================================================================
+    # BINARY VERIFICATION
+    # =========================================================================
+
+    - name: Set lynis binary path
+      ansible.builtin.set_fact:
+        __lynis_bin: >-
+          {{ '/usr/local/bin/lynis'
+             if (lynis_install_method | default('package')) == 'git'
+             else 'lynis' }}
+
+    - name: Check lynis binary
+      ansible.builtin.command:
+        cmd: "{{ __lynis_bin }} show version"
+      register: __lynis_version
+      changed_when: false
+      failed_when: __lynis_version.rc != 0
+
+    - name: Store lynis version
+      ansible.builtin.set_fact:
+        __lynis_version_str: "{{ __lynis_version.stdout | default('unknown') }}"
+
+    - name: Verify lynis version output
+      ansible.builtin.assert:
+        that:
+          - __lynis_version_str | length > 0
+          - __lynis_version_str != 'unknown'
+        fail_msg: "Lynis version command failed"
+        success_msg: "Lynis version: {{ __lynis_version_str }}"
+
+    # =========================================================================
+    # CONFIGURATION VERIFICATION
+    # =========================================================================
+
+    - name: Check custom profile
+      ansible.builtin.stat:
+        path: '/etc/lynis/custom.prf'
+      register: __lynis_custom_prf
+
+    - name: Verify custom profile exists
+      ansible.builtin.assert:
+        that:
+          - __lynis_custom_prf.stat.exists
+          - __lynis_custom_prf.stat.isreg
+          - __lynis_custom_prf.stat.mode == '0644'
+        fail_msg: "Custom profile missing or wrong permissions"
+        success_msg: "Custom profile exists with correct permissions"
+
+    - name: Read custom profile content
+      ansible.builtin.slurp:
+        src: '/etc/lynis/custom.prf'
+      register: __lynis_prf_content
+
+    - name: Verify custom profile content
+      ansible.builtin.assert:
+        that:
+          - "'machine-role=server' in __lynis_prf_content.content | b64decode"
+          - "'Ansible managed' in __lynis_prf_content.content | b64decode"
+          - "'compliance-standards=iso27001' in __lynis_prf_content.content | b64decode"
+          - "'skip-test=BOOT-5122' in __lynis_prf_content.content | b64decode"
+        fail_msg: "Custom profile content incorrect"
+        success_msg: "Custom profile contains expected directives"
+
+    # =========================================================================
+    # REPORT DIRECTORY VERIFICATION
+    # =========================================================================
+
+    - name: Check report directory
+      ansible.builtin.stat:
+        path: '/var/log/lynis'
+      register: __lynis_report_dir
+
+    - name: Verify report directory
+      ansible.builtin.assert:
+        that:
+          - __lynis_report_dir.stat.exists
+          - __lynis_report_dir.stat.isdir
+          - __lynis_report_dir.stat.mode == '0750'
+        fail_msg: "Report directory missing or wrong permissions"
+        success_msg: "Report directory exists with correct permissions (0750)"
+
+    # =========================================================================
+    # AUDIT SCRIPT VERIFICATION
+    # =========================================================================
+
+    - name: Check audit script
+      ansible.builtin.stat:
+        path: '/usr/local/bin/lynis-audit.sh'
+      register: __lynis_audit_script
+
+    - name: Verify audit script
+      ansible.builtin.assert:
+        that:
+          - __lynis_audit_script.stat.exists
+          - __lynis_audit_script.stat.isreg
+          - __lynis_audit_script.stat.mode == '0755'
+        fail_msg: "Audit script missing or wrong permissions"
+        success_msg: "Audit script exists and is executable"
+
+    - name: Read audit script content
+      ansible.builtin.slurp:
+        src: '/usr/local/bin/lynis-audit.sh'
+      register: __lynis_script_content
+
+    - name: Verify audit script uses --cronjob flag
+      ansible.builtin.assert:
+        that:
+          - "'--cronjob' in __lynis_script_content.content | b64decode"
+          - "'set -euo pipefail' in __lynis_script_content.content | b64decode"
+        fail_msg: "Audit script missing --cronjob flag or set -euo pipefail"
+        success_msg: "Audit script uses --cronjob and strict bash mode"
+
+    # =========================================================================
+    # SYSTEMD UNIT VERIFICATION
+    # =========================================================================
+
+    - name: Check systemd service unit
+      ansible.builtin.stat:
+        path: '/etc/systemd/system/lynis-audit.service'
+      register: __lynis_service_unit
+
+    - name: Verify systemd service unit
+      ansible.builtin.assert:
+        that:
+          - __lynis_service_unit.stat.exists
+          - __lynis_service_unit.stat.isreg
+        fail_msg: "Systemd service unit missing"
+        success_msg: "Systemd service unit exists"
+
+    - name: Read service unit content
+      ansible.builtin.slurp:
+        src: '/etc/systemd/system/lynis-audit.service'
+      register: __lynis_service_content
+
+    - name: Verify service unit hardening
+      ansible.builtin.assert:
+        that:
+          - "'ProtectSystem=full' in __lynis_service_content.content | b64decode"
+          - "'NoNewPrivileges=true' in __lynis_service_content.content | b64decode"
+          - "'PrivateTmp=true' in __lynis_service_content.content | b64decode"
+          - "'Type=oneshot' in __lynis_service_content.content | b64decode"
+        fail_msg: "Service unit missing hardening directives"
+        success_msg: "Service unit has proper hardening"
+
+    - name: Check systemd timer unit
+      ansible.builtin.stat:
+        path: '/etc/systemd/system/lynis-audit.timer'
+      register: __lynis_timer_unit
+
+    - name: Verify systemd timer unit
+      ansible.builtin.assert:
+        that:
+          - __lynis_timer_unit.stat.exists
+          - __lynis_timer_unit.stat.isreg
+        fail_msg: "Systemd timer unit missing"
+        success_msg: "Systemd timer unit exists"
+
+    - name: Check lynis timer is enabled
+      ansible.builtin.systemd:
+        name: lynis-audit.timer
+        enabled: true
+      check_mode: true
+      register: __lynis_timer_state
+      failed_when: __lynis_timer_state.changed
+
+    # =========================================================================
+    # FUNCTIONAL TEST
+    # =========================================================================
+
+    - name: Run quick lynis audit
+      ansible.builtin.command:
+        cmd: "{{ __lynis_bin }} audit system --cronjob"
+      register: __lynis_audit
+      changed_when: false
+      failed_when: false
+
+    - name: Verify lynis audit runs
+      ansible.builtin.assert:
+        that:
+          - __lynis_audit.rc in [0, 1]
+        fail_msg: "Lynis audit failed with exit code {{ __lynis_audit.rc }}"
+        success_msg: "Lynis audit executed successfully (exit code: {{ __lynis_audit.rc }})"

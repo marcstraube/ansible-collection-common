@@ -1,0 +1,20 @@
+---
+# =============================================================================
+# Hardware Tokens User Configuration
+# =============================================================================
+
+- name: Users | Add users to required groups
+  ansible.builtin.user:
+    name: '{{ item.0.username }}'
+    groups: '{{ item.1 }}'
+    append: true
+  loop: '{{ hardware_tokens_users | subelements("groups", skip_missing=True) }}'
+  when: item.1 in __hardware_tokens_groups
+
+- name: Users | Ensure plugdev group membership
+  ansible.builtin.user:
+    name: '{{ item.username }}'
+    groups: 'plugdev'
+    append: true
+  loop: '{{ hardware_tokens_users }}'
+  when: "'plugdev' in __hardware_tokens_groups"

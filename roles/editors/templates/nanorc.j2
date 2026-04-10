@@ -1,0 +1,35 @@
+{{ ansible_managed | comment }}
+{% if editors_nano_config.set_autoindent | default(true) %}
+
+# Nano Editor Configuration
+set autoindent
+{% endif %}
+{% if editors_nano_config.set_linenumbers | default(true) %}
+set linenumbers
+{% endif %}
+{% if editors_nano_config.set_mouse | default(true) %}
+set mouse
+{% endif %}
+{% if editors_nano_config.set_tabsize is defined %}
+set tabsize {{ editors_nano_config.set_tabsize }}
+{% endif %}
+{% if editors_nano_config.set_tabstospaces | default(true) %}
+set tabstospaces
+{% endif %}
+{% if editors_nano_config.set_softwrap | default(true) %}
+set softwrap
+{% endif %}
+{% if editors_nano_config.set_constantshow | default(true) %}
+set constantshow
+{% endif %}
+{% if editors_nano_config.set_indicator | default(true) %}
+set indicator
+{% endif %}
+{% if editors_nano_config.set_stateflags | default(true) %}
+set stateflags
+{% endif %}
+{% if editors_nano_config.syntax_highlighting | default(true) %}
+
+# Syntax highlighting
+include "/usr/share/nano/*.nanorc"
+{% endif %}

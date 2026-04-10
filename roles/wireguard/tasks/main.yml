@@ -1,0 +1,47 @@
+---
+# =============================================================================
+# WireGuard - Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags: [wireguard]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: wireguard_enabled | bool
+  tags: [wireguard, wireguard:install]
+
+- name: Main | Import key generation tasks
+  ansible.builtin.import_tasks: keys.yml
+  when:
+    - wireguard_enabled | bool
+    - wireguard_generate_keys | bool
+  tags: [wireguard, wireguard:keys]
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: wireguard_enabled | bool
+  tags: [wireguard, wireguard:configure]
+
+- name: Main | Include firewall tasks
+  ansible.builtin.include_tasks:
+    file: firewall.yml
+    apply:
+      tags: [wireguard, wireguard:firewall]
+  when:
+    - wireguard_enabled | bool
+    - wireguard_firewalld_enabled | bool
+  tags: [wireguard, wireguard:firewall]
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  when: wireguard_enabled | bool
+  tags: [wireguard, wireguard:service]

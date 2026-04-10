@@ -1,0 +1,100 @@
+---
+# =============================================================================
+# Client Certificate Tasks
+# =============================================================================
+
+- name: ClientCerts | Generate client private keys (EC)
+  community.crypto.openssl_privatekey:
+    path: '{{ pki_private_dir }}/{{ item.name }}.key'
+    type: 'ECC'
+    curve: '{{ item.key_curve | default(pki_client_key_curve) }}'
+    owner: root
+    group: root
+    mode: '0600'
+  loop: '{{ pki_client_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: (item.key_type | default(pki_client_key_type)) == 'ec'
+
+- name: ClientCerts | Generate client private keys (RSA)
+  community.crypto.openssl_privatekey:
+    path: '{{ pki_private_dir }}/{{ item.name }}.key'
+    type: 'RSA'
+    size: '{{ item.key_size | default(pki_client_key_size) }}'
+    owner: root
+    group: root
+    mode: '0600'
+  loop: '{{ pki_client_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: (item.key_type | default(pki_client_key_type)) == 'rsa'
+
+- name: ClientCerts | Generate client private keys (Ed25519)
+  community.crypto.openssl_privatekey:
+    path: '{{ pki_private_dir }}/{{ item.name }}.key'
+    type: 'Ed25519'
+    owner: root
+    group: root
+    mode: '0600'
+  loop: '{{ pki_client_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: (item.key_type | default(pki_client_key_type)) == 'ed25519'
+
+- name: ClientCerts | Generate client CSRs
+  community.crypto.openssl_csr:
+    path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
+    privatekey_path: '{{ pki_private_dir }}/{{ item.name }}.key'
+    common_name: '{{ item.common_name }}'
+    email_address: '{{ item.email | default(omit, true) }}'
+    key_usage:
+      - 'digitalSignature'
+      - 'keyEncipherment'
+    key_usage_critical: true
+    extended_key_usage:
+      - 'clientAuth'
+      - 'emailProtection'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ pki_client_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: ClientCerts | Sign client certificates with CA
+  community.crypto.x509_certificate:
+    path: '{{ pki_certs_dir }}/{{ item.name }}.crt'
+    csr_path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
+    ownca_path: '{{ _pki_signing_ca_cert }}'
+    ownca_privatekey_path: '{{ _pki_signing_ca_key }}'
+    ownca_privatekey_passphrase: '{{ _pki_signing_ca_passphrase | default(omit, true) }}'
+    ownca_not_after: '+{{ item.validity_days | default(pki_client_validity_days) }}d'
+    provider: ownca
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ pki_client_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: pki_ca_enabled | bool
+
+- name: ClientCerts | Export client certificates as PKCS12
+  community.crypto.openssl_pkcs12:
+    path: '{{ pki_certs_dir }}/{{ item.name }}.p12'
+    certificate_path: '{{ pki_certs_dir }}/{{ item.name }}.crt'
+    privatekey_path: '{{ pki_private_dir }}/{{ item.name }}.key'
+    other_certificates: '{{ _pki_signing_ca_chain }}'
+    passphrase: '{{ item.pkcs12_passphrase }}'
+    friendly_name: '{{ item.common_name }}'
+    owner: root
+    group: root
+    mode: '0600'
+    action: export
+    state: present
+  loop: '{{ pki_client_certs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - item.export_pkcs12 | default(false)
+    - item.pkcs12_passphrase is defined
+    - pki_ca_enabled | bool

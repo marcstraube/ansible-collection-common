@@ -1,0 +1,80 @@
+---
+# =============================================================================
+# OCSP Responder Tasks
+# =============================================================================
+
+- name: OCSP | Determine effective CA paths
+  ansible.builtin.set_fact:
+    _pki_ocsp_ca_cert: >-
+      {{ pki_intermediate_ca_dir + '/certs/intermediate.crt'
+         if (pki_intermediate_ca_enabled | bool)
+         else pki_ca_dir + '/certs/ca.crt' }}
+    _pki_ocsp_ca_key: >-
+      {{ pki_intermediate_ca_dir + '/private/intermediate.key'
+         if (pki_intermediate_ca_enabled | bool)
+         else pki_ca_dir + '/private/ca.key' }}
+    _pki_ocsp_ca_passphrase: >-
+      {{ pki_intermediate_ca_passphrase
+         if (pki_intermediate_ca_enabled | bool)
+         else pki_ca_passphrase }}
+    _pki_ocsp_ca_dir: >-
+      {{ pki_intermediate_ca_dir
+         if (pki_intermediate_ca_enabled | bool)
+         else pki_ca_dir }}
+    _pki_ocsp_key_curve: >-
+      {{ pki_intermediate_ca_key_curve
+         if (pki_intermediate_ca_enabled | bool)
+         else pki_ca_key_curve }}
+
+- name: OCSP | Generate OCSP signing private key
+  community.crypto.openssl_privatekey:
+    path: '{{ _pki_ocsp_ca_dir }}/private/ocsp.key'
+    type: 'ECC'
+    curve: '{{ _pki_ocsp_key_curve }}'
+    owner: root
+    group: root
+    mode: '0400'
+
+- name: OCSP | Generate OCSP signing CSR
+  community.crypto.openssl_csr:
+    path: '{{ _pki_ocsp_ca_dir }}/csr/ocsp.csr'
+    privatekey_path: '{{ _pki_ocsp_ca_dir }}/private/ocsp.key'
+    common_name: 'OCSP Responder'
+    key_usage:
+      - 'digitalSignature'
+    key_usage_critical: true
+    extended_key_usage:
+      - 'OCSPSigning'
+    extended_key_usage_critical: true
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: OCSP | Sign OCSP certificate with CA
+  community.crypto.x509_certificate:
+    path: '{{ _pki_ocsp_ca_dir }}/certs/ocsp.crt'
+    csr_path: '{{ _pki_ocsp_ca_dir }}/csr/ocsp.csr'
+    ownca_path: '{{ _pki_ocsp_ca_cert }}'
+    ownca_privatekey_path: '{{ _pki_ocsp_ca_key }}'
+    ownca_privatekey_passphrase: '{{ _pki_ocsp_ca_passphrase | default(omit, true) }}'
+    ownca_not_after: '+365d'
+    provider: ownca
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: OCSP | Deploy OCSP responder systemd service
+  ansible.builtin.template:
+    src: 'pki-ocsp.service.j2'
+    dest: '/etc/systemd/system/pki-ocsp.service'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart OCSP responder
+
+- name: OCSP | Enable and start OCSP responder
+  ansible.builtin.systemd:
+    name: pki-ocsp.service
+    enabled: true
+    state: started
+    daemon_reload: true

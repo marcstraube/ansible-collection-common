@@ -1,0 +1,71 @@
+---
+# =============================================================================
+# Podman - Configuration Tasks
+# =============================================================================
+
+- name: Configure | Deploy registries configuration
+  ansible.builtin.template:
+    src: registries.conf.j2
+    dest: '{{ __podman_config_dir }}/registries.conf'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Configure | Deploy storage configuration
+  ansible.builtin.template:
+    src: storage.conf.j2
+    dest: '{{ __podman_config_dir }}/storage.conf'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Configure | Deploy containers configuration
+  ansible.builtin.template:
+    src: containers.conf.j2
+    dest: '{{ __podman_config_dir }}/containers.conf'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Configure | Create docker alias
+  ansible.builtin.template:
+    src: podman-docker.sh.j2
+    dest: '/etc/profile.d/podman-docker.sh'
+    owner: root
+    group: root
+    mode: '0644'
+  when: podman_docker_alias | bool
+
+- name: Configure | Remove docker alias when disabled
+  ansible.builtin.file:
+    path: '/etc/profile.d/podman-docker.sh'
+    state: absent
+  when: not (podman_docker_alias | bool)
+
+- name: Configure | Create docker socket symlink
+  ansible.builtin.file:
+    src: '/run/podman/podman.sock'
+    dest: '/run/docker.sock'
+    state: link
+    force: true
+  when: podman_docker_socket_symlink | bool
+  failed_when: false
+
+- name: Configure | Ensure root config directory exists for auth
+  ansible.builtin.file:
+    path: '/root/.config/containers'
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: podman_registries_auth | length > 0
+
+- name: Configure | Setup registry authentication
+  ansible.builtin.template:
+    src: auth.json.j2
+    dest: '/root/.config/containers/auth.json'
+    owner: root
+    group: root
+    mode: '0600'
+  when: podman_registries_auth | length > 0
+  no_log: true

@@ -1,0 +1,11 @@
+{{ ansible_managed | comment }}
+
+[Coredump]
+Storage={{ base_coredump_storage }}
+{% if base_coredump_compress %}
+Compress=yes
+{% else %}
+Compress=no
+{% endif %}
+ProcessSizeMax={{ base_coredump_max_size }}
+ExternalSizeMax={{ base_coredump_max_size }}

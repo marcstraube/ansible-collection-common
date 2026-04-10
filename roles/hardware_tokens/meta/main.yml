@@ -1,0 +1,33 @@
+---
+# =============================================================================
+# Hardware Tokens Role Metadata
+# =============================================================================
+
+galaxy_info:
+  author: Marc Straube
+  description: Configure hardware security tokens (NitroKey, YubiKey, FIDO2, smart cards)
+  license: MIT
+
+  min_ansible_version: '2.17'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - security
+    - hardware
+    - yubikey
+    - nitrokey
+    - fido2
+    - u2f
+    - smartcard
+
+dependencies: []

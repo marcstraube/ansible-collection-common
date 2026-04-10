@@ -1,0 +1,14 @@
+---
+- name: Reload sshd
+  ansible.builtin.systemd:
+    name: "{{ __openssh_server_service }}"
+    state: reloaded
+  when: openssh_server_enabled | bool
+  listen: 'reload sshd'
+
+- name: Restart sshd
+  ansible.builtin.systemd:
+    name: "{{ __openssh_server_service }}"
+    state: restarted
+  when: openssh_server_enabled | bool
+  listen: 'restart sshd'

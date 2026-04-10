@@ -1,0 +1,29 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+
+set -euo pipefail
+
+BLOCKLIST_FILE="/etc/unbound/conf.d/blocklist.conf"
+TEMP_FILE=$(mktemp)
+
+echo "# Unbound blocklist - auto-generated" > "$TEMP_FILE"
+echo "# Updated: $(date)" >> "$TEMP_FILE"
+echo "" >> "$TEMP_FILE"
+
+{% for url in unbound_blocklist_urls %}
+echo "Downloading blocklist from: {{ url }}"
+curl -sS "{{ url }}" | \
+    grep -E '^0\.0\.0\.0' | \
+    awk '{print "local-zone: \""$2"\" always_nxdomain"}' >> "$TEMP_FILE" || true
+
+{% endfor %}
+
+# Count entries
+ENTRIES=$(grep -c 'local-zone' "$TEMP_FILE" || echo "0")
+echo "Total blocklist entries: $ENTRIES"
+
+# Move to final location
+mv "$TEMP_FILE" "$BLOCKLIST_FILE"
+chmod 644 "$BLOCKLIST_FILE"
+
+echo "Blocklist updated successfully"

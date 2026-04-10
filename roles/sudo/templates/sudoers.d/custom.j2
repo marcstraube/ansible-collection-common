@@ -1,0 +1,36 @@
+{{ ansible_managed | comment }}
+# Custom sudoers configuration: {{ item.name }}
+{% if item.content is defined %}
+{{ item.content }}
+{% else %}
+{% for user in item.users | default([]) %}
+{% if item.commands is defined and item.commands | length > 0 %}
+{% if item.nopasswd | default(false) %}
+{{ user }} ALL=(ALL:ALL) NOPASSWD: {{ item.commands | join(', ') }}
+{% else %}
+{{ user }} ALL=(ALL:ALL) {{ item.commands | join(', ') }}
+{% endif %}
+{% else %}
+{% if item.nopasswd | default(false) %}
+{{ user }} ALL=(ALL:ALL) NOPASSWD: ALL
+{% else %}
+{{ user }} ALL=(ALL:ALL) ALL
+{% endif %}
+{% endif %}
+{% endfor %}
+{% for group in item.groups | default([]) %}
+{% if item.commands is defined and item.commands | length > 0 %}
+{% if item.nopasswd | default(false) %}
+%{{ group }} ALL=(ALL:ALL) NOPASSWD: {{ item.commands | join(', ') }}
+{% else %}
+%{{ group }} ALL=(ALL:ALL) {{ item.commands | join(', ') }}
+{% endif %}
+{% else %}
+{% if item.nopasswd | default(false) %}
+%{{ group }} ALL=(ALL:ALL) NOPASSWD: ALL
+{% else %}
+%{{ group }} ALL=(ALL:ALL) ALL
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}

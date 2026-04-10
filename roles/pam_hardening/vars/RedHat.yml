@@ -1,0 +1,12 @@
+---
+# =============================================================================
+# RedHat/Fedora-specific variables for PAM
+# =============================================================================
+
+__pam_packages:
+  - pam
+  - authselect
+
+__pam_pwquality_package: 'libpwquality'
+
+__pam_google_authenticator_package: 'google-authenticator'

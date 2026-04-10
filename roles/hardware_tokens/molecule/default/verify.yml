@@ -1,0 +1,172 @@
+---
+# marcstraube.common.hardware_tokens/molecule/default/verify.yml
+
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+
+  tasks:
+    # ==========================================================================
+    # PACKAGE VERIFICATION
+    # ==========================================================================
+    - name: Check CCID package is installed
+      ansible.builtin.package:
+        name: "{{ 'ccid' if ansible_facts['os_family'] != 'Debian' else 'libccid' }}"
+        state: present
+      check_mode: true
+      register: ccid_pkg
+      failed_when: ccid_pkg.changed
+
+    - name: Check libfido2 package is installed
+      ansible.builtin.package:
+        name: "{{ 'libfido2' if ansible_facts['os_family'] != 'Debian' else 'libfido2-1' }}"
+        state: present
+      check_mode: true
+      register: libfido2_pkg
+      failed_when: libfido2_pkg.changed
+
+    - name: Check opensc package is installed
+      ansible.builtin.package:
+        name: opensc
+        state: present
+      check_mode: true
+      register: opensc_pkg
+      failed_when: opensc_pkg.changed
+
+    - name: Check pcsc-tools package is installed
+      ansible.builtin.package:
+        name: pcsc-tools
+        state: present
+      check_mode: true
+      register: pcsc_tools_pkg
+      failed_when: pcsc_tools_pkg.changed
+
+    # ==========================================================================
+    # UDEV RULES VERIFICATION
+    # ==========================================================================
+    - name: Check udev rules deployed (non-Arch only)
+      ansible.builtin.stat:
+        path: "/etc/udev/rules.d/{{ item }}"
+      register: udev_rules
+      loop:
+        - '41-nitrokey.rules'
+        - '60-fido2.rules'
+        - '70-yubikey.rules'
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    - name: Verify udev rules permissions
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.mode == '0644'
+          - item.stat.uid == 0
+          - item.stat.gid == 0
+        fail_msg: "{{ item.item }} not deployed or has wrong permissions"
+      loop: "{{ udev_rules.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    - name: Read NitroKey udev rules content
+      ansible.builtin.slurp:
+        src: /etc/udev/rules.d/41-nitrokey.rules
+      register: nitrokey_rules_content
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    - name: Verify NitroKey udev rules contain expected entries
+      ansible.builtin.assert:
+        that:
+          - "'SUBSYSTEM' in (nitrokey_rules_content.content | b64decode)"
+          - "'20a0' in (nitrokey_rules_content.content | b64decode)"
+        fail_msg: 'NitroKey udev rules content unexpected'
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    # ==========================================================================
+    # LOCK ON REMOVAL VERIFICATION
+    # ==========================================================================
+    - name: Check lock script deployed
+      ansible.builtin.stat:
+        path: /usr/local/bin/hardware-token-lock.sh
+      register: lock_script
+
+    - name: Verify lock script
+      ansible.builtin.assert:
+        that:
+          - lock_script.stat.exists
+          - lock_script.stat.mode == '0755'
+          - lock_script.stat.uid == 0
+        fail_msg: 'Lock script not deployed or has wrong permissions'
+
+    - name: Read lock script content
+      ansible.builtin.slurp:
+        src: /usr/local/bin/hardware-token-lock.sh
+      register: lock_script_content
+
+    - name: Verify lock script contains ansible_managed
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (lock_script_content.content | b64decode)"
+        fail_msg: 'Lock script missing ansible_managed header'
+
+    - name: Check lock udev rule deployed
+      ansible.builtin.stat:
+        path: /etc/udev/rules.d/85-hardware-token-lock.rules
+      register: lock_udev_rule
+
+    - name: Verify lock udev rule
+      ansible.builtin.assert:
+        that:
+          - lock_udev_rule.stat.exists
+          - lock_udev_rule.stat.mode == '0644'
+        fail_msg: 'Lock udev rule not deployed or has wrong permissions'
+
+    - name: Read lock udev rule content
+      ansible.builtin.slurp:
+        src: /etc/udev/rules.d/85-hardware-token-lock.rules
+      register: lock_udev_content
+
+    - name: Verify lock udev rule contains device IDs
+      ansible.builtin.assert:
+        that:
+          - "'20a0' in (lock_udev_content.content | b64decode)"
+          - "'42b2' in (lock_udev_content.content | b64decode)"
+          - "'Ansible managed' in (lock_udev_content.content | b64decode)"
+        fail_msg: 'Lock udev rule content unexpected'
+
+    # ==========================================================================
+    # LIBRARY VERIFICATION
+    # ==========================================================================
+    - name: Set OS-specific library paths
+      ansible.builtin.set_fact:
+        libfido2_lib_paths:
+          - /usr/lib/libfido2.so
+          - /usr/lib64/libfido2.so
+          - /usr/lib64/libfido2.so.1
+          - /usr/lib/x86_64-linux-gnu/libfido2.so.1
+
+    - name: Check for libfido2 library existence
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: libfido2_lib_check
+      loop: "{{ libfido2_lib_paths }}"
+
+    - name: Verify at least one libfido2 library exists
+      ansible.builtin.assert:
+        that:
+          - libfido2_lib_check.results | selectattr('stat.exists', 'equalto', true) | list | length > 0
+        fail_msg: 'libfido2 library not found in any expected location'
+
+    # ==========================================================================
+    # SERVICE VERIFICATION
+    # ==========================================================================
+    - name: Check pcscd.socket is enabled
+      ansible.builtin.systemd:
+        name: pcscd.socket
+      register: pcscd_socket_status
+
+    - name: Verify pcscd.socket is enabled
+      ansible.builtin.assert:
+        that:
+          - pcscd_socket_status.status.UnitFileState == 'enabled'
+        fail_msg: 'pcscd.socket is not enabled'

@@ -1,0 +1,38 @@
+{{ ansible_managed | comment }}
+# Custom jails
+
+{% for jail in fail2ban_custom_jails %}
+[{{ jail.name }}]
+enabled = {{ jail.enabled | default(true) | lower }}
+{% if jail.port is defined %}
+port = {{ jail.port }}
+{% endif %}
+{% if jail.protocol is defined %}
+protocol = {{ jail.protocol }}
+{% endif %}
+{% if jail.filter is defined %}
+filter = {{ jail.filter }}
+{% endif %}
+{% if jail.logpath is defined %}
+logpath = {{ jail.logpath }}
+{% endif %}
+{% if jail.maxretry is defined %}
+maxretry = {{ jail.maxretry }}
+{% endif %}
+{% if jail.bantime is defined %}
+bantime = {{ jail.bantime }}
+{% endif %}
+{% if jail.findtime is defined %}
+findtime = {{ jail.findtime }}
+{% endif %}
+{% if jail.action is defined %}
+action = {{ jail.action }}
+{% endif %}
+{% if jail.ignoreip is defined %}
+ignoreip = {{ jail.ignoreip | join(' ') }}
+{% endif %}
+{% if jail.backend is defined %}
+backend = {{ jail.backend }}
+{% endif %}
+
+{% endfor %}

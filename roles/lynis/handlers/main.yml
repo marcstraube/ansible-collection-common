@@ -1,0 +1,15 @@
+---
+# =============================================================================
+# Lynis Handlers
+# =============================================================================
+
+- name: Reload systemd daemon (lynis)
+  ansible.builtin.systemd:
+    daemon_reload: true
+  failed_when: false
+
+- name: Restart lynis timer
+  ansible.builtin.systemd:
+    name: lynis-audit.timer
+    state: restarted
+  when: lynis_timer_enabled | bool

@@ -1,0 +1,5 @@
+---
+# Ansible dependencies (collections) for the marcstraube.networkmanager role.
+# Install with: ansible-galaxy install -r requirements.yml
+collections:
+  - community.general

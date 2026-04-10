@@ -1,0 +1,95 @@
+{{ ansible_managed | comment }}
+# Cryptographic settings
+
+{#- Derive algorithm lists from host key types when set to 'auto' -#}
+{%- if openssh_server_host_key_algorithms == 'auto' -%}
+{%   set _hka = [] %}
+{%   for keytype in openssh_server_host_key_types %}
+{%     if keytype in openssh_server_algorithm_map %}
+{%       for alg in openssh_server_algorithm_map[keytype]['host_key'] %}
+{%         if alg not in _hka %}
+{%           set _ = _hka.append(alg) %}
+{%         endif %}
+{%       endfor %}
+{%     endif %}
+{%   endfor %}
+{%- else -%}
+{%   set _hka = openssh_server_host_key_algorithms %}
+{%- endif -%}
+
+{%- if openssh_server_ca_signature_algorithms == 'auto' -%}
+{%   set _casa = [] %}
+{%   for keytype in openssh_server_host_key_types %}
+{%     if keytype in openssh_server_algorithm_map %}
+{%       for alg in openssh_server_algorithm_map[keytype]['ca_signature'] %}
+{%         if alg not in _casa %}
+{%           set _ = _casa.append(alg) %}
+{%         endif %}
+{%       endfor %}
+{%     endif %}
+{%   endfor %}
+{%- else -%}
+{%   set _casa = openssh_server_ca_signature_algorithms %}
+{%- endif -%}
+
+{%- if openssh_server_hostbased_accepted_algorithms == 'auto' -%}
+{%   set _hbaa = [] %}
+{%   for keytype in openssh_server_host_key_types %}
+{%     if keytype in openssh_server_algorithm_map %}
+{%       for alg in openssh_server_algorithm_map[keytype]['host_key'] %}
+{%         if alg not in _hbaa %}
+{%           set _ = _hbaa.append(alg) %}
+{%         endif %}
+{%       endfor %}
+{%     endif %}
+{%   endfor %}
+{%- else -%}
+{%   set _hbaa = openssh_server_hostbased_accepted_algorithms %}
+{%- endif -%}
+
+{%- if openssh_server_pubkey_accepted_algorithms == 'auto' -%}
+{%   set _pkaa = [] %}
+{%   for keytype in openssh_server_host_key_types %}
+{%     if keytype in openssh_server_algorithm_map %}
+{%       for alg in openssh_server_algorithm_map[keytype]['host_key'] %}
+{%         if alg not in _pkaa %}
+{%           set _ = _pkaa.append(alg) %}
+{%         endif %}
+{%       endfor %}
+{%     endif %}
+{%   endfor %}
+{%- else -%}
+{%   set _pkaa = openssh_server_pubkey_accepted_algorithms %}
+{%- endif %}
+{% if __openssh_required_rsa_size_supported | default(true) and openssh_server_required_rsa_size is defined %}
+
+RequiredRSASize {{ openssh_server_required_rsa_size }}
+{% endif %}
+{% if openssh_server_kex_algorithms | length > 0 %}
+
+KexAlgorithms {{ openssh_server_kex_algorithms | join(',') }}
+{% endif %}
+{% if openssh_server_ciphers | length > 0 %}
+
+Ciphers {{ openssh_server_ciphers | join(',') }}
+{% endif %}
+{% if openssh_server_macs | length > 0 %}
+
+MACs {{ openssh_server_macs | join(',') }}
+{% endif %}
+{% if _hka | length > 0 %}
+
+HostKeyAlgorithms {{ _hka | join(',') }}
+{% endif %}
+{% if _casa | length > 0 %}
+
+CASignatureAlgorithms {{ _casa | join(',') }}
+{% endif %}
+{% if _hbaa | length > 0 %}
+
+HostbasedAcceptedAlgorithms {{ _hbaa | join(',') }}
+{% endif %}
+{% if _pkaa | length > 0 %}
+
+PubkeyAcceptedAlgorithms {{ _pkaa | join(',') }}
+{% endif %}

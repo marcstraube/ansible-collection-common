@@ -1,0 +1,43 @@
+---
+# =============================================================================
+# Networking Playbook
+# =============================================================================
+# Network configuration, DNS, VPN, and monitoring.
+#
+# Usage:
+#   ansible-playbook marcstraube.common.networking -i inventory/
+#
+# Configure roles via inventory variables (group_vars/host_vars).
+# See each role's defaults/main.yml for available variables.
+# =============================================================================
+
+- name: Configure Networking
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Include networkmanager role
+      ansible.builtin.include_role:
+        name: marcstraube.common.networkmanager
+      when: networkmanager_enabled | default(false) | bool
+
+    - name: Include unbound role
+      ansible.builtin.include_role:
+        name: marcstraube.common.unbound
+      when: unbound_enabled | default(false) | bool
+
+    - name: Include avahi role
+      ansible.builtin.include_role:
+        name: marcstraube.common.avahi
+      when: avahi_enabled | default(false) | bool
+
+    - name: Include wireguard role
+      ansible.builtin.include_role:
+        name: marcstraube.common.wireguard
+      when: wireguard_enabled | default(false) | bool
+
+    - name: Include snmp role
+      ansible.builtin.include_role:
+        name: marcstraube.common.snmp
+      when: snmp_enabled | default(false) | bool

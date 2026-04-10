@@ -1,0 +1,21 @@
+{{ ansible_managed | comment }}
+# =============================================================================
+# logind energy management drop-in
+# =============================================================================
+# System type: {{ energy_management_system_type }}
+# NOTE: security.conf may override some of these settings (alphabetical merge)
+
+[Login]
+HandlePowerKey={{ energy_management_handle_power_key }}
+HandlePowerKeyLongPress={{ energy_management_handle_power_key_long_press }}
+HandleSuspendKey={{ energy_management_handle_suspend_key }}
+HandleHibernateKey={{ energy_management_handle_hibernate_key }}
+{% if energy_management_system_type == 'laptop' %}
+HandleLidSwitch={{ energy_management_handle_lid_switch }}
+HandleLidSwitchExternalPower={{ energy_management_handle_lid_switch_external_power }}
+HandleLidSwitchDocked={{ energy_management_handle_lid_switch_docked }}
+{% endif %}
+{% if energy_management_idle_action | length > 0 %}
+IdleAction={{ energy_management_idle_action }}
+IdleActionSec={{ energy_management_idle_action_sec }}
+{% endif %}

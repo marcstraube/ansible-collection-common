@@ -1,0 +1,15 @@
+{{ ansible_managed | comment }}
+# Sudo access for user: {{ item.name }}
+{% if item.commands is defined and item.commands | length > 0 %}
+{% if item.nopasswd | default(false) %}
+{{ item.name }} ALL=(ALL:ALL) NOPASSWD: {{ item.commands | join(', ') }}
+{% else %}
+{{ item.name }} ALL=(ALL:ALL) {{ item.commands | join(', ') }}
+{% endif %}
+{% else %}
+{% if item.nopasswd | default(false) %}
+{{ item.name }} ALL=(ALL:ALL) NOPASSWD: ALL
+{% else %}
+{{ item.name }} ALL=(ALL:ALL) ALL
+{% endif %}
+{% endif %}

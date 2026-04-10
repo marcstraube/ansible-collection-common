@@ -1,0 +1,13 @@
+{{ ansible_managed | comment }}
+#
+# Certificate expiry check timer
+
+[Unit]
+Description=PKI Certificate Expiry Check Timer
+
+[Timer]
+OnCalendar={{ pki_renewal_timer_oncalendar }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

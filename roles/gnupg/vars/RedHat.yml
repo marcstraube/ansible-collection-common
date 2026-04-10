@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# RedHat/Rocky-specific variables for GnuPG
+# =============================================================================
+
+__gnupg_packages:
+  - 'gnupg2'
+
+__gnupg_tools_packages:
+  - 'paperkey'
+
+__gnupg_gui_packages:
+  - 'pinentry-gtk'
+  - 'seahorse'
+
+__gnupg_config_dir: '.gnupg'

@@ -1,0 +1,81 @@
+{{ ansible_managed | comment(decoration='" ') }}
+" Neovim Global Configuration
+{% if editors_neovim_config.syntax_on | default(true) %}
+
+" Basic settings
+syntax on
+{% endif %}
+{% if editors_neovim_config.set_number | default(true) %}
+set number
+{% endif %}
+{% if editors_neovim_config.set_relativenumber | default(true) %}
+set relativenumber
+{% endif %}
+{% if editors_neovim_config.set_expandtab | default(true) %}
+
+" Indentation
+set expandtab
+{% endif %}
+set tabstop={{ editors_neovim_config.set_tabstop | default(4) }}
+set shiftwidth={{ editors_neovim_config.set_shiftwidth | default(4) }}
+{% if editors_neovim_config.set_autoindent | default(true) %}
+set autoindent
+{% endif %}
+{% if editors_neovim_config.set_smartindent | default(true) %}
+set smartindent
+{% endif %}
+{% if editors_neovim_config.set_mouse is defined %}
+
+" Mouse support
+set mouse={{ editors_neovim_config.set_mouse }}
+{% endif %}
+
+" Encoding
+set encoding={{ editors_neovim_config.set_encoding | default('utf-8') }}
+{% if editors_neovim_config.set_clipboard is defined %}
+
+" Clipboard
+set clipboard={{ editors_neovim_config.set_clipboard }}
+{% endif %}
+{% if editors_neovim_config.set_termguicolors | default(true) %}
+
+" True colors
+set termguicolors
+{% endif %}
+{% if editors_neovim_config.set_hlsearch | default(true) %}
+
+" Search
+set hlsearch
+{% endif %}
+{% if editors_neovim_config.set_incsearch | default(true) %}
+set incsearch
+{% endif %}
+{% if editors_neovim_config.set_ignorecase | default(true) %}
+set ignorecase
+{% endif %}
+{% if editors_neovim_config.set_smartcase | default(true) %}
+set smartcase
+{% endif %}
+{% if editors_neovim_config.set_showmatch | default(true) %}
+
+" Visual
+set showmatch
+{% endif %}
+{% if editors_neovim_config.set_showcmd | default(true) %}
+set showcmd
+{% endif %}
+set laststatus={{ editors_neovim_config.set_laststatus | default(2) }}
+{% if editors_neovim_config.set_signcolumn is defined %}
+set signcolumn={{ editors_neovim_config.set_signcolumn }}
+{% endif %}
+{% if editors_neovim_config.set_cursorline | default(true) %}
+set cursorline
+{% endif %}
+{% if editors_neovim_config.colorscheme | default('') | length > 0 %}
+
+colorscheme {{ editors_neovim_config.colorscheme }}
+{% endif %}
+
+" Performance
+set updatetime={{ editors_neovim_config.set_updatetime | default(300) }}
+set timeoutlen={{ editors_neovim_config.set_timeoutlen | default(500) }}

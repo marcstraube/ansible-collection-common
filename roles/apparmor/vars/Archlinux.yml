@@ -1,0 +1,19 @@
+---
+# =============================================================================
+# ArchLinux-specific variables for AppArmor
+# =============================================================================
+
+# On Arch Linux, the single 'apparmor' package includes everything:
+# utils (aa-enforce, aa-complain, etc.), profiles, and aa-notify.
+
+__apparmor_packages:
+  - 'apparmor'
+
+__apparmor_utils_packages:
+  - 'apparmor'
+
+__apparmor_extra_profiles_package: 'apparmor'
+
+__apparmor_notify_package: 'apparmor'
+
+__apparmor_service_name: 'apparmor.service'

@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# WireGuard - Service Tasks
+# =============================================================================
+
+- name: Service | Enable and start WireGuard
+  ansible.builtin.systemd:
+    name: 'wg-quick@{{ wireguard_interface }}'
+    enabled: true
+    state: started

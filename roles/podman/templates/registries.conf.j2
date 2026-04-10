@@ -1,0 +1,44 @@
+{{ ansible_managed | comment }}
+#
+# Podman Registries Configuration
+# See containers-registries.conf(5) for details.
+
+# Unqualified search registries (tried in order for short image names)
+unqualified-search-registries = [{% for reg in podman_registries_search %}"{{ reg }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+{% if podman_short_name_mode is defined and podman_short_name_mode %}
+
+# Short-name resolution mode (enforcing, permissive, disabled)
+short-name-mode = "{{ podman_short_name_mode }}"
+{% endif %}
+{% if podman_credential_helpers is defined and podman_credential_helpers | length > 0 %}
+
+# Default credential helpers
+credential-helpers = [{% for helper in podman_credential_helpers %}"{{ helper }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+{% endif %}
+{% for registry in podman_registries | default([]) %}
+
+[[registry]]
+prefix = "{{ registry.prefix }}"
+location = "{{ registry.location | default(registry.prefix) }}"
+{% if registry.insecure | default(false) %}
+insecure = true
+{% endif %}
+{% if registry.blocked | default(false) %}
+blocked = true
+{% endif %}
+{% for mirror in registry.mirrors | default([]) %}
+
+[[registry.mirror]]
+location = "{{ mirror.location }}"
+{% if mirror.insecure | default(false) %}
+insecure = true
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% for blocked in podman_registries_blocked | default([]) %}
+
+[[registry]]
+prefix = "{{ blocked }}"
+location = "{{ blocked }}"
+blocked = true
+{% endfor %}

@@ -1,0 +1,106 @@
+# marcstraube.networkmanager/molecule/default/Vagrantfile
+#
+# MOLECULE_PLATFORM_NAME filters which VM to create.
+# If unset, all VMs are created (not recommended — RAM constraints).
+
+platform = ENV['MOLECULE_PLATFORM_NAME'] || ''
+
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  if platform.empty? || platform == "networkmanager-archlinux"
+    config.vm.define "networkmanager-archlinux" do |node|
+      node.vm.box = "marcstraube/archlinux-ansible"
+      node.vm.hostname = "networkmanager-archlinux"
+      node.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh", auto_correct: false
+
+      # Create eth1 and eth2 as real virtual NICs (eth0 is the default NAT interface)
+      node.vm.network "private_network", type: "dhcp" # Creates eth1
+      node.vm.network "private_network", type: "dhcp" # Creates eth2
+
+      # Provision script to create virtual WiFi interfaces for testing
+      node.vm.provision "shell", inline: <<-SHELL
+        # Load mac80211_hwsim kernel module to create virtual WiFi interfaces
+        # This creates WiFi interfaces that NetworkManager recognizes as real WiFi devices
+        # We create 4 radios: 2 for APs (wlan0/wlan1) and 2 for clients (wlan2/wlan3)
+        if ! lsmod | grep -q mac80211_hwsim; then
+          echo "Loading mac80211_hwsim kernel module with 4 virtual radios..."
+          modprobe mac80211_hwsim radios=4
+          sleep 2  # Give the kernel time to create the interfaces
+        fi
+
+        echo "Virtual WiFi interfaces created:"
+        iw dev || echo "iw command not available, installing iw..."
+
+        # Install iw if not present (needed to inspect WiFi interfaces)
+        if ! command -v iw &> /dev/null; then
+          pacman -Sy --noconfirm iw
+        fi
+
+        echo "WiFi devices:"
+        iw dev
+
+        echo "All network interfaces:"
+        ip link show | grep -E '(eth[0-9]|wlan[0-9])'
+      SHELL
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = 2
+        vb.name = "molecule-networkmanager-archlinux"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "networkmanager-debian-trixie"
+    config.vm.define "networkmanager-debian-trixie" do |node|
+      node.vm.box = "cloud-image/debian-13"
+      node.vm.hostname = "networkmanager-debian-trixie"
+      node.vm.network "forwarded_port", guest: 22, host: 2223, id: "ssh", auto_correct: false
+
+      # Extra NIC for ethernet connection testing
+      node.vm.network "private_network", type: "dhcp"
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "768"
+        vb.cpus = 1
+        vb.name = "molecule-networkmanager-debian-trixie"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "networkmanager-rocky-9"
+    config.vm.define "networkmanager-rocky-9" do |node|
+      node.vm.box = "bento/rockylinux-9"
+      node.vm.hostname = "networkmanager-rocky-9"
+      node.vm.network "forwarded_port", guest: 22, host: 2224, id: "ssh", auto_correct: false
+
+      # Extra NIC for ethernet connection testing
+      node.vm.network "private_network", type: "dhcp"
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "768"
+        vb.cpus = 1
+        vb.name = "molecule-networkmanager-rocky-9"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "networkmanager-rocky-10"
+    config.vm.define "networkmanager-rocky-10" do |node|
+      node.vm.box = "bento/rockylinux-10"
+      node.vm.hostname = "networkmanager-rocky-10"
+      node.vm.network "forwarded_port", guest: 22, host: 2225, id: "ssh", auto_correct: false
+
+      # Extra NIC for ethernet connection testing
+      node.vm.network "private_network", type: "dhcp"
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "768"
+        vb.cpus = 1
+        vb.name = "molecule-networkmanager-rocky-10"
+      end
+    end
+  end
+end

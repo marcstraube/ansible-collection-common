@@ -1,0 +1,18 @@
+---
+# =============================================================================
+# Chrony - Service Tasks
+# =============================================================================
+
+- name: Service | Enable and start chrony
+  ansible.builtin.systemd:
+    name: '{{ __chrony_service_name }}'
+    enabled: true
+    state: started
+  when: chrony_enabled | bool
+
+- name: Service | Stop and disable chrony
+  ansible.builtin.systemd:
+    name: '{{ __chrony_service_name }}'
+    enabled: false
+    state: stopped
+  when: not (chrony_enabled | bool)

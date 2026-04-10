@@ -1,0 +1,23 @@
+---
+# =============================================================================
+# Logrotate - Configuration Tasks
+# =============================================================================
+
+- name: Configure | Deploy main logrotate.conf
+  ansible.builtin.template:
+    src: logrotate.conf.j2
+    dest: '{{ __logrotate_config_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Configure | Deploy custom log configurations
+  ansible.builtin.template:
+    src: logrotate.d.j2
+    dest: '{{ __logrotate_config_dir }}/{{ item.name }}'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ logrotate_configs }}'
+  loop_control:
+    label: '{{ item.name }}'

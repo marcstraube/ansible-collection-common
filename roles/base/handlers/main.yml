@@ -1,0 +1,49 @@
+---
+# =============================================================================
+# Base System Handlers
+# =============================================================================
+
+- name: Generate locales (Arch/Debian)
+  ansible.builtin.command:
+    cmd: locale-gen
+  changed_when: true
+  listen: 'generate locales'
+  when: ansible_facts['os_family'] in ['Archlinux', 'Debian']
+
+- name: Generate locales (RedHat)
+  ansible.builtin.command:
+    cmd: >-
+      localedef -i {{ item.split('.')[0] }}
+      -f {{ item.split('.')[1].split(' ')[0] }}
+      {{ item.split(' ')[0] }}
+  loop: '{{ base_locales }}'
+  changed_when: true
+  listen: 'generate locales'
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Restart timesyncd
+  ansible.builtin.systemd:
+    name: 'systemd-timesyncd.service'
+    state: restarted
+  listen: 'restart timesyncd'
+  when: ansible_facts['os_family'] != 'RedHat'
+
+- name: Regenerate initramfs
+  ansible.builtin.command:
+    cmd: 'mkinitcpio -P'
+  changed_when: true
+  listen: 'regenerate initramfs'
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Restart journald
+  ansible.builtin.systemd:
+    name: 'systemd-journald.service'
+    state: restarted
+  listen: 'restart journald'
+
+- name: Regenerate GRUB config
+  ansible.builtin.command:
+    cmd: 'grub-mkconfig -o /boot/grub/grub.cfg'
+  changed_when: true
+  listen: 'regenerate grub config'
+  when: base_bootloader == 'grub'

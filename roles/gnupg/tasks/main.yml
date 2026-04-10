@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# GnuPG Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  when: gnupg_enabled | default(true) | bool
+  tags: [gnupg]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: gnupg_enabled | default(true) | bool
+  tags: [gnupg, gnupg:install]
+
+- name: Main | Configure users
+  ansible.builtin.include_tasks:
+    file: configure.yml
+    apply:
+      tags: [gnupg, gnupg:configure]
+  loop: '{{ gnupg_users }}'
+  loop_control:
+    loop_var: gnupg_user
+  when:
+    - gnupg_enabled | default(true) | bool
+    - gnupg_users | length > 0
+    - (gnupg_user.mode | default(gnupg_user_config_mode)) != 'disabled'
+    - >-
+      (gnupg_user.mode | default(gnupg_user_config_mode)) == 'managed'
+      or ((gnupg_user.mode | default(gnupg_user_config_mode)) == 'initial'
+          and gnupg_user.username in (__users_newly_created | default([])))
+  tags: [gnupg, gnupg:configure]

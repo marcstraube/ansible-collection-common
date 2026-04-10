@@ -1,0 +1,278 @@
+---
+# marcstraube.common.hardening/molecule/default/verify.yml
+
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+
+  tasks:
+    # =========================================================================
+    # SYSCTL HARDENING
+    # =========================================================================
+    - name: Verify | Check hardening sysctl config exists
+      ansible.builtin.stat:
+        path: /etc/sysctl.d/99-hardening.conf
+      register: sysctl_hardening
+
+    - name: Verify | Assert sysctl config is deployed
+      ansible.builtin.assert:
+        that:
+          - sysctl_hardening.stat.exists
+          - sysctl_hardening.stat.mode == '0644'
+        fail_msg: 'Sysctl hardening config should exist with mode 0644'
+
+    - name: Verify | Read sysctl hardening config
+      ansible.builtin.slurp:
+        src: /etc/sysctl.d/99-hardening.conf
+      register: sysctl_content
+
+    - name: Verify | Decode sysctl config
+      ansible.builtin.set_fact:
+        sysctl_decoded: "{{ sysctl_content.content | b64decode }}"
+
+    - name: Verify | Check sysctl config has ansible_managed header
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in sysctl_decoded"
+        fail_msg: 'Sysctl config missing ansible_managed header'
+
+    - name: Verify | Check sysctl config contains expected kernel settings
+      ansible.builtin.assert:
+        that:
+          - "'kernel.kptr_restrict = 2' in sysctl_decoded"
+          - "'kernel.dmesg_restrict = 1' in sysctl_decoded"
+          - "'kernel.randomize_va_space = 2' in sysctl_decoded"
+          - "'fs.suid_dumpable = 0' in sysctl_decoded"
+          - "'kernel.sysrq = 4' in sysctl_decoded"
+          - "'kernel.kexec_load_disabled = 1' in sysctl_decoded"
+          - "'dev.tty.ldisc_autoload = 0' in sysctl_decoded"
+          - "'kernel.core_uses_pid = 1' in sysctl_decoded"
+        fail_msg: 'Sysctl hardening config missing expected kernel settings'
+
+    - name: Verify | Check sysctl config contains fs.protected_* settings
+      ansible.builtin.assert:
+        that:
+          - "'fs.protected_hardlinks = 1' in sysctl_decoded"
+          - "'fs.protected_symlinks = 1' in sysctl_decoded"
+          - "'fs.protected_fifos = 2' in sysctl_decoded"
+          - "'fs.protected_regular = 2' in sysctl_decoded"
+        fail_msg: 'Sysctl config missing fs.protected_* settings'
+
+    - name: Verify | Check perf_event_paranoid is platform-correct
+      ansible.builtin.assert:
+        that:
+          - "'kernel.perf_event_paranoid = 3' in sysctl_decoded"
+        fail_msg: 'perf_event_paranoid should be 3 on Arch/Debian'
+      when: ansible_facts['os_family'] in ['Archlinux', 'Debian']
+
+    - name: Verify | Check perf_event_paranoid is 2 on RedHat
+      ansible.builtin.assert:
+        that:
+          - "'kernel.perf_event_paranoid = 2' in sysctl_decoded"
+        fail_msg: 'perf_event_paranoid should be 2 on RedHat'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # -------------------------------------------------------------------------
+    # Runtime sysctl verification
+    # -------------------------------------------------------------------------
+    - name: Verify | Check kernel.kptr_restrict at runtime
+      ansible.builtin.command:
+        cmd: sysctl -n kernel.kptr_restrict
+      register: kptr_restrict
+      changed_when: false
+
+    - name: Verify | Assert kernel.kptr_restrict value
+      ansible.builtin.assert:
+        that:
+          - kptr_restrict.stdout | trim == '2'
+        fail_msg: 'kernel.kptr_restrict not set to 2'
+
+    - name: Verify | Check kernel.dmesg_restrict at runtime
+      ansible.builtin.command:
+        cmd: sysctl -n kernel.dmesg_restrict
+      register: dmesg_restrict
+      changed_when: false
+
+    - name: Verify | Assert kernel.dmesg_restrict value
+      ansible.builtin.assert:
+        that:
+          - dmesg_restrict.stdout | trim == '1'
+        fail_msg: 'kernel.dmesg_restrict not set to 1'
+
+    - name: Verify | Check fs.suid_dumpable at runtime
+      ansible.builtin.command:
+        cmd: sysctl -n fs.suid_dumpable
+      register: suid_dumpable
+      changed_when: false
+
+    - name: Verify | Assert fs.suid_dumpable value
+      ansible.builtin.assert:
+        that:
+          - suid_dumpable.stdout | trim == '0'
+        fail_msg: 'fs.suid_dumpable not set to 0'
+
+    - name: Verify | Check fs.protected_fifos at runtime
+      ansible.builtin.command:
+        cmd: sysctl -n fs.protected_fifos
+      register: protected_fifos
+      changed_when: false
+
+    - name: Verify | Assert fs.protected_fifos value
+      ansible.builtin.assert:
+        that:
+          - protected_fifos.stdout | trim == '2'
+        fail_msg: 'fs.protected_fifos not set to 2'
+
+    - name: Verify | Check fs.protected_regular at runtime
+      ansible.builtin.command:
+        cmd: sysctl -n fs.protected_regular
+      register: protected_regular
+      changed_when: false
+
+    - name: Verify | Assert fs.protected_regular value
+      ansible.builtin.assert:
+        that:
+          - protected_regular.stdout | trim == '2'
+        fail_msg: 'fs.protected_regular not set to 2'
+
+    - name: Verify | Check kernel.yama.ptrace_scope at runtime
+      ansible.builtin.command:
+        cmd: sysctl -n kernel.yama.ptrace_scope
+      register: ptrace_scope
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert kernel.yama.ptrace_scope value
+      ansible.builtin.assert:
+        that:
+          - ptrace_scope.stdout | trim == '1'
+        fail_msg: 'kernel.yama.ptrace_scope not set to 1'
+      when: ptrace_scope.rc == 0
+
+    # =========================================================================
+    # KERNEL MODULE BLACKLISTING
+    # =========================================================================
+    - name: Verify | Check modprobe blacklist config exists
+      ansible.builtin.stat:
+        path: /etc/modprobe.d/hardening-blacklist.conf
+      register: modprobe_blacklist
+
+    - name: Verify | Assert modprobe blacklist is deployed
+      ansible.builtin.assert:
+        that:
+          - modprobe_blacklist.stat.exists
+          - modprobe_blacklist.stat.mode == '0644'
+        fail_msg: 'Modprobe blacklist config should exist with mode 0644'
+
+    - name: Verify | Read modprobe blacklist config
+      ansible.builtin.slurp:
+        src: /etc/modprobe.d/hardening-blacklist.conf
+      register: modprobe_content
+
+    - name: Verify | Decode modprobe blacklist
+      ansible.builtin.set_fact:
+        modprobe_decoded: "{{ modprobe_content.content | b64decode }}"
+
+    - name: Verify | Check modprobe blacklist has ansible_managed header
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in modprobe_decoded"
+        fail_msg: 'Modprobe blacklist missing ansible_managed header'
+
+    - name: Verify | Check filesystem modules are blacklisted
+      ansible.builtin.assert:
+        that:
+          - "'blacklist cramfs' in modprobe_decoded"
+          - "'install cramfs /bin/false' in modprobe_decoded"
+          - "'blacklist hfs' in modprobe_decoded"
+          - "'blacklist udf' in modprobe_decoded"
+          - "'blacklist freevxfs' in modprobe_decoded"
+        fail_msg: 'Modprobe blacklist missing filesystem modules'
+
+    - name: Verify | Check network modules are blacklisted
+      ansible.builtin.assert:
+        that:
+          - "'blacklist dccp' in modprobe_decoded"
+          - "'install dccp /bin/false' in modprobe_decoded"
+          - "'blacklist sctp' in modprobe_decoded"
+          - "'blacklist rds' in modprobe_decoded"
+          - "'blacklist tipc' in modprobe_decoded"
+        fail_msg: 'Modprobe blacklist missing network modules'
+
+    - name: Verify | Check extra modules are blacklisted
+      ansible.builtin.assert:
+        that:
+          - "'blacklist firewire-core' in modprobe_decoded"
+          - "'install firewire-core /bin/false' in modprobe_decoded"
+        fail_msg: 'Modprobe blacklist missing extra modules (firewire-core)'
+
+    # =========================================================================
+    # FILESYSTEM MOUNT HARDENING
+    # =========================================================================
+    - name: Verify | Check /tmp mount options
+      ansible.builtin.command:
+        cmd: findmnt -n -o OPTIONS /tmp
+      register: tmp_mount
+      changed_when: false
+
+    - name: Verify | Assert /tmp has hardened mount options
+      ansible.builtin.assert:
+        that:
+          - "'nodev' in tmp_mount.stdout"
+          - "'nosuid' in tmp_mount.stdout"
+          - "'noexec' in tmp_mount.stdout"
+        fail_msg: '/tmp missing hardened mount options (nodev,nosuid,noexec)'
+
+    - name: Verify | Check /dev/shm mount options
+      ansible.builtin.command:
+        cmd: findmnt -n -o OPTIONS /dev/shm
+      register: shm_mount
+      changed_when: false
+
+    - name: Verify | Assert /dev/shm has hardened mount options
+      ansible.builtin.assert:
+        that:
+          - "'nodev' in shm_mount.stdout"
+          - "'nosuid' in shm_mount.stdout"
+          - "'noexec' in shm_mount.stdout"
+        fail_msg: '/dev/shm missing hardened mount options (nodev,nosuid,noexec)'
+
+    - name: Verify | Check /var/tmp mount options
+      ansible.builtin.command:
+        cmd: findmnt -n -o OPTIONS /var/tmp
+      register: vartmp_mount
+      changed_when: false
+
+    - name: Verify | Assert /var/tmp has hardened mount options (inherited from /tmp)
+      ansible.builtin.assert:
+        that:
+          - "'nodev' in vartmp_mount.stdout"
+          - "'nosuid' in vartmp_mount.stdout"
+          - "'noexec' in vartmp_mount.stdout"
+        fail_msg: '/var/tmp missing hardened mount options (should inherit from /tmp bind mount)'
+
+    # =========================================================================
+    # FSTAB PERSISTENCE
+    # =========================================================================
+    - name: Verify | Read fstab
+      ansible.builtin.slurp:
+        src: /etc/fstab
+      register: fstab_content
+
+    - name: Verify | Decode fstab
+      ansible.builtin.set_fact:
+        fstab_decoded: "{{ fstab_content.content | b64decode }}"
+
+    - name: Verify | Check fstab has /tmp entry
+      ansible.builtin.assert:
+        that:
+          - "'/tmp' in fstab_decoded"
+          - "'noexec' in fstab_decoded"
+        fail_msg: 'fstab missing /tmp hardened entry'
+
+    - name: Verify | Check fstab has /dev/shm entry
+      ansible.builtin.assert:
+        that:
+          - "'/dev/shm' in fstab_decoded"
+        fail_msg: 'fstab missing /dev/shm hardened entry'

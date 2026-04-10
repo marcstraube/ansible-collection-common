@@ -1,0 +1,198 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # ==========================================================================
+    # LOAD OS-SPECIFIC VARIABLES
+    # ==========================================================================
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    # ==========================================================================
+    # PACKAGE VERIFICATION
+    # ==========================================================================
+    - name: Verify | Check chrony package is installed
+      ansible.builtin.package:
+        name: chrony
+        state: present
+      check_mode: true
+      register: chrony_pkg_check
+      failed_when: chrony_pkg_check.changed
+
+    # ==========================================================================
+    # CONFIGURATION FILE VERIFICATION
+    # ==========================================================================
+    - name: Verify | Check configuration file exists
+      ansible.builtin.stat:
+        path: '{{ __chrony_config_file }}'
+      register: chrony_config_stat
+
+    - name: Verify | Assert config file exists and has correct permissions
+      ansible.builtin.assert:
+        that:
+          - chrony_config_stat.stat.exists
+          - chrony_config_stat.stat.mode == '0644'
+        fail_msg: 'Chrony config file missing or has incorrect permissions'
+
+    # ==========================================================================
+    # CONFIGURATION CONTENT VALIDATION
+    # ==========================================================================
+    - name: Verify | Read chrony configuration
+      ansible.builtin.slurp:
+        src: '{{ __chrony_config_file }}'
+      register: chrony_config_content
+
+    - name: Verify | Decode config content
+      ansible.builtin.set_fact:
+        __chrony_config_decoded: '{{ chrony_config_content.content | b64decode }}'
+
+    - name: Verify | Check ansible_managed header
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in __chrony_config_decoded"
+        fail_msg: 'Config file missing ansible_managed header'
+
+    - name: Verify | Check NTP server configuration
+      ansible.builtin.assert:
+        that:
+          - "'server de.pool.ntp.org' in __chrony_config_decoded"
+          - "'server 0.pool.ntp.org' in __chrony_config_decoded"
+        fail_msg: 'NTP servers not configured correctly'
+
+    - name: Verify | Check drift file configured
+      ansible.builtin.assert:
+        that:
+          - "'driftfile' in __chrony_config_decoded"
+        fail_msg: 'Drift file not configured'
+
+    - name: Verify | Check makestep configured
+      ansible.builtin.assert:
+        that:
+          - "'makestep' in __chrony_config_decoded"
+        fail_msg: 'Makestep not configured'
+
+    - name: Verify | Check rtcsync configured
+      ansible.builtin.assert:
+        that:
+          - "'rtcsync' in __chrony_config_decoded"
+        fail_msg: 'RTC sync not configured'
+
+    - name: "Verify | Check rtconutc configured (default: RTC on UTC)"
+      ansible.builtin.assert:
+        that:
+          - "'rtconutc' in __chrony_config_decoded"
+        fail_msg: 'rtconutc not configured (RTC should default to UTC)'
+
+    - name: Verify | Check minsources configured
+      ansible.builtin.assert:
+        that:
+          - "'minsources 1' in __chrony_config_decoded"
+        fail_msg: 'minsources not configured'
+
+    - name: Verify | Check log directory configured
+      ansible.builtin.assert:
+        that:
+          - "'logdir' in __chrony_config_decoded"
+        fail_msg: 'Log directory not configured'
+
+    - name: Verify | Check no deprecated commandkey directive
+      ansible.builtin.assert:
+        that:
+          - "'commandkey' not in __chrony_config_decoded"
+        fail_msg: 'Deprecated commandkey directive still present'
+
+    # ==========================================================================
+    # SERVICE VERIFICATION
+    # ==========================================================================
+    - name: Verify | Check chrony service is enabled
+      ansible.builtin.systemd:
+        name: '{{ __chrony_service_name }}'
+        enabled: true
+      check_mode: true
+      register: chrony_service_enabled
+      failed_when: chrony_service_enabled.changed
+
+    - name: Verify | Check chrony service is running
+      ansible.builtin.systemd:
+        name: '{{ __chrony_service_name }}'
+        state: started
+      check_mode: true
+      register: chrony_service_running
+      failed_when: chrony_service_running.changed
+
+    # ==========================================================================
+    # FUNCTIONAL TESTS
+    # ==========================================================================
+    - name: Verify | Test chronyc tracking command works
+      ansible.builtin.command:
+        cmd: chronyc tracking
+      register: chrony_tracking
+      changed_when: false
+      failed_when: chrony_tracking.rc != 0
+
+    - name: Verify | Check tracking output contains expected fields
+      ansible.builtin.assert:
+        that:
+          - "'Reference ID' in chrony_tracking.stdout or 'Leap status' in chrony_tracking.stdout"
+        fail_msg: 'Chronyc tracking output does not contain expected fields'
+
+    - name: Verify | Test chronyc sources command works
+      ansible.builtin.command:
+        cmd: chronyc sources
+      register: chrony_sources
+      changed_when: false
+      failed_when: chrony_sources.rc != 0
+
+    - name: Verify | Check chronyc sources command returned output
+      ansible.builtin.assert:
+        that:
+          - "chrony_sources.stdout | length > 0"
+        fail_msg: 'chronyc sources returned no output'
+
+    - name: Verify | Test chronyc activity command works
+      ansible.builtin.command:
+        cmd: chronyc activity
+      register: chrony_activity
+      changed_when: false
+      failed_when: chrony_activity.rc != 0
+
+    # ==========================================================================
+    # LOG DIRECTORY VERIFICATION
+    # ==========================================================================
+    - name: Verify | Check log directory exists
+      ansible.builtin.stat:
+        path: /var/log/chrony
+      register: chrony_log_dir
+
+    - name: Verify | Assert log directory exists with correct ownership
+      ansible.builtin.assert:
+        that:
+          - chrony_log_dir.stat.exists
+          - chrony_log_dir.stat.isdir
+          - chrony_log_dir.stat.mode == '0750'
+        fail_msg: 'Chrony log directory missing or wrong permissions'
+
+    # ==========================================================================
+    # DRIFT FILE VERIFICATION
+    # ==========================================================================
+    - name: Verify | Check drift file parent directory exists
+      ansible.builtin.stat:
+        path: /var/lib/chrony
+      register: chrony_drift_dir
+
+    - name: Verify | Assert drift file directory exists
+      ansible.builtin.assert:
+        that:
+          - chrony_drift_dir.stat.exists
+          - chrony_drift_dir.stat.isdir
+        fail_msg: 'Chrony drift file directory does not exist'

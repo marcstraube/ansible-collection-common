@@ -1,0 +1,31 @@
+# YubiKey udev rules
+# Allow access for users in plugdev group
+
+# YubiKey 4/5 OTP+FIDO+CCID
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0407", MODE="0660", GROUP="plugdev"
+
+# YubiKey 4/5 OTP+FIDO
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0402", MODE="0660", GROUP="plugdev"
+
+# YubiKey 4/5 FIDO+CCID
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0406", MODE="0660", GROUP="plugdev"
+
+# YubiKey 4/5 OTP+CCID
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0405", MODE="0660", GROUP="plugdev"
+
+# YubiKey 4/5 FIDO
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0120", MODE="0660", GROUP="plugdev"
+
+# YubiKey 4/5 OTP
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0401", MODE="0660", GROUP="plugdev"
+
+# YubiKey 4/5 CCID
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0404", MODE="0660", GROUP="plugdev"
+
+# Security Key by Yubico
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0120", MODE="0660", GROUP="plugdev"
+
+# YubiKey NEO
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0111", MODE="0660", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0114", MODE="0660", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTR{idVendor}=="1050", ATTR{idProduct}=="0116", MODE="0660", GROUP="plugdev"

@@ -1,0 +1,58 @@
+---
+# =============================================================================
+# Python Role — Install Tasks
+# =============================================================================
+
+- name: Install | Python packages
+  ansible.builtin.package:
+    name: '{{ __python_packages + __python_pip_packages }}'
+    state: present
+
+- name: Install | pipx
+  ansible.builtin.package:
+    name: '{{ __python_pipx_packages }}'
+    state: present
+  when:
+    - python_pipx_enabled | default(true) | bool
+    - __python_pipx_packages | length > 0
+
+# -----------------------------------------------------------------------------
+# Bootstrap pipx (Rocky 9 — system pipx too old)
+# -----------------------------------------------------------------------------
+- name: Install | Create pipx bootstrap venv
+  ansible.builtin.command:
+    cmd: '{{ __python_venv_command }} /opt/pipx-bootstrap'
+    creates: /opt/pipx-bootstrap/bin/python
+  when:
+    - python_pipx_enabled | default(true) | bool
+    - __python_bootstrap_pipx | default(false) | bool
+
+- name: Install | pipx in bootstrap venv
+  ansible.builtin.pip:
+    name: pipx
+    state: present
+    virtualenv: /opt/pipx-bootstrap
+  when:
+    - python_pipx_enabled | default(true) | bool
+    - __python_bootstrap_pipx | default(false) | bool
+
+# -----------------------------------------------------------------------------
+# Extra packages
+# -----------------------------------------------------------------------------
+- name: Install | Extra Python packages (AUR)
+  become: true
+  become_user: 'aur_builder'
+  kewlfft.aur.aur:
+    name: '{{ python_extra_packages }}'
+    state: present
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - python_extra_packages | length > 0
+
+- name: Install | Extra Python packages
+  ansible.builtin.package:
+    name: '{{ python_extra_packages }}'
+    state: present
+  when:
+    - ansible_facts['os_family'] != 'Archlinux'
+    - python_extra_packages | length > 0

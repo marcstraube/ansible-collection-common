@@ -1,0 +1,17 @@
+---
+# =============================================================================
+# Debian-specific variables for GnuPG
+# =============================================================================
+
+__gnupg_packages:
+  - 'gnupg'
+
+__gnupg_tools_packages:
+  - 'hopenpgp-tools'
+  - 'paperkey'
+
+__gnupg_gui_packages:
+  - 'pinentry-gnome3'
+  - 'seahorse'
+
+__gnupg_config_dir: '.gnupg'

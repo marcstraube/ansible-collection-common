@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+{{ ansible_managed | comment('xml') }}
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+{% if fonts_fontconfig_antialias %}
+
+  <!-- Enable antialiasing -->
+  <match target="font">
+    <edit name="antialias" mode="assign">
+      <bool>true</bool>
+    </edit>
+  </match>
+{% endif %}
+{% if fonts_fontconfig_hinting %}
+
+  <!-- Hinting configuration -->
+  <match target="font">
+    <edit name="hinting" mode="assign">
+      <bool>true</bool>
+    </edit>
+    <edit name="hintstyle" mode="assign">
+      <const>{{ fonts_fontconfig_hinting }}</const>
+    </edit>
+  </match>
+{% endif %}
+{% if fonts_fontconfig_subpixel and fonts_fontconfig_subpixel != 'none' %}
+
+  <!-- Subpixel rendering -->
+  <match target="font">
+    <edit name="rgba" mode="assign">
+      <const>{{ fonts_fontconfig_subpixel }}</const>
+    </edit>
+  </match>
+{% endif %}
+{% if fonts_fontconfig_lcdfilter and fonts_fontconfig_lcdfilter != 'none' %}
+
+  <!-- LCD filter -->
+  <match target="font">
+    <edit name="lcdfilter" mode="assign">
+      <const>lcd{{ fonts_fontconfig_lcdfilter }}</const>
+    </edit>
+  </match>
+{% endif %}
+{% if fonts_fontconfig_prefer_sans %}
+
+  <!-- Preferred sans-serif font -->
+  <alias>
+    <family>sans-serif</family>
+    <prefer>
+      <family>{{ fonts_fontconfig_prefer_sans }}</family>
+    </prefer>
+  </alias>
+{% endif %}
+{% if fonts_fontconfig_prefer_serif %}
+
+  <!-- Preferred serif font -->
+  <alias>
+    <family>serif</family>
+    <prefer>
+      <family>{{ fonts_fontconfig_prefer_serif }}</family>
+    </prefer>
+  </alias>
+{% endif %}
+{% if fonts_fontconfig_prefer_mono %}
+
+  <!-- Preferred monospace font -->
+  <alias>
+    <family>monospace</family>
+    <prefer>
+      <family>{{ fonts_fontconfig_prefer_mono }}</family>
+    </prefer>
+  </alias>
+{% endif %}
+
+</fontconfig>

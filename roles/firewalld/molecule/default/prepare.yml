@@ -1,0 +1,38 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # Debian containers need polkitd installed and dbus restarted
+    # before firewalld can acquire its D-Bus name
+    - name: Prepare | Install polkitd (Debian)
+      ansible.builtin.apt:
+        name:
+          - polkitd
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Create polkit rules directories (Debian)
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        mode: '0755'
+      loop:
+        - /run/polkit-1/rules.d
+        - /usr/local/share/polkit-1/rules.d
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Restart dbus to clear stale activation state (Debian)
+      ansible.builtin.systemd:
+        name: dbus
+        state: restarted
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Start polkit (Debian)
+      ansible.builtin.systemd:
+        name: polkit
+        state: started
+      when: ansible_facts['os_family'] == 'Debian'

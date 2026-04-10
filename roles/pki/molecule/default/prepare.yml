@@ -1,0 +1,28 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Install cryptography library (Arch)
+      community.general.pacman:
+        name:
+          - python-cryptography
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Install cryptography library (Debian)
+      ansible.builtin.apt:
+        name:
+          - python3-cryptography
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install cryptography library (RedHat)
+      ansible.builtin.dnf:
+        name:
+          - python3-cryptography
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'

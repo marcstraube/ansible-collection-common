@@ -1,0 +1,166 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+#
+# Restic Backup Script: {{ item.name }}
+#
+
+set -euo pipefail
+
+# Configuration
+RESTIC_REPOSITORY="{{ item.repository }}"
+{% if item.password is defined %}
+RESTIC_PASSWORD_FILE="{{ restic_config_dir }}/{{ item.name }}/password"
+{% elif item.password_file is defined %}
+RESTIC_PASSWORD_FILE="{{ item.password_file }}"
+{% endif %}
+CONFIG_DIR="{{ restic_config_dir }}/{{ item.name }}"
+{% if restic_log_to_file | bool %}
+LOG_FILE="{{ restic_log_dir }}/{{ item.name }}.log"
+{% endif %}
+
+# Export repository and password
+export RESTIC_REPOSITORY
+export RESTIC_PASSWORD_FILE
+
+# Load environment variables
+if [ -f "${CONFIG_DIR}/environment" ]; then
+    set -a
+    source "${CONFIG_DIR}/environment"
+    set +a
+fi
+
+# Paths to backup
+BACKUP_PATHS=(
+{% for path in item.paths | default([]) %}
+    "{{ path }}"
+{% endfor %}
+)
+
+# Retention policy
+{% set retention = item.retention | default(restic_default_retention) %}
+KEEP_LAST="{{ retention.keep_last | default(7) }}"
+KEEP_DAILY="{{ retention.keep_daily | default(7) }}"
+KEEP_WEEKLY="{{ retention.keep_weekly | default(4) }}"
+KEEP_MONTHLY="{{ retention.keep_monthly | default(6) }}"
+KEEP_YEARLY="{{ retention.keep_yearly | default(1) }}"
+{% if retention.keep_within is defined and retention.keep_within %}
+KEEP_WITHIN="{{ retention.keep_within }}"
+{% endif %}
+
+# Logging function
+log() {
+{% if restic_log_to_file | bool %}
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+{% else %}
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+{% endif %}
+}
+
+# Error handling
+error_handler() {
+    log "ERROR: Backup failed with exit code $?"
+{% if restic_email_on_failure and restic_email_recipient %}
+
+    echo "Restic backup '{{ item.name }}' failed on $(hostname)" | \
+        mail -s "Backup FAILED: {{ item.name }}" -r "{{ restic_email_sender }}" "{{ restic_email_recipient }}"
+{% endif %}
+    exit 1
+}
+trap error_handler ERR
+
+# Commands
+case "${1:-backup}" in
+    init)
+        log "Initializing repository..."
+        restic init
+        log "Repository initialized"
+        ;;
+
+    backup)
+{% if restic_healthcheck_enabled and restic_healthcheck_url %}
+
+        # Signal start to healthcheck
+        curl -fsS -m 10 --retry 5 "{{ restic_healthcheck_url }}/start" > /dev/null 2>&1 || true
+{% endif %}
+
+        log "Starting backup: {{ item.name }}"
+{% if item.pre_backup is defined %}
+
+        # Pre-backup commands
+        log "Running pre-backup commands..."
+{{ item.pre_backup | indent(8, true) }}
+{% endif %}
+
+        # Run backup
+        log "Running restic backup..."
+        restic backup \
+{% if item.excludes is defined %}
+            --exclude-file="${CONFIG_DIR}/excludes" \
+{% endif %}
+{% if item.exclude_file is defined %}
+            --exclude-file="{{ item.exclude_file }}" \
+{% endif %}
+{% if restic_log_to_file | bool %}
+            {{ item.backup_options | default('--exclude-caches') }} \
+            "${BACKUP_PATHS[@]}" 2>&1 | tee -a "$LOG_FILE"
+{% else %}
+            {{ item.backup_options | default('--exclude-caches') }} \
+            "${BACKUP_PATHS[@]}"
+{% endif %}
+{% if item.post_backup is defined %}
+
+        # Post-backup commands
+        log "Running post-backup commands..."
+{{ item.post_backup | indent(8, true) }}
+{% endif %}
+
+        log "Backup completed successfully"
+{% if restic_healthcheck_enabled and restic_healthcheck_url %}
+
+        # Signal success to healthcheck
+        curl -fsS -m 10 --retry 5 "{{ restic_healthcheck_url }}" > /dev/null 2>&1 || true
+{% endif %}
+        ;;
+
+    prune)
+        log "Starting prune: {{ item.name }}"
+        restic forget \
+            --keep-last "$KEEP_LAST" \
+            --keep-daily "$KEEP_DAILY" \
+            --keep-weekly "$KEEP_WEEKLY" \
+            --keep-monthly "$KEEP_MONTHLY" \
+            --keep-yearly "$KEEP_YEARLY" \
+{% if retention.keep_within is defined and retention.keep_within %}
+            --keep-within "$KEEP_WITHIN" \
+{% endif %}
+{% if restic_log_to_file | bool %}
+            --prune 2>&1 | tee -a "$LOG_FILE"
+{% else %}
+            --prune
+{% endif %}
+        log "Prune completed"
+        ;;
+
+    check)
+        log "Checking repository integrity..."
+{% if restic_log_to_file | bool %}
+        restic check 2>&1 | tee -a "$LOG_FILE"
+{% else %}
+        restic check
+{% endif %}
+        log "Check completed"
+        ;;
+
+    snapshots)
+        restic snapshots
+        ;;
+
+    stats)
+        restic stats
+        ;;
+
+    *)
+        echo "Usage: $0 {init|backup|prune|check|snapshots|stats}"
+        exit 1
+        ;;
+esac

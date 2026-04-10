@@ -1,0 +1,222 @@
+---
+# =============================================================================
+# SNMP - Net-SNMP Agent Configuration
+# =============================================================================
+# Role: marcstraube.common.snmp
+# Description: Install and configure Net-SNMP (snmpd) for network monitoring
+# =============================================================================
+
+# =============================================================================
+# SERVICE CONTROL
+# =============================================================================
+
+snmp_enabled: false
+
+# =============================================================================
+# AGENT SETTINGS
+# =============================================================================
+
+# Addresses snmpd listens on (UDP port 161)
+snmp_listen_addresses:
+  - '127.0.0.1'
+
+# Suppress TCP wrapper connection logging
+snmp_dont_log_tcpwrappers: false
+
+# =============================================================================
+# SYSTEM INFORMATION
+# =============================================================================
+
+# sysContact OID
+snmp_sys_contact: 'admin@example.com'
+
+# sysLocation OID
+snmp_sys_location: 'Server Room'
+
+# sysName OID (empty = use hostname)
+snmp_sys_name: ''
+
+# =============================================================================
+# SNMPv2c CONFIGURATION
+# =============================================================================
+
+# Enable SNMPv2c community-based access
+snmp_v2c_enabled: false
+
+# Read-only communities
+snmp_v2c_communities:
+  - community: 'public'
+    source: '127.0.0.1'
+# Example:
+#   - community: 'monitoring'
+#     source: '10.0.0.0/24'
+
+# Read-write communities (use with caution)
+snmp_v2c_rw_communities: []
+# Example:
+#   - community: 'private'
+#     source: '127.0.0.1'
+
+# =============================================================================
+# VACM ACCESS CONTROL
+# =============================================================================
+# Traditional View-Based Access Control Model (com2sec -> group -> access).
+# Use this instead of rocommunity/rwcommunity when you need fine-grained
+# access control or compatibility with existing VACM configurations.
+
+# com2sec mappings: map source/community to security name
+snmp_com2sec: []
+# Example:
+#   - sec_name: 'mynet'
+#     source: '10.0.0.0/24'
+#     community: 'monitoring'
+
+# group mappings: map security name to group
+snmp_groups: []
+# Example:
+#   - name: 'mygroup'
+#     version: 'v2c'
+#     sec_name: 'mynet'
+
+# access rules: grant group access to views
+snmp_access: []
+# Example:
+#   - group: 'mygroup'
+#     context: ''
+#     match: 'any'
+#     level: 'noauth'
+#     prefix: 'exact'
+#     read: 'all'
+#     write: 'none'
+#     notify: 'none'
+
+# =============================================================================
+# TRAP FORWARDING
+# =============================================================================
+
+# trapsink destinations for forwarding traps
+snmp_trapsinks: []
+# Example:
+#   - host: '10.0.0.1'
+#     community: 'public'
+#     port: 162
+
+# =============================================================================
+# SMUX PEERS
+# =============================================================================
+
+# smuxpeer OIDs for sub-agent protocols (e.g. Dell OMSA)
+snmp_smuxpeers: []
+# Example:
+#   - '.1.3.6.1.4.1.674.10893.1'
+
+# =============================================================================
+# SNMPv3 CONFIGURATION (USM)
+# =============================================================================
+
+# Enable SNMPv3 user-based security
+snmp_v3_enabled: true
+
+# SNMPv3 users
+snmp_v3_users: []
+# Example:
+#   - username: 'monitoring'
+#     auth_protocol: 'SHA'          # MD5, SHA, SHA-224, SHA-256, SHA-384, SHA-512
+#     auth_passphrase: '{{ vault_snmp_v3_auth_passphrase }}'
+#     priv_protocol: 'AES'          # DES, AES, AES-192, AES-256
+#     priv_passphrase: '{{ vault_snmp_v3_priv_passphrase }}'
+#     access: 'rouser'              # rouser or rwuser
+#     security_level: 'authPriv'    # noAuthNoPriv, authNoPriv, authPriv
+
+# =============================================================================
+# VIEWS
+# =============================================================================
+
+# Named OID views for access control
+snmp_views:
+  - name: 'systemonly'
+    type: 'included'
+    oid: '.1.3.6.1.2.1.1'
+  - name: 'systemonly'
+    type: 'included'
+    oid: '.1.3.6.1.2.1.25.1'
+  - name: 'all'
+    type: 'included'
+    oid: '.1'
+# Example additional view:
+#   - name: 'myview'
+#     type: 'included'
+#     oid: '.1.3.6.1.4.1'
+
+# =============================================================================
+# MONITORING
+# =============================================================================
+
+# Disk usage monitors
+snmp_disk_monitors: []
+# Example:
+#   - path: '/'
+#     min_free: '10%'
+#   - path: '/var'
+#     min_free: '5%'
+
+# Process monitors
+snmp_process_monitors: []
+# Example:
+#   - name: 'sshd'
+#     min: 1
+#   - name: 'nginx'
+#     min: 1
+#     max: 0
+
+# Load average thresholds (1/5/15 minute)
+snmp_load_thresholds:
+  load1: 12
+  load5: 10
+  load15: 8
+
+# =============================================================================
+# EXTENSIONS
+# =============================================================================
+
+# Custom extend scripts
+snmp_extend_scripts: []
+# Example:
+#   - name: 'distro'
+#     command: '/usr/bin/lsb_release -d'
+#   - name: 'hardware'
+#     command: '/usr/sbin/dmidecode -s system-product-name'
+
+# =============================================================================
+# AGENTX
+# =============================================================================
+
+# Enable AgentX sub-agent support
+snmp_agentx_enabled: false
+
+# =============================================================================
+# EXTRA CONFIGURATION
+# =============================================================================
+
+# Raw snmpd.conf lines appended to end of config
+snmp_extra_config: []
+# Example:
+#   - 'pass .1.3.6.1.4.1.4413.4.1 /usr/local/bin/snmp-pass'
+#   - 'override .1.3.6.1.2.1.1.4.0 octet_str "admin@example.com"'
+
+# =============================================================================
+# FIREWALL
+# =============================================================================
+
+# Enable firewalld rule for SNMP (UDP/TCP 161)
+snmp_firewalld_enabled: false
+
+# Firewalld zone for SNMP service
+snmp_firewalld_zone: 'public'
+
+# =============================================================================
+# APPARMOR
+# =============================================================================
+
+# Enable AppArmor profile enforcement for snmpd (Arch/Debian only)
+snmp_apparmor_enabled: false

@@ -1,0 +1,482 @@
+---
+# marcstraube.networkmanager/molecule/default/verify.yml
+
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+  tasks:
+    # =========================================================================
+    # PACKAGE VERIFICATION
+    # =========================================================================
+
+    - name: Check if NetworkManager is installed
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Verify NetworkManager package is installed
+      ansible.builtin.assert:
+        that:
+          - >-
+            'networkmanager' in ansible_facts.packages or
+            'network-manager' in ansible_facts.packages or
+            'NetworkManager' in ansible_facts.packages
+        fail_msg: NetworkManager is not installed
+        success_msg: NetworkManager is installed
+
+    - name: Verify optional packages are installed
+      ansible.builtin.assert:
+        that:
+          - "'curl' in ansible_facts.packages"
+          - "'cifs-utils' in ansible_facts.packages"
+          - "'sshfs' in ansible_facts.packages"
+        fail_msg: One of the optional packages (curl, cifs-utils, sshfs) is not installed
+        success_msg: All optional packages are installed
+      when: (test_networkmanager_smb_shares | default([]) | length > 0) or
+            (test_networkmanager_sshfs_shares | default([]) | length > 0)
+
+    # =========================================================================
+    # SERVICE VERIFICATION
+    # =========================================================================
+
+    - name: Check NetworkManager service status
+      ansible.builtin.service_facts:
+
+    - name: Verify NetworkManager service is running
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['NetworkManager.service'].state == "running"
+        fail_msg: NetworkManager service is not running
+        success_msg: NetworkManager service is running
+
+    - name: Verify NetworkManager service is enabled
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['NetworkManager.service'].status == "enabled"
+        fail_msg: NetworkManager service is not enabled
+        success_msg: NetworkManager service is enabled
+
+    - name: Check nmcli command availability
+      ansible.builtin.command: nmcli --version
+      register: nmcli_version
+      changed_when: false
+      failed_when: nmcli_version.rc != 0
+
+    - name: Display NetworkManager version
+      ansible.builtin.debug:
+        msg: "NetworkManager version: {{ nmcli_version.stdout }}"
+
+    # =========================================================================
+    # CONNECTION VERIFICATION
+    # =========================================================================
+
+    - name: List all NetworkManager connections
+      ansible.builtin.command: nmcli connection show
+      register: nmcli_connections
+      changed_when: false
+
+    - name: Display created connections
+      ansible.builtin.debug:
+        var: nmcli_connections.stdout_lines
+
+    - name: Verify Ethernet connections exist
+      ansible.builtin.assert:
+        that:
+          - item in nmcli_connections.stdout
+        fail_msg: Ethernet connection '{{ item }}' was not created
+        success_msg: Ethernet connection '{{ item }}' exists
+      loop: "{{ test_networkmanager_connections.ethernet.keys() | list }}"
+      when: test_networkmanager_connections.ethernet | length > 0
+
+    - name: Verify WiFi connections exist
+      ansible.builtin.assert:
+        that:
+          - item in nmcli_connections.stdout
+        fail_msg: WiFi connection '{{ item }}' was not created
+        success_msg: WiFi connection '{{ item }}' exists
+      loop: "{{ test_networkmanager_connections.wifi.keys() | list }}"
+      when: test_networkmanager_connections.wifi | length > 0
+
+    - name: Verify VPN connections exist
+      ansible.builtin.assert:
+        that:
+          - item in nmcli_connections.stdout
+        fail_msg: VPN connection '{{ item }}' was not created
+        success_msg: VPN connection '{{ item }}' exists
+      loop: "{{ test_networkmanager_connections.vpn.keys() | list }}"
+      when: test_networkmanager_connections.vpn | length > 0
+
+    # =========================================================================
+    # DAEMON CONFIGURATION VERIFICATION
+    # =========================================================================
+
+    - name: Check if daemon config exists
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/conf.d/00-ansible.conf
+      register: nm_daemon_conf
+
+    - name: Verify daemon config file exists
+      ansible.builtin.assert:
+        that:
+          - nm_daemon_conf.stat.exists
+        fail_msg: Daemon config /etc/NetworkManager/conf.d/00-ansible.conf does not exist
+        success_msg: Daemon config file exists
+
+    - name: Read daemon config
+      ansible.builtin.slurp:
+        src: /etc/NetworkManager/conf.d/00-ansible.conf
+      register: nm_daemon_conf_content
+
+    - name: Verify daemon config contains expected sections and directives
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (nm_daemon_conf_content.content | b64decode)"
+          - "'[main]' in (nm_daemon_conf_content.content | b64decode)"
+          - "'dns=systemd-resolved' in (nm_daemon_conf_content.content | b64decode)"
+          - "'[logging]' in (nm_daemon_conf_content.content | b64decode)"
+          - "'level=WARN' in (nm_daemon_conf_content.content | b64decode)"
+          - "'[connection]' in (nm_daemon_conf_content.content | b64decode)"
+          - "'wifi.powersave=2' in (nm_daemon_conf_content.content | b64decode)"
+          - "'ipv6.dhcp-send-hostname=false' in (nm_daemon_conf_content.content | b64decode)"
+          - "'[device]' in (nm_daemon_conf_content.content | b64decode)"
+          - "'wifi.scan-rand-mac-address=no' in (nm_daemon_conf_content.content | b64decode)"
+          - "'[keyfile]' in (nm_daemon_conf_content.content | b64decode)"
+          - "'unmanaged-devices=' in (nm_daemon_conf_content.content | b64decode)"
+        fail_msg: Daemon config does not contain expected settings
+        success_msg: Daemon config contains all expected sections and directives
+
+    # =========================================================================
+    # LEGACY CONFIG MIGRATION VERIFICATION
+    # =========================================================================
+
+    - name: Verify legacy dhcp-send-hostname.conf is removed
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/conf.d/dhcp-send-hostname.conf
+      register: legacy_dhcp_conf
+
+    - name: Assert legacy dhcp-send-hostname.conf does not exist
+      ansible.builtin.assert:
+        that:
+          - not legacy_dhcp_conf.stat.exists
+        fail_msg: Legacy dhcp-send-hostname.conf still exists
+        success_msg: Legacy dhcp-send-hostname.conf correctly removed
+
+    - name: Verify legacy unmanaged.conf is removed
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/conf.d/unmanaged.conf
+      register: legacy_unmanaged_conf
+
+    - name: Assert legacy unmanaged.conf does not exist
+      ansible.builtin.assert:
+        that:
+          - not legacy_unmanaged_conf.stat.exists
+        fail_msg: Legacy unmanaged.conf still exists
+        success_msg: Legacy unmanaged.conf correctly removed
+
+    # =========================================================================
+    # UNMANAGED DEVICES VERIFICATION
+    # =========================================================================
+
+    - name: Build expected unmanaged devices string
+      ansible.builtin.set_fact:
+        expected_unmanaged_devices: []
+
+    - name: Format unmanaged devices in order
+      ansible.builtin.set_fact:
+        expected_unmanaged_devices: >-
+          {{ expected_unmanaged_devices +
+          ['mac:' ~ item.mac if item.mac is defined
+          else 'interface-name:' ~ item.ifname] }}
+      loop: "{{ test_networkmanager_unmanaged_devices }}"
+      loop_control:
+        label: "{{ item.mac | default(item.ifname) | default('unknown') }}"
+
+    - name: Verify unmanaged devices in daemon config
+      ansible.builtin.assert:
+        that:
+          - >-
+            ("unmanaged-devices=" ~ (expected_unmanaged_devices | join(";")))
+            in (nm_daemon_conf_content.content | b64decode)
+        fail_msg: >-
+          Daemon config does not contain expected unmanaged devices.
+          Expected: unmanaged-devices={{ expected_unmanaged_devices | join(';') }}
+        success_msg: Unmanaged devices correctly configured in daemon config
+
+    # =========================================================================
+    # DHCP HOSTNAME VERIFICATION
+    # =========================================================================
+
+    - name: Set fact for connections with dhcp_send_hostname explicitly set to false
+      ansible.builtin.set_fact:
+        dhcp_hostname_disabled_connections: >-
+          {{ (test_networkmanager_connections.ethernet | dict2items +
+          test_networkmanager_connections.wifi | dict2items) |
+          selectattr('value.dhcp_send_hostname_ipv4', 'defined') |
+          rejectattr('value.dhcp_send_hostname_ipv4') | map(attribute='key') | list }}
+
+    - name: Check connections for dhcp-send-hostname override
+      ansible.builtin.shell: |
+        set -o pipefail
+        nmcli -t -f ipv4.dhcp-send-hostname connection show "{{ item }}" | cut -d: -f2
+      args:
+        executable: /bin/bash
+      register: connection_dhcp_hostname
+      changed_when: false
+      failed_when: false
+      loop: "{{ dhcp_hostname_disabled_connections }}"
+      when: dhcp_hostname_disabled_connections | length > 0
+
+    - name: Verify connections have dhcp-send-hostname disabled
+      ansible.builtin.assert:
+        that:
+          - >-
+            item.stdout | trim in ['no', '0', 'false']
+        fail_msg: Connection '{{ item.item }}' does not have dhcp-send-hostname disabled
+        success_msg: Connection '{{ item.item }}' correctly has dhcp-send-hostname disabled
+      loop: "{{ connection_dhcp_hostname.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when:
+        - dhcp_hostname_disabled_connections | length > 0
+        - item.rc == 0
+
+    # =========================================================================
+    # POLKIT VERIFICATION
+    # =========================================================================
+
+    - name: Check if polkit rule exists
+      ansible.builtin.stat:
+        path: /etc/polkit-1/rules.d/49-networkmanager.rules
+      register: polkit_rule
+
+    - name: Verify polkit rule exists
+      ansible.builtin.assert:
+        that:
+          - polkit_rule.stat.exists
+        fail_msg: Polkit rule does not exist
+        success_msg: Polkit rule exists
+
+    - name: Read polkit rule
+      ansible.builtin.slurp:
+        src: /etc/polkit-1/rules.d/49-networkmanager.rules
+      register: polkit_rule_content
+      when: polkit_rule.stat.exists
+
+    - name: Verify polkit rule content
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (polkit_rule_content.content | b64decode)"
+          - "'org.freedesktop.NetworkManager.' in (polkit_rule_content.content | b64decode)"
+          - "'wheel' in (polkit_rule_content.content | b64decode)"
+          - "'polkit.Result.YES' in (polkit_rule_content.content | b64decode)"
+        fail_msg: Polkit rule does not contain expected content
+        success_msg: Polkit rule content is correct
+      when: polkit_rule.stat.exists
+
+    # =========================================================================
+    # DISPATCHER SCRIPTS VERIFICATION (only when SMB/SSHFS/WiFi configured)
+    # =========================================================================
+
+    - name: Check if timezone dispatcher script exists
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/dispatcher.d/09-timezone.sh
+      register: timezone_script
+
+    - name: Verify timezone dispatcher script exists
+      ansible.builtin.assert:
+        that:
+          - timezone_script.stat.exists
+          - timezone_script.stat.mode == "0755"
+        fail_msg: Timezone dispatcher script does not exist or is not executable
+        success_msg: Timezone dispatcher script exists and is executable
+      when: test_networkmanager_configure_timezone | bool
+
+    - name: Set dispatcher scripts to check based on configuration
+      ansible.builtin.set_fact:
+        smb_configured: "{{ test_networkmanager_smb_shares | default([]) | length > 0 }}"
+        sshfs_configured: "{{ test_networkmanager_sshfs_shares | default([]) | length > 0 }}"
+        wifi_toggle_configured: >-
+          {{ test_networkmanager_connections.ethernet | dict2items |
+          selectattr('value.toggle_wifi', 'defined') |
+          selectattr('value.toggle_wifi') | list | length > 0 }}
+
+    - name: Check SMB dispatcher scripts exist
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/dispatcher.d/{{ item }}
+      register: smb_scripts
+      loop:
+        - 30-mount-smb.sh
+        - 40-umount-smb.sh
+      when: smb_configured | bool
+
+    - name: Verify SMB dispatcher scripts
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.mode == "0755"
+        fail_msg: SMB dispatcher script {{ item.item }} does not exist or is not executable
+        success_msg: SMB dispatcher script {{ item.item }} exists and is executable
+      loop: "{{ smb_scripts.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: smb_configured | bool
+
+    - name: Check SSHFS dispatcher scripts exist
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/dispatcher.d/{{ item }}
+      register: sshfs_scripts
+      loop:
+        - 30-mount-sshfs.sh
+        - 40-umount-sshfs.sh
+      when: sshfs_configured | bool
+
+    - name: Verify SSHFS dispatcher scripts
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.mode == "0755"
+        fail_msg: SSHFS dispatcher script {{ item.item }} does not exist or is not executable
+        success_msg: SSHFS dispatcher script {{ item.item }} exists and is executable
+      loop: "{{ sshfs_scripts.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: sshfs_configured | bool
+
+    - name: Check WiFi toggle dispatcher script exists
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/dispatcher.d/99-wifi-auto-toggle.sh
+      register: wifi_toggle_script
+      when: wifi_toggle_configured | bool
+
+    - name: Verify WiFi toggle dispatcher script
+      ansible.builtin.assert:
+        that:
+          - wifi_toggle_script.stat.exists
+          - wifi_toggle_script.stat.mode == "0755"
+        fail_msg: WiFi toggle dispatcher script does not exist or is not executable
+        success_msg: WiFi toggle dispatcher script exists and is executable
+      when: wifi_toggle_configured | bool
+
+    # =========================================================================
+    # VPN AUTO-CONNECT VERIFICATION (only when VPN configured)
+    # =========================================================================
+
+    - name: Set fact for connections with VPN auto-connect
+      ansible.builtin.set_fact:
+        ethernet_vpn_connections: >-
+          {{ test_networkmanager_connections.ethernet | dict2items |
+          selectattr('value.vpn', 'defined') | map(attribute='key') | list }}
+        wifi_vpn_connections: >-
+          {{ test_networkmanager_connections.wifi | dict2items |
+          selectattr('value.vpn', 'defined') | map(attribute='key') | list }}
+
+    - name: Check connection.secondaries for Ethernet connections with VPN
+      ansible.builtin.shell: |
+        set -o pipefail
+        nmcli -t -f connection.secondaries connection show "{{ item }}" | cut -d: -f2
+      args:
+        executable: /bin/bash
+      register: ethernet_secondaries
+      changed_when: false
+      failed_when: false
+      loop: "{{ ethernet_vpn_connections }}"
+      when: ethernet_vpn_connections | length > 0
+
+    - name: Verify Ethernet connections have VPN in connection.secondaries
+      ansible.builtin.assert:
+        that:
+          - item.stdout | trim | length > 0
+        fail_msg: Connection '{{ item.item }}' does not have connection.secondaries configured
+        success_msg: Connection '{{ item.item }}' has VPN auto-connect configured
+      loop: "{{ ethernet_secondaries.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when:
+        - ethernet_vpn_connections | length > 0
+        - item.rc == 0
+
+    - name: Check connection.secondaries for WiFi connections with VPN
+      ansible.builtin.shell: |
+        set -o pipefail
+        nmcli -t -f connection.secondaries connection show "{{ item }}" | cut -d: -f2
+      args:
+        executable: /bin/bash
+      register: wifi_secondaries
+      changed_when: false
+      failed_when: false
+      loop: "{{ wifi_vpn_connections }}"
+      when: wifi_vpn_connections | length > 0
+
+    - name: Verify WiFi connections have VPN in connection.secondaries
+      ansible.builtin.assert:
+        that:
+          - item.stdout | trim | length > 0
+        fail_msg: Connection '{{ item.item }}' does not have connection.secondaries configured
+        success_msg: Connection '{{ item.item }}' has VPN auto-connect configured
+      loop: "{{ wifi_secondaries.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when:
+        - wifi_vpn_connections | length > 0
+        - item.rc == 0
+
+    # =========================================================================
+    # VPN-DEPENDENT SMB SHARES VERIFICATION (only when both VPN and SMB configured)
+    # =========================================================================
+
+    - name: Set fact for VPN connection names
+      ansible.builtin.set_fact:
+        vpn_connection_names: "{{ test_networkmanager_connections.vpn.keys() | list }}"
+      when: test_networkmanager_connections.vpn | length > 0
+
+    - name: Initialize VPN-dependent SMB shares list
+      ansible.builtin.set_fact:
+        vpn_dependent_smb_shares: []
+      when: smb_configured | bool
+
+    - name: Filter VPN-dependent SMB shares
+      ansible.builtin.set_fact:
+        vpn_dependent_smb_shares: "{{ vpn_dependent_smb_shares + [item] }}"
+      loop: "{{ test_networkmanager_smb_shares | selectattr('depends_on', 'defined') | list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when:
+        - smb_configured | bool
+        - (item.depends_on | intersect(vpn_connection_names | default([])) | length) > 0
+
+    - name: Check VPN-SMB mount script exists
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/dispatcher.d/50-vpn-mount-smb.sh
+      register: vpn_smb_mount_script
+      when:
+        - smb_configured | bool
+        - vpn_dependent_smb_shares | default([]) | length > 0
+
+    - name: Verify VPN-SMB dispatcher scripts exist
+      ansible.builtin.assert:
+        that:
+          - vpn_smb_mount_script.stat.exists
+        fail_msg: VPN-SMB mount script does not exist
+        success_msg: VPN-SMB mount script exists
+      when:
+        - smb_configured | bool
+        - vpn_dependent_smb_shares | default([]) | length > 0
+
+    # =========================================================================
+    # SCRIPT SYNTAX VERIFICATION (only scripts that exist)
+    # =========================================================================
+
+    - name: Find all dispatcher scripts
+      ansible.builtin.find:
+        paths: /etc/NetworkManager/dispatcher.d
+        patterns: '*.sh'
+        recurse: true
+      register: found_scripts
+
+    - name: Validate shell script syntax for all deployed scripts
+      ansible.builtin.shell: bash -n {{ item.path }}
+      loop: "{{ found_scripts.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      changed_when: false
+      when: found_scripts.files | length > 0

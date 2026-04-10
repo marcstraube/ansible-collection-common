@@ -1,0 +1,126 @@
+---
+# marcstraube.common.auditd/molecule/default/molecule.yml
+
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    ignore-errors: true
+
+driver:
+  name: default
+  options:
+    managed: false
+    login_cmd_template: bash -c 'cd ${MOLECULE_EPHEMERAL_DIRECTORY} && vagrant ssh {instance}'
+
+platforms:
+  - name: auditd-archlinux
+    groups:
+      - test_hosts
+  - name: auditd-debian-trixie
+    groups:
+      - test_hosts
+  - name: auditd-rocky-9
+    groups:
+      - test_hosts
+  - name: auditd-rocky-10
+    groups:
+      - test_hosts
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks,timer
+      stdout_callback: default
+      result_format: yaml
+      inject_facts_as_vars: false
+  inventory:
+    host_vars:
+      auditd-archlinux:
+        ansible_port: 2222
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/auditd-archlinux/virtualbox/private_key
+      auditd-debian-trixie:
+        ansible_port: 2223
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/auditd-debian-trixie/virtualbox/private_key
+      auditd-rocky-9:
+        ansible_port: 2224
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/auditd-rocky-9/virtualbox/private_key
+      auditd-rocky-10:
+        ansible_port: 2225
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/auditd-rocky-10/virtualbox/private_key
+    group_vars:
+      all:
+        ansible_connection: ssh
+        ansible_user: vagrant
+        ansible_host: 127.0.0.1
+        ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+
+        # Centralized test configuration variables
+        auditd_enabled: true
+        auditd_rules_enabled: true
+
+        # Disable immutable rules for idempotence testing
+        auditd_rules_immutable: false
+
+        # Test configuration
+        auditd_log_format: 'ENRICHED'
+        auditd_num_logs: 5
+        auditd_max_log_file: 8
+        auditd_max_log_file_action: 'rotate'
+
+        # Test audit rules
+        auditd_time_change: true
+        auditd_identity_change: true
+        auditd_network_change: true
+        auditd_logins: true
+        auditd_perm_mod: true
+        auditd_actions: true
+        auditd_modules: true
+
+        # Test PCI-DSS preset
+        auditd_pci_dss: true
+
+        # Test syslog plugin
+        auditd_plugin_syslog: true
+        auditd_syslog_facility: 'LOG_LOCAL6'
+
+        # Custom watches
+        auditd_custom_watches:
+          - path: '/etc/ssh/sshd_config'
+            permissions: 'wa'
+            key: 'sshd_config'
+
+  playbooks:
+    create: create.yml
+    destroy: destroy.yml
+    prepare: prepare.yml
+    converge: converge.yml
+    verify: verify.yml
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy

@@ -1,0 +1,29 @@
+{{ ansible_managed | comment }}
+{% if hardening_modules_blacklist_fs | difference(hardening_modules_blacklist_exclude) %}
+
+# Kernel module blacklist for security hardening
+# Modules are blacklisted AND install-disabled to prevent both
+# automatic and manual loading.
+
+# Uncommon filesystem modules
+{% for mod in hardening_modules_blacklist_fs | difference(hardening_modules_blacklist_exclude) | sort %}
+blacklist {{ mod }}
+install {{ mod }} /bin/false
+{% endfor %}
+
+{% endif %}
+{% if hardening_modules_blacklist_net | difference(hardening_modules_blacklist_exclude) %}
+# Uncommon network protocol modules
+{% for mod in hardening_modules_blacklist_net | difference(hardening_modules_blacklist_exclude) | sort %}
+blacklist {{ mod }}
+install {{ mod }} /bin/false
+{% endfor %}
+
+{% endif %}
+{% if hardening_modules_blacklist_extra | difference(hardening_modules_blacklist_exclude) %}
+# Additional blacklisted modules
+{% for mod in hardening_modules_blacklist_extra | difference(hardening_modules_blacklist_exclude) | sort %}
+blacklist {{ mod }}
+install {{ mod }} /bin/false
+{% endfor %}
+{% endif %}

@@ -1,0 +1,20 @@
+---
+# =============================================================================
+# NODE.JS - Debian Variables
+# =============================================================================
+
+__nodejs_packages:
+  - 'nodejs'
+
+__nodejs_nvm_packages: []
+
+__nodejs_prerequisite_packages:
+  - 'curl'
+  - 'gnupg'
+  - 'ca-certificates'
+
+__nodejs_nodesource_supported: true
+__nodejs_nodesource_key_url: 'https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key'
+__nodejs_nodesource_repo: >-
+  deb [signed-by=/etc/apt/keyrings/nodesource.asc]
+  https://deb.nodesource.com/node_{{ nodejs_version }}.x nodistro main

@@ -1,0 +1,12 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Update Unbound DNS Blocklist Timer
+
+[Timer]
+OnCalendar={{ unbound_blocklist_schedule }}
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

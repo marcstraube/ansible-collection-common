@@ -1,0 +1,77 @@
+---
+# =============================================================================
+# Hardware Tokens PAM U2F Configuration
+# =============================================================================
+
+- name: PAM U2F | Ensure authfile directory exists
+  ansible.builtin.file:
+    path: "{{ hardware_tokens_pam_u2f_config.authfile | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: PAM U2F | Create authfile if missing
+  ansible.builtin.copy:
+    content: ''
+    dest: "{{ hardware_tokens_pam_u2f_config.authfile }}"
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+
+- name: PAM U2F | Build pam_u2f.so options string
+  ansible.builtin.set_fact:
+    _pam_u2f_options: >-
+      authfile={{ hardware_tokens_pam_u2f_config.authfile }}
+      {{ 'cue' if hardware_tokens_pam_u2f_config.cue | default(false) else '' }}
+      {{ 'interactive' if hardware_tokens_pam_u2f_config.interactive | default(false) else '' }}
+      origin={{ hardware_tokens_pam_u2f_config.origin }}
+      appid={{ hardware_tokens_pam_u2f_config.appid }}
+      {{
+        'pinverification=1'
+        if hardware_tokens_pam_u2f_mode == 'passwordless' and hardware_tokens_pam_u2f_pin | bool
+        else ''
+      }}
+      {{ 'nouserok' if hardware_tokens_pam_u2f_nouserok | bool else '' }}
+
+- name: PAM U2F | Normalize options string
+  ansible.builtin.set_fact:
+    _pam_u2f_options: "{{ _pam_u2f_options | regex_replace('\\s+', ' ') | trim }}"
+
+- name: PAM U2F | Build target PAM files list
+  ansible.builtin.set_fact:
+    _pam_u2f_targets: >-
+      {{
+        [__hardware_tokens_pam_system_auth]
+        if hardware_tokens_pam_u2f_system_auth | bool
+        else hardware_tokens_pam_u2f_services | map('regex_replace', '^(.*)$', '/etc/pam.d/\1') | list
+      }}
+
+- name: PAM U2F | Configure 2FA mode (auth required, after pam_unix)
+  ansible.builtin.lineinfile:
+    path: "{{ item }}"
+    insertafter: '.*pam_unix\.so.*'
+    line: "auth       required   pam_u2f.so {{ _pam_u2f_options }}"
+    regexp: '.*pam_u2f\.so.*'
+    state: present
+  loop: "{{ _pam_u2f_targets }}"
+  when: hardware_tokens_pam_u2f_mode == '2fa'
+
+- name: PAM U2F | Configure passwordless mode (auth sufficient, before pam_unix)
+  ansible.builtin.lineinfile:
+    path: "{{ item }}"
+    insertbefore: '.*pam_unix\.so.*'
+    line: "auth       sufficient pam_u2f.so {{ _pam_u2f_options }}"
+    regexp: '.*pam_u2f\.so.*'
+    state: present
+  loop: "{{ _pam_u2f_targets }}"
+  when: hardware_tokens_pam_u2f_mode == 'passwordless'
+
+- name: PAM U2F | Display enrollment instructions
+  ansible.builtin.debug:
+    msg: >-
+      FIDO2 key enrollment required! Run on the target host:
+      pamu2fcfg -i {{ hardware_tokens_pam_u2f_config.origin }}
+      > {{ hardware_tokens_pam_u2f_config.authfile }}
+      (For additional keys, use >> to append)

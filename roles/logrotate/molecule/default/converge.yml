@@ -1,0 +1,54 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+  vars:
+    logrotate_enabled: true
+    logrotate_frequency: 'daily'
+    logrotate_rotate: 7
+    logrotate_compress: true
+    logrotate_delaycompress: true
+    logrotate_su: 'root adm'
+    logrotate_configs:
+      - name: 'testapp'
+        path: '/var/log/testapp/*.log'
+        options:
+          frequency: 'daily'
+          rotate: 14
+          compress: true
+          delaycompress: true
+          missingok: true
+          notifempty: true
+          create: '0640 root root'
+          sharedscripts: true
+          su: 'root adm'
+          maxage: 90
+        postrotate: |
+          true
+
+  tasks:
+    - name: Create test log directory
+      ansible.builtin.file:
+        path: '/var/log/testapp'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Include logrotate role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

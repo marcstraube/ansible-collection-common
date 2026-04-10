@@ -1,0 +1,152 @@
+---
+# =============================================================================
+# Graphics Drivers Configuration
+# =============================================================================
+# Role: marcstraube.common.graphics
+# Description: Install GPU drivers, Vulkan, and video acceleration
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+graphics_enabled: true
+
+# =============================================================================
+# GPU VENDOR SELECTION
+# =============================================================================
+
+# GPU vendor: intel, amd, nvidia, auto
+# 'auto' will attempt to detect GPU(s) from lspci
+graphics_gpu: 'auto'
+
+# Install drivers for multiple GPUs (hybrid graphics)
+# Example: ['intel', 'nvidia'] for Intel + NVIDIA laptop
+graphics_gpus: []
+
+# =============================================================================
+# INTEL GPU
+# =============================================================================
+
+# Install Intel GPU drivers
+graphics_intel_enabled: false
+
+# Mesa driver (required for 3D)
+graphics_intel_mesa: true
+
+# Vulkan support (Broadwell and newer)
+graphics_intel_vulkan: true
+
+# VA-API driver: intel-media-driver (modern, Gen 8+) or libva-intel-driver (legacy)
+# Recommended: intel-media-driver for Gen 8 (Broadwell) and newer
+graphics_intel_vaapi: true
+graphics_intel_vaapi_driver: 'intel-media-driver'
+
+# Enable GuC/HuC firmware (Gen 9+ Skylake and newer)
+# Warning: Can cause kernel taint and potential freezes on some systems
+graphics_intel_guc_huc: false
+
+# 32-bit support (for Steam, Wine, etc.)
+graphics_intel_32bit: false
+
+# =============================================================================
+# AMD GPU
+# =============================================================================
+
+# Install AMD GPU drivers
+graphics_amd_enabled: false
+
+# Mesa driver (required for 3D, includes VA-API/VDPAU)
+graphics_amd_mesa: true
+
+# Vulkan support
+graphics_amd_vulkan: true
+
+# 32-bit support (for Steam, Wine, etc.)
+graphics_amd_32bit: false
+
+# =============================================================================
+# NVIDIA GPU
+# =============================================================================
+
+# Install NVIDIA GPU drivers
+graphics_nvidia_enabled: false
+
+# Driver type: open, proprietary, nouveau
+# - open: nvidia-open kernel modules (recommended for Turing+)
+# - proprietary: nvidia proprietary driver (Arch: maps to nvidia-open since Dec 2025)
+# - nouveau: Open source community driver (limited performance)
+graphics_nvidia_driver: 'open'
+
+# NVIDIA driver version for legacy GPUs (empty = latest)
+# Options: 580xx (Pascal/Maxwell), 470xx (Kepler), 390xx (Fermi)
+# Arch: legacy drivers are AUR packages (community maintained)
+graphics_nvidia_legacy_version: ''
+
+# 32-bit support (for Steam, Wine, etc.)
+graphics_nvidia_32bit: false
+
+# Install CUDA support
+graphics_nvidia_cuda: false
+
+# =============================================================================
+# COMMON OPTIONS
+# =============================================================================
+
+# Install Vulkan loader and tools
+graphics_vulkan_tools: true
+
+# Install VA-API tools (vainfo)
+graphics_vaapi_tools: true
+
+# Install VDPAU tools (vdpauinfo)
+graphics_vdpau_tools: false
+
+# Install Mesa utilities (glxinfo, glxgears)
+graphics_mesa_utils: true
+
+# =============================================================================
+# HYBRID GRAPHICS (PRIME)
+# =============================================================================
+
+# Enable hybrid graphics support (Intel/AMD iGPU + NVIDIA dGPU)
+graphics_hybrid_enabled: false
+
+# Install switcheroo-control for desktop environment GPU switching
+# (GNOME, KDE, Cinnamon, COSMIC, Budgie right-click "Run on dGPU")
+graphics_hybrid_switcheroo: true
+
+# Install prime-run helper script (Arch: nvidia-prime package)
+graphics_hybrid_prime_run: true
+
+# NVIDIA RTD3 (Runtime D3) power management
+# Allows the dGPU to power off when not in use
+# Supported on Turing+ with Intel Coffee Lake+ or compatible AMD CPUs
+graphics_hybrid_nvidia_rtd3: false
+
+# RTD3 dynamic power management level
+# 0x02 = fine-grained (Turing/pre-Ampere)
+# 0x03 = coarse-grained (Ampere and newer)
+graphics_hybrid_nvidia_rtd3_level: '0x02'
+
+# Enable nvidia-persistenced service (recommended with RTD3)
+graphics_hybrid_nvidia_persistenced: false
+
+# =============================================================================
+# KERNEL PARAMETERS (modprobe.d)
+# =============================================================================
+
+# Deploy modprobe.d config files for GPU kernel module options
+graphics_kernel_params_enabled: false
+
+# Intel i915 kernel module options (written to /etc/modprobe.d/i915.conf)
+# Each entry is a full 'options' line, e.g. 'i915 fastboot=1'
+graphics_intel_kernel_params: []
+# Example:
+#   - 'i915 fastboot=1'
+
+# NVIDIA kernel module options (written to /etc/modprobe.d/nvidia.conf)
+graphics_nvidia_kernel_params: []
+# Example:
+#   - 'nvidia-drm modeset=1'
+#   - 'nvidia NVreg_PreserveVideoMemoryAllocations=1'

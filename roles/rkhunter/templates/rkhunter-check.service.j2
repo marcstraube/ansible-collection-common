@@ -1,0 +1,35 @@
+{{ ansible_managed | comment }}
+#
+# rkhunter rootkit check systemd service
+
+[Unit]
+Description=rkhunter Rootkit Check
+Documentation=man:rkhunter(8)
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/rkhunter-check.sh
+StandardOutput=journal
+StandardError=journal
+
+# Scheduling priority
+Nice=19
+IOSchedulingClass=idle
+
+# Security hardening
+# Note: rkhunter needs read access to the entire filesystem
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+NoNewPrivileges=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

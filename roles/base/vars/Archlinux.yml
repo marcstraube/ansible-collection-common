@@ -1,0 +1,19 @@
+---
+# =============================================================================
+# Arch Linux specific variables
+# =============================================================================
+
+__base_default_packages:
+  - 'bash-completion'
+  - 'htop'
+  - 'man-db'
+  - 'man-pages'
+  - 'tmux'
+  - 'wget'
+  - 'curl'
+  - 'rsync'
+  - 'tree'
+  - 'unzip'
+  - 'zip'
+
+__base_dialog_package: 'dialog'

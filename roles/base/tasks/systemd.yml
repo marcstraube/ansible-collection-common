@@ -1,0 +1,52 @@
+---
+# =============================================================================
+# Systemd Configuration Tasks
+# =============================================================================
+
+- name: Ensure journald.conf.d directory exists
+  ansible.builtin.file:
+    path: '/etc/systemd/journald.conf.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Ensure coredump.conf.d directory exists
+  ansible.builtin.file:
+    path: '/etc/systemd/coredump.conf.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Configure journald
+  ansible.builtin.template:
+    src: 'journald.conf.j2'
+    dest: '/etc/systemd/journald.conf.d/ansible.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 'restart journald'
+
+- name: Configure coredump
+  ansible.builtin.template:
+    src: 'coredump.conf.j2'
+    dest: '/etc/systemd/coredump.conf.d/ansible.conf'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable services
+  ansible.builtin.systemd:
+    name: '{{ item }}'
+    enabled: true
+    state: started
+  loop: '{{ base_services_enabled }}'
+
+- name: Disable services
+  ansible.builtin.systemd:
+    name: '{{ item }}'
+    enabled: false
+    state: stopped
+  loop: '{{ base_services_disabled }}'
+  failed_when: false

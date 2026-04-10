@@ -1,0 +1,13 @@
+---
+# =============================================================================
+# Fontconfig Configuration
+# =============================================================================
+
+- name: Fontconfig | Deploy custom fontconfig
+  ansible.builtin.template:
+    src: 'local.conf.j2'
+    dest: '/etc/fonts/local.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Rebuild font cache

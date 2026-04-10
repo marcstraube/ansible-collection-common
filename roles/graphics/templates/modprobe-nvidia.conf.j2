@@ -1,0 +1,5 @@
+{{ ansible_managed | comment }}
+
+{% for param in graphics_nvidia_kernel_params %}
+options {{ param }}
+{% endfor %}

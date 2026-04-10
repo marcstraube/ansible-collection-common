@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# SNMP - Installation Tasks
+# =============================================================================
+
+- name: Install | SNMP packages
+  ansible.builtin.package:
+    name: '{{ __snmp_packages }}'
+    state: present
+  register: __snmp_install

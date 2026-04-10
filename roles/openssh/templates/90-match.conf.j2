@@ -1,0 +1,20 @@
+{{ ansible_managed | comment }}
+{% if openssh_server_sftp_chroot_enabled | default(false) | bool %}
+
+# Match blocks
+Match Group {{ openssh_server_sftp_chroot_group }}
+    ChrootDirectory {{ openssh_server_sftp_chroot_directory }}
+    ForceCommand internal-sftp
+    AllowTcpForwarding no
+    AllowAgentForwarding no
+    X11Forwarding no
+    PermitTunnel no
+
+{% endif %}
+{% for block in openssh_server_match_blocks %}
+Match {{ block.match }}
+{% for option, value in block.options.items() %}
+    {{ option }} {{ value }}
+{% endfor %}
+
+{% endfor %}

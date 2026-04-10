@@ -1,0 +1,13 @@
+---
+# =============================================================================
+# Auditd - Firewall Tasks
+# =============================================================================
+
+- name: Firewall | Allow audit remote logging port
+  ansible.posix.firewalld:
+    port: '{{ auditd_remote_port }}/tcp'
+    zone: '{{ auditd_firewalld_zone }}'
+    permanent: true
+    immediate: true
+    state: enabled
+  when: auditd_remote_server is defined and auditd_remote_server | length > 0

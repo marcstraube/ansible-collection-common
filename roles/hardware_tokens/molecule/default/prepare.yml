@@ -1,0 +1,40 @@
+---
+# marcstraube.common.hardware_tokens/molecule/default/prepare.yml
+
+- name: Prepare instances
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Install Python 3 (Debian)
+      ansible.builtin.raw: apt-get update && apt-get install -y python3
+      changed_when: false
+      when: inventory_hostname == 'hardware-tokens-debian'
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Full system update (Arch Linux)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+      retries: 3
+      delay: 10
+      register: system_update
+      until: system_update is succeeded
+
+    - name: Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Ensure EPEL repository (Rocky)
+      ansible.builtin.command:
+        cmd: dnf install -y epel-release
+      register: _epel_install
+      changed_when: "'Installing' in _epel_install.stdout"
+      failed_when:
+        - _epel_install.rc != 0
+        - "'already installed' not in _epel_install.stdout"
+      when: ansible_facts['os_family'] == 'RedHat'

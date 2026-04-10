@@ -1,0 +1,86 @@
+#jinja2:lstrip_blocks: True
+#!/bin/sh
+{{ ansible_managed | comment }}
+
+# This script automatically activates a WireGuard VPN connection when connecting
+# to a non-home network, and deactivates it when the base connection drops.
+# This ensures laptops always have VPN connectivity when roaming.
+
+LOG_PREFIX="NM-VPN-Autoconnect"
+VPN_CONNECTION="{{ networkmanager_vpn_autoconnect.connection }}"
+
+{% set uuid_map = {} %}
+{# Build UUID map for home connections that should NOT trigger VPN #}
+{% for conn_type in ['ethernet', 'wifi', 'wireguard'] %}
+  {% if network_connections_data[conn_type] is defined %}
+    {% for conn_name, conn_details in network_connections_data[conn_type].items() %}
+      {% if conn_details.uuid is defined %}
+        {% set _ = uuid_map.update({conn_name: conn_details.uuid}) %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endfor %}
+
+{% set home_uuids = [] %}
+{% for conn_name in networkmanager_vpn_autoconnect.home_connections %}
+  {% if uuid_map[conn_name] is defined %}
+    {% set _ = home_uuids.append(uuid_map[conn_name]) %}
+  {% endif %}
+{% endfor %}
+
+{% set vpn_uuid = uuid_map.get(networkmanager_vpn_autoconnect.connection, '') %}
+
+if [ "$2" = "up" ]; then
+  # Skip if this IS the VPN connection itself
+{% if vpn_uuid %}
+  if [ "$NM_UUID" = "{{ vpn_uuid }}" ]; then
+    exit 0
+  fi
+{% else %}
+  if [ "$CONNECTION_ID" = "$VPN_CONNECTION" ]; then
+    exit 0
+  fi
+{% endif %}
+
+{% if home_uuids | length > 0 %}
+
+  # Skip if on a home network connection (VPN not needed)
+  if {% for uuid in home_uuids %}[ "$NM_UUID" = "{{ uuid }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
+    echo "$LOG_PREFIX: On home network ($CONNECTION_ID). VPN not needed."
+    exit 0
+  fi
+{% endif %}
+
+  # Wait briefly for connection to stabilize
+  sleep 2
+
+  # Check if VPN is already active
+  if nmcli -t -f NAME connection show --active | grep -q "^${VPN_CONNECTION}$"; then
+    echo "$LOG_PREFIX: VPN ($VPN_CONNECTION) already active."
+    exit 0
+  fi
+
+  echo "$LOG_PREFIX: Non-home network detected ($CONNECTION_ID). Activating VPN ($VPN_CONNECTION)."
+  nmcli connection up "$VPN_CONNECTION" 2>&1 | while read -r line; do
+    echo "$LOG_PREFIX: $line"
+  done
+fi
+
+if [ "$2" = "down" ]; then
+  # Skip if this IS the VPN connection going down (avoid recursion)
+{% if vpn_uuid %}
+  if [ "$NM_UUID" = "{{ vpn_uuid }}" ]; then
+    exit 0
+  fi
+{% else %}
+  if [ "$CONNECTION_ID" = "$VPN_CONNECTION" ]; then
+    exit 0
+  fi
+{% endif %}
+
+  # Deactivate VPN when the base connection drops
+  if nmcli -t -f NAME connection show --active | grep -q "^${VPN_CONNECTION}$"; then
+    echo "$LOG_PREFIX: Base connection ($CONNECTION_ID) went down. Deactivating VPN ($VPN_CONNECTION)."
+    nmcli connection down "$VPN_CONNECTION" 2>/dev/null
+  fi
+fi

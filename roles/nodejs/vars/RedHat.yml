@@ -1,0 +1,17 @@
+---
+# =============================================================================
+# NODE.JS - Red Hat/Rocky/Alma Linux Variables
+# =============================================================================
+
+__nodejs_packages:
+  - 'nodejs'
+  - 'npm'
+
+__nodejs_nvm_packages: []
+
+__nodejs_prerequisite_packages:
+  - 'curl'
+
+__nodejs_nodesource_supported: true
+__nodejs_nodesource_key_url: 'https://rpm.nodesource.com/gpgkey/ns-operations-public.key'
+__nodejs_nodesource_repo: "https://rpm.nodesource.com/pub_{{ nodejs_version }}.x/nodistro/nodejs/$basearch"

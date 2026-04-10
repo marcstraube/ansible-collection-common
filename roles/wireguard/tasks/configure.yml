@@ -1,0 +1,13 @@
+---
+# =============================================================================
+# WireGuard - Configuration Tasks
+# =============================================================================
+
+- name: Configure | Deploy WireGuard configuration
+  ansible.builtin.template:
+    src: wg.conf.j2
+    dest: '{{ wireguard_config_dir }}/{{ wireguard_interface }}.conf'
+    owner: root
+    group: root
+    mode: '{{ wireguard_config_mode }}'
+  notify: 'restart wireguard'

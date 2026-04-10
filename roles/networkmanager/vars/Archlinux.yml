@@ -1,0 +1,12 @@
+---
+# marcstraube.networkmanager/vars/Archlinux.yml
+
+__networkmanager_packages:
+  - networkmanager
+
+# network-manager-applet includes nm-applet + nm-connection-editor
+__networkmanager_applet_packages:
+  - network-manager-applet
+
+__networkmanager_service_name: NetworkManager.service
+__networkmanager_dispatcher_service: NetworkManager-dispatcher.service

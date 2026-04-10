@@ -1,0 +1,13 @@
+---
+# marcstraube.networkmanager/tasks/service.yml
+
+- name: Service | Enable and start NetworkManager
+  ansible.builtin.systemd:
+    name: '{{ __networkmanager_service_name }}'
+    enabled: true
+    state: started
+
+- name: Service | Enable NetworkManager Dispatcher
+  ansible.builtin.systemd:
+    name: '{{ __networkmanager_dispatcher_service }}'
+    enabled: true

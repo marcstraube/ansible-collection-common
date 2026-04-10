@@ -1,0 +1,66 @@
+---
+# =============================================================================
+# AIDE Main Tasks
+# =============================================================================
+
+# =============================================================================
+# VALIDATION
+# =============================================================================
+
+- name: Warn if email notifications use localhost address
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: aide_email_to is set to '{{ aide_email_to }}'.
+      Emails to localhost will not reach external recipients.
+      Set a real email address in your vars for production alerting.
+  when:
+    - aide_email_enabled | bool
+    - "'localhost' in aide_email_to"
+  tags: [aide]
+
+# =============================================================================
+# INSTALLATION
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags: [aide]
+
+- name: Main | Include BTRFS tasks
+  ansible.builtin.include_tasks:
+    file: btrfs.yml
+    apply:
+      tags: [aide, aide:install]
+  when:
+    - aide_enabled | bool
+    - aide_btrfs_subvolume | bool
+  tags: [aide, aide:install]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: aide_enabled | bool
+  tags: [aide, aide:install]
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: aide_enabled | bool
+  tags: [aide, aide:configure]
+
+- name: Main | Import database tasks
+  ansible.builtin.import_tasks: database.yml
+  when: aide_enabled | bool
+  tags: [aide, aide:database]
+
+- name: Main | Import schedule tasks
+  ansible.builtin.import_tasks: schedule.yml
+  when:
+    - aide_enabled | bool
+    - aide_timer_enabled | bool
+  tags: [aide, aide:schedule]

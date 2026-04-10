@@ -1,0 +1,124 @@
+---
+# =============================================================================
+# System Hardening Configuration
+# =============================================================================
+# Role: marcstraube.common.hardening
+# Description: Kernel hardening (sysctl), kernel module blacklisting,
+#              and filesystem mount hardening
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+hardening_enabled: true
+
+# =============================================================================
+# KERNEL HARDENING (sysctl)
+# =============================================================================
+# Security-focused sysctl settings deployed to /etc/sysctl.d/99-hardening.conf
+# Note: Network-level sysctl (ip_forward, rp_filter, etc.) is in the sysctl role
+
+hardening_kernel_enabled: true
+
+# Sysctl parameters applied on all platforms
+hardening_kernel_settings:
+  # --- Kernel pointer / memory exposure ---
+  # Restrict kernel pointer exposure (0=off, 1=hide from non-CAP_SYSLOG, 2=hide from all)
+  kernel.kptr_restrict: 2
+  # Restrict dmesg access to CAP_SYSLOG
+  kernel.dmesg_restrict: 1
+  # Restrict ptrace scope (0=classic, 1=parent-only, 2=admin-only, 3=no-attach)
+  # Note: 3 is a one-way ratchet — cannot be lowered without reboot
+  kernel.yama.ptrace_scope: 1
+  # Full ASLR (address space layout randomization)
+  kernel.randomize_va_space: 2
+
+  # --- Attack surface reduction ---
+  # Disable magic SysRq key except sync (4=sync only, 0=disable all, 244=safe subset)
+  kernel.sysrq: 4
+  # Restrict unprivileged BPF (1=permanently disabled, 2=disabled but admin can re-enable)
+  kernel.unprivileged_bpf_disabled: 1
+  # Harden BPF JIT compiler (2=harden for all users)
+  net.core.bpf_jit_harden: 2
+  # Prevent loading new kernel at runtime (one-way toggle — breaks kdump if set)
+  kernel.kexec_load_disabled: 1
+  # Disable TTY line discipline auto-loading (prevents module loading via TTY exploits)
+  dev.tty.ldisc_autoload: 0
+
+  # --- Core dump prevention ---
+  # Prevent core dumps of SUID processes
+  fs.suid_dumpable: 0
+  # Append PID to core dump filenames
+  kernel.core_uses_pid: 1
+
+  # --- Filesystem protection ---
+  # Prevent hardlink/symlink attacks in world-writable sticky directories
+  fs.protected_hardlinks: 1
+  fs.protected_symlinks: 1
+  # Prevent FIFO/regular file attacks in sticky directories (2=extends to group-writable)
+  fs.protected_fifos: 2
+  fs.protected_regular: 2
+
+# perf_event_paranoid: set per-platform (3 on Arch/Debian, 2 on RedHat)
+# Value 3 is a Debian/Arch kernel patch — not upstream, treated as 2 on RHEL kernels
+hardening_kernel_perf_event_paranoid: true
+
+# io_uring: disabled for all users by default (kernel 6.6+ required)
+# 0=open, 1=unprivileged blocked, 2=all blocked
+# Set to 0 if PostgreSQL or other io_uring consumers are in use
+hardening_kernel_io_uring_disabled: 2
+
+# =============================================================================
+# KERNEL MODULE BLACKLISTING
+# =============================================================================
+# Blacklist unused kernel modules to reduce attack surface
+# Deployed to /etc/modprobe.d/hardening-blacklist.conf
+
+hardening_modules_enabled: true
+
+# Uncommon filesystem modules (CIS Level 1)
+hardening_modules_blacklist_fs:
+  - cramfs
+  - freevxfs
+  - hfs
+  - hfsplus
+  - jffs2
+  - udf
+
+# Uncommon network protocol modules
+hardening_modules_blacklist_net:
+  - dccp
+  - sctp
+  - rds
+  - tipc
+
+# Additional modules to blacklist (user-defined)
+# Examples: usb-storage, thunderbolt, firewire-core, bluetooth
+hardening_modules_blacklist_extra: []
+
+# Modules to exclude from blacklisting (override for specific hosts)
+# Use when a host needs a module that is in the default lists above
+hardening_modules_blacklist_exclude: []
+
+# =============================================================================
+# FILESYSTEM MOUNT HARDENING
+# =============================================================================
+# Harden mount options for sensitive directories via fstab
+
+hardening_fs_enabled: true
+
+# Mount options for sensitive directories
+# Each entry: device, fstype, options
+hardening_fs_mounts:
+  - path: '/tmp'
+    src: 'tmpfs'
+    fstype: 'tmpfs'
+    options: 'defaults,nodev,nosuid,noexec,size=50%'
+  - path: '/dev/shm'
+    src: 'tmpfs'
+    fstype: 'tmpfs'
+    options: 'defaults,nodev,nosuid,noexec'
+
+# /var/tmp bind mount to /tmp (inherits /tmp mount options)
+hardening_fs_vartmp_bind: true

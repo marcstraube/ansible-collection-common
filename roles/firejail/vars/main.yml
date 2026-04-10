@@ -1,0 +1,14 @@
+---
+# =============================================================================
+# Firejail OS-independent variables
+# =============================================================================
+# Package name, config path, and profiles path are identical across
+# Arch Linux, Debian, and Rocky Linux (EPEL).
+
+__firejail_package: 'firejail'
+__firejail_config_path: '/etc/firejail'
+__firejail_profiles_path: '/etc/firejail'
+
+# OS-specific profile overrides (merged with user-defined firejail_profiles)
+# Currently empty — extend per-OS if needed in the future
+__firejail_profiles_os: {}

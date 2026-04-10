@@ -1,0 +1,18 @@
+{{ ansible_managed | comment }}
+
+Section "InputClass"
+    Identifier "system-keyboard"
+    MatchIsKeyboard "on"
+{% if base_xkb_layout %}
+    Option "XkbLayout" "{{ base_xkb_layout }}"
+{% endif %}
+{% if base_xkb_model %}
+    Option "XkbModel" "{{ base_xkb_model }}"
+{% endif %}
+{% if base_xkb_variant %}
+    Option "XkbVariant" "{{ base_xkb_variant }}"
+{% endif %}
+{% if base_xkb_options %}
+    Option "XkbOptions" "{{ base_xkb_options }}"
+{% endif %}
+EndSection

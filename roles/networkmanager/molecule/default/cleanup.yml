@@ -1,0 +1,11 @@
+---
+# marcstraube.networkmanager/molecule/default/cleanup.yml
+
+- name: Cleanup
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Cleanup task placeholder
+      ansible.builtin.debug:
+        msg: No cleanup tasks defined

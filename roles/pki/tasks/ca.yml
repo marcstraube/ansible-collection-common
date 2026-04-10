@@ -1,0 +1,143 @@
+---
+# =============================================================================
+# Certificate Authority Tasks
+# =============================================================================
+
+- name: CA | Ensure CA directory structure exists
+  ansible.builtin.file:
+    path: '{{ pki_ca_dir }}/{{ item }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  loop:
+    - ''
+    - 'certs'
+    - 'crl'
+    - 'newcerts'
+    - 'private'
+    - 'csr'
+
+- name: CA | Ensure CA index file exists
+  ansible.builtin.file:
+    path: '{{ pki_ca_dir }}/index.txt'
+    state: touch
+    owner: root
+    group: root
+    mode: '0600'
+    modification_time: preserve
+    access_time: preserve
+
+- name: CA | Ensure CA serial file exists
+  ansible.builtin.copy:
+    content: '1000'
+    dest: '{{ pki_ca_dir }}/serial'
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+
+- name: CA | Ensure CRL number file exists
+  ansible.builtin.copy:
+    content: '1000'
+    dest: '{{ pki_ca_dir }}/crlnumber'
+    owner: root
+    group: root
+    mode: '0600'
+    force: false
+
+- name: CA | Generate CA OpenSSL configuration
+  ansible.builtin.template:
+    src: 'ca-openssl.cnf.j2'
+    dest: '{{ pki_ca_dir }}/openssl.cnf'
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: CA | Check if CA private key exists
+  ansible.builtin.stat:
+    path: '{{ pki_ca_dir }}/private/ca.key'
+  register: _pki_ca_key_stat
+
+- name: CA | Generate CA private key (EC)
+  community.crypto.openssl_privatekey:
+    path: '{{ pki_ca_dir }}/private/ca.key'
+    type: 'ECC'
+    curve: '{{ pki_ca_key_curve }}'
+    passphrase: '{{ pki_ca_passphrase | default(omit, true) }}'
+    cipher: '{{ "auto" if pki_ca_passphrase else omit }}'
+    owner: root
+    group: root
+    mode: '0400'
+  when:
+    - not _pki_ca_key_stat.stat.exists
+    - pki_ca_key_type == 'ec'
+
+- name: CA | Generate CA private key (RSA)
+  community.crypto.openssl_privatekey:
+    path: '{{ pki_ca_dir }}/private/ca.key'
+    type: 'RSA'
+    size: '{{ pki_ca_key_size }}'
+    passphrase: '{{ pki_ca_passphrase | default(omit, true) }}'
+    cipher: '{{ "auto" if pki_ca_passphrase else omit }}'
+    owner: root
+    group: root
+    mode: '0400'
+  when:
+    - not _pki_ca_key_stat.stat.exists
+    - pki_ca_key_type == 'rsa'
+
+- name: CA | Generate CA private key (Ed25519)
+  community.crypto.openssl_privatekey:
+    path: '{{ pki_ca_dir }}/private/ca.key'
+    type: 'Ed25519'
+    passphrase: '{{ pki_ca_passphrase | default(omit, true) }}'
+    cipher: '{{ "auto" if pki_ca_passphrase else omit }}'
+    owner: root
+    group: root
+    mode: '0400'
+  when:
+    - not _pki_ca_key_stat.stat.exists
+    - pki_ca_key_type == 'ed25519'
+
+- name: CA | Check if CA certificate exists
+  ansible.builtin.stat:
+    path: '{{ pki_ca_dir }}/certs/ca.crt'
+  register: _pki_ca_cert_stat
+
+- name: CA | Generate CA CSR
+  community.crypto.openssl_csr:
+    path: '{{ pki_ca_dir }}/csr/ca.csr'
+    privatekey_path: '{{ pki_ca_dir }}/private/ca.key'
+    privatekey_passphrase: '{{ pki_ca_passphrase | default(omit, true) }}'
+    common_name: '{{ pki_ca_common_name }}'
+    country_name: '{{ pki_ca_country | default(omit, true) }}'
+    state_or_province_name: '{{ pki_ca_state | default(omit, true) }}'
+    locality_name: '{{ pki_ca_locality | default(omit, true) }}'
+    organization_name: '{{ pki_ca_organization | default(omit, true) }}'
+    organizational_unit_name: '{{ pki_ca_organizational_unit | default(omit, true) }}'
+    email_address: '{{ pki_ca_email | default(omit, true) }}'
+    basic_constraints:
+      - 'CA:TRUE'
+    basic_constraints_critical: true
+    key_usage:
+      - 'keyCertSign'
+      - 'cRLSign'
+    key_usage_critical: true
+    owner: root
+    group: root
+    mode: '0600'
+  when: not _pki_ca_cert_stat.stat.exists
+
+- name: CA | Generate self-signed CA certificate
+  community.crypto.x509_certificate:
+    path: '{{ pki_ca_dir }}/certs/ca.crt'
+    privatekey_path: '{{ pki_ca_dir }}/private/ca.key'
+    privatekey_passphrase: '{{ pki_ca_passphrase | default(omit, true) }}'
+    csr_path: '{{ pki_ca_dir }}/csr/ca.csr'
+    provider: selfsigned
+    selfsigned_not_after: '+{{ pki_ca_validity_days }}d'
+    owner: root
+    group: root
+    mode: '0644'
+  when: not _pki_ca_cert_stat.stat.exists

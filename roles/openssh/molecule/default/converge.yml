@@ -1,0 +1,91 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+      changed_when: false
+
+    - name: Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+      changed_when: false
+
+    - name: Create sshd privilege separation directory
+      ansible.builtin.file:
+        path: /run/sshd
+        state: directory
+        mode: '0755'
+
+  vars:
+    # Test security settings
+    openssh_server_port: 22
+    openssh_server_permit_root_login: 'no'
+    openssh_server_password_authentication: false
+    openssh_server_max_auth_tries: 3
+
+    # Test cryptographic settings
+    openssh_server_host_key_types:
+      - 'ed25519'
+      - 'rsa'
+
+    openssh_server_kex_algorithms:
+      - 'curve25519-sha256'
+      - 'curve25519-sha256@libssh.org'
+
+    openssh_server_ciphers:
+      - 'chacha20-poly1305@openssh.com'
+      - 'aes256-gcm@openssh.com'
+
+    openssh_server_macs:
+      - 'hmac-sha2-512-etm@openssh.com'
+      - 'hmac-sha2-256-etm@openssh.com'
+
+    # Test access control
+    openssh_server_allow_groups:
+      - 'wheel'
+      - 'sudo'
+
+    # Test session settings
+    openssh_server_client_alive_interval: 300
+    openssh_server_client_alive_count_max: 3
+
+    # Disable moduli hardening for faster tests
+    openssh_server_harden_moduli: false
+
+    # Disable ssh-audit installation for faster tests
+    openssh_install_ssh_audit: false
+
+    # Test logging
+    openssh_server_log_level: 'VERBOSE'
+
+    # Test SFTP chroot
+    openssh_server_sftp_chroot_enabled: true
+    openssh_server_sftp_chroot_group: 'sftponly'
+    openssh_server_sftp_chroot_directory: '/home/%u'
+
+    # Test match blocks
+    openssh_server_match_blocks:
+      - match: 'User testdeploy'
+        options:
+          PasswordAuthentication: 'no'
+          AllowTcpForwarding: 'no'
+
+    # Test extra config
+    openssh_server_extra_sshd_config:
+      - 'AcceptEnv LANG LC_*'
+
+    # Test banner
+    openssh_server_banner_enabled: true
+    openssh_server_banner_content: 'Test banner'
+
+  tasks:
+    - name: Include ansible-openssh role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

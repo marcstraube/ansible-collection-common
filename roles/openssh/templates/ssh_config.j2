@@ -1,0 +1,40 @@
+{{ ansible_managed | comment }}
+# SSH client defaults
+
+{#- Derive host key algorithms from host key types when set to 'auto' -#}
+{%- if openssh_server_host_key_algorithms == 'auto' -%}
+{%   set _hka = [] %}
+{%   for keytype in openssh_server_host_key_types %}
+{%     if keytype in openssh_server_algorithm_map %}
+{%       for alg in openssh_server_algorithm_map[keytype]['host_key'] %}
+{%         if alg not in _hka %}
+{%           set _ = _hka.append(alg) %}
+{%         endif %}
+{%       endfor %}
+{%     endif %}
+{%   endfor %}
+{%- else -%}
+{%   set _hka = openssh_server_host_key_algorithms %}
+{%- endif %}
+
+Host *
+    GlobalKnownHostsFile {{ openssh_client_global_known_hosts }}
+    HashKnownHosts {{ openssh_client_hash_known_hosts | ternary('yes', 'no') }}
+    StrictHostKeyChecking {{ openssh_client_strict_host_key_checking }}
+    VisualHostKey {{ openssh_client_visual_host_key | ternary('yes', 'no') }}
+{% if openssh_server_kex_algorithms | length > 0 %}
+
+    KexAlgorithms {{ openssh_server_kex_algorithms | join(',') }}
+{% endif %}
+{% if openssh_server_ciphers | length > 0 %}
+
+    Ciphers {{ openssh_server_ciphers | join(',') }}
+{% endif %}
+{% if openssh_server_macs | length > 0 %}
+
+    MACs {{ openssh_server_macs | join(',') }}
+{% endif %}
+{% if _hka | length > 0 %}
+
+    HostKeyAlgorithms {{ _hka | join(',') }}
+{% endif %}

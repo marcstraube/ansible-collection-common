@@ -1,0 +1,147 @@
+{{ ansible_managed | comment }}
+#
+# NetworkManager daemon configuration
+# Deployed to /etc/NetworkManager/conf.d/00-ansible.conf
+#
+
+{% set has_main = (
+  networkmanager_plugins | length > 0 or
+  networkmanager_dns | length > 0 or
+  networkmanager_rc_manager | length > 0 or
+  not networkmanager_systemd_resolved or
+  networkmanager_auth_polkit | length > 0 or
+  networkmanager_hostname_mode | length > 0 or
+  networkmanager_firewall_backend | length > 0 or
+  networkmanager_no_auto_default | length > 0 or
+  networkmanager_ignore_carrier | length > 0 or
+  networkmanager_migrate_ifcfg_rh) %}
+{% if has_main %}
+[main]
+{% if networkmanager_plugins | length > 0 %}
+plugins={{ networkmanager_plugins | join(',') }}
+{% endif %}
+{% if networkmanager_dns | length > 0 %}
+dns={{ networkmanager_dns }}
+{% endif %}
+{% if networkmanager_rc_manager | length > 0 %}
+rc-manager={{ networkmanager_rc_manager }}
+{% endif %}
+{% if not networkmanager_systemd_resolved %}
+systemd-resolved=false
+{% endif %}
+{% if networkmanager_auth_polkit | length > 0 %}
+auth-polkit={{ networkmanager_auth_polkit }}
+{% endif %}
+{% if networkmanager_hostname_mode | length > 0 %}
+hostname-mode={{ networkmanager_hostname_mode }}
+{% endif %}
+{% if networkmanager_firewall_backend | length > 0 %}
+firewall-backend={{ networkmanager_firewall_backend }}
+{% endif %}
+{% if networkmanager_no_auto_default | length > 0 %}
+no-auto-default={{ networkmanager_no_auto_default | join(',') }}
+{% endif %}
+{% if networkmanager_ignore_carrier | length > 0 %}
+ignore-carrier={{ networkmanager_ignore_carrier | join(',') }}
+{% endif %}
+{% if networkmanager_migrate_ifcfg_rh %}
+migrate-ifcfg-rh=true
+{% endif %}
+
+{% endif %}
+{% set has_logging = (
+  networkmanager_log_level | length > 0 or
+  networkmanager_log_domains | length > 0 or
+  networkmanager_log_backend | length > 0 or
+  networkmanager_log_audit) %}
+{% if has_logging %}
+[logging]
+{% if networkmanager_log_level | length > 0 %}
+level={{ networkmanager_log_level }}
+{% endif %}
+{% if networkmanager_log_domains | length > 0 %}
+domains={{ networkmanager_log_domains }}
+{% endif %}
+{% if networkmanager_log_backend | length > 0 %}
+backend={{ networkmanager_log_backend }}
+{% endif %}
+{% if networkmanager_log_audit %}
+audit=true
+{% endif %}
+
+{% endif %}
+{% set has_connectivity = networkmanager_connectivity_uri | length > 0 %}
+{% if has_connectivity %}
+[connectivity]
+uri={{ networkmanager_connectivity_uri }}
+{% if networkmanager_connectivity_interval != 300 %}
+interval={{ networkmanager_connectivity_interval }}
+{% endif %}
+{% if networkmanager_connectivity_timeout != 20 %}
+timeout={{ networkmanager_connectivity_timeout }}
+{% endif %}
+{% if networkmanager_connectivity_response | length > 0 %}
+response={{ networkmanager_connectivity_response }}
+{% endif %}
+
+{% endif %}
+{% set has_connection = (
+  networkmanager_wifi_powersave | length > 0 or
+  (networkmanager_connection_mdns | string | length > 0 and networkmanager_connection_mdns != '') or
+  (networkmanager_connection_llmnr | string | length > 0 and networkmanager_connection_llmnr != '') or
+  networkmanager_ethernet_wake_on_lan | length > 0 or
+  not networkmanager_dhcp_send_hostname_ipv4 or
+  not networkmanager_dhcp_send_hostname_ipv6) %}
+{% if has_connection %}
+[connection]
+{% if networkmanager_wifi_powersave | length > 0 %}
+{% set powersave_map = {'default': '0', 'ignore': '1', 'disable': '2', 'enable': '3'} %}
+wifi.powersave={{ powersave_map[networkmanager_wifi_powersave] | default(networkmanager_wifi_powersave) }}
+{% endif %}
+{% if networkmanager_connection_mdns != '' %}
+connection.mdns={{ networkmanager_connection_mdns }}
+{% endif %}
+{% if networkmanager_connection_llmnr != '' %}
+connection.llmnr={{ networkmanager_connection_llmnr }}
+{% endif %}
+{% if networkmanager_ethernet_wake_on_lan | length > 0 %}
+ethernet.wake-on-lan={{ networkmanager_ethernet_wake_on_lan }}
+{% endif %}
+{% if not networkmanager_dhcp_send_hostname_ipv4 %}
+ipv4.dhcp-send-hostname=false
+{% endif %}
+{% if not networkmanager_dhcp_send_hostname_ipv6 %}
+ipv6.dhcp-send-hostname=false
+{% endif %}
+
+{% endif %}
+{% set has_device = (
+  not networkmanager_wifi_scan_rand_mac or
+  networkmanager_wifi_backend | length > 0) %}
+{% if has_device %}
+[device]
+{% if not networkmanager_wifi_scan_rand_mac %}
+wifi.scan-rand-mac-address=no
+{% endif %}
+{% if networkmanager_wifi_backend | length > 0 %}
+wifi.backend={{ networkmanager_wifi_backend }}
+{% endif %}
+
+{% endif %}
+{% if networkmanager_unmanaged_devices | length > 0 %}
+[keyfile]
+{% set unmanaged_devices_formatted = [] %}
+{% for device in networkmanager_unmanaged_devices %}
+{% if device.mac is defined %}
+{% set _ = unmanaged_devices_formatted.append('mac:' ~ device.mac) %}
+{% elif device.ifname is defined %}
+{% set _ = unmanaged_devices_formatted.append('interface-name:' ~ device.ifname) %}
+{% endif %}
+{% endfor %}
+unmanaged-devices={{ unmanaged_devices_formatted | join(';') }}
+
+{% endif %}
+{% if ansible_facts['os_family'] == 'Debian' and networkmanager_ifupdown_managed %}
+[ifupdown]
+managed=true
+{% endif %}

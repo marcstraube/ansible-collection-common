@@ -1,0 +1,199 @@
+---
+# =============================================================================
+# Chrony - NTP Time Synchronization
+# =============================================================================
+# Role: marcstraube.common.chrony
+# Description: Configure chrony for accurate time synchronization
+# =============================================================================
+
+# =============================================================================
+# SERVICE CONTROL
+# =============================================================================
+
+# Enable or disable chrony service
+chrony_enabled: true
+
+# =============================================================================
+# NTP SERVERS
+# =============================================================================
+
+# NTP servers to use for synchronization
+# Each entry has 'server' and optional 'options' (default: 'iburst')
+chrony_ntp_servers:
+  - server: 'de.pool.ntp.org'
+    options: 'iburst'
+  - server: '0.pool.ntp.org'
+    options: 'iburst'
+  - server: '1.pool.ntp.org'
+    options: 'iburst'
+  - server: '2.pool.ntp.org'
+    options: 'iburst'
+
+# NTP pools (alternative to individual servers)
+# Each entry has 'pool' and optional 'options'
+chrony_ntp_pools: []
+# Example:
+#   - pool: 'pool.ntp.org'
+#     options: 'iburst maxsources 4'
+
+# =============================================================================
+# NTP SERVER MODE
+# =============================================================================
+
+# Allow these networks to use this host as NTP server
+chrony_allow_networks: []
+# Example:
+#   - '192.168.1.0/24'
+#   - '10.0.0.0/8'
+
+# Deny these networks (overrides allow)
+chrony_deny_networks: []
+
+# Enable local stratum when upstream servers unreachable
+# Useful for isolated networks (0 = disabled, 10 = typical for local server)
+chrony_local_stratum: 0
+
+# =============================================================================
+# SOURCE SELECTION
+# =============================================================================
+
+# Minimum number of sources required for clock synchronization
+# Increase for better reliability (0 = use chrony default)
+chrony_minsources: 0
+
+# =============================================================================
+# TIMING OPTIONS
+# =============================================================================
+
+# Step clock if offset > threshold in first N updates (makestep directive)
+chrony_makestep_threshold: 1.0
+chrony_makestep_limit: 3
+
+# Maximum rate of clock adjustment in ppm (0 = use default)
+chrony_max_slew_rate: 0
+
+# Maximum allowed offset for clock correction in seconds (maxchange directive)
+# If offset exceeds this after chrony_maxchange_start updates, action depends
+# on chrony_maxchange_ignore (true = log only, false = exit chronyd)
+# Set to 0 to disable maxchange entirely
+chrony_max_offset: 0
+chrony_maxchange_start: 1
+chrony_maxchange_ignore: true
+
+# =============================================================================
+# RTC (REAL-TIME CLOCK)
+# =============================================================================
+
+# Sync system time to RTC on clock updates
+chrony_rtcsync: true
+
+# RTC is in local time instead of UTC (for dual-boot with Windows)
+chrony_rtc_local: false
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+
+# Log directory
+chrony_log_dir: '/var/log/chrony'
+
+# What to log (measurements, statistics, tracking, rtc, refclocks, tempcomp)
+chrony_log_options:
+  - 'measurements'
+  - 'statistics'
+  - 'tracking'
+
+# =============================================================================
+# DRIFT FILE
+# =============================================================================
+
+# File to store clock drift information
+chrony_drift_file: '/var/lib/chrony/drift'
+
+# =============================================================================
+# KEYS (AUTHENTICATION)
+# =============================================================================
+
+# Key file for NTP symmetric key authentication
+chrony_keys_file: '/etc/chrony.keys'
+
+# Generate authentication key if key file does not exist
+chrony_generate_keys: false
+
+# =============================================================================
+# NTS (NETWORK TIME SECURITY)
+# =============================================================================
+
+# Enable NTS server mode (requires certificate and key)
+# Client-side NTS: add 'nts' to server options instead
+chrony_nts_server_enabled: false
+
+# TLS certificate and key for NTS server
+chrony_nts_server_cert: ''
+chrony_nts_server_key: ''
+
+# Directory for NTS cookie/key dump files
+chrony_ntsdumpdir: '/var/lib/chrony'
+
+# =============================================================================
+# HARDWARE TIMESTAMPING
+# =============================================================================
+
+# Enable hardware timestamping on interfaces
+chrony_hw_timestamp_interfaces: []
+# Example:
+#   - 'eth0'
+#   - '*'  # All interfaces
+
+# =============================================================================
+# LEAP SECONDS
+# =============================================================================
+
+# Timezone with leap seconds (e.g. 'right/UTC')
+chrony_leapsectz: ''
+
+# Path to leap-seconds.list file for offline operation
+chrony_leapseclist: ''
+# Example: '/usr/share/zoneinfo/leap-seconds.list'
+
+# =============================================================================
+# SECURITY
+# =============================================================================
+
+# Bind command interface to specific address
+chrony_bind_cmd_address: '127.0.0.1'
+
+# =============================================================================
+# FIREWALL
+# =============================================================================
+
+# Enable firewalld integration (opens NTP port 123/UDP in server mode)
+chrony_firewalld_enabled: false
+
+# firewalld zone to add NTP service to
+chrony_firewalld_zone: 'public'
+
+# =============================================================================
+# APPARMOR
+# =============================================================================
+
+# Enable AppArmor profile enforcement (Debian/Arch only, not RHEL/Rocky)
+chrony_apparmor_enabled: false
+
+# =============================================================================
+# BTRFS
+# =============================================================================
+
+# Enable BTRFS NoCOW optimization for log directory
+# Auto-detected: only applies on BTRFS filesystems with empty log dirs
+chrony_btrfs_nocow: true
+
+# =============================================================================
+# EXTRA CONFIGURATION
+# =============================================================================
+
+# Additional chrony.conf directives (list of strings)
+chrony_extra_config: []
+# Example:
+#   - 'stratumweight 0'
+#   - 'combinelimit 3'

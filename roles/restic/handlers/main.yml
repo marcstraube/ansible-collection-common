@@ -1,0 +1,10 @@
+---
+# =============================================================================
+# Restic - Handlers
+# =============================================================================
+
+- name: Reload restic systemd units
+  ansible.builtin.systemd:
+    daemon_reload: true
+  failed_when: false
+  listen: 'reload restic systemd units'

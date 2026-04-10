@@ -1,0 +1,51 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Update apt cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Pre-install unbound for binary detection
+      ansible.builtin.package:
+        name: unbound
+        state: present
+
+    - name: Detect unbound binary path
+      ansible.builtin.command:
+        cmd: which unbound
+      register: __prepare_unbound_path
+      changed_when: false
+
+    - name: Create systemd override directory for unbound
+      ansible.builtin.file:
+        path: /etc/systemd/system/unbound.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Override unbound service for containers
+      ansible.builtin.copy:
+        content: |
+          [Service]
+          Type=simple
+          ExecStart=
+          ExecStart={{ __prepare_unbound_path.stdout }} -d
+          ExecReload=
+          ExecReload=/bin/true
+        dest: /etc/systemd/system/unbound.service.d/override.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Stop unbound before converge
+      ansible.builtin.systemd:
+        name: unbound.service
+        state: stopped
+        daemon_reload: true
+      failed_when: false

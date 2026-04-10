@@ -1,0 +1,21 @@
+---
+# =============================================================================
+# Energy Management - logind.conf.d Drop-in (all systemd distros)
+# =============================================================================
+
+- name: Logind | Create logind.conf.d directory
+  ansible.builtin.file:
+    path: '{{ __energy_management_logind_conf_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Logind | Deploy energy.conf drop-in
+  ansible.builtin.template:
+    src: 'logind-energy.conf.j2'
+    dest: '{{ __energy_management_logind_conf_dir }}/{{ __energy_management_logind_conf_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 'restart logind'

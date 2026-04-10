@@ -1,0 +1,281 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+
+  tasks:
+    # =========================================================================
+    # GNUPG INSTALLATION
+    # =========================================================================
+    - name: Verify | Set expected package name
+      ansible.builtin.set_fact:
+        _gnupg_expected_pkg: >-
+          {{ 'gnupg2' if ansible_facts['os_family'] == 'RedHat' else 'gnupg' }}
+
+    - name: Verify | Check gnupg package installed
+      ansible.builtin.package:
+        name: '{{ _gnupg_expected_pkg }}'
+        state: present
+      check_mode: true
+      register: gnupg_pkg
+      failed_when: gnupg_pkg.changed
+
+    - name: Verify | Check gpg binary exists
+      ansible.builtin.command:
+        cmd: which gpg
+      register: gpg_binary
+      changed_when: false
+      failed_when: gpg_binary.rc != 0
+
+    - name: Verify | Check gpg version
+      ansible.builtin.command:
+        cmd: gpg --version
+      register: gpg_version
+      changed_when: false
+      failed_when: gpg_version.rc != 0
+
+    - name: Verify | Verify gpg version output
+      ansible.builtin.assert:
+        that:
+          - "'gpg (GnuPG)' in gpg_version.stdout"
+        fail_msg: 'gpg version output unexpected'
+
+    # =========================================================================
+    # GPG-AGENT
+    # =========================================================================
+    - name: Verify | Check gpg-agent binary exists
+      ansible.builtin.command:
+        cmd: which gpg-agent
+      register: gpg_agent_binary
+      changed_when: false
+      failed_when: gpg_agent_binary.rc != 0
+
+    # =========================================================================
+    # GPG UTILITIES
+    # =========================================================================
+    - name: Verify | Check gpg-connect-agent exists
+      ansible.builtin.command:
+        cmd: which gpg-connect-agent
+      register: gpg_connect_agent
+      changed_when: false
+      failed_when: gpg_connect_agent.rc != 0
+
+    - name: Verify | Check dirmngr exists
+      ansible.builtin.command:
+        cmd: which dirmngr
+      register: dirmngr_binary
+      changed_when: false
+      failed_when: dirmngr_binary.rc != 0
+
+    - name: Verify | Check gpgconf exists
+      ansible.builtin.command:
+        cmd: which gpgconf
+      register: gpgconf_binary
+      changed_when: false
+      failed_when: gpgconf_binary.rc != 0
+
+    # =========================================================================
+    # ROOT USER CONFIGURATION
+    # =========================================================================
+    - name: Verify | Check root .gnupg directory
+      ansible.builtin.stat:
+        path: /root/.gnupg
+      register: root_gnupg
+
+    - name: Verify | Assert root .gnupg exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - root_gnupg.stat.exists
+          - root_gnupg.stat.isdir
+          - root_gnupg.stat.mode == '0700'
+        fail_msg: 'root .gnupg directory missing or wrong permissions'
+
+    - name: Verify | Check root gpg.conf exists
+      ansible.builtin.stat:
+        path: /root/.gnupg/gpg.conf
+      register: root_gpg_conf
+
+    - name: Verify | Assert root gpg.conf exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - root_gpg_conf.stat.exists
+          - root_gpg_conf.stat.mode == '0600'
+        fail_msg: 'root gpg.conf missing or wrong permissions'
+
+    - name: Verify | Read root gpg.conf content
+      ansible.builtin.slurp:
+        src: /root/.gnupg/gpg.conf
+      register: root_gpg_conf_content
+
+    - name: Verify | Assert gpg.conf contains expected directives
+      ansible.builtin.assert:
+        that:
+          - "'trust-model tofu+pgp' in root_gpg_conf_content.content | b64decode"
+          - "'display-charset utf-8' in root_gpg_conf_content.content | b64decode"
+          - "'keyid-format 0xlong' in root_gpg_conf_content.content | b64decode"
+          - "'no-greeting' in root_gpg_conf_content.content | b64decode"
+          - "'auto-key-locate local,wkd' in root_gpg_conf_content.content | b64decode"
+          - "'keyserver hkps://keys.openpgp.org' in root_gpg_conf_content.content | b64decode"
+          - "'cert-digest-algo SHA512' in root_gpg_conf_content.content | b64decode"
+          - "'Ansible managed' in root_gpg_conf_content.content | b64decode"
+        fail_msg: 'gpg.conf missing expected directives'
+
+    - name: Verify | Check root gpg-agent.conf exists
+      ansible.builtin.stat:
+        path: /root/.gnupg/gpg-agent.conf
+      register: root_agent_conf
+
+    - name: Verify | Assert root gpg-agent.conf exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - root_agent_conf.stat.exists
+          - root_agent_conf.stat.mode == '0600'
+        fail_msg: 'root gpg-agent.conf missing or wrong permissions'
+
+    - name: Verify | Read root gpg-agent.conf content
+      ansible.builtin.slurp:
+        src: /root/.gnupg/gpg-agent.conf
+      register: root_agent_conf_content
+
+    - name: Verify | Assert gpg-agent.conf contains expected directives
+      ansible.builtin.assert:
+        that:
+          - "'default-cache-ttl 600' in root_agent_conf_content.content | b64decode"
+          - "'max-cache-ttl 7200' in root_agent_conf_content.content | b64decode"
+          - "'allow-preset-passphrase' in root_agent_conf_content.content | b64decode"
+          - "'Ansible managed' in root_agent_conf_content.content | b64decode"
+        fail_msg: 'gpg-agent.conf missing expected directives'
+
+    - name: Verify | Assert root gpg-agent.conf does NOT have SSH support
+      ansible.builtin.assert:
+        that:
+          - "'enable-ssh-support' not in root_agent_conf_content.content | b64decode"
+        fail_msg: 'root gpg-agent.conf should not have SSH support'
+
+    - name: Verify | Check root dirmngr.conf exists
+      ansible.builtin.stat:
+        path: /root/.gnupg/dirmngr.conf
+      register: root_dirmngr_conf
+
+    - name: Verify | Assert root dirmngr.conf exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - root_dirmngr_conf.stat.exists
+          - root_dirmngr_conf.stat.mode == '0600'
+        fail_msg: 'root dirmngr.conf missing or wrong permissions'
+
+    - name: Verify | Read root dirmngr.conf content
+      ansible.builtin.slurp:
+        src: /root/.gnupg/dirmngr.conf
+      register: root_dirmngr_conf_content
+
+    - name: Verify | Assert dirmngr.conf contains expected directives
+      ansible.builtin.assert:
+        that:
+          - "'keyserver hkps://keys.openpgp.org' in root_dirmngr_conf_content.content | b64decode"
+          - "'resolver-timeout 15' in root_dirmngr_conf_content.content | b64decode"
+          - "'Ansible managed' in root_dirmngr_conf_content.content | b64decode"
+        fail_msg: 'dirmngr.conf missing expected directives'
+
+    # =========================================================================
+    # TEST USER CONFIGURATION
+    # =========================================================================
+    - name: Verify | Check testuser .gnupg directory
+      ansible.builtin.stat:
+        path: /home/testuser/.gnupg
+      register: testuser_gnupg
+
+    - name: Verify | Assert testuser .gnupg exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - testuser_gnupg.stat.exists
+          - testuser_gnupg.stat.isdir
+          - testuser_gnupg.stat.mode == '0700'
+        fail_msg: 'testuser .gnupg directory missing or wrong permissions'
+
+    - name: Verify | Read testuser gpg-agent.conf content
+      ansible.builtin.slurp:
+        src: /home/testuser/.gnupg/gpg-agent.conf
+      register: testuser_agent_conf_content
+
+    - name: Verify | Assert testuser gpg-agent.conf has SSH support
+      ansible.builtin.assert:
+        that:
+          - "'enable-ssh-support' in testuser_agent_conf_content.content | b64decode"
+          - "'default-cache-ttl-ssh 1800' in testuser_agent_conf_content.content | b64decode"
+          - "'max-cache-ttl-ssh 7200' in testuser_agent_conf_content.content | b64decode"
+        fail_msg: 'testuser gpg-agent.conf missing SSH support'
+
+    - name: Verify | Check testuser SSH environment file
+      ansible.builtin.stat:
+        path: /home/testuser/.config/environment.d/50-gpg-ssh.conf
+      register: testuser_ssh_env
+
+    - name: Verify | Assert testuser SSH environment file exists
+      ansible.builtin.assert:
+        that:
+          - testuser_ssh_env.stat.exists
+          - testuser_ssh_env.stat.mode == '0644'
+        fail_msg: 'testuser SSH environment file missing or wrong permissions'
+
+    - name: Verify | Read testuser SSH environment file
+      ansible.builtin.slurp:
+        src: /home/testuser/.config/environment.d/50-gpg-ssh.conf
+      register: testuser_ssh_env_content
+
+    - name: Verify | Assert SSH_AUTH_SOCK uses runtime directory
+      ansible.builtin.assert:
+        that:
+          - "'SSH_AUTH_SOCK=/run/user/' in testuser_ssh_env_content.content | b64decode"
+          - "'gnupg/S.gpg-agent.ssh' in testuser_ssh_env_content.content | b64decode"
+        fail_msg: 'SSH_AUTH_SOCK not pointing to runtime directory'
+
+    - name: Verify | Check root does NOT have SSH environment file
+      ansible.builtin.stat:
+        path: /root/.config/environment.d/50-gpg-ssh.conf
+      register: root_ssh_env
+
+    - name: Verify | Assert root does NOT have SSH environment file
+      ansible.builtin.assert:
+        that:
+          - not root_ssh_env.stat.exists
+        fail_msg: 'root should not have SSH environment file (agent_ssh: false)'
+
+    # =========================================================================
+    # FUNCTIONAL TESTS
+    # =========================================================================
+    - name: Verify | Test gpg list keys
+      ansible.builtin.command:
+        cmd: gpg --list-keys
+      register: gpg_list_keys
+      changed_when: false
+      failed_when: gpg_list_keys.rc not in [0, 2]
+
+    - name: Verify | Test gpgconf list components
+      ansible.builtin.command:
+        cmd: gpgconf --list-components
+      register: gpgconf_components
+      changed_when: false
+      failed_when: gpgconf_components.rc != 0
+
+    - name: Verify | Verify gpgconf components output
+      ansible.builtin.assert:
+        that:
+          - "'gpg:' in gpgconf_components.stdout"
+          - "'gpg-agent:' in gpgconf_components.stdout"
+        fail_msg: 'gpgconf components output unexpected'
+
+    # =========================================================================
+    # DISABLED USER — must have no config
+    # =========================================================================
+    - name: Verify | Check disableduser has no .gnupg directory
+      ansible.builtin.stat:
+        path: /home/disableduser/.gnupg
+      register: disabled_gnupg
+
+    - name: Verify | Assert disableduser has no gnupg config
+      ansible.builtin.assert:
+        that:
+          - not disabled_gnupg.stat.exists
+        fail_msg: 'disableduser should not have .gnupg directory (mode: disabled)'

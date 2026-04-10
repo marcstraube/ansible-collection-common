@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+{% if firejail_apparmor | default(false) | bool %}
+
+# AppArmor confinement for all sandboxed applications
+apparmor
+{% endif %}
+{% for line in firejail_globals %}
+{{ line }}
+{% endfor %}

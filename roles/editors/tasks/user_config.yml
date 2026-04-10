@@ -1,0 +1,117 @@
+---
+# =============================================================================
+# Per-User Editor Config Deployment
+# =============================================================================
+# Called once per user from users.yml loop.
+# Variable: __editors_user (the current editors_users entry)
+# =============================================================================
+
+- name: User config | Get user info for {{ __editors_user.username }}
+  ansible.builtin.getent:
+    database: passwd
+    key: '{{ __editors_user.username }}'
+
+- name: User config | Set user facts
+  ansible.builtin.set_fact:
+    __editors_user_home: '{{ getent_passwd[__editors_user.username][4] }}'
+    __editors_user_group: '{{ getent_passwd[__editors_user.username][2] }}'
+    __editors_user_merge: >-
+      {{ __editors_user.config_merge
+         | default(editors_user_config_merge) | bool }}
+
+- name: User config | Build effective nano config
+  ansible.builtin.set_fact:
+    __editors_user_nano_config: >-
+      {{ (editors_nano_config | combine(__editors_user.nano_config))
+         if __editors_user_merge
+         else __editors_user.nano_config }}
+  when: __editors_user.nano_config is defined
+
+- name: User config | Build effective vim config
+  ansible.builtin.set_fact:
+    __editors_user_vim_config: >-
+      {{ (editors_vim_config | combine(__editors_user.vim_config))
+         if __editors_user_merge
+         else __editors_user.vim_config }}
+  when: __editors_user.vim_config is defined
+
+- name: User config | Build effective neovim config
+  ansible.builtin.set_fact:
+    __editors_user_neovim_config: >-
+      {{ (editors_neovim_config | combine(__editors_user.neovim_config))
+         if __editors_user_merge
+         else __editors_user.neovim_config }}
+  when: __editors_user.neovim_config is defined
+
+# =============================================================================
+# Nano
+# =============================================================================
+
+- name: User config | Ensure nano config directory for {{ __editors_user.username }}
+  ansible.builtin.file:
+    path: '{{ __editors_user_home }}/.config/nano'
+    state: directory
+    owner: '{{ __editors_user.username }}'
+    group: '{{ __editors_user_group }}'
+    mode: '0755'
+  when:
+    - editors_nano | bool
+    - __editors_user.nano_config is defined
+
+- name: User config | Deploy nano config for {{ __editors_user.username }}
+  ansible.builtin.template:
+    src: nanorc.j2
+    dest: '{{ __editors_user_home }}/.config/nano/nanorc'
+    owner: '{{ __editors_user.username }}'
+    group: '{{ __editors_user_group }}'
+    mode: '0644'
+  vars:
+    editors_nano_config: '{{ __editors_user_nano_config }}'
+  when:
+    - editors_nano | bool
+    - __editors_user.nano_config is defined
+
+# =============================================================================
+# Vim
+# =============================================================================
+
+- name: User config | Deploy vim config for {{ __editors_user.username }}
+  ansible.builtin.template:
+    src: vimrc.j2
+    dest: '{{ __editors_user_home }}/.vimrc'
+    owner: '{{ __editors_user.username }}'
+    group: '{{ __editors_user_group }}'
+    mode: '0644'
+  vars:
+    editors_vim_config: '{{ __editors_user_vim_config }}'
+  when:
+    - editors_vim | bool
+    - __editors_user.vim_config is defined
+
+# =============================================================================
+# Neovim
+# =============================================================================
+
+- name: User config | Ensure neovim config directory for {{ __editors_user.username }}
+  ansible.builtin.file:
+    path: '{{ __editors_user_home }}/.config/nvim'
+    state: directory
+    owner: '{{ __editors_user.username }}'
+    group: '{{ __editors_user_group }}'
+    mode: '0755'
+  when:
+    - editors_neovim | bool
+    - __editors_user.neovim_config is defined
+
+- name: User config | Deploy neovim config for {{ __editors_user.username }}
+  ansible.builtin.template:
+    src: init.vim.j2
+    dest: '{{ __editors_user_home }}/.config/nvim/init.vim'
+    owner: '{{ __editors_user.username }}'
+    group: '{{ __editors_user_group }}'
+    mode: '0644'
+  vars:
+    editors_neovim_config: '{{ __editors_user_neovim_config }}'
+  when:
+    - editors_neovim | bool
+    - __editors_user.neovim_config is defined

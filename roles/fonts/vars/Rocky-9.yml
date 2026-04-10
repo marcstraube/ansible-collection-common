@@ -1,0 +1,36 @@
+---
+# =============================================================================
+# Rocky 9 Variables for Fonts
+# =============================================================================
+# Rocky 9 uses old emoji package name and lacks some EPEL 10 coding fonts.
+# Overrides RedHat.yml defaults.
+
+__fonts_dejavu_package: 'dejavu-sans-fonts'
+__fonts_liberation_package: 'liberation-fonts'
+__fonts_noto_package: 'google-noto-sans-fonts'
+__fonts_noto_emoji_package: 'google-noto-emoji-color-fonts'
+__fonts_noto_cjk_package: 'google-noto-sans-cjk-fonts'
+
+__fonts_coding_packages:
+  firacode: 'fira-code-fonts'  # EPEL 9
+  jetbrains: ''  # Not in EPEL 9
+  cascadia: ''  # Not in EPEL
+  iosevka: ''  # Not in repos
+  hack: ''  # Not in EPEL
+  source-code-pro: 'adobe-source-code-pro-fonts'
+
+__fonts_nerd_packages:
+  # Nerd Fonts not in EPEL — COPR or manual install only
+  firacode: ''
+  hack: ''
+  jetbrains: ''
+  meslo: ''
+  source-code-pro: ''
+  ubuntu: ''
+  dejavu: ''
+  liberation: ''
+  noto: ''
+  roboto: ''
+  droid: ''
+  terminus: ''
+  symbols-only: ''

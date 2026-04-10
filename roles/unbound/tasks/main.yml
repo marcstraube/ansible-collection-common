@@ -1,0 +1,66 @@
+---
+# =============================================================================
+# Unbound - Main Tasks
+# =============================================================================
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags: [unbound]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: unbound_enabled | bool
+  tags: [unbound, unbound:install]
+
+- name: Main | Include BTRFS tasks
+  ansible.builtin.include_tasks:
+    file: btrfs.yml
+    apply:
+      tags: [unbound, unbound:configure]
+  when: unbound_enabled | bool
+  tags: [unbound, unbound:configure]
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: unbound_enabled | bool
+  tags: [unbound, unbound:configure]
+
+- name: Main | Import blocklist tasks
+  ansible.builtin.import_tasks: blocklist.yml
+  when:
+    - unbound_enabled | bool
+    - unbound_blocklist_enabled | bool
+  tags: [unbound, unbound:blocklist]
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  when: unbound_enabled | bool
+  tags: [unbound, unbound:service]
+
+- name: Main | Include firewall tasks
+  ansible.builtin.include_tasks:
+    file: firewall.yml
+    apply:
+      tags: [unbound, unbound:firewall]
+  when:
+    - unbound_enabled | bool
+    - unbound_firewalld_enabled | bool
+  tags: [unbound, unbound:firewall]
+
+- name: Main | Include AppArmor tasks
+  ansible.builtin.include_tasks:
+    file: apparmor.yml
+    apply:
+      tags: [unbound, unbound:apparmor]
+  when:
+    - unbound_enabled | bool
+    - unbound_apparmor_enabled | bool
+    - ansible_facts['os_family'] != 'RedHat'
+  tags: [unbound, unbound:apparmor]

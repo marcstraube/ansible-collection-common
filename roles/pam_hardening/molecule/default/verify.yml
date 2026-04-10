@@ -1,0 +1,317 @@
+---
+# =============================================================================
+# Molecule Verify Tests for PAM Hardening Role
+# =============================================================================
+
+- name: Verify PAM hardening configuration
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # PACKAGE VERIFICATION
+    # =========================================================================
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Verify PAM packages installed (Arch)
+      ansible.builtin.assert:
+        that:
+          - "'pam' in ansible_facts.packages"
+          - "'libpwquality' in ansible_facts.packages"
+        fail_msg: "Required PAM packages not installed (Arch)"
+        success_msg: "PAM packages installed (Arch)"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify PAM packages installed (Debian)
+      ansible.builtin.assert:
+        that:
+          - "'libpam-modules' in ansible_facts.packages"
+          - "'libpam-pwquality' in ansible_facts.packages"
+        fail_msg: "Required PAM packages not installed (Debian)"
+        success_msg: "PAM packages installed (Debian)"
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify PAM packages installed (RedHat)
+      ansible.builtin.assert:
+        that:
+          - "'pam' in ansible_facts.packages"
+          - "'libpwquality' in ansible_facts.packages"
+          - "'authselect' in ansible_facts.packages"
+        fail_msg: "Required PAM packages not installed (RedHat)"
+        success_msg: "PAM packages installed (RedHat)"
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # =========================================================================
+    # PWQUALITY VERIFICATION
+    # =========================================================================
+
+    - name: Read pwquality.conf
+      ansible.builtin.slurp:
+        src: '/etc/security/pwquality.conf'
+      register: __verify_pwquality
+
+    - name: Verify pwquality.conf content
+      ansible.builtin.assert:
+        that:
+          - "'minlen = 15' in (__verify_pwquality.content | b64decode)"
+          - "'lcredit = -1' in (__verify_pwquality.content | b64decode)"
+          - "'ucredit = -1' in (__verify_pwquality.content | b64decode)"
+          - "'dcredit = -1' in (__verify_pwquality.content | b64decode)"
+          - "'ocredit = -1' in (__verify_pwquality.content | b64decode)"
+          - "'maxrepeat = 3' in (__verify_pwquality.content | b64decode)"
+          - "'maxclassrepeat = 4' in (__verify_pwquality.content | b64decode)"
+          - "'difok = 2' in (__verify_pwquality.content | b64decode)"
+          - "'retry = 3' in (__verify_pwquality.content | b64decode)"
+          - "'enforce_for_root' in (__verify_pwquality.content | b64decode)"
+          - "'Ansible managed' in (__verify_pwquality.content | b64decode)"
+        fail_msg: "pwquality.conf content incorrect"
+        success_msg: "pwquality.conf configured correctly"
+
+    - name: Verify pam_pwquality in PAM stack (Arch)
+      ansible.builtin.command: grep -E '^password\s+requisite\s+pam_pwquality\.so' /etc/pam.d/system-auth
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    # =========================================================================
+    # FAILLOCK VERIFICATION
+    # =========================================================================
+
+    - name: Read faillock.conf
+      ansible.builtin.slurp:
+        src: '/etc/security/faillock.conf'
+      register: __verify_faillock
+
+    - name: Verify faillock.conf content
+      ansible.builtin.assert:
+        that:
+          - "'deny = 5' in (__verify_faillock.content | b64decode)"
+          - "'unlock_time = 900' in (__verify_faillock.content | b64decode)"
+          - "'fail_interval = 900' in (__verify_faillock.content | b64decode)"
+          - "'audit' in (__verify_faillock.content | b64decode)"
+          - "'Ansible managed' in (__verify_faillock.content | b64decode)"
+        fail_msg: "faillock.conf content incorrect"
+        success_msg: "faillock.conf configured correctly"
+
+    - name: Verify faillock directory exists
+      ansible.builtin.stat:
+        path: '/var/run/faillock'
+      register: __verify_faillock_dir
+
+    - name: Assert faillock directory
+      ansible.builtin.assert:
+        that:
+          - __verify_faillock_dir.stat.exists
+          - __verify_faillock_dir.stat.isdir
+        fail_msg: "Faillock directory missing"
+        success_msg: "Faillock directory exists"
+
+    - name: Verify faillock in PAM stack (Debian)
+      ansible.builtin.command: grep -E 'pam_faillock\.so' /etc/pam.d/common-auth
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify faillock via authselect (RedHat)
+      ansible.builtin.command: authselect current
+      register: __verify_authselect
+      changed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Assert authselect features (RedHat)
+      ansible.builtin.assert:
+        that:
+          - "'with-faillock' in __verify_authselect.stdout"
+          - "'with-pamaccess' in __verify_authselect.stdout"
+          - "'without-nullok' in __verify_authselect.stdout"
+        fail_msg: "authselect features not enabled"
+        success_msg: "authselect features configured correctly"
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # =========================================================================
+    # LIMITS VERIFICATION
+    # =========================================================================
+
+    - name: Read limits configuration
+      ansible.builtin.slurp:
+        src: '/etc/security/limits.d/99-hardening.conf'
+      register: __verify_limits
+
+    - name: Verify limits content
+      ansible.builtin.assert:
+        that:
+          - "'maxlogins' in (__verify_limits.content | b64decode)"
+          - "'nproc' in (__verify_limits.content | b64decode)"
+          - "'core' in (__verify_limits.content | b64decode)"
+          - "'@developers' in (__verify_limits.content | b64decode)"
+          - "'Ansible managed' in (__verify_limits.content | b64decode)"
+        fail_msg: "Limits configuration incorrect"
+        success_msg: "Limits configured correctly"
+
+    - name: Verify pam_limits in common-session (Debian)
+      ansible.builtin.command: grep -E '^session\s+required\s+pam_limits\.so' /etc/pam.d/common-session
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # =========================================================================
+    # ACCESS CONTROL VERIFICATION
+    # =========================================================================
+
+    - name: Read access.conf
+      ansible.builtin.slurp:
+        src: '/etc/security/access.conf'
+      register: __verify_access
+
+    - name: Verify access.conf content
+      ansible.builtin.assert:
+        that:
+          - "'+:wheel:ALL' in (__verify_access.content | b64decode)"
+          - "'+:root:LOCAL' in (__verify_access.content | b64decode)"
+          - "'-:ALL:ALL' in (__verify_access.content | b64decode)"
+          - "'Ansible managed' in (__verify_access.content | b64decode)"
+        fail_msg: "access.conf content incorrect"
+        success_msg: "access.conf configured correctly"
+
+    - name: Verify pam_access in common-account (Debian)
+      ansible.builtin.command: grep -E '^account\s+required\s+pam_access\.so' /etc/pam.d/common-account
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # =========================================================================
+    # LOGIN.DEFS VERIFICATION
+    # =========================================================================
+
+    - name: Read login.defs
+      ansible.builtin.slurp:
+        src: '/etc/login.defs'
+      register: __verify_login_defs
+
+    - name: Verify password hashing
+      ansible.builtin.assert:
+        that:
+          - "'ENCRYPT_METHOD YESCRYPT' in (__verify_login_defs.content | b64decode)"
+        fail_msg: "Password hashing not set to yescrypt"
+        success_msg: "Password hashing configured"
+
+    - name: Verify umask in login.defs
+      ansible.builtin.assert:
+        that:
+          - "'UMASK 0077' in (__verify_login_defs.content | b64decode)"
+        fail_msg: "UMASK not set correctly"
+        success_msg: "UMASK configured"
+
+    - name: Verify password aging in login.defs
+      ansible.builtin.assert:
+        that:
+          - "'PASS_MAX_DAYS 99999' in (__verify_login_defs.content | b64decode)"
+          - "'PASS_MIN_DAYS 0' in (__verify_login_defs.content | b64decode)"
+          - "'PASS_WARN_AGE 7' in (__verify_login_defs.content | b64decode)"
+        fail_msg: "Password aging not configured"
+        success_msg: "Password aging configured"
+
+    # =========================================================================
+    # NULL PASSWORD VERIFICATION
+    # =========================================================================
+
+    - name: Check nullok removed from PAM auth (Arch)
+      ansible.builtin.command: grep -c 'nullok' /etc/pam.d/system-auth
+      register: __verify_nullok_arch
+      changed_when: false
+      failed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify nullok removed (Arch)
+      ansible.builtin.assert:
+        that:
+          - __verify_nullok_arch.stdout | int == 0
+        fail_msg: "nullok still present in system-auth"
+        success_msg: "nullok removed from system-auth"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Check nullok removed from PAM auth (Debian)
+      ansible.builtin.command: grep -c 'nullok' /etc/pam.d/common-auth
+      register: __verify_nullok_debian
+      changed_when: false
+      failed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify nullok removed (Debian)
+      ansible.builtin.assert:
+        that:
+          - __verify_nullok_debian.stdout | int == 0
+        fail_msg: "nullok still present in common-auth"
+        success_msg: "nullok removed from common-auth"
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # =========================================================================
+    # SECURETTY VERIFICATION
+    # =========================================================================
+
+    - name: Check securetty exists
+      ansible.builtin.stat:
+        path: '/etc/securetty'
+      register: __verify_securetty
+
+    - name: Verify securetty
+      ansible.builtin.assert:
+        that:
+          - __verify_securetty.stat.exists
+          - __verify_securetty.stat.mode == '0600'
+        fail_msg: "securetty missing or wrong permissions"
+        success_msg: "securetty configured"
+
+    - name: Read securetty content
+      ansible.builtin.slurp:
+        src: '/etc/securetty'
+      register: __verify_securetty_content
+
+    - name: Verify securetty content
+      ansible.builtin.assert:
+        that:
+          - "'tty1' in (__verify_securetty_content.content | b64decode)"
+          - "'tty2' in (__verify_securetty_content.content | b64decode)"
+          - "'Ansible managed' in (__verify_securetty_content.content | b64decode)"
+        fail_msg: "securetty content incorrect"
+        success_msg: "securetty content correct"
+
+    # =========================================================================
+    # PASSWORD HISTORY VERIFICATION
+    # =========================================================================
+
+    - name: Verify pam_pwhistory in PAM stack (Arch)
+      ansible.builtin.command: grep -E '^password\s+required\s+pam_pwhistory\.so.*remember=5' /etc/pam.d/system-auth
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify password history in pam_unix (Debian)
+      ansible.builtin.command: grep -E 'pam_unix\.so.*remember=5' /etc/pam.d/common-password
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify pwhistory.conf (RedHat)
+      ansible.builtin.command: grep -E '^remember\s*=\s*5' /etc/security/pwhistory.conf
+      changed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # =========================================================================
+    # FAILLOCK BINARY VERIFICATION
+    # =========================================================================
+
+    - name: Check faillock command is available
+      ansible.builtin.stat:
+        path: '/usr/sbin/faillock'
+      register: __verify_faillock_sbin
+
+    - name: Check faillock in /usr/bin
+      ansible.builtin.stat:
+        path: '/usr/bin/faillock'
+      register: __verify_faillock_bin
+
+    - name: Verify faillock utility
+      ansible.builtin.assert:
+        that:
+          - __verify_faillock_sbin.stat.exists or __verify_faillock_bin.stat.exists
+        fail_msg: "faillock utility not available"
+        success_msg: "faillock utility available"

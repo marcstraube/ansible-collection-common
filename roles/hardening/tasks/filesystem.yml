@@ -1,0 +1,49 @@
+---
+# =============================================================================
+# Filesystem Mount Hardening
+# =============================================================================
+# Uses state: present (fstab only) + raw remount commands to avoid the
+# chicken-and-egg problem where mounting /tmp destroys the Ansible
+# module payload that was extracted there.
+
+- name: Filesystem | Configure mount entries in fstab
+  ansible.posix.mount:
+    path: '{{ item.path }}'
+    src: '{{ item.src }}'
+    fstype: '{{ item.fstype }}'
+    opts: '{{ item.options }}'
+    state: present
+  loop: '{{ hardening_fs_mounts }}'
+  loop_control:
+    label: '{{ item.path }}'
+  register: __hardening_fstab_result
+
+- name: Filesystem | Mount or remount entries
+  ansible.builtin.raw: >-
+    if findmnt -n {{ item.item.path }} > /dev/null 2>&1; then
+      mount -o remount {{ item.item.path }};
+    else
+      mount {{ item.item.path }};
+    fi
+  loop: '{{ __hardening_fstab_result.results }}'
+  loop_control:
+    label: '{{ item.item.path }}'
+  changed_when: false
+
+- name: Filesystem | Configure /var/tmp bind mount in fstab
+  ansible.posix.mount:
+    path: '/var/tmp'
+    src: '/tmp'
+    fstype: 'none'
+    opts: 'bind'
+    state: present
+  when: hardening_fs_vartmp_bind | bool
+  register: __hardening_vartmp_fstab
+
+- name: Filesystem | Mount /var/tmp bind
+  ansible.builtin.raw: >-
+    if ! findmnt -n /var/tmp > /dev/null 2>&1; then
+      mount /var/tmp;
+    fi
+  when: hardening_fs_vartmp_bind | bool
+  changed_when: false

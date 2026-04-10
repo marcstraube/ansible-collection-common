@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# Restic - Service Tasks
+# =============================================================================
+
+- name: Service | Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Service | Initialize repositories
+  ansible.builtin.command:
+    cmd: '{{ restic_script_dir }}/restic-backup-{{ item.name }} init'
+  loop: '{{ restic_jobs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  register: __restic_init
+  changed_when: "'created restic repository' in __restic_init.stdout"
+  failed_when:
+    - __restic_init.rc != 0
+    - "'already initialized' not in __restic_init.stderr"
+    - "'config file already exists' not in __restic_init.stderr"
+  when: restic_auto_init | bool
+
+- name: Service | Enable and start backup timers
+  ansible.builtin.systemd:
+    name: 'restic-backup-{{ item.name }}.timer'
+    enabled: true
+    state: started
+  loop: '{{ restic_jobs }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Service | Run initial backup
+  ansible.builtin.command:
+    cmd: '{{ restic_script_dir }}/restic-backup-{{ item.name }} backup'
+  loop: '{{ restic_jobs }}'
+  loop_control:
+    label: '{{ item.name }}'
+  changed_when: true
+  when: restic_run_after_configure | bool

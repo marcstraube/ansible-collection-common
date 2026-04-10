@@ -1,0 +1,18 @@
+---
+# =============================================================================
+# WireGuard - Handlers
+# =============================================================================
+
+- name: Restart wireguard
+  ansible.builtin.systemd:
+    name: 'wg-quick@{{ wireguard_interface }}'
+    state: restarted
+  listen: 'restart wireguard'
+
+- name: Reload wireguard
+  ansible.builtin.command:
+    cmd: 'wg syncconf {{ wireguard_interface }} <(wg-quick strip {{ wireguard_interface }})'
+  args:
+    executable: /bin/bash
+  changed_when: true
+  listen: 'reload wireguard'

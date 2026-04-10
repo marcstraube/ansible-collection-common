@@ -1,0 +1,51 @@
+---
+# =============================================================================
+# Debian-specific variables for hardware tokens
+# =============================================================================
+
+# CCID smart card driver
+__hardware_tokens_ccid_package: 'libccid'
+
+# FIDO2 packages
+__hardware_tokens_fido2_packages:
+  - 'libfido2-1'
+  - 'fido2-tools'
+
+# Smartcard packages (pcscd daemon + diagnostics)
+__hardware_tokens_smartcard_packages:
+  - 'pcscd'
+  - 'pcsc-tools'
+
+# OpenSC smart card tools
+__hardware_tokens_opensc_package: 'opensc'
+
+# NitroKey packages
+__hardware_tokens_nitrokey_packages:
+  - 'libnitrokey-common'
+  - 'libnitrokey3'
+
+# NitroKey App GUI (not available in Debian repos)
+__hardware_tokens_nitrokey_app_package: ''
+
+# YubiKey packages
+__hardware_tokens_yubikey_packages:
+  - 'libpam-yubico'
+
+# YubiKey Manager CLI (ykman)
+__hardware_tokens_yubikey_manager_package: 'yubikey-manager'
+
+# PAM U2F
+__hardware_tokens_pam_u2f_package: 'libpam-u2f'
+
+# Services
+__hardware_tokens_pcscd_service: 'pcscd.socket'
+
+# Udev rules path
+__hardware_tokens_udev_rules_path: '/etc/udev/rules.d'
+
+# PAM system auth config
+__hardware_tokens_pam_system_auth: '/etc/pam.d/common-auth'
+
+# Required groups
+__hardware_tokens_groups:
+  - 'plugdev'

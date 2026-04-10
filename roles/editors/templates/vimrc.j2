@@ -1,0 +1,79 @@
+{{ ansible_managed | comment(decoration='" ') }}
+" Vim Configuration
+
+" Basic settings
+set nocompatible
+filetype plugin indent on
+{% if editors_vim_config.syntax_on | default(true) %}
+syntax on
+{% endif %}
+{% if editors_vim_config.set_number | default(true) %}
+set number
+{% endif %}
+{% if editors_vim_config.set_relativenumber | default(false) %}
+set relativenumber
+{% endif %}
+{% if editors_vim_config.set_expandtab | default(true) %}
+
+" Indentation
+set expandtab
+{% endif %}
+set tabstop={{ editors_vim_config.set_tabstop | default(4) }}
+set shiftwidth={{ editors_vim_config.set_shiftwidth | default(4) }}
+{% if editors_vim_config.set_autoindent | default(true) %}
+set autoindent
+{% endif %}
+{% if editors_vim_config.set_smartindent | default(true) %}
+set smartindent
+{% endif %}
+{% if editors_vim_config.set_mouse is defined %}
+
+" Mouse support
+set mouse={{ editors_vim_config.set_mouse }}
+{% endif %}
+
+" Encoding
+set encoding={{ editors_vim_config.set_encoding | default('utf-8') }}
+{% if editors_vim_config.set_clipboard is defined %}
+
+" Clipboard
+set clipboard={{ editors_vim_config.set_clipboard }}
+{% endif %}
+{% if editors_vim_config.set_hlsearch | default(true) %}
+
+" Search
+set hlsearch
+{% endif %}
+{% if editors_vim_config.set_incsearch | default(true) %}
+set incsearch
+{% endif %}
+{% if editors_vim_config.set_ignorecase | default(true) %}
+set ignorecase
+{% endif %}
+{% if editors_vim_config.set_smartcase | default(true) %}
+set smartcase
+{% endif %}
+{% if editors_vim_config.set_showmatch | default(true) %}
+
+" Visual
+set showmatch
+{% endif %}
+{% if editors_vim_config.set_showcmd | default(true) %}
+set showcmd
+{% endif %}
+{% if editors_vim_config.set_wildmenu | default(true) %}
+set wildmenu
+{% endif %}
+set laststatus={{ editors_vim_config.set_laststatus | default(2) }}
+{% if editors_vim_config.set_ruler | default(true) %}
+set ruler
+{% endif %}
+{% if editors_vim_config.colorscheme | default('') | length > 0 %}
+
+colorscheme {{ editors_vim_config.colorscheme }}
+{% endif %}
+{% if editors_vim_config.set_backspace is defined %}
+
+" Editing
+set backspace={{ editors_vim_config.set_backspace }}
+{% endif %}

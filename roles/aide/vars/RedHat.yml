@@ -1,0 +1,36 @@
+---
+# =============================================================================
+# RedHat/Fedora-specific variables for AIDE
+# =============================================================================
+
+__aide_package: 'aide'
+
+__aide_aur: false
+
+__aide_config_file: '/etc/aide.conf'
+
+__aide_init_command: 'aide --init'
+
+# AIDE 0.18+ uses 'database_in' (Rocky 10, Fedora, RHEL 10+)
+# Rocky 9 (AIDE 0.16) overrides this in Rocky-9.yml
+__aide_database_directive: 'database_in'
+
+# AIDE 0.18+ supports log_level/report_level directives
+__aide_supports_log_level: true
+
+__aide_dir_owner: 'root'
+__aide_dir_group: 'root'
+
+# OS-specific paths to exclude from monitoring
+__aide_os_exclude_paths:
+  - '/var/lib/rpm'
+  - '/var/cache/yum'
+  - '/var/cache/dnf'
+  - '/usr/src'
+  - '/usr/tmp'
+
+# OS-specific important config files to monitor with FIPSR rule
+__aide_os_critical_configs:
+  - '/etc/yum.conf'
+  - '/etc/yum.repos.d'
+  - '/etc/dnf'

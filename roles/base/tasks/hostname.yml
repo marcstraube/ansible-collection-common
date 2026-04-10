@@ -1,0 +1,31 @@
+---
+# =============================================================================
+# Hostname Configuration Tasks
+# =============================================================================
+
+- name: Set system hostname
+  ansible.builtin.hostname:
+    name: '{{ base_hostname }}'
+    use: systemd
+
+- name: Configure machine-info
+  ansible.builtin.template:
+    src: 'machine-info.j2'
+    dest: '/etc/machine-info'
+    owner: root
+    group: root
+    mode: '0644'
+  when: >-
+    base_pretty_hostname | length > 0 or
+    base_chassis | length > 0 or
+    base_deployment | length > 0 or
+    base_icon_name | length > 0 or
+    base_location | length > 0
+
+- name: Update /etc/hosts with hostname
+  ansible.builtin.lineinfile:
+    path: '/etc/hosts'
+    regexp: '^127\.0\.1\.1'
+    line: '127.0.1.1       {{ base_hostname }}'
+    state: present
+    unsafe_writes: true

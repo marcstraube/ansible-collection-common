@@ -1,0 +1,86 @@
+---
+# =============================================================================
+# fail2ban BTRFS Tasks — Subvolume + NoCOW for database, NoCOW for log
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Database directory: /var/lib/fail2ban — Subvolume + NoCOW
+# -----------------------------------------------------------------------------
+- name: BTRFS | Check if fail2ban database parent filesystem is BTRFS
+  ansible.builtin.command:
+    cmd: stat -f -c %T /var/lib
+  register: __fail2ban_db_fstype
+  changed_when: false
+  failed_when: false
+
+- name: BTRFS | Set database BTRFS detection fact
+  ansible.builtin.set_fact:
+    __fail2ban_db_is_btrfs: "{{ __fail2ban_db_fstype.stdout | default('') == 'btrfs' }}"
+
+- name: BTRFS | Check if fail2ban database directory is already a subvolume
+  ansible.builtin.command:
+    cmd: btrfs subvolume show /var/lib/fail2ban
+  register: __fail2ban_subvol_check
+  changed_when: false
+  failed_when: false
+  when: __fail2ban_db_is_btrfs | bool
+
+- name: BTRFS | Check if fail2ban database directory exists and has content
+  ansible.builtin.find:
+    paths: /var/lib/fail2ban
+    file_type: any
+  register: __fail2ban_dir_contents
+  when:
+    - __fail2ban_db_is_btrfs | bool
+    - __fail2ban_subvol_check.rc != 0
+
+- name: BTRFS | Create subvolume for fail2ban database directory
+  when:
+    - __fail2ban_db_is_btrfs | bool
+    - __fail2ban_subvol_check.rc != 0
+    - __fail2ban_dir_contents.matched == 0
+  block:
+    - name: BTRFS | Remove empty fail2ban database directory for subvolume creation
+      ansible.builtin.file:
+        path: /var/lib/fail2ban
+        state: absent
+
+    - name: BTRFS | Create BTRFS subvolume
+      ansible.builtin.command:
+        cmd: btrfs subvolume create /var/lib/fail2ban
+      changed_when: true
+
+    - name: BTRFS | Set ownership on subvolume
+      ansible.builtin.file:
+        path: /var/lib/fail2ban
+        owner: root
+        group: root
+        mode: '0755'
+        state: directory
+
+- name: BTRFS | Set NoCOW attribute on fail2ban database directory
+  ansible.builtin.command:
+    cmd: chattr +C /var/lib/fail2ban
+  register: __fail2ban_db_chattr
+  changed_when: __fail2ban_db_chattr.rc == 0
+  failed_when: false
+  when: __fail2ban_db_is_btrfs | bool
+
+# -----------------------------------------------------------------------------
+# Log file: NoCOW only (single file in /var/log, no subvolume)
+# -----------------------------------------------------------------------------
+- name: BTRFS | Check if fail2ban log directory is on BTRFS
+  ansible.builtin.command:
+    cmd: stat -f -c %T {{ fail2ban_logtarget | dirname }}
+  register: __fail2ban_log_fstype
+  changed_when: false
+  failed_when: false
+  when: fail2ban_logtarget is not search('SYSLOG|SYSTEMD|STDOUT|STDERR')
+
+- name: BTRFS | Set NoCOW attribute on fail2ban log file
+  ansible.builtin.command:
+    cmd: chattr +C {{ fail2ban_logtarget }}
+  changed_when: false
+  when:
+    - fail2ban_logtarget is not search('SYSLOG|SYSTEMD|STDOUT|STDERR')
+    - __fail2ban_log_fstype.stdout | default('') == 'btrfs'

@@ -1,0 +1,49 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+  vars:
+    energy_management_enabled: true
+    energy_management_system_type: 'desktop'
+
+    # Logind
+    energy_management_logind_enabled: true
+    energy_management_handle_power_key: 'suspend'
+    energy_management_handle_power_key_long_press: 'poweroff'
+    energy_management_handle_suspend_key: 'suspend'
+    energy_management_handle_hibernate_key: 'hibernate'
+
+    # Sleep
+    energy_management_sleep_enabled: true
+    energy_management_allow_suspend: true
+    energy_management_allow_hibernate: true
+    energy_management_allow_suspend_then_hibernate: true
+    energy_management_allow_hybrid_sleep: false
+    energy_management_hibernate_delay_sec: 3600
+
+    # PPD (container test — install only, service may not start)
+    energy_management_power_manager: 'ppd'
+    energy_management_ppd_default_profile: 'balanced'
+
+    # Battery/backlight disabled for desktop test
+    energy_management_battery_enabled: false
+    energy_management_backlight_enabled: false
+
+  tasks:
+    - name: Include energy_management role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

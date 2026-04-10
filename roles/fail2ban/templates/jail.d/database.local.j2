@@ -1,0 +1,20 @@
+{{ ansible_managed | comment }}
+{% if fail2ban_mysqld_enabled %}
+
+# Database server jails
+[mysqld-auth]
+enabled = true
+port = {{ fail2ban_mysqld_port }}
+logpath = {{ fail2ban_mysqld_logpath }}
+maxretry = {{ fail2ban_mysqld_maxretry }}
+bantime = {{ fail2ban_mysqld_bantime }}
+{% endif %}
+{% if fail2ban_postgresql_enabled %}
+
+[postgresql]
+enabled = true
+port = {{ fail2ban_postgresql_port }}
+logpath = {{ fail2ban_postgresql_logpath }}
+maxretry = {{ fail2ban_postgresql_maxretry }}
+bantime = {{ fail2ban_postgresql_bantime }}
+{% endif %}

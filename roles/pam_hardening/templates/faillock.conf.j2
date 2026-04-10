@@ -1,0 +1,54 @@
+{{ ansible_managed | comment }}
+#
+# Configuration for pam_faillock — account lockout after repeated
+# authentication failures.
+#
+# See faillock.conf(5) for full documentation.
+
+# Directory for user failure record files
+dir = {{ pam_faillock_dir }}
+
+# Lock account after this many consecutive failures
+deny = {{ pam_faillock_deny }}
+
+# Time window for counting failures (seconds)
+fail_interval = {{ pam_faillock_fail_interval }}
+
+# Re-enable access after this many seconds (0 = manual unlock only)
+unlock_time = {{ pam_faillock_unlock_time }}
+{% if pam_faillock_audit %}
+
+# Log username to syslog if user not found
+audit
+{% endif %}
+{% if pam_faillock_silent %}
+
+# Suppress lockout messages to user
+silent
+{% endif %}
+{% if pam_faillock_no_log_info %}
+
+# Suppress informative messages via syslog
+no_log_info
+{% endif %}
+{% if pam_faillock_local_users_only %}
+
+# Only track local /etc/passwd users (skip AD/LDAP)
+local_users_only
+{% endif %}
+{% if pam_faillock_nodelay %}
+
+# Do not enforce delay after authentication failures
+nodelay
+{% endif %}
+{% if pam_faillock_even_deny_root %}
+
+# Root account can be locked too
+even_deny_root
+root_unlock_time = {{ pam_faillock_root_unlock_time }}
+{% endif %}
+{% if pam_faillock_admin_group | length > 0 %}
+
+# Group members treated like root for lockout handling
+admin_group = {{ pam_faillock_admin_group }}
+{% endif %}

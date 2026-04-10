@@ -1,0 +1,32 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+#
+# Two-Factor Authentication Setup Script
+# Run this script as the user who needs TOTP 2FA configured.
+
+set -euo pipefail
+
+echo "========================================"
+echo "Google Authenticator Setup"
+echo "========================================"
+echo ""
+echo "This script will set up two-factor authentication for your account."
+echo "You will need the Google Authenticator app on your mobile device."
+echo ""
+
+google-authenticator \
+    --time-based \
+    --disallow-reuse \
+    --force \
+    --rate-limit=3 \
+    --rate-time=30 \
+    --window-size=3
+
+echo ""
+echo "========================================"
+echo "Setup Complete!"
+echo "========================================"
+echo ""
+echo "IMPORTANT: Save your emergency scratch codes in a secure location."
+echo "You will need one of these codes if you lose access to your phone."
+echo ""

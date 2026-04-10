@@ -1,0 +1,84 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+#
+# Certificate expiry check script
+# Scans certificate directories and reports certificates expiring
+# within {{ pki_renewal_warning_days }} days.
+
+set -euo pipefail
+
+WARNING_DAYS="{{ pki_renewal_warning_days }}"
+WARNING_SECS=$((WARNING_DAYS * 86400))
+REPORT_EMAIL="{{ pki_renewal_report_email }}"
+HOSTNAME=$(uname -n)
+
+CERT_DIRS=(
+    "{{ pki_certs_dir }}"
+{% if pki_ca_enabled | bool %}
+    "{{ pki_ca_dir }}/certs"
+{% endif %}
+{% if pki_intermediate_ca_enabled | bool %}
+    "{{ pki_intermediate_ca_dir }}/certs"
+{% endif %}
+)
+
+expiring_certs=()
+expired_certs=()
+
+{% raw %}
+for dir in "${CERT_DIRS[@]}"; do
+    [ -d "$dir" ] || continue
+    while IFS= read -r -d '' cert_file; do
+        # Skip non-certificate files
+        openssl x509 -in "$cert_file" -noout 2>/dev/null || continue
+
+        subject=$(openssl x509 -in "$cert_file" -noout -subject 2>/dev/null | sed 's/^subject=//')
+        end_date=$(openssl x509 -in "$cert_file" -noout -enddate 2>/dev/null | sed 's/^notAfter=//')
+        end_epoch=$(date -d "$end_date" +%s 2>/dev/null) || continue
+        now_epoch=$(date +%s)
+        days_left=$(( (end_epoch - now_epoch) / 86400 ))
+
+        if [ "$days_left" -lt 0 ]; then
+            expired_certs+=("EXPIRED (${days_left}d ago): ${cert_file} - ${subject}")
+        elif [ "$days_left" -lt "$WARNING_DAYS" ]; then
+            expiring_certs+=("EXPIRING (${days_left}d left): ${cert_file} - ${subject}")
+        fi
+    done < <(find "$dir" -maxdepth 1 -name '*.crt' -print0 2>/dev/null)
+done
+
+if [ ${#expired_certs[@]} -eq 0 ] && [ ${#expiring_certs[@]} -eq 0 ]; then
+    echo "All certificates OK - no expiry warnings."
+    exit 0
+fi
+
+# Build report
+report="Certificate Expiry Report for ${HOSTNAME}\n"
+report+="Generated: $(date)\n"
+report+="Warning threshold: ${WARNING_DAYS} days\n\n"
+
+if [ ${#expired_certs[@]} -gt 0 ]; then
+    report+="=== EXPIRED CERTIFICATES ===\n"
+    for entry in "${expired_certs[@]}"; do
+        report+="  ${entry}\n"
+    done
+    report+="\n"
+fi
+
+if [ ${#expiring_certs[@]} -gt 0 ]; then
+    report+="=== EXPIRING CERTIFICATES ===\n"
+    for entry in "${expiring_certs[@]}"; do
+        report+="  ${entry}\n"
+    done
+    report+="\n"
+fi
+
+echo -e "$report"
+
+# Send email notification if mail command is available
+if command -v mail >/dev/null 2>&1; then
+    echo -e "$report" | mail -s "PKI Certificate Expiry Warning - ${HOSTNAME}" "$REPORT_EMAIL"
+fi
+
+# Exit with error to trigger systemd failure notification
+exit 1
+{% endraw %}

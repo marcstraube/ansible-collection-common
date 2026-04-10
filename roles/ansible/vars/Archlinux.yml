@@ -1,0 +1,24 @@
+---
+# =============================================================================
+# Archlinux specific variables
+# =============================================================================
+
+__ansible_tools_ansible_packages:
+  - 'ansible'
+
+__ansible_tools_molecule_packages:
+  - 'molecule'
+
+# AUR package — provides all molecule driver plugins
+# Requires --nocheck due to upstream test bug
+__ansible_tools_driver_aur_package: 'molecule-plugins'
+
+__ansible_tools_podman_packages:
+  - 'python-podman'
+
+__ansible_tools_docker_packages:
+  - 'python-docker'
+
+__ansible_tools_lint_packages:
+  - 'ansible-lint'
+  - 'yamllint'

@@ -1,0 +1,47 @@
+---
+# marcstraube.networkmanager/molecule/default/converge.yml
+
+- name: Converge
+  hosts: all
+  gather_facts: true
+  become: true
+  vars:
+    # Use centralized test variables from molecule.yml
+    networkmanager_install_applet: "{{ test_networkmanager_install_applet }}"
+    networkmanager_configure_timezone: "{{ test_networkmanager_configure_timezone }}"
+    networkmanager_dns: "{{ test_networkmanager_dns }}"
+    networkmanager_log_level: "{{ test_networkmanager_log_level }}"
+    networkmanager_wifi_powersave: "{{ test_networkmanager_wifi_powersave }}"
+    networkmanager_wifi_scan_rand_mac: "{{ test_networkmanager_wifi_scan_rand_mac }}"
+    networkmanager_dhcp_send_hostname_ipv4: "{{ test_networkmanager_dhcp_send_hostname_ipv4 }}"
+    networkmanager_dhcp_send_hostname_ipv6: "{{ test_networkmanager_dhcp_send_hostname_ipv6 }}"
+    networkmanager_connections: "{{ test_networkmanager_connections }}"
+    networkmanager_smb_shares: "{{ test_networkmanager_smb_shares | default([]) }}"
+    networkmanager_sshfs_shares: "{{ test_networkmanager_sshfs_shares | default([]) }}"
+    users_list: "{{ test_users_list }}"
+    networkmanager_unmanaged_devices: "{{ test_networkmanager_unmanaged_devices }}"
+    networkmanager_polkit: "{{ test_networkmanager_polkit }}"
+    networkmanager_polkit_group: "{{ test_networkmanager_polkit_group }}"
+
+  tasks:
+    - name: Ensure Vagrant-managed interfaces are ignored by NetworkManager
+      community.general.ini_file:
+        path: /etc/NetworkManager/conf.d/99-unmanaged-vagrant-interfaces.conf
+        create: true
+        option: unmanaged-devices
+        value: interface-name:eth0
+        section: keyfile
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart NetworkManager
+
+    - name: Include networkmanager role
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'  # noqa: role-name[path]
+
+  handlers:
+    - name: Restart NetworkManager
+      ansible.builtin.service:
+        name: NetworkManager
+        state: restarted

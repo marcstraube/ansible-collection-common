@@ -1,0 +1,5 @@
+{{ ansible_managed | comment }}
+
+{% for key, value in firejail_config.items() %}
+{{ key }} {{ value }}
+{% endfor %}

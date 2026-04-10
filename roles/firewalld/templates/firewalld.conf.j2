@@ -1,0 +1,60 @@
+{{ ansible_managed | comment }}
+#
+# firewalld.conf — Global daemon configuration
+#
+
+# Default zone
+DefaultZone={{ firewalld_default_zone }}
+
+# Clean up on exit
+CleanupOnExit={{ firewalld_cleanup_on_exit | ternary('yes', 'no') }}
+
+# Clean up loaded kernel modules on exit
+CleanupModulesOnExit={{ firewalld_cleanup_modules_on_exit | ternary('yes', 'no') }}
+
+# Lockdown mode
+Lockdown={{ firewalld_lockdown | ternary('yes', 'no') }}
+
+# IPv6 reverse path filter
+{% if __firewalld_ipv6_rpfilter_legacy | default(false) | bool %}
+# Rocky 9 (firewalld 1.x): only yes/no
+IPv6_rpfilter={{ (firewalld_ipv6_rpfilter in ['strict', 'strict-forward']) | ternary('yes', 'no') }}
+{% else %}
+IPv6_rpfilter={{ firewalld_ipv6_rpfilter }}
+{% endif %}
+
+# Use individual calls instead of transaction
+IndividualCalls={{ firewalld_individual_calls | ternary('yes', 'no') }}
+
+# Log denied packets
+LogDenied={{ firewalld_log_denied }}
+
+# Firewall backend
+{% if firewalld_backend != '' %}
+FirewallBackend={{ firewalld_backend }}
+{% else %}
+# FirewallBackend=nftables
+{% endif %}
+
+# Flush all rules on reload
+FlushAllOnReload={{ firewalld_flush_all_on_reload | ternary('yes', 'no') }}
+
+# Reload policy
+ReloadPolicy={{ firewalld_reload_policy }}
+
+# RFC 3964 IPv4
+RFC3964_IPv4={{ firewalld_rfc3964_ipv4 | ternary('yes', 'no') }}
+{% if not (__firewalld_ipv6_rpfilter_legacy | default(false) | bool) %}
+
+# Strict forward ports (Docker/Podman integration)
+StrictForwardPorts={{ firewalld_strict_forward_ports | ternary('yes', 'no') }}
+
+# nftables flowtable offloading
+NftablesFlowtable={{ firewalld_nftables_flowtable }}
+
+# nftables packet counters
+NftablesCounters={{ firewalld_nftables_counters | ternary('yes', 'no') }}
+
+# nftables table owner flag
+NftablesTableOwner={{ firewalld_nftables_table_owner | ternary('yes', 'no') }}
+{% endif %}

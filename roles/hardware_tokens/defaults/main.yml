@@ -1,0 +1,117 @@
+---
+# =============================================================================
+# Hardware Tokens Configuration
+# =============================================================================
+# Role: marcstraube.common.hardware_tokens
+# Description: Configure hardware security tokens (NitroKey, YubiKey, FIDO2)
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+hardware_tokens_enabled: true
+
+# =============================================================================
+# SUPPORTED DEVICES
+# =============================================================================
+
+# NitroKey support (udev rules + packages)
+hardware_tokens_nitrokey: true
+
+# NitroKey App GUI (Arch Linux only, not available on Debian/RHEL)
+hardware_tokens_nitrokey_app: false
+
+# YubiKey support (udev rules + packages)
+hardware_tokens_yubikey: true
+
+# YubiKey Manager CLI — ykman (Arch + Debian only, not in Rocky repos)
+hardware_tokens_yubikey_manager: false
+
+# Generic FIDO2/U2F support (udev rules + libfido2 + fido2-tools)
+hardware_tokens_fido2: true
+
+# =============================================================================
+# SMARTCARD / PKCS#11
+# =============================================================================
+
+# Install smartcard diagnostics (pcsc-tools)
+hardware_tokens_smartcard: true
+
+# OpenSC for PKCS#11 smartcard access
+hardware_tokens_opensc: true
+
+# Enable PC/SC daemon socket for smartcard communication
+hardware_tokens_pcscd: true
+
+# =============================================================================
+# PAM / LOGIN
+# =============================================================================
+
+# Enable PAM U2F module for login
+hardware_tokens_pam_u2f: false
+
+# PAM U2F authentication mode: '2fa' or 'passwordless'
+#   2fa:          User password + token touch (auth required, after pam_unix)
+#   passwordless: Token PIN + touch, no system password (auth sufficient, before pam_unix)
+hardware_tokens_pam_u2f_mode: '2fa'
+
+# Require FIDO2 PIN for passwordless mode
+hardware_tokens_pam_u2f_pin: true
+
+# Allow login for users without registered keys (nouserok)
+hardware_tokens_pam_u2f_nouserok: true
+
+# Configure system-wide PAM auth instead of per-service
+# When true, modifies system-auth (Arch/RHEL) or common-auth (Debian)
+# When false, modifies individual service files from pam_u2f_services list
+hardware_tokens_pam_u2f_system_auth: false
+
+# PAM services to configure (only when pam_u2f_system_auth is false)
+# SDDM does not support pam_u2f — do not add 'sddm' here
+hardware_tokens_pam_u2f_services:
+  - 'sudo'
+  - 'login'
+
+# PAM U2F configuration
+hardware_tokens_pam_u2f_config:
+  authfile: '/etc/u2f_mappings'
+  cue: true                       # Show "Please touch device" prompt
+  interactive: false              # Wait for user to press Enter before checking
+  origin: 'pam://{{ ansible_facts["hostname"] }}'
+  appid: 'pam://{{ ansible_facts["hostname"] }}'
+
+# =============================================================================
+# UDEV RULES
+# =============================================================================
+
+# Deploy udev rules for device access
+hardware_tokens_udev_rules: true
+
+# =============================================================================
+# LOCK ON REMOVAL
+# =============================================================================
+
+# Auto-lock screen when hardware token is removed
+hardware_tokens_lock_on_removal: false
+
+# Device vendor/product IDs that trigger lock on removal
+# Default: Nitrokey 3 (20a0/42b2), Nitrokey FIDO2 (20a0/42b1)
+hardware_tokens_lock_on_removal_devices:
+  - vendor: '20a0'
+    product: '42b2'
+    name: 'Nitrokey 3'
+  - vendor: '20a0'
+    product: '42b1'
+    name: 'Nitrokey FIDO2'
+
+# =============================================================================
+# USER CONFIGURATION
+# =============================================================================
+
+# Users with hardware token access (group membership)
+hardware_tokens_users: []
+# hardware_tokens_users:
+#   - username: 'johndoe'
+#     groups:
+#       - 'plugdev'

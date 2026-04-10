@@ -1,0 +1,26 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    firejail_enabled: true
+    firejail_exclude:
+      - 'keepassxc'
+    firejail_config:
+      browser-disable-u2f: 'no'
+      browser-allow-drm: 'yes'
+      restricted-network: 'no'
+    firejail_globals:
+      - 'blacklist ${HOME}/.ssh'
+    firejail_profiles:
+      firefox:
+        - 'whitelist ${HOME}/.mozilla'
+        - 'private-tmp'
+    firejail_pacman_hook: true
+
+  tasks:
+    - name: Include firejail role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

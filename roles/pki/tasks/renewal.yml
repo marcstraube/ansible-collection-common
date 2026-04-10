@@ -1,0 +1,36 @@
+---
+# =============================================================================
+# Certificate Renewal Monitoring Tasks
+# =============================================================================
+
+- name: Renewal | Deploy certificate check script
+  ansible.builtin.template:
+    src: 'pki-cert-check.sh.j2'
+    dest: '/usr/local/bin/pki-cert-check'
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Renewal | Deploy certificate check systemd service
+  ansible.builtin.template:
+    src: 'pki-cert-check.service.j2'
+    dest: '/etc/systemd/system/pki-cert-check.service'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Renewal | Deploy certificate check systemd timer
+  ansible.builtin.template:
+    src: 'pki-cert-check.timer.j2'
+    dest: '/etc/systemd/system/pki-cert-check.timer'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart cert check timer
+
+- name: Renewal | Enable and start certificate check timer
+  ansible.builtin.systemd:
+    name: pki-cert-check.timer
+    enabled: true
+    state: started
+    daemon_reload: true

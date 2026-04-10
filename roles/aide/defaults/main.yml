@@ -1,0 +1,139 @@
+---
+# =============================================================================
+# AIDE Configuration - File Integrity Monitoring
+# =============================================================================
+# Role: marcstraube.common.aide
+# Description: Configure AIDE for file integrity monitoring
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+aide_enabled: true
+
+# Create BTRFS subvolume for AIDE database directory with NoCOW attribute
+# Only applies when database directory is on a BTRFS filesystem
+# Subvolume is only created if the directory is empty (fresh install)
+aide_btrfs_subvolume: true
+
+# =============================================================================
+# AIDE CONFIGURATION
+# =============================================================================
+
+# Database location
+aide_database: '/var/lib/aide/aide.db'
+
+# New database location (for updates)
+aide_database_new: '/var/lib/aide/aide.db.new'
+
+# Database output format: plain, gzip
+aide_database_format: 'gzip'
+
+# Report level for AIDE 0.18+ (report_level directive)
+# Common values: added_removed_attributes, changed_attributes, summary
+aide_report_level: 'changed_attributes'
+
+# Report URL (where to output reports)
+aide_report_url: 'file:///var/log/aide/aide.log'
+
+# Additional report URLs
+aide_report_urls: []
+
+# =============================================================================
+# MONITORING RULES
+# =============================================================================
+
+# Monitor system binaries
+aide_monitor_binaries: true
+
+# Monitor system libraries
+aide_monitor_libraries: true
+
+# Monitor boot files
+aide_monitor_boot: true
+
+# Monitor configuration files
+aide_monitor_configs: true
+
+# Monitor system directories
+aide_monitor_system_dirs: true
+
+# Monitor user home directories (detect compromised accounts)
+aide_monitor_home_dirs: true
+
+# Monitor log files
+aide_monitor_logs: false
+
+# =============================================================================
+# CUSTOM RULES
+# =============================================================================
+
+# Custom directories to monitor
+# Example:
+#   aide_custom_rules:
+#     - path: '/opt/myapp'
+#       rule: 'R+sha512'
+#     - path: '/etc/myapp'
+#       rule: 'NORMAL'
+aide_custom_rules: []
+
+# Additional directories to exclude from monitoring
+# (system dirs like /proc, /sys, /dev, /run, /tmp are always excluded)
+aide_exclude_paths: []
+
+# =============================================================================
+# SCHEDULED CHECKS (systemd timer)
+# =============================================================================
+
+# Enable systemd timer for scheduled checks
+aide_timer_enabled: true
+
+# Timer schedule (systemd OnCalendar format)
+aide_timer_oncalendar: 'daily'
+
+# Randomized delay for timer (to avoid system load spikes)
+aide_timer_randomized_delay: '1h'
+
+# =============================================================================
+# EMAIL NOTIFICATIONS
+# =============================================================================
+
+# Enable email notifications (requires mail command and working MTA)
+aide_email_enabled: false
+
+# Email recipient
+aide_email_to: 'root@localhost'
+
+# Email subject
+aide_email_subject: '[AIDE] File Integrity Check Report'
+
+# Only send email if changes detected
+aide_email_on_change_only: true
+
+# =============================================================================
+# INITIALIZATION
+# =============================================================================
+
+# Initialize database on first run
+aide_init_db: true
+
+# Force database re-initialization
+aide_force_init: false
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+
+# Log directory for AIDE reports
+aide_log_dir: '/var/log/aide'
+
+# Report retention in days
+aide_report_retention_days: 90
+
+# =============================================================================
+# ADVANCED
+# =============================================================================
+
+# Verbose level for AIDE 0.16 (verbose directive, 0-255)
+aide_verbose: 5

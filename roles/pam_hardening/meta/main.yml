@@ -1,0 +1,30 @@
+---
+galaxy_info:
+  author: Marc Straube
+  description: >-
+    Harden PAM (Pluggable Authentication Modules) configuration including
+    password quality (pwquality), account lockout (faillock), session limits,
+    access control, umask, password aging, and optional TOTP 2FA.
+  license: MIT
+  min_ansible_version: '2.17'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - security
+    - pam
+    - hardening
+    - authentication
+    - password
+    - faillock
+
+dependencies: []

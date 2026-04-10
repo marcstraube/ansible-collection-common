@@ -1,0 +1,68 @@
+---
+# =============================================================================
+# Podman - Rootless Configuration Tasks
+# =============================================================================
+
+- name: Rootless | Configure subuid for users
+  ansible.builtin.lineinfile:
+    path: '/etc/subuid'
+    regexp: '^{{ item.username }}:'
+    line: >-
+      {{ item.username }}:{{ item.subuid_start | default(100000) }}:{{
+        item.subuid_count | default(podman_subid_count)
+      }}
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ podman_rootless_users }}'
+  loop_control:
+    label: '{{ item.username }}'
+
+- name: Rootless | Configure subgid for users
+  ansible.builtin.lineinfile:
+    path: '/etc/subgid'
+    regexp: '^{{ item.username }}:'
+    line: >-
+      {{ item.username }}:{{ item.subgid_start | default(100000) }}:{{
+        item.subgid_count | default(podman_subid_count)
+      }}
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ podman_rootless_users }}'
+  loop_control:
+    label: '{{ item.username }}'
+
+- name: Rootless | Check linger status for users
+  ansible.builtin.stat:
+    path: '/var/lib/systemd/linger/{{ item.username }}'
+  loop: '{{ podman_rootless_users }}'
+  loop_control:
+    label: '{{ item.username }}'
+  when: item.linger | default(false)
+  register: __podman_linger_status
+
+- name: Rootless | Enable linger for users
+  ansible.builtin.command:
+    cmd: 'loginctl enable-linger {{ item.item.username }}'
+  loop: '{{ __podman_linger_status.results | default([]) }}'
+  loop_control:
+    label: '{{ item.item.username }}'
+  when:
+    - item is not skipped
+    - not item.stat.exists
+  changed_when: true
+
+- name: Rootless | Create user config directories
+  ansible.builtin.file:
+    path: '~{{ item.username }}/.config/containers'
+    state: directory
+    owner: '{{ item.username }}'
+    mode: '0755'
+  loop: '{{ podman_rootless_users }}'
+  loop_control:
+    label: '{{ item.username }}'
+  become: true
+  become_user: '{{ item.username }}'

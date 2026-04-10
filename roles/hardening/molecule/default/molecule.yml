@@ -1,0 +1,102 @@
+---
+# marcstraube.common.hardening/molecule/default/molecule.yml
+
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    ignore-errors: true
+
+driver:
+  name: default
+  options:
+    managed: false
+    login_cmd_template: bash -c 'cd ${MOLECULE_EPHEMERAL_DIRECTORY} && vagrant ssh {instance}'
+
+platforms:
+  - name: hardening-archlinux
+    groups:
+      - test_hosts
+  - name: hardening-debian-trixie
+    groups:
+      - test_hosts
+  - name: hardening-rocky-9
+    groups:
+      - test_hosts
+  - name: hardening-rocky-10
+    groups:
+      - test_hosts
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks,timer
+      stdout_callback: default
+      result_format: yaml
+      inject_facts_as_vars: false
+  inventory:
+    host_vars:
+      hardening-archlinux:
+        ansible_port: 2222
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/hardening-archlinux/virtualbox/private_key
+      hardening-debian-trixie:
+        ansible_port: 2223
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/hardening-debian-trixie/virtualbox/private_key
+      hardening-rocky-9:
+        ansible_port: 2224
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/hardening-rocky-9/virtualbox/private_key
+      hardening-rocky-10:
+        ansible_port: 2225
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/hardening-rocky-10/virtualbox/private_key
+    group_vars:
+      all:
+        ansible_connection: ssh
+        ansible_user: vagrant
+        ansible_host: 127.0.0.1
+        ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+
+        # All features enabled for testing
+        hardening_enabled: true
+        hardening_kernel_enabled: true
+        hardening_modules_enabled: true
+        hardening_fs_enabled: true
+        hardening_fs_vartmp_bind: true
+
+        # Extra module blacklisting for test coverage
+        hardening_modules_blacklist_extra:
+          - firewire-core
+
+  playbooks:
+    create: create.yml
+    destroy: destroy.yml
+    prepare: prepare.yml
+    converge: converge.yml
+    verify: verify.yml
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy

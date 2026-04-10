@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# Firewalld Handlers
+# =============================================================================
+
+- name: Reload firewalld
+  ansible.builtin.systemd:
+    name: '{{ __firewalld_service_name }}'
+    state: reloaded
+  when: firewalld_enabled | bool
+
+- name: Restart firewalld
+  ansible.builtin.systemd:
+    name: '{{ __firewalld_service_name }}'
+    state: restarted
+  when: firewalld_enabled | bool

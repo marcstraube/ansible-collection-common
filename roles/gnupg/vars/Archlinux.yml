@@ -1,0 +1,18 @@
+---
+# =============================================================================
+# ArchLinux-specific variables for GnuPG
+# =============================================================================
+
+__gnupg_packages:
+  - 'gnupg'
+
+__gnupg_tools_packages:
+  - 'hopenpgp-tools'
+  - 'paperkey'
+
+# pinentry is already a dependency of gnupg on Arch (single package provides
+# all variants: curses, gtk, qt, gnome3, tty, emacs)
+__gnupg_gui_packages:
+  - 'seahorse'
+
+__gnupg_config_dir: '.gnupg'

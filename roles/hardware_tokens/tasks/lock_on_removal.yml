@@ -1,0 +1,21 @@
+---
+# =============================================================================
+# Hardware Tokens Lock on Removal
+# =============================================================================
+
+- name: Lock on removal | Deploy lock script
+  ansible.builtin.template:
+    src: hardware-token-lock.sh.j2
+    dest: /usr/local/bin/hardware-token-lock.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Lock on removal | Deploy udev rule
+  ansible.builtin.template:
+    src: 85-hardware-token-lock.rules.j2
+    dest: "{{ __hardware_tokens_udev_rules_path }}/85-hardware-token-lock.rules"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Hardware tokens reload udev

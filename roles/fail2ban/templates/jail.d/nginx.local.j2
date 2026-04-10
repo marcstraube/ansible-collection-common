@@ -1,0 +1,39 @@
+{{ ansible_managed | comment }}
+{% if fail2ban_nginx_http_auth_enabled %}
+
+# Nginx web server jails
+[nginx-http-auth]
+enabled = true
+port = {{ fail2ban_nginx_http_auth_port }}
+logpath = {{ fail2ban_nginx_http_auth_logpath }}
+maxretry = {{ fail2ban_nginx_http_auth_maxretry }}
+bantime = {{ fail2ban_nginx_http_auth_bantime }}
+{% endif %}
+{% if fail2ban_nginx_limit_req_enabled %}
+
+[nginx-limit-req]
+enabled = true
+port = {{ fail2ban_nginx_limit_req_port }}
+logpath = {{ fail2ban_nginx_limit_req_logpath }}
+maxretry = {{ fail2ban_nginx_limit_req_maxretry }}
+bantime = {{ fail2ban_nginx_limit_req_bantime }}
+{% endif %}
+{% if fail2ban_nginx_botsearch_enabled %}
+
+[nginx-botsearch]
+enabled = true
+port = {{ fail2ban_nginx_botsearch_port }}
+logpath = {{ fail2ban_nginx_botsearch_logpath }}
+maxretry = {{ fail2ban_nginx_botsearch_maxretry }}
+bantime = {{ fail2ban_nginx_botsearch_bantime }}
+{% endif %}
+{% if fail2ban_nginx_forbidden_enabled %}
+
+[nginx-forbidden]
+enabled = true
+{% endif %}
+{% if fail2ban_nginx_bad_request_enabled %}
+
+[nginx-bad-request]
+enabled = true
+{% endif %}

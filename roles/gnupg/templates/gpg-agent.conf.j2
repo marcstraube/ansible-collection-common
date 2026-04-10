@@ -1,0 +1,52 @@
+{{ ansible_managed | comment }}
+
+# Cache TTL
+default-cache-ttl {{ gnupg_agent_default_cache_ttl }}
+max-cache-ttl {{ gnupg_agent_max_cache_ttl }}
+
+{% if gnupg_user.agent_ssh | default(gnupg_agent_enable_ssh) | bool %}
+
+# SSH support
+enable-ssh-support
+default-cache-ttl-ssh {{ gnupg_agent_default_cache_ttl_ssh }}
+max-cache-ttl-ssh {{ gnupg_agent_max_cache_ttl_ssh }}
+{% endif %}
+
+{% if gnupg_agent_pinentry | length > 0 %}
+
+# Pinentry program
+pinentry-program /usr/bin/{{ gnupg_agent_pinentry }}
+{% endif %}
+{% if gnupg_agent_pinentry_timeout > 0 %}
+pinentry-timeout {{ gnupg_agent_pinentry_timeout }}
+{% endif %}
+
+{% if gnupg_agent_grab %}
+
+# Keyboard grab (anti-sniffing on X11)
+grab
+{% endif %}
+
+{% if gnupg_agent_allow_loopback_pinentry %}
+
+# Loopback pinentry (scripted passphrase entry)
+allow-loopback-pinentry
+{% endif %}
+
+{% if gnupg_agent_allow_preset_passphrase %}
+
+# Preset passphrase
+allow-preset-passphrase
+{% endif %}
+
+{% if gnupg_agent_no_allow_external_cache %}
+
+# External cache
+no-allow-external-cache
+{% endif %}
+
+{% if gnupg_agent_disable_scdaemon %}
+
+# Smartcard daemon
+disable-scdaemon
+{% endif %}

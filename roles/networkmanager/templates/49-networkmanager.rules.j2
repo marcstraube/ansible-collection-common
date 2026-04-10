@@ -1,0 +1,10 @@
+{{ ansible_managed | comment('c') }}
+
+// Allow members of the "{{ networkmanager_polkit_group }}" group to manage
+// NetworkManager without authentication.
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 &&
+        subject.isInGroup("{{ networkmanager_polkit_group }}")) {
+        return polkit.Result.YES;
+    }
+});

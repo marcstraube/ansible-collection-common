@@ -1,0 +1,115 @@
+---
+# =============================================================================
+# GnuPG User Configuration
+# =============================================================================
+
+- name: Configure | Get user info
+  ansible.builtin.getent:
+    database: passwd
+    key: '{{ gnupg_user.username }}'
+
+- name: Configure | Set user home fact
+  ansible.builtin.set_fact:
+    _gnupg_user_home: '{{ getent_passwd[gnupg_user.username][4] }}'
+    _gnupg_user_uid: '{{ getent_passwd[gnupg_user.username][1] }}'
+
+- name: Configure | Ensure .gnupg directory exists
+  ansible.builtin.file:
+    path: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}'
+    state: directory
+    owner: '{{ gnupg_user.username }}'
+    group: '{{ gnupg_user.username }}'
+    mode: '0700'
+
+- name: Configure | Deploy gpg.conf
+  ansible.builtin.template:
+    src: gpg.conf.j2
+    dest: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}/gpg.conf'
+    owner: '{{ gnupg_user.username }}'
+    group: '{{ gnupg_user.username }}'
+    mode: '0600'
+
+- name: Configure | Deploy gpg-agent.conf
+  ansible.builtin.template:
+    src: gpg-agent.conf.j2
+    dest: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}/gpg-agent.conf'
+    owner: '{{ gnupg_user.username }}'
+    group: '{{ gnupg_user.username }}'
+    mode: '0600'
+  notify: GnuPG reload agent
+  when: gnupg_agent_enabled | default(true) | bool
+
+- name: Configure | Deploy scdaemon.conf
+  ansible.builtin.template:
+    src: scdaemon.conf.j2
+    dest: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}/scdaemon.conf'
+    owner: '{{ gnupg_user.username }}'
+    group: '{{ gnupg_user.username }}'
+    mode: '0600'
+  notify: GnuPG reload scdaemon
+  when: gnupg_scdaemon_enabled | default(true) | bool
+
+- name: Configure | Deploy dirmngr.conf
+  ansible.builtin.template:
+    src: dirmngr.conf.j2
+    dest: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}/dirmngr.conf'
+    owner: '{{ gnupg_user.username }}'
+    group: '{{ gnupg_user.username }}'
+    mode: '0600'
+  when: gnupg_dirmngr_enabled | default(true) | bool
+
+- name: Configure | Create systemd user environment.d directory
+  ansible.builtin.file:
+    path: '{{ _gnupg_user_home }}/.config/environment.d'
+    state: directory
+    owner: '{{ gnupg_user.username }}'
+    group: '{{ gnupg_user.username }}'
+    mode: '0755'
+  when:
+    - gnupg_agent_enabled | default(true) | bool
+    - gnupg_user.agent_ssh | default(gnupg_agent_enable_ssh) | bool
+
+- name: Configure | Set SSH_AUTH_SOCK to gpg-agent socket
+  ansible.builtin.copy:
+    content: |
+      # GPG agent SSH socket (managed by Ansible)
+      SSH_AUTH_SOCK=/run/user/{{ _gnupg_user_uid }}/gnupg/S.gpg-agent.ssh
+    dest: '{{ _gnupg_user_home }}/.config/environment.d/50-gpg-ssh.conf'
+    owner: '{{ gnupg_user.username }}'
+    group: '{{ gnupg_user.username }}'
+    mode: '0644'
+  when:
+    - gnupg_agent_enabled | default(true) | bool
+    - gnupg_user.agent_ssh | default(gnupg_agent_enable_ssh) | bool
+
+- name: Configure | Import keys from keyserver
+  ansible.builtin.command:
+    cmd: >
+      gpg --keyserver {{ item.keyserver | default(gnupg_keyserver) }}
+      --recv-keys {{ item.keyid }}
+  loop: '{{ gnupg_import_keys | selectattr("keyid", "defined") | list }}'
+  become: true
+  become_user: '{{ gnupg_user.username }}'
+  register: _gnupg_import
+  changed_when: "'imported: 1' in _gnupg_import.stderr"
+  failed_when: false
+
+- name: Configure | Import keys from files
+  ansible.builtin.command:
+    cmd: 'gpg --import {{ item.file }}'
+  loop: '{{ gnupg_import_keys | selectattr("file", "defined") | list }}'
+  become: true
+  become_user: '{{ gnupg_user.username }}'
+  register: _gnupg_import_file
+  changed_when: "'imported: 1' in _gnupg_import_file.stderr"
+  failed_when: false
+
+- name: Configure | Set ultimate trust for keys  # noqa: risky-shell-pipe
+  ansible.builtin.shell:
+    cmd: 'echo "{{ item }}:6:" | gpg --import-ownertrust'
+  loop: '{{ gnupg_trust_keys }}'
+  become: true
+  become_user: '{{ gnupg_user.username }}'
+  register: _gnupg_trust
+  changed_when: "'inserted' in (_gnupg_trust.stderr | default(''))"
+  when: gnupg_trust_keys | length > 0

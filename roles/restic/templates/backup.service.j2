@@ -1,0 +1,34 @@
+{{ ansible_managed | comment }}
+#
+# Restic Backup Service: {{ item.name }}
+#
+
+[Unit]
+Description=Restic backup: {{ item.name }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{ restic_script_dir }}/restic-backup-{{ item.name }} backup
+ExecStartPost={{ restic_script_dir }}/restic-backup-{{ item.name }} prune
+User={{ restic_user }}
+Group={{ restic_group }}
+Nice={{ restic_nice_level }}
+IOSchedulingClass={{ restic_ionice_class }}
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+{% if restic_log_to_file | bool %}
+ReadWritePaths={{ restic_log_dir }}
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,31 @@
+---
+# =============================================================================
+# Logrotate - Role Metadata
+# =============================================================================
+
+galaxy_info:
+  author: Marc Straube
+  description: Manage logrotate global configuration, custom drop-in configs, and systemd timer
+  license: MIT
+
+  min_ansible_version: '2.17'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - logrotate
+    - logs
+    - rotation
+    - systemd
+    - system
+
+dependencies: []

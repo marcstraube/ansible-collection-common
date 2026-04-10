@@ -1,0 +1,14 @@
+{{ ansible_managed | comment }}
+#
+# Podman System Prune Timer
+
+[Unit]
+Description=Podman system prune timer
+
+[Timer]
+OnCalendar={{ podman_prune_schedule }}
+Persistent=true
+RandomizedDelaySec=3600
+
+[Install]
+WantedBy=timers.target

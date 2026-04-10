@@ -1,0 +1,183 @@
+---
+# =============================================================================
+# Sysctl - Kernel Parameter Tuning
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SERVICE CONTROL
+# -----------------------------------------------------------------------------
+sysctl_enabled: true
+
+# -----------------------------------------------------------------------------
+# CUSTOM PARAMETERS
+# Key-value pairs applied to sysctl.conf
+# -----------------------------------------------------------------------------
+sysctl_parameters: {}
+# Example:
+#   net.ipv4.ip_forward: 1
+#   vm.swappiness: 10
+
+# -----------------------------------------------------------------------------
+# PRESET PROFILES
+# Enable predefined parameter sets for common use cases
+# -----------------------------------------------------------------------------
+
+# Security hardening profile (CIS benchmark recommended)
+sysctl_profile_security: true
+
+# Network performance profile (high-traffic servers)
+sysctl_profile_network_performance: false
+
+# Database server profile (PostgreSQL, MariaDB)
+sysctl_profile_database: false
+
+# Web server profile (nginx, Apache)
+sysctl_profile_webserver: false
+
+# Docker/container host profile
+sysctl_profile_docker: false
+
+# -----------------------------------------------------------------------------
+# SECURITY PROFILE PARAMETERS
+# Applied when sysctl_profile_security: true
+# -----------------------------------------------------------------------------
+sysctl_security_parameters:
+  # Disable IP forwarding
+  net.ipv4.ip_forward: 0
+  net.ipv6.conf.all.forwarding: 0
+
+  # Disable source routing
+  net.ipv4.conf.all.accept_source_route: 0
+  net.ipv4.conf.default.accept_source_route: 0
+  net.ipv6.conf.all.accept_source_route: 0
+  net.ipv6.conf.default.accept_source_route: 0
+
+  # Disable ICMP redirects
+  net.ipv4.conf.all.accept_redirects: 0
+  net.ipv4.conf.default.accept_redirects: 0
+  net.ipv6.conf.all.accept_redirects: 0
+  net.ipv6.conf.default.accept_redirects: 0
+  net.ipv4.conf.all.send_redirects: 0
+  net.ipv4.conf.default.send_redirects: 0
+
+  # Enable reverse path filtering
+  net.ipv4.conf.all.rp_filter: 1
+  net.ipv4.conf.default.rp_filter: 1
+
+  # Ignore ICMP broadcasts
+  net.ipv4.icmp_echo_ignore_broadcasts: 1
+
+  # Log martian packets
+  net.ipv4.conf.all.log_martians: 1
+  net.ipv4.conf.default.log_martians: 1
+
+  # SYN flood protection
+  net.ipv4.tcp_syncookies: 1
+
+  # Disable IPv6 router advertisements
+  net.ipv6.conf.all.accept_ra: 0
+  net.ipv6.conf.default.accept_ra: 0
+
+# -----------------------------------------------------------------------------
+# NETWORK PERFORMANCE PROFILE PARAMETERS
+# Applied when sysctl_profile_network_performance: true
+# -----------------------------------------------------------------------------
+sysctl_network_performance_parameters:
+  # Increase socket buffer sizes
+  net.core.rmem_max: 16777216
+  net.core.wmem_max: 16777216
+  net.core.rmem_default: 262144
+  net.core.wmem_default: 262144
+
+  # TCP buffer sizes (min, default, max)
+  net.ipv4.tcp_rmem: '4096 87380 16777216'
+  net.ipv4.tcp_wmem: '4096 65536 16777216'
+
+  # Increase connection backlog
+  net.core.somaxconn: 65535
+  net.core.netdev_max_backlog: 65535
+
+  # TCP optimizations
+  net.ipv4.tcp_max_syn_backlog: 65535
+  net.ipv4.tcp_tw_reuse: 1
+  net.ipv4.tcp_fin_timeout: 15
+  net.ipv4.tcp_keepalive_time: 300
+  net.ipv4.tcp_keepalive_probes: 5
+  net.ipv4.tcp_keepalive_intvl: 15
+
+  # Enable TCP Fast Open
+  net.ipv4.tcp_fastopen: 3
+
+  # Increase local port range
+  net.ipv4.ip_local_port_range: '1024 65535'
+
+# -----------------------------------------------------------------------------
+# DATABASE PROFILE PARAMETERS
+# Applied when sysctl_profile_database: true
+# -----------------------------------------------------------------------------
+sysctl_database_parameters:
+  # Reduce swappiness for databases
+  vm.swappiness: 10
+
+  # Increase shared memory limits
+  kernel.shmmax: 68719476736
+  kernel.shmall: 4294967296
+
+  # Memory overcommit (don't overcommit)
+  vm.overcommit_memory: 2
+  vm.overcommit_ratio: 80
+
+  # Dirty page settings for better write performance
+  vm.dirty_ratio: 15
+  vm.dirty_background_ratio: 5
+
+  # Increase file descriptors
+  fs.file-max: 2097152
+
+  # Increase semaphore limits
+  kernel.sem: '250 32000 100 128'
+
+# -----------------------------------------------------------------------------
+# WEB SERVER PROFILE PARAMETERS
+# Applied when sysctl_profile_webserver: true
+# -----------------------------------------------------------------------------
+sysctl_webserver_parameters:
+  # Connection handling
+  net.core.somaxconn: 65535
+  net.ipv4.tcp_max_tw_buckets: 1440000
+
+  # TCP optimizations
+  net.ipv4.tcp_tw_reuse: 1
+  net.ipv4.tcp_fin_timeout: 15
+
+  # Increase local port range
+  net.ipv4.ip_local_port_range: '1024 65535'
+
+  # File descriptors
+  fs.file-max: 2097152
+
+# -----------------------------------------------------------------------------
+# DOCKER PROFILE PARAMETERS
+# Applied when sysctl_profile_docker: true
+# -----------------------------------------------------------------------------
+sysctl_docker_parameters:
+  # Enable IP forwarding for containers
+  net.ipv4.ip_forward: 1
+  net.ipv6.conf.all.forwarding: 1
+
+  # Bridge network filtering
+  net.bridge.bridge-nf-call-iptables: 1
+  net.bridge.bridge-nf-call-ip6tables: 1
+
+  # Increase inotify limits for containers
+  fs.inotify.max_user_watches: 524288
+  fs.inotify.max_user_instances: 512
+
+# -----------------------------------------------------------------------------
+# CONFIGURATION OPTIONS
+# -----------------------------------------------------------------------------
+# File to write sysctl parameters
+sysctl_config_file: '/etc/sysctl.d/90-ansible.conf'
+
+# Apply parameters immediately (vs. only on reboot)
+sysctl_apply_immediately: true

@@ -1,0 +1,12 @@
+{{ ansible_managed | comment }}
+#
+# Podman System Prune Service
+
+[Unit]
+Description=Podman system prune
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/podman system prune {{ '-af' if podman_prune_all else '-f' }}{{ ' --volumes' if podman_prune_volumes else '' }}

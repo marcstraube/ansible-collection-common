@@ -1,0 +1,438 @@
+---
+# =============================================================================
+# ANSIBLE-OPENSSH ROLE - DEFAULT VARIABLES
+# =============================================================================
+# This role installs and configures OpenSSH server and client with
+# security-hardened defaults following modern best practices.
+# =============================================================================
+
+# =============================================================================
+# SERVICE CONTROL
+# =============================================================================
+# Enable or disable the SSH server
+openssh_server_enabled: true
+
+# Service state: started, stopped
+openssh_server_state: 'started'
+
+# =============================================================================
+# NETWORK SETTINGS
+# =============================================================================
+# Port(s) to listen on (can be list for multiple ports)
+openssh_server_port: 22
+
+# Additional ports (for running SSH on multiple ports)
+openssh_server_additional_ports: []
+# Example:
+#   - 2222
+#   - 22222
+
+# Address family: any, inet (IPv4), inet6 (IPv6)
+openssh_server_address_family: 'any'
+
+# Listen addresses (empty = all interfaces)
+openssh_server_listen_addresses: []
+# Example:
+#   - '0.0.0.0'
+#   - '::'
+
+# TCP keep-alive
+openssh_server_tcp_keep_alive: true
+
+# =============================================================================
+# HOST KEYS
+# =============================================================================
+# Host key types to generate and use
+# Recommended: ed25519 (best), rsa (compatibility)
+# Avoid: ecdsa (NSA concerns), dsa (deprecated)
+openssh_server_host_key_types:
+  - 'ed25519'
+  - 'rsa'
+
+# RSA key size (minimum 3072 for security)
+openssh_server_rsa_key_size: 4096
+
+# Required minimum RSA size for client keys
+openssh_server_required_rsa_size: 3072
+
+# =============================================================================
+# CRYPTOGRAPHIC SETTINGS (HARDENED DEFAULTS)
+# =============================================================================
+# Key exchange algorithms (ordered by preference)
+# These are modern, secure algorithms only
+openssh_server_kex_algorithms:
+  - 'sntrup761x25519-sha512@openssh.com'
+  - 'curve25519-sha256'
+  - 'curve25519-sha256@libssh.org'
+  - 'diffie-hellman-group18-sha512'
+  - 'diffie-hellman-group16-sha512'
+  - 'diffie-hellman-group-exchange-sha256'
+
+# Encryption ciphers (ordered by preference)
+# ChaCha20 first (fast on CPUs without AES-NI), then AES-GCM
+openssh_server_ciphers:
+  - 'chacha20-poly1305@openssh.com'
+  - 'aes256-gcm@openssh.com'
+  - 'aes128-gcm@openssh.com'
+  - 'aes256-ctr'
+  - 'aes192-ctr'
+  - 'aes128-ctr'
+
+# Message authentication codes
+openssh_server_macs:
+  - 'hmac-sha2-512-etm@openssh.com'
+  - 'hmac-sha2-256-etm@openssh.com'
+  - 'umac-128-etm@openssh.com'
+
+# Maps host key types to their SSH protocol algorithm names.
+# Used to auto-derive algorithm lists from openssh_server_host_key_types.
+openssh_server_algorithm_map:
+  ed25519:
+    host_key:
+      - 'ssh-ed25519-cert-v01@openssh.com'
+      - 'sk-ssh-ed25519-cert-v01@openssh.com'
+      - 'ssh-ed25519'
+      - 'sk-ssh-ed25519@openssh.com'
+    ca_signature:
+      - 'ssh-ed25519'
+      - 'sk-ssh-ed25519@openssh.com'
+  rsa:
+    host_key:
+      - 'rsa-sha2-512-cert-v01@openssh.com'
+      - 'rsa-sha2-256-cert-v01@openssh.com'
+      - 'rsa-sha2-512'
+      - 'rsa-sha2-256'
+    ca_signature:
+      - 'rsa-sha2-512'
+      - 'rsa-sha2-256'
+  ecdsa:
+    host_key:
+      - 'ecdsa-sha2-nistp521-cert-v01@openssh.com'
+      - 'ecdsa-sha2-nistp384-cert-v01@openssh.com'
+      - 'ecdsa-sha2-nistp256-cert-v01@openssh.com'
+      - 'ecdsa-sha2-nistp521'
+      - 'ecdsa-sha2-nistp384'
+      - 'ecdsa-sha2-nistp256'
+    ca_signature:
+      - 'ecdsa-sha2-nistp521'
+      - 'ecdsa-sha2-nistp384'
+      - 'ecdsa-sha2-nistp256'
+
+# Host key algorithms
+# 'auto' = derive from openssh_server_host_key_types via algorithm_map
+# list   = explicit override
+# []     = omit directive from config
+openssh_server_host_key_algorithms: 'auto'
+
+# CA signature algorithms
+# 'auto' = derive from openssh_server_host_key_types via algorithm_map
+# list   = explicit override
+# []     = omit directive from config
+openssh_server_ca_signature_algorithms: 'auto'
+
+# Hostbased accepted algorithms
+# 'auto' = derive from openssh_server_host_key_types via algorithm_map
+# list   = explicit override
+# []     = omit directive from config
+openssh_server_hostbased_accepted_algorithms: 'auto'
+
+# Public key accepted algorithms
+# 'auto' = derive from openssh_server_host_key_types via algorithm_map
+# list   = explicit override
+# []     = omit directive from config
+openssh_server_pubkey_accepted_algorithms: 'auto'
+
+# =============================================================================
+# AUTHENTICATION
+# =============================================================================
+# Authentication methods (publickey is most secure)
+openssh_server_authentication_methods: 'publickey'
+
+# Permit root login: yes, no, prohibit-password, forced-commands-only
+openssh_server_permit_root_login: 'no'
+
+# Password authentication (disable for better security)
+openssh_server_password_authentication: false
+
+# Keyboard-interactive authentication
+openssh_server_kbd_interactive_authentication: false
+
+# Public key authentication
+openssh_server_pubkey_authentication: true
+
+# Hostbased authentication (generally not recommended)
+openssh_server_hostbased_authentication: false
+
+# Use PAM for authentication
+openssh_server_use_pam: true
+
+# Permit empty passwords (never enable this)
+openssh_server_permit_empty_passwords: false
+
+# =============================================================================
+# LOGIN RESTRICTIONS
+# =============================================================================
+# Time to complete authentication
+openssh_server_login_grace_time: 30
+
+# Maximum authentication attempts
+openssh_server_max_auth_tries: 3
+
+# Maximum concurrent sessions per connection
+openssh_server_max_sessions: 10
+
+# Maximum concurrent unauthenticated connections
+openssh_server_max_startups: '10:30:60'
+
+# =============================================================================
+# ACCESS CONTROL
+# =============================================================================
+# Allow only specific users (empty = all users)
+openssh_server_allow_users: []
+# Example:
+#   - 'admin'
+#   - 'deploy'
+
+# Deny specific users
+openssh_server_deny_users: []
+# Example:
+#   - 'root'
+
+# Allow only specific groups
+openssh_server_allow_groups: []
+# Example:
+#   - 'ssh-users'
+#   - 'wheel'
+
+# Deny specific groups
+openssh_server_deny_groups: []
+
+# =============================================================================
+# SESSION SETTINGS
+# =============================================================================
+# Client alive interval (seconds)
+openssh_server_client_alive_interval: 300
+
+# Client alive count max
+openssh_server_client_alive_count_max: 3
+
+# Strict modes (check file permissions)
+openssh_server_strict_modes: true
+
+# =============================================================================
+# FORWARDING
+# =============================================================================
+# Allow TCP forwarding
+openssh_server_allow_tcp_forwarding: false
+
+# Allow agent forwarding
+openssh_server_allow_agent_forwarding: false
+
+# Permit tunnel device forwarding: yes, no, point-to-point, ethernet
+openssh_server_permit_tunnel: false
+
+# Gateway ports for remote forwarding
+openssh_server_gateway_ports: false
+
+# X11 forwarding
+openssh_server_x11_forwarding: false
+openssh_server_x11_display_offset: 10
+openssh_server_x11_use_localhost: true
+
+# Allow stream local forwarding: yes, no, all, local, remote
+openssh_server_allow_stream_local_forwarding: false
+
+# =============================================================================
+# SFTP CONFIGURATION
+# =============================================================================
+# Enable SFTP subsystem
+openssh_server_sftp_enabled: true
+
+# SFTP chroot settings
+openssh_server_sftp_chroot_enabled: false
+openssh_server_sftp_chroot_directory: '/home/%u'
+openssh_server_sftp_chroot_group: 'sftponly'
+
+# =============================================================================
+# BANNER
+# =============================================================================
+# Enable SSH banner
+openssh_server_banner_enabled: false
+
+# Banner file path
+openssh_server_banner_file: '/etc/ssh/banner'
+
+# Custom banner content
+openssh_server_banner_content: |
+  **************************************************************************
+  NOTICE TO USERS
+
+  This is a private computer system. Unauthorized access is prohibited.
+  All activities may be monitored and recorded.
+  **************************************************************************
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+# Syslog facility
+openssh_server_syslog_facility: 'AUTH'
+
+# Log level: QUIET, FATAL, ERROR, INFO, VERBOSE, DEBUG, DEBUG1, DEBUG2, DEBUG3
+openssh_server_log_level: 'VERBOSE'
+
+# =============================================================================
+# MODULI HARDENING
+# =============================================================================
+# Remove weak Diffie-Hellman moduli (< 3072 bits)
+openssh_server_harden_moduli: true
+
+# Minimum moduli size
+openssh_server_moduli_minimum_size: 3071
+
+# =============================================================================
+# PENALTY SYSTEM (OpenSSH 9.8+, ignored on older versions)
+# =============================================================================
+# Penalty conditions and durations for misbehaving clients
+# Format: "condition:penalty_duration" (e.g., "authfail:10s")
+# Empty list = use OpenSSH built-in defaults
+openssh_server_per_source_penalties: []
+# Example:
+#   - 'min:2s'
+#   - 'max:600s'
+#   - 'authfail:5s'
+#   - 'noauth:1s'
+#   - 'grace-exceeded:10s'
+#   - 'refuseconnection:10s'
+
+# Network block size for penalty tracking (IPv4/IPv6 CIDR)
+# Format: "ipv4_prefix:ipv6_prefix" (e.g., "32:128" for per-IP)
+openssh_server_per_source_net_block_size: ''
+
+# =============================================================================
+# CHANNEL / CONNECTION TIMEOUTS (OpenSSH 9.2+/9.7+, ignored on older)
+# =============================================================================
+# Timeout for connections with no open channels (OpenSSH 9.2+)
+# Format: duration string (e.g., "300s", "5m"). Empty = disabled.
+openssh_server_unused_connection_timeout: ''
+
+# Close idle channels after timeout (OpenSSH 9.7+)
+# Format: "type=duration" (e.g., "session:300s"). Empty = disabled.
+openssh_server_channel_timeout: ''
+
+# =============================================================================
+# ADDITIONAL OPTIONS
+# =============================================================================
+# Print last log on login
+openssh_server_print_lastlog: true
+
+# Print message of the day
+openssh_server_print_motd: false
+
+# Compression: yes, no, delayed
+openssh_server_compression: 'delayed'
+
+# Use DNS for client hostname lookup
+openssh_server_use_dns: false
+
+# Version addendum (append to version string)
+openssh_server_version_addendum: ''
+
+# =============================================================================
+# MATCH BLOCKS
+# =============================================================================
+# Custom match blocks for specific users/groups/hosts
+# SFTP chroot match block is auto-generated when openssh_server_sftp_chroot_enabled
+openssh_server_match_blocks: []
+# Example:
+#   - match: 'User deploy'
+#     options:
+#       PasswordAuthentication: 'no'
+#       AllowTcpForwarding: 'no'
+
+# =============================================================================
+# EXTRA CONFIGURATION
+# =============================================================================
+# Extra sshd_config lines appended to session config
+openssh_server_extra_sshd_config: []
+# Example:
+#   - 'AcceptEnv LANG LC_*'
+#   - 'DebianBanner no'
+
+# =============================================================================
+# AUTHORIZED KEYS
+# =============================================================================
+# Authorized keys file path
+openssh_server_authorized_keys_file: '.ssh/authorized_keys'
+
+# Additional authorized keys files
+openssh_server_authorized_keys_files: []
+# Example:
+#   - '/etc/ssh/authorized_keys/%u'
+
+# Authorized keys command (for dynamic key lookup)
+openssh_server_authorized_keys_command: ''
+openssh_server_authorized_keys_command_user: ''
+
+# =============================================================================
+# CERTIFICATE AUTHENTICATION
+# =============================================================================
+# Trusted user CA keys file
+openssh_server_trusted_user_ca_keys: ''
+
+# Revoked keys file
+openssh_server_revoked_keys: ''
+
+# =============================================================================
+# CLIENT CONFIGURATION
+# =============================================================================
+# Configure SSH client settings
+openssh_client_enabled: true
+
+# Global known hosts file
+openssh_client_global_known_hosts: '/etc/ssh/ssh_known_hosts'
+
+# Hash known hosts
+openssh_client_hash_known_hosts: true
+
+# Strict host key checking: yes, no, ask, accept-new
+openssh_client_strict_host_key_checking: 'ask'
+
+# Visual host key
+openssh_client_visual_host_key: false
+
+# =============================================================================
+# SSH AGENT
+# =============================================================================
+# Enable global ssh-agent service (systemd user service)
+openssh_agent_global_service: false
+
+# SSH askpass program
+openssh_askpass_enabled: false
+
+# =============================================================================
+# SSHFP DNS RECORDS
+# =============================================================================
+# Generate and show SSHFP DNS records
+openssh_server_generate_sshfp_records: false
+openssh_server_sshfp_hostname: '{{ ansible_facts["fqdn"] }}'
+
+# =============================================================================
+# FIREWALL INTEGRATION
+# =============================================================================
+# Enable firewalld integration
+openssh_firewalld_enabled: false
+
+# Firewalld zone for SSH
+openssh_firewalld_zone: 'public'
+
+# =============================================================================
+# APPARMOR INTEGRATION
+# =============================================================================
+# Enable AppArmor profile enforcement (Arch/Debian only, not RHEL/Rocky)
+openssh_apparmor_enabled: false
+
+# =============================================================================
+# SECURITY TOOLS
+# =============================================================================
+# Install ssh-audit for security analysis
+openssh_install_ssh_audit: true

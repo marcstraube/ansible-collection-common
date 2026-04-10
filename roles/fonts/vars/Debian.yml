@@ -1,0 +1,34 @@
+---
+# =============================================================================
+# Debian-specific variables for fonts
+# =============================================================================
+
+__fonts_dejavu_package: 'fonts-dejavu'
+__fonts_liberation_package: 'fonts-liberation2'
+__fonts_noto_package: 'fonts-noto-core'
+__fonts_noto_emoji_package: 'fonts-noto-color-emoji'
+__fonts_noto_cjk_package: 'fonts-noto-cjk'
+
+__fonts_coding_packages:
+  firacode: 'fonts-firacode'
+  jetbrains: 'fonts-jetbrains-mono'
+  cascadia: 'fonts-cascadia-code'
+  iosevka: ''  # Not in repos
+  hack: 'fonts-hack'
+  source-code-pro: 'fonts-adobe-source-code-pro'
+
+__fonts_nerd_packages:
+  # Nerd Fonts not in Debian repos - manual install needed
+  firacode: ''
+  hack: ''
+  jetbrains: ''
+  meslo: ''
+  source-code-pro: ''
+  ubuntu: ''
+  dejavu: ''
+  liberation: ''
+  noto: ''
+  roboto: ''
+  droid: ''
+  terminus: ''
+  symbols-only: ''

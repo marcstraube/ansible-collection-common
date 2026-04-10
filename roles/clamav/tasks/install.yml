@@ -1,0 +1,13 @@
+---
+- name: Install ClamAV packages
+  ansible.builtin.package:
+    name: '{{ __clamav_packages }}'
+    state: present
+
+- name: Install ClamAV milter packages
+  ansible.builtin.package:
+    name: '{{ __clamav_milter_packages }}'
+    state: present
+  when:
+    - clamav_milter_enabled | bool
+    - __clamav_milter_packages | length > 0

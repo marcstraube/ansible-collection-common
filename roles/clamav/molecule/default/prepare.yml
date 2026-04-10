@@ -1,0 +1,104 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # ClamAV daemon may fail to start in containers without override
+    - name: Create systemd override directory for clamd (Arch)
+      ansible.builtin.file:
+        path: /etc/systemd/system/clamav-daemon.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Deploy systemd override for clamd (Arch)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/clamav-daemon.service.d/override.conf
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Service]
+          Type=simple
+          ExecStart=
+          ExecStart=/usr/bin/clamd --foreground
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Create systemd override directory for clamd (Debian)
+      ansible.builtin.file:
+        path: /etc/systemd/system/clamav-daemon.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Deploy systemd override for clamd (Debian)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/clamav-daemon.service.d/override.conf
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Service]
+          Type=simple
+          ExecStart=
+          ExecStart=/usr/sbin/clamd --foreground
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Create systemd override directory for clamd@scan (RedHat)
+      ansible.builtin.file:
+        path: /etc/systemd/system/clamd@scan.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Deploy systemd override for clamd@scan (RedHat)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/clamd@scan.service.d/override.conf
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Service]
+          Type=simple
+          ExecStart=
+          ExecStart=/usr/sbin/clamd --foreground -c /etc/clamd.d/scan.conf
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Create systemd override directory for freshclam
+      ansible.builtin.file:
+        path: /etc/systemd/system/clamav-freshclam.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Deploy systemd override for freshclam
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/clamav-freshclam.service.d/override.conf
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Service]
+          Type=simple
+          ExecStart=
+          ExecStart=/usr/bin/freshclam --daemon --foreground
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    # EPEL is required for ClamAV on RedHat
+    - name: Install EPEL repository (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'

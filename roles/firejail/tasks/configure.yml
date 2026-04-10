@@ -1,0 +1,83 @@
+---
+# =============================================================================
+# Firejail Configuration Tasks
+# =============================================================================
+
+# Deploy global firejail settings
+- name: Configure | Deploy global configuration
+  ansible.builtin.template:
+    src: firejail.config.j2
+    dest: '{{ __firejail_config_path }}/firejail.config'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: apply firecfg
+
+# Comment out excluded apps in firecfg.config so firecfg skips them
+- name: Configure | Exclude applications from firecfg
+  ansible.builtin.replace:
+    path: '{{ __firejail_config_path }}/firecfg.config'
+    regexp: '^({{ item | regex_escape }})$'
+    replace: '# \1'
+  loop: '{{ firejail_exclude }}'
+  notify: apply firecfg
+
+# Deploy per-application profile overrides (OS-specific + user-defined, user wins)
+- name: Configure | Deploy custom profile overrides
+  ansible.builtin.template:
+    src: firejail-profile.local.j2
+    dest: '{{ __firejail_profiles_path }}/{{ item.key }}.local'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: >-
+    {{ (__firejail_profiles_os | default({}))
+       | combine(firejail_profiles)
+       | dict2items }}
+  when: ((__firejail_profiles_os | default({})) | combine(firejail_profiles)) | length > 0
+
+# Load firejail AppArmor profile into kernel
+- name: Configure | Load firejail AppArmor profile
+  ansible.builtin.command:
+    cmd: apparmor_parser -r /etc/apparmor.d/firejail-default
+  changed_when: false
+  when:
+    - firejail_apparmor | bool
+    - (ansible_facts['apparmor'] | default({}))['status'] | default('') == 'enabled'
+
+# Deploy global profile overrides
+- name: Configure | Deploy globals.local
+  ansible.builtin.template:
+    src: globals.local.j2
+    dest: '{{ __firejail_config_path }}/globals.local'
+    owner: root
+    group: root
+    mode: '0644'
+  when: (firejail_globals | length > 0) or (firejail_apparmor | bool)
+
+# Deploy pacman hook on Arch Linux
+- name: Configure | Ensure pacman hooks directory exists
+  ansible.builtin.file:
+    path: /etc/pacman.d/hooks
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - firejail_pacman_hook | bool
+
+- name: Configure | Deploy pacman hook for firecfg
+  ansible.builtin.copy:
+    src: firejail-firecfg.hook
+    dest: /etc/pacman.d/hooks/firejail-firecfg.hook
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - firejail_pacman_hook | bool
+
+# Ensure firecfg runs within this role execution
+- name: Configure | Flush handlers
+  ansible.builtin.meta: flush_handlers

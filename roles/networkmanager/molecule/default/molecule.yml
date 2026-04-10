@@ -1,0 +1,269 @@
+---
+# marcstraube.networkmanager/molecule/default/molecule.yml
+
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    ignore-errors: true
+
+driver:
+  name: default
+  options:
+    managed: false
+    login_cmd_template: bash -c 'cd ${MOLECULE_EPHEMERAL_DIRECTORY} && vagrant ssh {instance}'
+
+platforms:
+  - name: networkmanager-archlinux
+    groups:
+      - test_hosts
+  - name: networkmanager-debian-trixie
+    groups:
+      - test_hosts
+  - name: networkmanager-rocky-9
+    groups:
+      - test_hosts
+  - name: networkmanager-rocky-10
+    groups:
+      - test_hosts
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks,timer
+      stdout_callback: default
+      result_format: yaml
+      inject_facts_as_vars: false
+  inventory:
+    host_vars:
+      networkmanager-archlinux:
+        ansible_python_interpreter: /usr/bin/python
+        ansible_port: 2222
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/networkmanager-archlinux/virtualbox/private_key
+
+        # Arch-specific: full test set including WiFi, VPN, SMB, SSHFS
+        test_networkmanager_connections:
+          ethernet:
+            'Test Ethernet Connection':
+              ifname: eth1
+              ip4: 192.168.1.10/24
+              gw4: 192.168.1.1
+              state: present
+              autoconnect: false
+              dhcp_send_hostname_ipv4: true
+              dhcp_send_hostname_ipv6: true
+              toggle_wifi: true
+              vpn:
+                - Test VPN Company
+            'Home Ethernet':
+              ifname: eth2
+              ip4: 192.168.2.10/24
+              gw4: 192.168.2.1
+              state: present
+              autoconnect: false
+              dhcp_send_hostname_ipv4: false
+              dhcp_send_hostname_ipv6: false
+          wifi:
+            'Office WiFi':
+              ifname: wlan2
+              ssid: Office-Network
+              state: present
+              autoconnect: false
+              vpn:
+                - Test VPN Company
+            'Home WiFi':
+              ifname: wlan3
+              ssid: Home-Network
+              state: present
+              autoconnect: false
+          vpn:
+            'Test VPN Company':
+              vpn:
+                service-type: org.freedesktop.NetworkManager.pptp
+                gateway: vpn.example.com
+                user: testuser
+                password-flags: 1
+              state: present
+              autoconnect: false
+            'Test VPN Backup':
+              vpn:
+                service-type: org.freedesktop.NetworkManager.pptp
+                gateway: vpn-backup.example.com
+                user: testuser
+                password-flags: 1
+              state: present
+              autoconnect: false
+
+        test_networkmanager_smb_shares:
+          - name: Company File Server
+            src: //fileserver.example.com/share1
+            mount_subpath: company/files
+            credentials_name: company
+            mount_options:
+              iocharset: utf8
+            depends_on:
+              - Test Ethernet Connection
+              - Test VPN Company
+            users:
+              - name: vagrant
+                smb_username: testuser
+                smb_password: testpass
+          - name: Office WiFi Share
+            src: //office-nas.local/documents
+            mount_subpath: office/docs
+            credentials_name: office
+            mount_options:
+              iocharset: utf8
+            depends_on:
+              - Office WiFi
+            users:
+              - name: vagrant
+                smb_username: testuser
+                smb_password: testpass
+          - name: VPN Only Share
+            src: //internal-server.corp/data
+            mount_subpath: vpn/data
+            credentials_name: vpn-corp
+            mount_options:
+              iocharset: utf8
+            depends_on:
+              - Test VPN Company
+            users:
+              - name: vagrant
+                smb_username: testuser
+                smb_password: testpass
+
+        test_networkmanager_sshfs_shares:
+          - name: Remote Dev Server
+            src: devuser@remoteserver:/srv/data
+            dest: /mnt/dev-data
+            user: vagrant
+            depends_on:
+              - Test Ethernet Connection
+
+      networkmanager-debian-trixie:
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_port: 2223
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/networkmanager-debian-trixie/virtualbox/private_key
+
+        # Debian: ethernet only, no WiFi/VPN/SMB/SSHFS
+        test_networkmanager_connections:
+          ethernet:
+            'Test Ethernet Connection':
+              ifname: eth1
+              ip4: 192.168.1.10/24
+              gw4: 192.168.1.1
+              state: present
+              autoconnect: false
+              dhcp_send_hostname_ipv4: true
+              dhcp_send_hostname_ipv6: true
+          wifi: {}
+          vpn: {}
+        test_networkmanager_smb_shares: []
+        test_networkmanager_sshfs_shares: []
+
+      networkmanager-rocky-9:
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_port: 2224
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/networkmanager-rocky-9/virtualbox/private_key
+
+        # Rocky 9: ethernet only, no WiFi/VPN/SMB/SSHFS
+        test_networkmanager_connections:
+          ethernet:
+            'Test Ethernet Connection':
+              ifname: eth1
+              ip4: 192.168.1.10/24
+              gw4: 192.168.1.1
+              state: present
+              autoconnect: false
+              dhcp_send_hostname_ipv4: true
+              dhcp_send_hostname_ipv6: true
+          wifi: {}
+          vpn: {}
+        test_networkmanager_smb_shares: []
+        test_networkmanager_sshfs_shares: []
+
+      networkmanager-rocky-10:
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_port: 2225
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/networkmanager-rocky-10/virtualbox/private_key
+
+        # Rocky 10: ethernet only, no WiFi/VPN/SMB/SSHFS
+        test_networkmanager_connections:
+          ethernet:
+            'Test Ethernet Connection':
+              ifname: eth1
+              ip4: 192.168.1.10/24
+              gw4: 192.168.1.1
+              state: present
+              autoconnect: false
+              dhcp_send_hostname_ipv4: true
+              dhcp_send_hostname_ipv6: true
+          wifi: {}
+          vpn: {}
+        test_networkmanager_smb_shares: []
+        test_networkmanager_sshfs_shares: []
+
+    group_vars:
+      all:
+        ansible_connection: ssh
+        ansible_user: vagrant
+        ansible_host: 127.0.0.1
+        ansible_ssh_common_args: >-
+          -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+
+        # Shared test configuration (all platforms)
+        test_networkmanager_unmanaged_devices:
+          - mac: 00:11:22:33:44:55
+          - ifname: eth99
+          - mac: AA:BB:CC:DD:EE:FF
+
+        test_networkmanager_install_applet: false
+        test_networkmanager_configure_timezone: true
+        test_networkmanager_dns: systemd-resolved
+        test_networkmanager_log_level: WARN
+        test_networkmanager_wifi_powersave: disable
+        test_networkmanager_wifi_scan_rand_mac: false
+        test_networkmanager_dhcp_send_hostname_ipv4: true
+        test_networkmanager_dhcp_send_hostname_ipv6: false
+        test_networkmanager_polkit: true
+        test_networkmanager_polkit_group: wheel
+
+        test_users_list:
+          - name: vagrant
+            home: /home/vagrant
+            group: vagrant
+
+  playbooks:
+    create: create.yml
+    destroy: destroy.yml
+    prepare: prepare.yml
+    converge: converge.yml
+    verify: verify.yml
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy

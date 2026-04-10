@@ -1,0 +1,47 @@
+---
+# =============================================================================
+# Bootloader Configuration Tasks
+# =============================================================================
+
+# =============================================================================
+# GRUB
+# =============================================================================
+
+- name: Set GRUB timeout
+  ansible.builtin.lineinfile:
+    path: '/etc/default/grub'
+    regexp: '^GRUB_TIMEOUT='
+    line: 'GRUB_TIMEOUT={{ base_grub_timeout }}'
+  notify: 'regenerate grub config'
+  when: base_bootloader == 'grub'
+
+- name: Set GRUB default entry
+  ansible.builtin.lineinfile:
+    path: '/etc/default/grub'
+    regexp: '^GRUB_DEFAULT='
+    line: 'GRUB_DEFAULT={{ base_grub_default }}'
+  notify: 'regenerate grub config'
+  when: base_bootloader == 'grub'
+
+- name: Set kernel parameters in GRUB_CMDLINE_LINUX_DEFAULT
+  ansible.builtin.lineinfile:
+    path: '/etc/default/grub'
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="{{ base_kernel_parameters | join(" ") }}"'
+  notify: 'regenerate grub config'
+  when:
+    - base_bootloader == 'grub'
+    - base_kernel_parameters | length > 0
+
+# =============================================================================
+# SYSTEMD-BOOT
+# =============================================================================
+
+- name: Configure systemd-boot loader.conf
+  ansible.builtin.template:
+    src: 'loader.conf.j2'
+    dest: '/boot/loader/loader.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  when: base_bootloader == 'systemd-boot'

@@ -1,0 +1,161 @@
+---
+# =============================================================================
+# rkhunter Configuration - Rootkit Detection
+# =============================================================================
+# Role: marcstraube.common.rkhunter
+# Description: Configure rkhunter for rootkit detection
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+rkhunter_enabled: true
+
+# =============================================================================
+# RKHUNTER CONFIGURATION
+# =============================================================================
+
+# Update signatures on installation
+rkhunter_update_on_install: true
+
+# Database update mirrors (0=any, 1=local only, 2=remote only)
+rkhunter_mirrors_mode: 0
+
+# Rotate mirror list for load balancing (true/false)
+rkhunter_rotate_mirrors: true
+
+# Download command override (empty = auto-detect wget/curl/etc.)
+rkhunter_web_cmd: ''
+
+# Hash function for file property checks (MD5, SHA1, SHA256, SHA384, SHA512, NONE)
+rkhunter_hash_cmd: 'SHA256'
+
+# Email notifications on warnings (empty = disabled)
+rkhunter_mail_on_warning: ''
+
+# Mail command template (used when rkhunter_mail_on_warning is set)
+rkhunter_mail_cmd: 'mail -s "[rkhunter] Warnings found on ${HOST_NAME}"'
+
+# Report warnings only (used by check script)
+rkhunter_report_warnings_only: false
+
+# =============================================================================
+# SSH CHECKS
+# =============================================================================
+
+# Allow SSH root login (unset, yes, no, without-password, forced-commands-only)
+# Should match your sshd_config PermitRootLogin setting
+rkhunter_allow_ssh_root_user: 'no'
+
+# Allow SSH protocol version 1 (0=disallow, 1=allow, 2=don't check)
+rkhunter_allow_ssh_prot_v1: 0
+
+# =============================================================================
+# WHITELISTING
+# =============================================================================
+
+# Allowed hidden directories
+rkhunter_allowhiddendir: []
+
+# Allowed hidden files
+rkhunter_allowhiddenfile: []
+
+# Allowed device files
+rkhunter_allowdevfile: []
+
+# Scripts and binaries to whitelist from script-check test
+rkhunter_scriptwhitelist: []
+
+# Whitelist processes using deleted files (common: /usr/lib/libfoo.so)
+rkhunter_allowprocdelfile: []
+
+# Whitelist processes listening on all interfaces
+rkhunter_allowproclisten: []
+
+# Whitelist shared memory segment PIDs
+rkhunter_allowipcpid: []
+
+# Whitelist shared memory segment users
+rkhunter_allowipcuser: []
+
+# =============================================================================
+# SCANNING OPTIONS
+# =============================================================================
+
+# Enable/disable tests (space-separated)
+rkhunter_enable_tests: 'ALL'
+rkhunter_disable_tests: 'suspscan hidden_ports hidden_procs deleted_files packet_cap_apps apps'
+
+# Directories to scan for suspicious files
+rkhunter_suspscan_dirs:
+  - '/tmp'
+  - '/var/tmp'
+
+# Device scan mode (THOROUGH or LAZY)
+rkhunter_scan_mode_dev: 'THOROUGH'
+
+# Additional files/directories to track for property changes
+rkhunter_user_fileprop_files_dirs:
+  - '/etc/rkhunter.conf'
+
+# Skip inode change reporting (true/false)
+rkhunter_skip_inode_check: false
+
+# Auto-detect X Window display manager (true/false)
+rkhunter_auto_x_detect: true
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+
+# Use syslog for logging
+rkhunter_use_syslog: true
+
+# Syslog facility.priority (e.g., authpriv.warning)
+rkhunter_syslog_facility: 'authpriv.warning'
+
+# Append to log file instead of overwriting (true/false)
+rkhunter_append_log: false
+
+# Copy log with timestamp when warnings found (true/false)
+rkhunter_copy_log_on_error: false
+
+# Log directory
+rkhunter_log_dir: '/var/log'
+
+# =============================================================================
+# OS CHANGE DETECTION
+# =============================================================================
+
+# Warn on OS version change (true/false)
+rkhunter_warn_on_os_change: true
+
+# Auto-update file properties on OS change (true/false)
+rkhunter_updt_on_os_change: false
+
+# =============================================================================
+# LOCKING
+# =============================================================================
+
+# Enable file locking to prevent concurrent runs (true/false)
+rkhunter_use_locking: false
+
+# Lock timeout in seconds
+rkhunter_lock_timeout: 300
+
+# =============================================================================
+# SCHEDULED SCANS (systemd timer)
+# =============================================================================
+
+# Enable systemd timer for scheduled checks
+rkhunter_timer_enabled: true
+
+# Timer schedule (systemd OnCalendar format)
+rkhunter_timer_oncalendar: 'daily'
+
+# Randomized delay for timer (to avoid system load spikes)
+rkhunter_timer_randomized_delay: '1h'
+
+# Update signatures before scan (in check script)
+rkhunter_update_before_scan: true

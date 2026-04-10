@@ -1,0 +1,8 @@
+{{ ansible_managed | comment }}
+#
+# Restic exclude patterns: {{ item.name }}
+#
+
+{% for exclude in item.excludes | default([]) %}
+{{ exclude }}
+{% endfor %}

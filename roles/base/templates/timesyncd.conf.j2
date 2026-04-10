@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+
+[Time]
+{% if base_ntp_servers | length > 0 %}
+NTP={{ base_ntp_servers | join(' ') }}
+{% endif %}
+{% if base_ntp_fallback_servers | length > 0 %}
+FallbackNTP={{ base_ntp_fallback_servers | join(' ') }}
+{% endif %}

@@ -1,0 +1,136 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # =========================================================================
+    # CONFIGURATION FILE VERIFICATION
+    # =========================================================================
+    - name: Verify | Check sysctl config file exists
+      ansible.builtin.stat:
+        path: '/etc/sysctl.d/90-ansible.conf'
+      register: sysctl_config
+      failed_when: not sysctl_config.stat.exists
+
+    - name: Verify | Check sysctl config file permissions
+      ansible.builtin.assert:
+        that:
+          - sysctl_config.stat.mode == '0644'
+          - sysctl_config.stat.pw_name == 'root'
+          - sysctl_config.stat.gr_name == 'root'
+        fail_msg: 'Sysctl config file has incorrect permissions'
+
+    - name: Verify | Read sysctl config file
+      ansible.builtin.slurp:
+        src: '/etc/sysctl.d/90-ansible.conf'
+      register: sysctl_content
+
+    - name: Verify | Decode sysctl config content
+      ansible.builtin.set_fact:
+        __sysctl_config_decoded: '{{ sysctl_content.content | b64decode }}'
+
+    - name: Verify | Check ansible_managed header present
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in __sysctl_config_decoded"
+        fail_msg: 'Ansible managed header missing from sysctl config'
+
+    # =========================================================================
+    # CUSTOM PARAMETERS VERIFICATION
+    # =========================================================================
+    - name: Verify | Check custom parameters in config
+      ansible.builtin.assert:
+        that:
+          - "'vm.swappiness = 10' in __sysctl_config_decoded"
+          - "'net.core.somaxconn = 1024' in __sysctl_config_decoded"
+        fail_msg: 'Custom sysctl parameters not found in config'
+
+    # =========================================================================
+    # SECURITY PROFILE PARAMETERS VERIFICATION
+    # =========================================================================
+    - name: Verify | Check security profile parameters
+      ansible.builtin.assert:
+        that:
+          - "'net.ipv4.ip_forward = 0' in __sysctl_config_decoded"
+          - "'net.ipv6.conf.all.forwarding = 0' in __sysctl_config_decoded"
+          - "'net.ipv4.conf.all.accept_source_route = 0' in __sysctl_config_decoded"
+          - "'net.ipv4.conf.all.accept_redirects = 0' in __sysctl_config_decoded"
+          - "'net.ipv4.conf.all.send_redirects = 0' in __sysctl_config_decoded"
+          - "'net.ipv4.tcp_syncookies = 1' in __sysctl_config_decoded"
+          - "'net.ipv4.conf.all.rp_filter = 1' in __sysctl_config_decoded"
+          - "'net.ipv4.conf.all.log_martians = 1' in __sysctl_config_decoded"
+          - "'net.ipv4.icmp_echo_ignore_broadcasts = 1' in __sysctl_config_decoded"
+          - "'net.ipv6.conf.all.accept_ra = 0' in __sysctl_config_decoded"
+        fail_msg: 'Security profile parameters missing from config'
+
+    # =========================================================================
+    # NETWORK PERFORMANCE PROFILE VERIFICATION
+    # =========================================================================
+    - name: Verify | Check network performance profile parameters
+      ansible.builtin.assert:
+        that:
+          - "'net.core.rmem_max = 16777216' in __sysctl_config_decoded"
+          - "'net.core.wmem_max = 16777216' in __sysctl_config_decoded"
+          - "'net.ipv4.tcp_fastopen = 3' in __sysctl_config_decoded"
+          - "'net.ipv4.tcp_tw_reuse = 1' in __sysctl_config_decoded"
+        fail_msg: 'Network performance profile parameters missing from config'
+
+    # =========================================================================
+    # DROP-IN DIRECTORY VERIFICATION
+    # =========================================================================
+    - name: Verify | Check /etc/sysctl.d directory exists
+      ansible.builtin.stat:
+        path: /etc/sysctl.d
+      register: sysctl_d_dir
+      failed_when: not sysctl_d_dir.stat.exists
+
+    - name: Verify | Check /etc/sysctl.d is a directory
+      ansible.builtin.assert:
+        that:
+          - sysctl_d_dir.stat.isdir
+        fail_msg: '/etc/sysctl.d is not a directory'
+
+    # =========================================================================
+    # NO DUPLICATE KEYS
+    # =========================================================================
+    - name: Verify | Check no duplicate keys in config  # noqa: risky-shell-pipe
+      ansible.builtin.shell:
+        cmd: |
+          grep '^[^#]' /etc/sysctl.d/90-ansible.conf | cut -d= -f1 | sort | uniq -d | wc -l
+        executable: /bin/bash
+      register: duplicate_keys
+      changed_when: false
+      failed_when: duplicate_keys.stdout | int > 0
+
+    # =========================================================================
+    # SYSCTL COMMAND VERIFICATION
+    # =========================================================================
+    - name: Verify | Test sysctl command works
+      ansible.builtin.command:
+        cmd: sysctl -a
+      register: sysctl_all
+      changed_when: false
+      failed_when: sysctl_all.rc != 0
+
+    # =========================================================================
+    # PACKAGE VERIFICATION
+    # =========================================================================
+    - name: Verify | Check procps package installed (Arch)
+      ansible.builtin.command:
+        cmd: pacman -Qi procps-ng
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check procps package installed (Debian)
+      ansible.builtin.command:
+        cmd: dpkg -s procps
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Check procps package installed (RedHat)  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: rpm -q procps-ng
+      changed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'

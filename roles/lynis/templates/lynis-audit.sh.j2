@@ -1,0 +1,53 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+#
+# Lynis Audit Script — executed by lynis-audit.timer
+#
+
+set -euo pipefail
+
+# Rotate old reports
+find {{ lynis_report_dir }} -name "lynis-report-*.dat" -mtime +{{ lynis_keep_reports }} -delete 2>/dev/null || true
+
+# Report file with timestamp
+REPORT_FILE="{{ lynis_report_dir }}/lynis-report-$(date +%Y%m%d-%H%M%S).dat"
+
+echo "Starting Lynis security audit at $(date)"
+echo "======================================="
+
+# Run lynis audit (--cronjob = non-interactive, no colors, no waiting)
+# Exit code 0 = clean, 1 = warnings found (not a failure)
+lynis audit system \
+    --cronjob \
+{% if lynis_auditor | length > 0 %}
+    --auditor '{{ lynis_auditor }}' \
+{% endif %}
+    --log-file {{ lynis_log_file }} \
+    --report-file "${REPORT_FILE}" \
+    || true
+
+EXIT_CODE=0
+{% if lynis_show_hardening_index %}
+
+# Check hardening index
+if [ -f "${REPORT_FILE}" ]; then
+    HARDENING_INDEX=$(grep "hardening_index=" "${REPORT_FILE}" | cut -d'=' -f2 || echo "0")
+    echo "Hardening Index: ${HARDENING_INDEX}"
+
+    if [ "${HARDENING_INDEX}" -lt "{{ lynis_min_hardening_index }}" ]; then
+        echo "WARNING: Hardening index (${HARDENING_INDEX}) is below minimum ({{ lynis_min_hardening_index }})"
+        EXIT_CODE=1
+    fi
+fi
+{% endif %}
+{% if lynis_email_report | length > 0 %}
+
+# Send email report
+if command -v mail &>/dev/null && [ -f "${REPORT_FILE}" ]; then
+    mail -s "Lynis Security Audit Report - $(hostname)" \
+        '{{ lynis_email_report }}' < "${REPORT_FILE}"
+fi
+{% endif %}
+
+echo "Lynis audit finished at $(date)"
+exit ${EXIT_CODE}

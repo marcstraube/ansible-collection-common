@@ -1,0 +1,13 @@
+---
+# =============================================================================
+# AIDE Configuration Tasks
+# =============================================================================
+
+- name: Deploy AIDE configuration
+  ansible.builtin.template:
+    src: 'aide.conf.j2'
+    dest: '{{ __aide_config_file }}'
+    owner: root
+    group: root
+    mode: '0600'
+  notify: Reinitialize AIDE database

@@ -1,0 +1,30 @@
+---
+# =============================================================================
+# NODE.JS - ADDITIONAL PACKAGE MANAGERS
+# =============================================================================
+
+- name: Package Managers | Install pnpm
+  community.general.npm:
+    name: pnpm
+    global: true
+    state: present
+  environment: >-
+    {{
+      {'HTTP_PROXY': nodejs_npm_proxy, 'HTTPS_PROXY': nodejs_npm_proxy}
+      if nodejs_npm_proxy | length > 0
+      else {}
+    }}
+  when: "'pnpm' in nodejs_package_managers"
+
+- name: Package Managers | Install yarn
+  community.general.npm:
+    name: yarn
+    global: true
+    state: present
+  environment: >-
+    {{
+      {'HTTP_PROXY': nodejs_npm_proxy, 'HTTPS_PROXY': nodejs_npm_proxy}
+      if nodejs_npm_proxy | length > 0
+      else {}
+    }}
+  when: "'yarn' in nodejs_package_managers"

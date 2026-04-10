@@ -1,0 +1,160 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Check unbound is installed
+      ansible.builtin.command:
+        cmd: 'unbound -V'
+      register: __verify_unbound_version
+      changed_when: false
+      failed_when: __verify_unbound_version.rc != 0
+
+    - name: Verify | Check config file exists
+      ansible.builtin.stat:
+        path: '/etc/unbound/unbound.conf'
+      register: __verify_config_file
+      failed_when: not __verify_config_file.stat.exists
+
+    - name: Verify | Check config file permissions
+      ansible.builtin.assert:
+        that:
+          - __verify_config_file.stat.mode == '0640'
+        fail_msg: 'Config file should be mode 0640'
+
+    - name: Verify | Check config syntax
+      ansible.builtin.command:
+        cmd: 'unbound-checkconf /etc/unbound/unbound.conf'
+      register: __verify_config_check
+      changed_when: false
+      failed_when: __verify_config_check.rc != 0
+
+    - name: Verify | Read main config
+      ansible.builtin.slurp:
+        src: '/etc/unbound/unbound.conf'
+      register: __verify_main_config
+
+    - name: Verify | Check ansible_managed header
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in __verify_main_config.content | b64decode"
+        fail_msg: 'Config must have ansible_managed header'
+
+    - name: Verify | Check security directives in config
+      ansible.builtin.assert:
+        that:
+          - "'harden-glue: yes' in __verify_main_config.content | b64decode"
+          - "'harden-dnssec-stripped: yes' in __verify_main_config.content | b64decode"
+          - "'harden-below-nxdomain: yes' in __verify_main_config.content | b64decode"
+          - "'harden-large-queries: yes' in __verify_main_config.content | b64decode"
+          - "'harden-algo-downgrade: yes' in __verify_main_config.content | b64decode"
+          - "'hide-identity: yes' in __verify_main_config.content | b64decode"
+          - "'hide-version: yes' in __verify_main_config.content | b64decode"
+          - "'use-caps-for-id: yes' in __verify_main_config.content | b64decode"
+          - "'val-clean-additional: yes' in __verify_main_config.content | b64decode"
+        fail_msg: 'Security directives not properly configured'
+
+    - name: Verify | Check performance directives in config
+      ansible.builtin.assert:
+        that:
+          - "'serve-expired: yes' in __verify_main_config.content | b64decode"
+          - "'serve-expired-ttl: 3600' in __verify_main_config.content | b64decode"
+          - "'rrset-roundrobin: yes' in __verify_main_config.content | b64decode"
+          - "'minimal-responses: yes' in __verify_main_config.content | b64decode"
+          - "'edns-buffer-size: 1232' in __verify_main_config.content | b64decode"
+        fail_msg: 'Performance directives not properly configured'
+
+    - name: Verify | Check privacy directives in config
+      ansible.builtin.assert:
+        that:
+          - "'qname-minimisation: yes' in __verify_main_config.content | b64decode"
+          - "'aggressive-nsec: yes' in __verify_main_config.content | b64decode"
+          - "'tcp-upstream: no' in __verify_main_config.content | b64decode"
+        fail_msg: 'Privacy directives not properly configured'
+
+    - name: Verify | Check TLS upstream in config
+      ansible.builtin.assert:
+        that:
+          - "'tls-cert-bundle' in __verify_main_config.content | b64decode"
+        fail_msg: 'TLS cert bundle not configured'
+
+    - name: Verify | Check private domains in config
+      ansible.builtin.assert:
+        that:
+          - "'private-domain: \"internal.example.com\"' in __verify_main_config.content | b64decode"
+        fail_msg: 'Private domains not configured'
+
+    - name: Verify | Check insecure domains in config
+      ansible.builtin.assert:
+        that:
+          - "'domain-insecure: \"test.example.com\"' in __verify_main_config.content | b64decode"
+        fail_msg: 'Insecure domains not configured'
+
+    - name: Verify | Check conf.d directory exists
+      ansible.builtin.stat:
+        path: '/etc/unbound/conf.d'
+      register: __verify_conf_d
+      failed_when: not __verify_conf_d.stat.isdir
+
+    - name: Verify | Check local zones config exists
+      ansible.builtin.stat:
+        path: '/etc/unbound/conf.d/10-local-zones.conf'
+      register: __verify_local_zones
+      failed_when: not __verify_local_zones.stat.exists
+
+    - name: Verify | Read local zones config
+      ansible.builtin.slurp:
+        src: '/etc/unbound/conf.d/10-local-zones.conf'
+      register: __verify_local_zones_content
+
+    - name: Verify | Check local data is configured
+      ansible.builtin.assert:
+        that:
+          - "'test.local' in __verify_local_zones_content.content | b64decode"
+          - "'192.168.1.100' in __verify_local_zones_content.content | b64decode"
+        fail_msg: 'Local data not found in configuration'
+
+    - name: Verify | Check PTR records in local zones
+      ansible.builtin.assert:
+        that:
+          - "'local-data-ptr' in __verify_local_zones_content.content | b64decode"
+        fail_msg: 'PTR records not found in local zones'
+
+    - name: Verify | Check forward zones config exists
+      ansible.builtin.stat:
+        path: '/etc/unbound/conf.d/90-forward-zones.conf'
+      register: __verify_forward_zones
+      failed_when: not __verify_forward_zones.stat.exists
+
+    - name: Verify | Read forward zones config
+      ansible.builtin.slurp:
+        src: '/etc/unbound/conf.d/90-forward-zones.conf'
+      register: __verify_forward_zones_content
+
+    - name: Verify | Check forward zone configuration
+      ansible.builtin.assert:
+        that:
+          - "'example.com' in __verify_forward_zones_content.content | b64decode"
+          - "'forward-tls-upstream: yes' in __verify_forward_zones_content.content | b64decode"
+          - "'1.1.1.1' in __verify_forward_zones_content.content | b64decode"
+        fail_msg: 'Forward zones not properly configured'
+
+    - name: Verify | Check ansible_managed in local zones
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in __verify_local_zones_content.content | b64decode"
+        fail_msg: 'Local zones config must have ansible_managed header'
+
+    - name: Verify | Check ansible_managed in forward zones
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in __verify_forward_zones_content.content | b64decode"
+        fail_msg: 'Forward zones config must have ansible_managed header'
+
+    - name: Verify | Check unbound service is running
+      ansible.builtin.systemd:
+        name: 'unbound'
+      register: __verify_service_status
+      failed_when: __verify_service_status.status.ActiveState != 'active'

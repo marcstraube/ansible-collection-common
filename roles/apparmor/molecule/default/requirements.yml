@@ -1,0 +1,4 @@
+---
+# marcstraube.common.apparmor/molecule/default/requirements.yml
+
+roles: []

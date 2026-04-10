@@ -1,0 +1,25 @@
+---
+# =============================================================================
+# Directory Setup Tasks
+# =============================================================================
+
+- name: Directories | Ensure certificate directories exist
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - '{{ pki_certs_dir }}'
+    - '{{ pki_csr_dir }}'
+  when: pki_create_dirs | bool
+
+- name: Directories | Ensure private key directory exists
+  ansible.builtin.file:
+    path: '{{ pki_private_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '{{ pki_private_dir_mode }}'
+  when: pki_create_dirs | bool

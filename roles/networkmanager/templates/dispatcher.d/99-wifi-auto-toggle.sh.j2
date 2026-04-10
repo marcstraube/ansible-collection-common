@@ -1,0 +1,31 @@
+#jinja2:lstrip_blocks: True
+#!/bin/sh
+{{ ansible_managed | comment }}
+
+# This script will automatically toggle wireless depending on an defined established ethernet connection
+# Connection details are defined in Ansible variable 'networkmanager_connections'
+
+LOG_PREFIX="NM-WiFi-Toggle"
+
+{% if network_connections_data.ethernet is defined %}
+
+# NM_UUID is provided by NetworkManager dispatcher.
+
+  {% for conn_name, conn_details in network_connections_data.ethernet.items() %}
+    {% if conn_details.toggle_wifi is defined and conn_details.toggle_wifi %}
+# Check if the current connection is {{ conn_name }} (UUID: {{ conn_details.uuid }})
+if [ "$NM_UUID" = "{{ conn_details.uuid }}" ]; then
+  case "$2" in
+    up)
+      echo "$LOG_PREFIX for connection '{{ conn_name }}': ethernet up"
+      nmcli radio wifi off
+      ;;
+    down)
+      echo "$LOG_PREFIX for connection '{{ conn_name }}': ethernet down"
+      nmcli radio wifi on
+      ;;
+  esac
+fi
+    {% endif %}
+  {% endfor %}
+{% endif %}

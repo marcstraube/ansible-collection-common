@@ -1,0 +1,37 @@
+---
+# =============================================================================
+# Chrony - Configuration Tasks
+# =============================================================================
+
+- name: Configure | Create log directory
+  ansible.builtin.file:
+    path: '{{ chrony_log_dir }}'
+    state: directory
+    owner: '{{ __chrony_user }}'
+    group: '{{ __chrony_group }}'
+    mode: '0750'
+
+- name: Configure | Deploy chrony configuration
+  ansible.builtin.template:
+    src: 'chrony.conf.j2'
+    dest: '{{ __chrony_config_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart chrony
+
+- name: Configure | Generate NTP authentication key  # noqa: risky-shell-pipe
+  ansible.builtin.shell:
+    cmd: 'chronyc keygen 1 SHA256 256 > {{ chrony_keys_file }}'
+    creates: '{{ chrony_keys_file }}'
+  when: chrony_generate_keys | bool
+
+- name: Configure | Set key file permissions
+  ansible.builtin.file:
+    path: '{{ chrony_keys_file }}'
+    owner: root
+    group: '{{ __chrony_group }}'
+    mode: '0640'
+  when:
+    - chrony_generate_keys | bool
+    - chrony_keys_file | length > 0

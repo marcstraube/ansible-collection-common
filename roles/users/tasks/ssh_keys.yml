@@ -1,0 +1,37 @@
+---
+# =============================================================================
+# SSH Keys Tasks
+# =============================================================================
+
+- name: Add SSH authorized keys
+  ansible.posix.authorized_key:
+    user: '{{ item.name }}'
+    key: "{{ item.ssh_keys | join('\n') }}"
+    state: present
+    exclusive: '{{ item.ssh_keys_exclusive | default(false) }}'
+    path: >-
+      {{ item.home | default(users_default_home_base + "/" + item.name) }}/{{
+        users_ssh_authorized_keys_dir }}/{{ users_ssh_authorized_keys_file }}
+    manage_dir: false
+  loop: '{{ users_list | selectattr("ssh_keys", "defined") | list }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - item.state | default('present') == 'present'
+    - item.ssh_keys | length > 0
+
+- name: Set authorized_keys file permissions
+  ansible.builtin.file:
+    path: >-
+      {{ item.home | default(users_default_home_base + "/" + item.name) }}/{{
+        users_ssh_authorized_keys_dir }}/{{ users_ssh_authorized_keys_file }}
+    owner: '{{ item.name }}'
+    group: '{{ item.group | default(item.name) }}'
+    mode: '{{ users_ssh_authorized_keys_mode }}'
+  loop: '{{ users_list }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - item.state | default('present') == 'present'
+    - item.ssh_keys is defined
+    - item.ssh_keys | length > 0

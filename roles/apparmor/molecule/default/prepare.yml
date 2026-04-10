@@ -1,0 +1,68 @@
+---
+# marcstraube.common.apparmor/molecule/default/prepare.yml
+
+- name: Prepare instances
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Install Python 3 (Debian)
+      ansible.builtin.raw: apt-get update && apt-get install -y python3
+      changed_when: false
+      when: inventory_hostname == 'apparmor-debian'
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Initialize pacman keyring (Arch Linux)
+      ansible.builtin.raw: |
+        pacman-key --init
+        pacman-key --populate archlinux
+      when: ansible_facts['os_family'] == 'Archlinux'
+      changed_when: false
+
+    - name: Update archlinux-keyring first (Arch Linux)
+      community.general.pacman:
+        name:
+          - archlinux-keyring
+        state: latest
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+      retries: 3
+      delay: 10
+      register: keyring_update
+      until: keyring_update is succeeded
+
+    - name: Full system update (Arch Linux)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+      retries: 3
+      delay: 10
+      register: system_update
+      until: system_update is succeeded
+
+    - name: Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Ensure GRUB is installed (Arch Linux)
+      community.general.pacman:
+        name: grub
+        state: present
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Ensure /etc/default/grub exists (Arch Linux)
+      ansible.builtin.copy:
+        dest: /etc/default/grub
+        content: |
+          GRUB_DEFAULT=0
+          GRUB_TIMEOUT=5
+          GRUB_DISTRIBUTOR="Arch"
+          GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+          GRUB_CMDLINE_LINUX=""
+        mode: "0644"
+        force: false
+      when: ansible_facts['os_family'] == 'Archlinux'

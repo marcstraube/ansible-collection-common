@@ -1,0 +1,21 @@
+---
+# =============================================================================
+# GnuPG Installation
+# =============================================================================
+
+- name: Install | GnuPG packages
+  ansible.builtin.package:
+    name: '{{ __gnupg_packages }}'
+    state: present
+
+- name: Install | Additional tools
+  ansible.builtin.package:
+    name: '{{ __gnupg_tools_packages }}'
+    state: present
+  when: gnupg_install_tools | default(true) | bool
+
+- name: Install | GUI packages
+  ansible.builtin.package:
+    name: '{{ __gnupg_gui_packages }}'
+    state: present
+  when: gnupg_install_gui | default(false) | bool

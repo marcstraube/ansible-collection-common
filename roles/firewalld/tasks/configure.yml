@@ -1,0 +1,295 @@
+---
+# =============================================================================
+# Firewalld - Configuration Tasks
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Ensure firewalld is running for configuration
+# -----------------------------------------------------------------------------
+
+- name: Configure | Start firewalld for configuration
+  ansible.builtin.systemd:
+    name: '{{ __firewalld_service_name }}'
+    state: started
+
+# -----------------------------------------------------------------------------
+# Version Detection (for firewalld.conf conditionals)
+# -----------------------------------------------------------------------------
+
+- name: Configure | Get firewalld version
+  ansible.builtin.command:
+    cmd: firewall-cmd --version
+  register: __firewalld_version_output
+  changed_when: false
+
+- name: Configure | Set version facts
+  ansible.builtin.set_fact:
+    __firewalld_version: '{{ __firewalld_version_output.stdout | trim }}'
+    __firewalld_ipv6_rpfilter_legacy: >-
+      {{ (__firewalld_version_output.stdout | trim) is version('2.0.0', '<') }}
+
+# -----------------------------------------------------------------------------
+# Global Configuration (firewalld.conf)
+# -----------------------------------------------------------------------------
+
+- name: Configure | Deploy firewalld.conf
+  ansible.builtin.template:
+    src: 'firewalld.conf.j2'
+    dest: '{{ __firewalld_config_dir }}/firewalld.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart firewalld
+
+# -----------------------------------------------------------------------------
+# Zone Management
+# -----------------------------------------------------------------------------
+
+- name: Configure | Create custom zones
+  ansible.posix.firewalld:
+    zone: '{{ item.name }}'
+    state: present
+    permanent: true
+  loop: '{{ firewalld_zones }}'
+  loop_control:
+    label: '{{ item.name }}'
+  notify: Reload firewalld
+
+- name: Configure | Flush handlers for zone availability
+  ansible.builtin.meta: flush_handlers
+
+- name: Configure | Get current zone targets
+  ansible.builtin.command:
+    cmd: 'firewall-cmd --permanent --zone={{ item.name }} --get-target'
+  loop: '{{ firewalld_zones | selectattr("target", "defined") | list }}'
+  loop_control:
+    label: '{{ item.name }}'
+  register: __firewalld_zone_targets
+  changed_when: false
+
+- name: Configure | Set zone targets
+  ansible.builtin.command:
+    cmd: >-
+      firewall-cmd --permanent
+      --zone={{ item.item.name }}
+      --set-target={{ item.item.target }}
+  loop: '{{ __firewalld_zone_targets.results }}'
+  loop_control:
+    label: '{{ item.item.name }}: {{ item.item.target }}'
+  when: (item.stdout | trim) != item.item.target
+  changed_when: true
+  notify: Reload firewalld
+
+# -----------------------------------------------------------------------------
+# Default Zone
+# -----------------------------------------------------------------------------
+
+- name: Configure | Get current default zone
+  ansible.builtin.command:
+    cmd: firewall-cmd --get-default-zone
+  register: __firewalld_current_zone
+  changed_when: false
+
+- name: Configure | Set default zone
+  ansible.builtin.command:
+    cmd: 'firewall-cmd --set-default-zone={{ firewalld_default_zone }}'
+  when: (__firewalld_current_zone.stdout | trim) != firewalld_default_zone
+  changed_when: true
+
+# -----------------------------------------------------------------------------
+# Custom Services
+# -----------------------------------------------------------------------------
+
+- name: Configure | Create custom service files
+  ansible.builtin.template:
+    src: 'service.xml.j2'
+    dest: '{{ __firewalld_config_dir }}/services/{{ item.name }}.xml'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ firewalld_custom_services }}'
+  loop_control:
+    label: '{{ item.name }}'
+  notify: Reload firewalld
+
+# -----------------------------------------------------------------------------
+# Services - Default Zone
+# -----------------------------------------------------------------------------
+
+- name: Configure | Enable services in default zone
+  ansible.posix.firewalld:
+    service: '{{ item }}'
+    zone: '{{ firewalld_default_zone }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_services }}'
+
+- name: Configure | Disable services
+  ansible.posix.firewalld:
+    service: '{{ item }}'
+    zone: '{{ firewalld_default_zone }}'
+    state: disabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_services_disabled }}'
+
+# -----------------------------------------------------------------------------
+# Services - Per Zone
+# -----------------------------------------------------------------------------
+
+- name: Configure | Enable services per zone
+  ansible.posix.firewalld:
+    service: '{{ item.1 }}'
+    zone: '{{ item.0.zone }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_zone_services | subelements("services") }}'
+  loop_control:
+    label: '{{ item.0.zone }}: {{ item.1 }}'
+
+# -----------------------------------------------------------------------------
+# Ports - Default Zone
+# -----------------------------------------------------------------------------
+
+- name: Configure | Open ports in default zone
+  ansible.posix.firewalld:
+    port: '{{ item }}'
+    zone: '{{ firewalld_default_zone }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_ports }}'
+
+# -----------------------------------------------------------------------------
+# Ports - Per Zone
+# -----------------------------------------------------------------------------
+
+- name: Configure | Open ports per zone
+  ansible.posix.firewalld:
+    port: '{{ item.1 }}'
+    zone: '{{ item.0.zone }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_zone_ports | subelements("ports") }}'
+  loop_control:
+    label: '{{ item.0.zone }}: {{ item.1 }}'
+
+# -----------------------------------------------------------------------------
+# Rich Rules
+# -----------------------------------------------------------------------------
+
+- name: Configure | Add rich rules
+  ansible.posix.firewalld:
+    rich_rule: '{{ item.rule }}'
+    zone: '{{ item.zone | default(firewalld_default_zone) }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_rich_rules }}'
+  loop_control:
+    label: '{{ item.zone | default(firewalld_default_zone) }}: {{ item.rule | truncate(50) }}'
+
+# -----------------------------------------------------------------------------
+# Source-Based Routing
+# -----------------------------------------------------------------------------
+
+- name: Configure | Assign sources to zones
+  ansible.posix.firewalld:
+    source: '{{ item.source }}'
+    zone: '{{ item.zone }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_sources }}'
+  loop_control:
+    label: '{{ item.zone }}: {{ item.source }}'
+
+# -----------------------------------------------------------------------------
+# Interface Assignment
+# -----------------------------------------------------------------------------
+
+- name: Configure | Assign interfaces to zones
+  ansible.posix.firewalld:
+    interface: '{{ item.interface }}'
+    zone: '{{ item.zone }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_interfaces }}'
+  loop_control:
+    label: '{{ item.zone }}: {{ item.interface }}'
+
+# -----------------------------------------------------------------------------
+# Port Forwarding
+# -----------------------------------------------------------------------------
+
+- name: Configure | Add port forwards
+  ansible.posix.firewalld:
+    port_forward:
+      - port: '{{ item.port.split("/")[0] }}'
+        proto: '{{ item.port.split("/")[1] }}'
+        toport: '{{ item.to_port }}'
+        toaddr: '{{ item.to_addr | default(omit) }}'
+    zone: '{{ item.zone | default(firewalld_default_zone) }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_forwards }}'
+  loop_control:
+    label: '{{ item.port }} -> {{ item.to_port }}'
+  when: firewalld_forwards | length > 0
+
+# -----------------------------------------------------------------------------
+# Masquerading
+# -----------------------------------------------------------------------------
+
+- name: Configure | Enable masquerading per zone
+  ansible.posix.firewalld:
+    masquerade: true
+    zone: '{{ item.zone }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_masquerade }}'
+  loop_control:
+    label: '{{ item.zone }}'
+  when: item.enabled | default(true) | bool
+
+# -----------------------------------------------------------------------------
+# ICMP Blocks
+# -----------------------------------------------------------------------------
+
+- name: Configure | Add ICMP blocks
+  ansible.posix.firewalld:
+    icmp_block: '{{ item.1 }}'
+    zone: '{{ item.0.zone | default(firewalld_default_zone) }}'
+    state: enabled
+    permanent: true
+    immediate: true
+  loop: '{{ firewalld_icmp_blocks | subelements("icmp_types") }}'
+  loop_control:
+    label: '{{ item.0.zone | default(firewalld_default_zone) }}: {{ item.1 }}'
+
+# -----------------------------------------------------------------------------
+# Direct Rules (deprecated in firewalld 2.x)
+# -----------------------------------------------------------------------------
+
+- name: Configure | Add direct rules
+  ansible.builtin.command:
+    cmd: >-
+      firewall-cmd --permanent --direct --add-rule
+      {{ item.family }} {{ item.table }} {{ item.chain }}
+      {{ item.priority }} {{ item.rule }}
+  loop: '{{ firewalld_direct_rules }}'
+  loop_control:
+    label: '{{ item.family }}/{{ item.table }}/{{ item.chain }}: {{ item.rule | truncate(40) }}'
+  register: __firewalld_direct_rule
+  changed_when: "'ALREADY_ENABLED' not in __firewalld_direct_rule.stderr"
+  failed_when:
+    - __firewalld_direct_rule.rc != 0
+    - "'ALREADY_ENABLED' not in __firewalld_direct_rule.stderr"
+  notify: Reload firewalld
+  when: firewalld_direct_rules | length > 0

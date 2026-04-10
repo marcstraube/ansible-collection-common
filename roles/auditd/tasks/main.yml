@@ -1,0 +1,72 @@
+---
+# =============================================================================
+# Auditd Main Tasks
+# =============================================================================
+
+- name: Warn if email notifications use default address
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: auditd_email_address is set to '{{ auditd_email_address }}'.
+      Set a real email address in your vars for production alerting.
+  when:
+    - auditd_email_enabled | bool
+    - auditd_email_address == 'root'
+  tags: [auditd]
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags: [auditd]
+
+- name: Main | Include BTRFS tasks
+  ansible.builtin.include_tasks:
+    file: btrfs.yml
+    apply:
+      tags: [auditd, auditd:install]
+  when:
+    - auditd_enabled | bool
+    - auditd_btrfs_subvolume | bool
+  tags: [auditd, auditd:install]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: auditd_enabled | bool
+  tags: [auditd, auditd:install]
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: auditd_enabled | bool
+  tags: [auditd, auditd:configure]
+
+- name: Main | Import rules tasks
+  ansible.builtin.import_tasks: rules.yml
+  when:
+    - auditd_enabled | bool
+    - auditd_rules_enabled | bool
+  tags: [auditd, auditd:rules]
+
+- name: Main | Import remote tasks
+  ansible.builtin.import_tasks: remote.yml
+  when:
+    - auditd_enabled | bool
+    - auditd_remote_logging | bool
+  tags: [auditd, auditd:remote]
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  when: auditd_enabled | bool
+  tags: [auditd, auditd:service]
+
+- name: Main | Include firewall tasks
+  ansible.builtin.include_tasks:
+    file: firewall.yml
+    apply:
+      tags: [auditd, auditd:firewall]
+  when: auditd_firewalld_enabled | default(false) | bool
+  tags: [auditd, auditd:firewall]

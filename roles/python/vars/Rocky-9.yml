@@ -1,0 +1,13 @@
+---
+__python_packages:
+  - 'python3'
+  - 'python3.12'
+
+__python_pip_packages:
+  - 'python3.12-pip'
+
+__python_pipx_packages: []
+
+__python_bootstrap_pipx: true
+
+__python_venv_command: 'python3.12 -m venv'

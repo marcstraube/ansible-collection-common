@@ -1,0 +1,186 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # Package and Service
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Check firewalld package is installed
+      ansible.builtin.package:
+        name: firewalld
+        state: present
+      check_mode: true
+      register: __verify_pkg
+      failed_when: __verify_pkg.changed
+
+    - name: Verify | Check firewalld service is running
+      ansible.builtin.systemd:
+        name: firewalld
+      register: __verify_svc
+      failed_when: __verify_svc.status.ActiveState != 'active'
+
+    - name: Verify | Check firewalld service is enabled
+      ansible.builtin.systemd:
+        name: firewalld
+      register: __verify_svc_enabled
+      failed_when: __verify_svc_enabled.status.UnitFileState != 'enabled'
+
+    # -------------------------------------------------------------------------
+    # firewalld.conf
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Check firewalld.conf exists
+      ansible.builtin.stat:
+        path: /etc/firewalld/firewalld.conf
+      register: __verify_conf
+      failed_when: not __verify_conf.stat.exists
+
+    - name: Verify | Check firewalld.conf contains ansible_managed
+      ansible.builtin.command:
+        cmd: grep -c 'Ansible managed' /etc/firewalld/firewalld.conf
+      register: __verify_conf_managed
+      changed_when: false
+      failed_when: __verify_conf_managed.rc != 0
+
+    - name: Verify | Check LogDenied setting in config
+      ansible.builtin.command:
+        cmd: grep -c 'LogDenied=all' /etc/firewalld/firewalld.conf
+      register: __verify_conf_log
+      changed_when: false
+      failed_when: __verify_conf_log.rc != 0
+
+    # -------------------------------------------------------------------------
+    # Default Zone
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Check default zone is public
+      ansible.builtin.command:
+        cmd: firewall-cmd --get-default-zone
+      register: __verify_zone
+      changed_when: false
+      failed_when: __verify_zone.stdout != 'public'
+
+    # -------------------------------------------------------------------------
+    # Services
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Check SSH service is enabled
+      ansible.builtin.command:
+        cmd: firewall-cmd --query-service=ssh
+      register: __verify_ssh
+      changed_when: false
+      failed_when: __verify_ssh.rc != 0
+
+    - name: Verify | Check HTTP service is enabled
+      ansible.builtin.command:
+        cmd: firewall-cmd --query-service=http
+      register: __verify_http
+      changed_when: false
+      failed_when: __verify_http.rc != 0
+
+    # -------------------------------------------------------------------------
+    # Ports
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Check port 8080/tcp is open
+      ansible.builtin.command:
+        cmd: firewall-cmd --query-port=8080/tcp
+      register: __verify_port
+      changed_when: false
+      failed_when: __verify_port.rc != 0
+
+    # -------------------------------------------------------------------------
+    # Rich Rules
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Check rich rule is active
+      ansible.builtin.command:
+        cmd: firewall-cmd --list-rich-rules
+      register: __verify_rich
+      changed_when: false
+      failed_when: "'10.0.0.0/8' not in __verify_rich.stdout"
+
+    # -------------------------------------------------------------------------
+    # Sources
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Check source is assigned to trusted zone
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=trusted --list-sources
+      register: __verify_source
+      changed_when: false
+      failed_when: "'192.168.1.0/24' not in __verify_source.stdout"
+
+    # -------------------------------------------------------------------------
+    # Custom Services
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Check custom service file exists
+      ansible.builtin.stat:
+        path: /etc/firewalld/services/myapp.xml
+      register: __verify_custom_svc
+      failed_when: not __verify_custom_svc.stat.exists
+
+    - name: Verify | Check custom service file contains ansible_managed
+      ansible.builtin.command:
+        cmd: grep -c 'Ansible managed' /etc/firewalld/services/myapp.xml
+      register: __verify_custom_managed
+      changed_when: false
+      failed_when: __verify_custom_managed.rc != 0
+
+    - name: Verify | Check custom service XML contains source-port
+      ansible.builtin.command:
+        cmd: grep -c 'source-port' /etc/firewalld/services/myapp.xml
+      register: __verify_custom_srcport
+      changed_when: false
+      failed_when: __verify_custom_srcport.rc != 0
+
+    # -------------------------------------------------------------------------
+    # Purge
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Get public zone services
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --list-services --permanent
+      register: __verify_purge
+      changed_when: false
+
+    - name: Verify | Assert only configured services remain after purge
+      ansible.builtin.assert:
+        that:
+          - "'ssh' in __verify_purge.stdout.split()"
+          - "'http' in __verify_purge.stdout.split()"
+          - "'dhcpv6-client' not in __verify_purge.stdout.split()"
+        fail_msg: >-
+          Public zone has unexpected services: {{ __verify_purge.stdout }}.
+          Expected only ssh and http after purge.
+
+    # -------------------------------------------------------------------------
+    # Version-conditional checks (firewalld 2.x+)
+    # -------------------------------------------------------------------------
+
+    - name: Verify | Get firewalld version
+      ansible.builtin.command:
+        cmd: firewall-cmd --version
+      register: __verify_version
+      changed_when: false
+
+    - name: Verify | Check 2.x-only directives present in config
+      ansible.builtin.command:
+        cmd: grep -c 'NftablesCounters' /etc/firewalld/firewalld.conf
+      register: __verify_nft_counters
+      changed_when: false
+      failed_when: __verify_nft_counters.rc != 0
+      when: (__verify_version.stdout | trim) is version('2.0.0', '>=')
+
+    - name: Verify | Check 2.x-only directives absent on 1.x
+      ansible.builtin.command:
+        cmd: grep -c 'NftablesCounters' /etc/firewalld/firewalld.conf
+      register: __verify_no_nft_counters
+      changed_when: false
+      failed_when: __verify_no_nft_counters.rc == 0
+      when: (__verify_version.stdout | trim) is version('2.0.0', '<')

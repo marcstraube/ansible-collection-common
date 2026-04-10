@@ -1,0 +1,16 @@
+---
+# =============================================================================
+# Firejail Handlers
+# =============================================================================
+
+- name: Firecfg clean
+  ansible.builtin.command:
+    cmd: firecfg --clean
+  listen: apply firecfg
+  changed_when: true
+
+- name: Firecfg apply
+  ansible.builtin.command:
+    cmd: firecfg
+  listen: apply firecfg
+  changed_when: true

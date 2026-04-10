@@ -1,0 +1,135 @@
+{{ ansible_managed | comment }}
+#
+# Podman Containers Configuration
+# See containers.conf(5) for details.
+#
+# Config precedence: /usr/share/containers/ -> /etc/containers/ -> $HOME/.config/containers/
+
+[containers]
+{% if podman_apparmor_profile %}
+# AppArmor profile for containers
+apparmor_profile = "{{ podman_apparmor_profile }}"
+{% endif %}
+
+# Default capabilities
+default_capabilities = [
+{% for cap in podman_default_capabilities %}
+  "{{ cap }}",
+{% endfor %}
+]
+
+# Default sysctls
+default_sysctls = [
+{% for sysctl in podman_default_sysctls %}
+  "{{ sysctl }}",
+{% endfor %}
+]
+
+# Default ulimits
+default_ulimits = [
+{% for name, value in podman_default_ulimits.items() %}
+  "{{ name }}={{ value }}",
+{% endfor %}
+]
+{% if podman_cgroupns != 'private' %}
+
+# Cgroup namespace mode
+cgroupns = "{{ podman_cgroupns }}"
+{% endif %}
+{% if podman_http_proxy %}
+
+# Pass proxy environment variables to containers
+http_proxy = true
+{% endif %}
+{% if podman_init %}
+
+# Run init process in containers
+init = true
+{% endif %}
+
+# Container SELinux/MAC separation
+label = {{ podman_label | lower }}
+
+# Logging
+log_driver = "{{ podman_log_driver }}"
+{% if podman_log_size_max != -1 %}
+log_size_max = {{ podman_log_size_max }}
+{% endif %}
+
+# Process limits
+pids_limit = {{ podman_default_pids_limit }}
+
+# Security - seccomp profile
+{% if podman_seccomp_enabled %}
+seccomp_profile = "{{ podman_seccomp_profile }}"
+{% else %}
+seccomp_profile = ""
+{% endif %}
+{% if podman_tz %}
+
+# Container timezone
+tz = "{{ podman_tz }}"
+{% endif %}
+
+# User namespace mode
+userns = "{{ podman_userns_mode }}"
+
+[network]
+# Network backend
+network_backend = "{{ podman_network_backend }}"
+
+# Firewall driver
+firewall_driver = "{{ podman_firewall_driver }}"
+
+# Default subnet
+default_subnet = "{{ podman_default_subnet }}"
+{% if podman_dns_bind_port != 53 %}
+
+# DNS bind port for aardvark-dns
+dns_bind_port = {{ podman_dns_bind_port }}
+{% endif %}
+{% if podman_dns_servers | length > 0 %}
+
+# DNS servers for containers
+dns_servers = [{% for dns in podman_dns_servers %}"{{ dns }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+{% endif %}
+{% if podman_rootless_network_cmd != 'pasta' %}
+
+# Default rootless network command
+default_rootless_network_cmd = "{{ podman_rootless_network_cmd }}"
+{% endif %}
+{% if podman_pasta_options | length > 0 %}
+
+# Pasta options for rootless networking
+pasta_options = [{% for opt in podman_pasta_options %}"{{ opt }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+{% endif %}
+
+[engine]
+# OCI runtime
+runtime = "{{ podman_runtime }}"
+
+# Cgroup manager
+cgroup_manager = "{{ podman_cgroup_manager }}"
+{% if podman_compression_format != 'gzip' %}
+
+# Compression format for image push
+compression_format = "{{ podman_compression_format }}"
+{% endif %}
+{% if podman_database_backend %}
+
+# Database backend
+database_backend = "{{ podman_database_backend }}"
+{% endif %}
+
+# Events logger
+events_logger = "{{ podman_events_logger }}"
+{% if podman_image_format != 'oci' %}
+
+# Image default format
+image_default_format = "{{ podman_image_format }}"
+{% endif %}
+{% if podman_retry != 3 %}
+
+# Retry count for pulling/pushing images
+retry = {{ podman_retry }}
+{% endif %}

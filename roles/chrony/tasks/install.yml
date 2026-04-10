@@ -1,0 +1,19 @@
+---
+# =============================================================================
+# Chrony - Installation Tasks
+# =============================================================================
+
+- name: Install | Chrony packages
+  ansible.builtin.package:
+    name: '{{ __chrony_packages }}'
+    state: present
+
+- name: Install | Disable conflicting NTP services
+  ansible.builtin.systemd:
+    name: '{{ item }}'
+    enabled: false
+    state: stopped
+  loop:
+    - 'ntpd'
+    - 'systemd-timesyncd'
+  failed_when: false

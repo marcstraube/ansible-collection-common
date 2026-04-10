@@ -1,0 +1,55 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags: [openssh]
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  tags: [openssh, openssh:install]
+
+- name: Main | Import hostkeys tasks
+  ansible.builtin.import_tasks: hostkeys.yml
+  tags: [openssh, openssh:hostkeys]
+
+- name: Main | Import moduli tasks
+  ansible.builtin.import_tasks: moduli.yml
+  when: openssh_server_harden_moduli | bool
+  tags: [openssh, openssh:configure]
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  tags: [openssh, openssh:configure]
+
+- name: Main | Import client tasks
+  ansible.builtin.import_tasks: client.yml
+  when: openssh_client_enabled | bool
+  tags: [openssh, openssh:client]
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  tags: [openssh, openssh:service]
+
+- name: Main | Include firewall tasks
+  ansible.builtin.include_tasks:
+    file: firewall.yml
+    apply:
+      tags: [openssh, openssh:firewall]
+  when: openssh_firewalld_enabled | default(false) | bool
+  tags: [openssh, openssh:firewall]
+
+- name: Main | Include AppArmor tasks
+  ansible.builtin.include_tasks:
+    file: apparmor.yml
+    apply:
+      tags: [openssh, openssh:apparmor]
+  when:
+    - openssh_apparmor_enabled | default(false) | bool
+    - ansible_facts['os_family'] != 'RedHat'
+  tags: [openssh, openssh:apparmor]

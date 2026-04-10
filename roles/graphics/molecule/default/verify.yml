@@ -1,0 +1,96 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    # Intel mesa package verification
+    - name: Verify | Check Intel mesa package installed (Arch)
+      ansible.builtin.command:
+        cmd: 'pacman -Q mesa'
+      register: __verify_mesa_arch
+      changed_when: false
+      failed_when: __verify_mesa_arch.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check Intel mesa package installed (Debian)
+      ansible.builtin.command:
+        cmd: 'dpkg -l mesa-vulkan-drivers'
+      register: __verify_mesa_deb
+      changed_when: false
+      failed_when: __verify_mesa_deb.rc != 0
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Gather package facts (RedHat)
+      ansible.builtin.package_facts:
+        manager: auto
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Assert Intel mesa installed (RedHat)
+      ansible.builtin.assert:
+        that:
+          - "'mesa-dri-drivers' in ansible_facts.packages"
+        fail_msg: 'mesa-dri-drivers package is not installed'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Mesa utils verification
+    - name: Verify | Check mesa-utils installed (Arch)
+      ansible.builtin.command:
+        cmd: 'pacman -Q mesa-utils'
+      register: __verify_mesautils_arch
+      changed_when: false
+      failed_when: __verify_mesautils_arch.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check mesa-utils installed (Debian)
+      ansible.builtin.command:
+        cmd: 'dpkg -l mesa-utils'
+      register: __verify_mesautils_deb
+      changed_when: false
+      failed_when: __verify_mesautils_deb.rc != 0
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Assert mesa-demos installed (RedHat)
+      ansible.builtin.assert:
+        that:
+          - "'mesa-demos' in ansible_facts.packages"
+        fail_msg: 'mesa-demos package is not installed'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Kernel params verification
+    - name: Verify | Check i915 modprobe config exists
+      ansible.builtin.stat:
+        path: /etc/modprobe.d/i915.conf
+      register: __verify_i915_conf
+
+    - name: Verify | Assert i915 modprobe config deployed
+      ansible.builtin.assert:
+        that:
+          - __verify_i915_conf.stat.exists
+          - __verify_i915_conf.stat.mode == '0644'
+        fail_msg: '/etc/modprobe.d/i915.conf not found or wrong permissions'
+
+    - name: Verify | Check i915 modprobe config content
+      ansible.builtin.command:
+        cmd: 'grep -c "i915 fastboot=1" /etc/modprobe.d/i915.conf'
+      register: __verify_i915_content
+      changed_when: false
+      failed_when: __verify_i915_content.rc != 0
+
+    - name: Verify | Check ansible_managed header in i915 config
+      ansible.builtin.command:
+        cmd: 'grep -c "Ansible managed" /etc/modprobe.d/i915.conf'
+      register: __verify_i915_header
+      changed_when: false
+      failed_when: __verify_i915_header.rc != 0

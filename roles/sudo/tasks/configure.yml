@@ -1,0 +1,109 @@
+---
+# =============================================================================
+# Sudo Configuration
+# =============================================================================
+
+- name: Configure main sudoers file
+  ansible.builtin.template:
+    src: 'sudoers.j2'
+    dest: '/etc/sudoers'
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  when: sudo_enabled | bool
+
+- name: Ensure sudoers.d directory exists
+  ansible.builtin.file:
+    path: '/etc/sudoers.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  when: sudo_enabled | bool
+
+- name: Remove legacy wheel/sudo group drop-in (now in main sudoers)
+  ansible.builtin.file:
+    path: '/etc/sudoers.d/10-{{ __sudo_group }}'
+    state: absent
+  when: sudo_enabled | bool
+
+- name: Configure sudo users
+  ansible.builtin.template:
+    src: 'sudoers.d/user.j2'
+    dest: '/etc/sudoers.d/20-user-{{ item.name }}'
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  loop: '{{ sudo_users }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - sudo_enabled | bool
+    - sudo_users | length > 0
+
+- name: Configure sudo groups
+  ansible.builtin.template:
+    src: 'sudoers.d/custom_group.j2'
+    dest: '/etc/sudoers.d/30-group-{{ item.name }}'
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  loop: '{{ sudo_groups }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - sudo_enabled | bool
+    - sudo_groups | length > 0
+
+- name: Configure custom sudoers files
+  ansible.builtin.template:
+    src: 'sudoers.d/custom.j2'
+    dest: '/etc/sudoers.d/50-{{ item.name }}'
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  loop: '{{ sudo_sudoers_files }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - sudo_enabled | bool
+    - sudo_sudoers_files | length > 0
+
+- name: Find unmanaged sudoers.d files
+  ansible.builtin.find:
+    paths: '/etc/sudoers.d'
+    patterns: '*'
+    file_type: file
+  register: _sudo_existing_files
+  when:
+    - sudo_enabled | bool
+    - sudo_purge_sudoers_d | bool
+
+- name: Build list of managed sudoers.d files
+  ansible.builtin.set_fact:
+    _sudo_managed_files: >-
+      {{
+        (sudo_users | map(attribute='name') | map('regex_replace', '^', '20-user-') | list) +
+        (sudo_groups | map(attribute='name') | map('regex_replace', '^', '30-group-') | list) +
+        (sudo_sudoers_files | map(attribute='name') | map('regex_replace', '^', '50-') | list) +
+        sudo_keep_sudoers_files
+      }}
+  when:
+    - sudo_enabled | bool
+    - sudo_purge_sudoers_d | bool
+
+- name: Remove unmanaged sudoers.d files
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: absent
+  loop: '{{ _sudo_existing_files.files }}'
+  loop_control:
+    label: '{{ item.path | basename }}'
+  when:
+    - sudo_enabled | bool
+    - sudo_purge_sudoers_d | bool
+    - item.path | basename not in _sudo_managed_files

@@ -1,0 +1,146 @@
+{{ ansible_managed | comment }}
+#
+# rkhunter configuration file
+#
+# Full documentation: man rkhunter.conf
+
+# =============================================================================
+# UPDATE MIRRORS
+# =============================================================================
+
+MIRRORS_MODE={{ rkhunter_mirrors_mode }}
+UPDATE_MIRRORS={{ 1 if rkhunter_rotate_mirrors | bool else 0 }}
+ROTATE_MIRRORS={{ 1 if rkhunter_rotate_mirrors | bool else 0 }}
+{% if rkhunter_web_cmd | length > 0 %}
+WEB_CMD={{ rkhunter_web_cmd }}
+{% endif %}
+
+# =============================================================================
+# SCANNING OPTIONS
+# =============================================================================
+
+HASH_CMD={{ rkhunter_hash_cmd }}
+ENABLE_TESTS={{ rkhunter_enable_tests }}
+DISABLE_TESTS={{ rkhunter_disable_tests }}
+SCAN_MODE_DEV={{ rkhunter_scan_mode_dev }}
+{% if rkhunter_suspscan_dirs | length > 0 %}
+{% for dir in rkhunter_suspscan_dirs %}
+SUSPSCAN_DIRS={{ dir }}
+{% endfor %}
+{% endif %}
+SKIP_INODE_CHECK={{ 1 if rkhunter_skip_inode_check | bool else 0 }}
+AUTO_X_DETECT={{ 1 if rkhunter_auto_x_detect | bool else 0 }}
+
+# =============================================================================
+# PACKAGE MANAGER
+# =============================================================================
+
+PKGMGR={{ __rkhunter_pkgmgr }}
+
+# =============================================================================
+# SSH CHECKS
+# =============================================================================
+
+ALLOW_SSH_ROOT_USER={{ rkhunter_allow_ssh_root_user }}
+ALLOW_SSH_PROT_V1={{ rkhunter_allow_ssh_prot_v1 }}
+
+# =============================================================================
+# WHITELISTING
+# =============================================================================
+{% if rkhunter_allowhiddendir | length > 0 %}
+
+{% for dir in rkhunter_allowhiddendir %}
+ALLOWHIDDENDIR={{ dir }}
+{% endfor %}
+{% endif %}
+{% if rkhunter_allowhiddenfile | length > 0 %}
+
+{% for file in rkhunter_allowhiddenfile %}
+ALLOWHIDDENFILE={{ file }}
+{% endfor %}
+{% endif %}
+{% if rkhunter_allowdevfile | length > 0 %}
+
+{% for dev in rkhunter_allowdevfile %}
+ALLOWDEVFILE={{ dev }}
+{% endfor %}
+{% endif %}
+{% if rkhunter_scriptwhitelist | length > 0 %}
+
+{% for script in rkhunter_scriptwhitelist %}
+SCRIPTWHITELIST={{ script }}
+{% endfor %}
+{% endif %}
+{% if rkhunter_allowprocdelfile | length > 0 %}
+
+{% for path in rkhunter_allowprocdelfile %}
+ALLOWPROCDELFILE={{ path }}
+{% endfor %}
+{% endif %}
+{% if rkhunter_allowproclisten | length > 0 %}
+
+{% for proc in rkhunter_allowproclisten %}
+ALLOWPROCLISTEN={{ proc }}
+{% endfor %}
+{% endif %}
+{% if rkhunter_allowipcpid | length > 0 %}
+
+{% for pid in rkhunter_allowipcpid %}
+ALLOWIPCPID={{ pid }}
+{% endfor %}
+{% endif %}
+{% if rkhunter_allowipcuser | length > 0 %}
+
+{% for user in rkhunter_allowipcuser %}
+ALLOWIPCUSER={{ user }}
+{% endfor %}
+{% endif %}
+
+# =============================================================================
+# REPORTING
+# =============================================================================
+{% if rkhunter_mail_on_warning | length > 0 %}
+
+MAIL-ON-WARNING={{ rkhunter_mail_on_warning }}
+MAIL_CMD={{ rkhunter_mail_cmd }}
+{% endif %}
+
+USE_SYSLOG={{ rkhunter_syslog_facility if rkhunter_use_syslog | bool else 'NONE' }}
+LOGFILE={{ rkhunter_log_dir }}/rkhunter.log
+APPEND_LOG={{ 1 if rkhunter_append_log | bool else 0 }}
+COPY_LOG_ON_ERROR={{ 1 if rkhunter_copy_log_on_error | bool else 0 }}
+
+# =============================================================================
+# FILE PROPERTY TRACKING
+# =============================================================================
+{% if rkhunter_user_fileprop_files_dirs | length > 0 %}
+
+{% for path in rkhunter_user_fileprop_files_dirs %}
+USER_FILEPROP_FILES_DIRS={{ path }}
+{% endfor %}
+{% endif %}
+
+# =============================================================================
+# OS CHANGE DETECTION
+# =============================================================================
+
+WARN_ON_OS_CHANGE={{ 1 if rkhunter_warn_on_os_change | bool else 0 }}
+UPDT_ON_OS_CHANGE={{ 1 if rkhunter_updt_on_os_change | bool else 0 }}
+
+# =============================================================================
+# LOCKING
+# =============================================================================
+
+USE_LOCKING={{ 1 if rkhunter_use_locking | bool else 0 }}
+{% if rkhunter_use_locking | bool %}
+LOCK_TIMEOUT={{ rkhunter_lock_timeout }}
+{% endif %}
+
+# =============================================================================
+# SYSTEM PATHS
+# =============================================================================
+
+INSTALLDIR=/usr
+DBDIR=/var/lib/rkhunter/db
+TMPDIR=/var/lib/rkhunter/tmp
+SCRIPTDIR={{ __rkhunter_scriptdir }}

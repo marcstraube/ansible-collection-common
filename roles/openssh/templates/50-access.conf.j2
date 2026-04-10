@@ -1,0 +1,18 @@
+{{ ansible_managed | comment }}
+{% if openssh_server_allow_users | length > 0 %}
+
+# Access control
+AllowUsers {{ openssh_server_allow_users | join(' ') }}
+{% endif %}
+{% if openssh_server_deny_users | length > 0 %}
+
+DenyUsers {{ openssh_server_deny_users | join(' ') }}
+{% endif %}
+{% if openssh_server_allow_groups | length > 0 %}
+
+AllowGroups {{ openssh_server_allow_groups | join(' ') }}
+{% endif %}
+{% if openssh_server_deny_groups | length > 0 %}
+
+DenyGroups {{ openssh_server_deny_groups | join(' ') }}
+{% endif %}

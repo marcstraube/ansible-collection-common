@@ -1,0 +1,91 @@
+#jinja2:lstrip_blocks: True
+#!/bin/sh
+{{ ansible_managed | comment }}
+
+# This script attempts to unmount SMB shares when a network connection goes down (e.g., unexpected disconnect).
+# It ensures a share is only unmounted if none of its dependencies are active anymore.
+# Shares that depend on legacy VPN connections are excluded and handled by the VPN-specific umount script.
+# Each share is unmounted per user from their home directory.
+
+# NM_UUID is provided by NetworkManager dispatcher.
+LOG_PREFIX="NM-SMB-Unmount-Down"
+
+{% set id_map = {} -%}
+{% if network_connections_data is defined -%}
+  {% for conn_type in ['ethernet', 'wifi', 'wireguard'] -%}
+    {% if network_connections_data[conn_type] is defined -%}
+      {% for conn_name, conn_details in network_connections_data[conn_type].items() -%}
+        {% if conn_details.uuid is defined -%}
+          {% set _ = id_map.update({conn_name: conn_details.uuid}) -%}
+        {% endif -%}
+      {% endfor -%}
+    {% endif -%}
+  {% endfor -%}
+  {% if network_connections_data.vpn is defined -%}
+    {% for vpn_name, vpn_details in network_connections_data.vpn.items() -%}
+      {% set _ = id_map.update({vpn_name: vpn_name}) -%}
+    {% endfor -%}
+  {% endif -%}
+{% endif -%}
+{% set user_homes = {} -%}
+{% for user in users_list | default([]) -%}
+  {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
+{% endfor -%}
+# Function to get all currently active connection IDs (UUIDs for base, names for VPNs)
+get_active_connection_ids() {
+  nmcli -t -f UUID,TYPE,NAME connection show --active | while IFS=':' read -r uuid type name; do
+    if [ "$type" = "vpn" ]; then
+      echo "$name" # For VPNs, we use the name as ID
+    else
+      echo "$uuid" # For base connections, we use the UUID
+    fi
+  done
+}
+
+if [ "$2" = "down" ]; then
+  ACTIVE_IDS=$(get_active_connection_ids)
+{% if networkmanager_smb_shares is defined and networkmanager_smb_shares is not none and networkmanager_smb_shares | length > 0 %}
+
+  {% for share in networkmanager_smb_shares %}
+    {% set resolved_dependencies = [] %}
+    {% for dependency_name in share.depends_on %}
+      {% if id_map[dependency_name] is defined %}
+        {% set _ = resolved_dependencies.append(id_map[dependency_name]) %}
+      {% endif %}
+    {% endfor %}
+
+    {% if resolved_dependencies | length > 0 %}
+      {% for smb_user in share.users %}
+        {% set user_home = user_homes[smb_user.name] | default('/home/' + smb_user.name) %}
+        {% set mount_point = user_home + '/' + share.mount_subpath %}
+  # Check if the share is currently mounted for {{ smb_user.name }}
+  if mountpoint -q "{{ mount_point }}"; then
+    SHARE_STILL_NEEDED="false"
+        {% for dep_id in resolved_dependencies %}
+    # Check if this dependency is still active
+    if echo "$ACTIVE_IDS" | grep -q "^{{ dep_id }}$"; then
+      SHARE_STILL_NEEDED="true"
+      break
+    fi
+        {% endfor %}
+
+    if [ "$SHARE_STILL_NEEDED" = "false" ]; then
+      echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ mount_point }}) has no active dependencies left. Unmounting for {{ smb_user.name }}."
+      umount -t cifs -l "{{ mount_point }}"
+    else
+      echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ mount_point }}) still has active dependencies. Not unmounting for {{ smb_user.name }}."
+    fi
+  else
+    echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ mount_point }}) is not mounted for {{ smb_user.name }}."
+  fi
+      {% endfor %}
+    {% else %}
+      {% for smb_user in share.users %}
+        {% set user_home = user_homes[smb_user.name] | default('/home/' + smb_user.name) %}
+        {% set mount_point = user_home + '/' + share.mount_subpath %}
+  echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ mount_point }}) has no valid dependencies defined. Skipping."
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+fi

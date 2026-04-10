@@ -1,0 +1,32 @@
+---
+# =============================================================================
+# GPU Detection Tasks
+# =============================================================================
+
+- name: Detect | Get GPU controllers from lspci  # noqa: risky-shell-pipe
+  ansible.builtin.shell:
+    cmd: "lspci -nn | grep -iE '(VGA|3D|Display) controller'"
+  register: __graphics_lspci_output
+  changed_when: false
+  failed_when: false
+
+- name: Detect | Parse GPU vendors
+  ansible.builtin.set_fact:
+    __detected_gpus: >-
+      {{
+        (__graphics_lspci_output.stdout | default('') | lower |
+         regex_findall('(intel|amd|nvidia|advanced micro devices)') |
+         unique | list) |
+        map('replace', 'advanced micro devices', 'amd') | list
+      }}
+  when: __graphics_lspci_output.rc == 0
+
+- name: Detect | Display detected GPUs
+  ansible.builtin.debug:
+    msg: 'Detected GPU vendors: {{ __detected_gpus | default([]) | join(", ") }}'
+  when: __detected_gpus is defined and __detected_gpus | length > 0
+
+- name: Detect | Warn if no GPU detected
+  ansible.builtin.debug:
+    msg: 'Warning: No GPU detected via lspci. Set graphics_gpu or graphics_gpus manually.'
+  when: __detected_gpus is not defined or __detected_gpus | length == 0

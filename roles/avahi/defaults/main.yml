@@ -1,0 +1,143 @@
+---
+# =============================================================================
+# Avahi - mDNS/DNS-SD Service Discovery
+# =============================================================================
+# Role: marcstraube.common.avahi
+# Description: Configure Avahi for mDNS/DNS-SD network service discovery
+# =============================================================================
+
+# =============================================================================
+# SERVICE CONTROL
+# =============================================================================
+
+# Enable or disable the avahi-daemon service
+avahi_enabled: true
+
+# =============================================================================
+# SERVER SETTINGS
+# =============================================================================
+
+# Hostname to publish via mDNS (empty = system hostname)
+avahi_hostname: ''
+
+# Domain name for mDNS
+avahi_domain_name: 'local'
+
+# Additional browse domains (list of domain strings)
+avahi_browse_domains: []
+
+# Allow mDNS on point-to-point interfaces (e.g. VPN tunnels)
+avahi_allow_point_to_point: false
+
+# Prevent other mDNS stacks from running (exclusively bind UDP 5353)
+avahi_disallow_other_stacks: false
+
+# =============================================================================
+# NETWORK SETTINGS
+# =============================================================================
+
+# IP protocol support
+avahi_use_ipv4: true
+avahi_use_ipv6: true
+
+# Interface filtering (empty = all non-loopback interfaces)
+avahi_allow_interfaces: []
+avahi_deny_interfaces: []
+
+# Maximum entries in the DNS cache per interface
+avahi_cache_entries_max: 4096
+
+# Per-interface packet rate limiting
+avahi_ratelimit_interval_usec: 1000000
+avahi_ratelimit_burst: 1000
+
+# =============================================================================
+# DBUS
+# =============================================================================
+
+# Enable D-Bus interface (required for most client functionality)
+avahi_enable_dbus: true
+
+# =============================================================================
+# WIDE AREA
+# =============================================================================
+
+# Enable DNS-SD over unicast DNS for non-.local domains
+avahi_enable_wide_area: false
+
+# =============================================================================
+# PUBLISH SETTINGS
+# =============================================================================
+
+# Disable all record publishing (querying-only mode)
+avahi_disable_publishing: false
+
+# Disable user service publishing (still publishes address records)
+avahi_disable_user_service_publishing: false
+
+# Publish IP address records for all local interfaces
+avahi_publish_addresses: true
+
+# Publish HINFO record with OS and CPU info (privacy concern)
+avahi_publish_hinfo: false
+
+# Publish _workstation._tcp service
+avahi_publish_workstation: false
+
+# Announce local domain name for browsing by other hosts
+avahi_publish_domain: true
+
+# Publish IPv6 AAAA records via IPv4 transport
+avahi_publish_aaaa_on_ipv4: true
+
+# Publish IPv4 A records via IPv6 transport
+avahi_publish_a_on_ipv6: false
+
+# =============================================================================
+# REFLECTOR
+# =============================================================================
+
+# Forward mDNS between interfaces (gateway/bridge mode)
+avahi_enable_reflector: false
+
+# Forward mDNS between IPv4 and IPv6 (requires enable_reflector)
+avahi_reflect_ipv: false
+
+# =============================================================================
+# RLIMITS
+# =============================================================================
+
+# Resource limits passed to setrlimit(2) — 0 disables where applicable
+avahi_rlimit_core: 0
+avahi_rlimit_data: 8388608
+avahi_rlimit_fsize: 0
+avahi_rlimit_nofile: 768
+avahi_rlimit_stack: 8388608
+
+# =============================================================================
+# NSS-MDNS
+# =============================================================================
+
+# Install nss-mdns for .local hostname resolution
+avahi_nss_mdns: true
+
+# nsswitch.conf hosts line — customize for environments with SSSD, Winbind, etc.
+avahi_nsswitch_hosts: >-
+  hosts: mymachines mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] files myhostname dns
+
+# =============================================================================
+# FIREWALL
+# =============================================================================
+
+# Enable firewalld integration (add mDNS service)
+avahi_firewalld_enabled: false
+
+# firewalld zone to add the mDNS service to
+avahi_firewalld_zone: 'public'
+
+# =============================================================================
+# APPARMOR
+# =============================================================================
+
+# Enable AppArmor profile enforcement (Arch + Debian only, not RHEL/Rocky)
+avahi_apparmor_enabled: false

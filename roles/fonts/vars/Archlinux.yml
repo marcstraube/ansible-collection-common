@@ -1,0 +1,33 @@
+---
+# =============================================================================
+# ArchLinux-specific variables for fonts
+# =============================================================================
+
+__fonts_dejavu_package: 'ttf-dejavu'
+__fonts_liberation_package: 'ttf-liberation'
+__fonts_noto_package: 'noto-fonts'
+__fonts_noto_emoji_package: 'noto-fonts-emoji'
+__fonts_noto_cjk_package: 'noto-fonts-cjk'
+
+__fonts_coding_packages:
+  firacode: 'ttf-fira-code'
+  jetbrains: 'ttf-jetbrains-mono'
+  cascadia: 'ttf-cascadia-code'
+  iosevka: ''  # AUR only (ttf-iosevka)
+  hack: 'ttf-hack'
+  source-code-pro: 'adobe-source-code-pro-fonts'
+
+__fonts_nerd_packages:
+  firacode: 'ttf-firacode-nerd'
+  hack: 'ttf-hack-nerd'
+  jetbrains: 'ttf-jetbrains-mono-nerd'
+  meslo: 'ttf-meslo-nerd'
+  source-code-pro: 'ttf-sourcecodepro-nerd'
+  ubuntu: 'ttf-ubuntu-nerd'
+  dejavu: 'ttf-dejavu-nerd'
+  liberation: 'ttf-liberation-mono-nerd'
+  noto: 'ttf-noto-nerd'
+  roboto: 'ttf-roboto-mono-nerd'
+  droid: 'ttf-droid-nerd'  # AUR
+  terminus: 'ttf-terminus-nerd'
+  symbols-only: 'ttf-nerd-fonts-symbols'

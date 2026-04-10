@@ -1,0 +1,64 @@
+---
+# =============================================================================
+# ClamAV BTRFS Tasks — Subvolume + NoCOW for database directory
+# =============================================================================
+
+- name: BTRFS | Check if ClamAV database parent filesystem is BTRFS
+  ansible.builtin.command:
+    cmd: stat -f -c %T {{ clamav_database_directory | dirname }}
+  register: __clamav_db_fstype
+  changed_when: false
+  failed_when: false
+
+- name: BTRFS | Set BTRFS detection fact
+  ansible.builtin.set_fact:
+    __clamav_is_btrfs: "{{ __clamav_db_fstype.stdout | default('') == 'btrfs' }}"
+
+- name: BTRFS | Check if ClamAV database directory is already a subvolume
+  ansible.builtin.command:
+    cmd: btrfs subvolume show {{ clamav_database_directory }}
+  register: __clamav_subvol_check
+  changed_when: false
+  failed_when: false
+  when: __clamav_is_btrfs | bool
+
+- name: BTRFS | Check if ClamAV database directory exists and has content
+  ansible.builtin.find:
+    paths: '{{ clamav_database_directory }}'
+    file_type: any
+  register: __clamav_dir_contents
+  when:
+    - __clamav_is_btrfs | bool
+    - __clamav_subvol_check.rc != 0
+
+- name: BTRFS | Create subvolume for ClamAV database directory
+  when:
+    - __clamav_is_btrfs | bool
+    - __clamav_subvol_check.rc != 0
+    - __clamav_dir_contents.matched == 0
+  block:
+    - name: BTRFS | Remove empty ClamAV database directory for subvolume creation
+      ansible.builtin.file:
+        path: '{{ clamav_database_directory }}'
+        state: absent
+
+    - name: BTRFS | Create BTRFS subvolume
+      ansible.builtin.command:
+        cmd: btrfs subvolume create {{ clamav_database_directory }}
+      changed_when: true
+
+    - name: BTRFS | Set ownership on subvolume
+      ansible.builtin.file:
+        path: '{{ clamav_database_directory }}'
+        owner: '{{ clamav_user | default(__clamav_user, true) }}'
+        group: '{{ clamav_group | default(__clamav_group, true) }}'
+        mode: '0755'
+        state: directory
+
+- name: BTRFS | Set NoCOW attribute on ClamAV database directory
+  ansible.builtin.command:
+    cmd: chattr +C {{ clamav_database_directory }}
+  register: __clamav_chattr
+  changed_when: __clamav_chattr.rc == 0
+  failed_when: false
+  when: __clamav_is_btrfs | bool

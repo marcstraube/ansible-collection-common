@@ -1,0 +1,137 @@
+---
+# =============================================================================
+# Lynis Configuration - Security Auditing
+# =============================================================================
+# Role: marcstraube.common.lynis
+# Description: Install and configure Lynis for automated security auditing
+# =============================================================================
+
+# =============================================================================
+# ROLE CONTROL
+# =============================================================================
+
+# Enable the lynis role
+lynis_enabled: true
+
+# =============================================================================
+# INSTALLATION
+# =============================================================================
+
+# Installation method: 'package' (OS package manager) or 'git' (upstream repo)
+lynis_install_method: 'package'
+
+# Git repository URL (only used when lynis_install_method: 'git')
+lynis_git_repo: 'https://github.com/CISOfy/lynis.git'
+
+# Installation directory for git-based install
+lynis_install_dir: '/usr/local/lynis'
+
+# Git version/branch/tag to checkout
+lynis_version: 'master'
+
+# =============================================================================
+# PROFILE CONFIGURATION (custom.prf)
+# =============================================================================
+
+# Machine role: 'personal', 'workstation', or 'server'
+# Affects which tests are run and scoring weights
+lynis_machine_role: 'server'
+
+# Scan depth: 'light', 'normal', or 'full' (affects number of tests executed)
+lynis_scan_mode: 'normal'
+
+# Auditor name recorded in reports
+lynis_auditor: ''
+
+# Colored output in terminal (disabled automatically with --cronjob)
+lynis_colors: true
+
+# Quick mode — skip interactive prompts (lynis 3.0+ is non-interactive by default)
+lynis_quick_mode: false
+
+# Skip all plugins
+lynis_skip_plugins: false
+
+# Verbose output
+lynis_verbose: false
+
+# Debug mode
+lynis_debug: false
+
+# Pause between tests in seconds (0 = no pause, useful to reduce system load)
+lynis_pause_between_tests: 0
+
+# List of test IDs to skip (e.g. ['BOOT-5122', 'AUTH-9262'])
+lynis_skip_tests: []
+
+# List of plugins to enable (e.g. ['docker', 'nginx', 'postgresql'])
+# Empty list = use default plugin set from default.prf
+lynis_plugins: []
+
+# =============================================================================
+# COMPLIANCE
+# =============================================================================
+
+# Enable compliance standard annotations in reports
+lynis_compliance_enabled: false
+
+# Compliance standards to check (pci-dss, hipaa, iso27001, cis)
+lynis_compliance_standards: []
+
+# =============================================================================
+# REPORTING
+# =============================================================================
+
+# Log file location (lynis runtime log)
+lynis_log_file: '/var/log/lynis.log'
+
+# Directory for timestamped report archives
+lynis_report_dir: '/var/log/lynis'
+
+# Number of days to keep old reports (older reports are deleted)
+lynis_keep_reports: 30
+
+# Show warnings only (suppress informational output)
+lynis_show_warnings_only: false
+
+# Check hardening index after audit and warn if below threshold
+lynis_show_hardening_index: true
+
+# Minimum acceptable hardening index (0-100, production standard)
+lynis_min_hardening_index: 80
+
+# Email address for audit report delivery (empty = disabled, requires working MTA)
+lynis_email_report: ''
+
+# Upload results to Lynis Enterprise (requires license)
+lynis_upload_results: false
+
+# =============================================================================
+# CUSTOM TESTS
+# =============================================================================
+
+# Directory for custom test plugins
+lynis_custom_tests_dir: '/etc/lynis/custom'
+
+# Deploy and enable custom tests directory
+lynis_custom_tests_enabled: false
+
+# =============================================================================
+# SCHEDULED AUDITS (systemd timer)
+# =============================================================================
+
+# Enable systemd timer for scheduled audits
+lynis_timer_enabled: true
+
+# Timer schedule in systemd OnCalendar format (e.g. 'daily', 'weekly', '*-*-* 02:00:00')
+lynis_timer_oncalendar: 'daily'
+
+# Randomized delay to avoid load spikes on multiple hosts
+lynis_timer_randomized_delay: '1h'
+
+# =============================================================================
+# BTRFS
+# =============================================================================
+
+# Set NoCOW attribute on report directory (prevents CoW overhead on BTRFS)
+lynis_btrfs_nocow: true

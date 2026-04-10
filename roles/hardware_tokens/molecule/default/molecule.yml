@@ -1,0 +1,99 @@
+---
+# marcstraube.common.hardware_tokens/molecule/default/molecule.yml
+# Vagrant-based: needs real udev for hardware token rules
+
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    ignore-errors: true
+
+driver:
+  name: default
+  options:
+    managed: false
+    login_cmd_template: bash -c 'cd ${MOLECULE_EPHEMERAL_DIRECTORY} && vagrant ssh {instance}'
+
+platforms:
+  - name: hardware-tokens-archlinux
+    groups:
+      - test_hosts
+  - name: hardware-tokens-debian-trixie
+    groups:
+      - test_hosts
+  - name: hardware-tokens-rocky-9
+    groups:
+      - test_hosts
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks,timer
+      stdout_callback: default
+      result_format: yaml
+      inject_facts_as_vars: false
+  inventory:
+    host_vars:
+      hardware-tokens-archlinux:
+        ansible_port: 2222
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/hardware-tokens-archlinux/virtualbox/private_key
+      hardware-tokens-debian-trixie:
+        ansible_port: 2223
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/hardware-tokens-debian-trixie/virtualbox/private_key
+      hardware-tokens-rocky-9:
+        ansible_port: 2224
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/hardware-tokens-rocky-9/virtualbox/private_key
+    group_vars:
+      all:
+        ansible_connection: ssh
+        ansible_user: vagrant
+        ansible_host: 127.0.0.1
+        ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+
+        # Role configuration for testing
+        hardware_tokens_enabled: true
+        hardware_tokens_nitrokey: true
+        hardware_tokens_yubikey: true
+        hardware_tokens_fido2: true
+        hardware_tokens_smartcard: true
+        hardware_tokens_opensc: true
+        hardware_tokens_pcscd: true
+        hardware_tokens_lock_on_removal: true
+        hardware_tokens_lock_on_removal_devices:
+          - vendor: '20a0'
+            product: '42b2'
+            name: 'Nitrokey 3'
+        hardware_tokens_users: []
+
+  playbooks:
+    create: create.yml
+    destroy: destroy.yml
+    prepare: prepare.yml
+    converge: converge.yml
+    verify: verify.yml
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy
