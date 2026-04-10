@@ -21,7 +21,7 @@ cd ansible-collection-common
 
 pip install ansible-core ansible-lint molecule molecule-plugins[podman] yamllint pre-commit
 
-ansible-galaxy collection install -r galaxy.yml
+ansible-galaxy collection install community.general community.crypto ansible.posix
 
 pre-commit install
 ```

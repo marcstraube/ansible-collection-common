@@ -15,7 +15,7 @@ Multi-OS support: Arch Linux (primary), Debian Trixie, Rocky Linux 9/10.
 - **Variables:** `<role>_<setting>`, internal: `__<role>_<setting>` (double underscore)
 - **Booleans:** `<role>_enabled | default(true/false) | bool`
 - **Templates:** `{{ ansible_managed | comment }}` header
-- **Comments:** English only — no German in code/config files
+- **Comments:** English only
 
 ### YAML Quoting Rules for Facts
 
