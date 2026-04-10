@@ -29,7 +29,7 @@ jobs:
 
       - name: Install collection dependencies
         run: |
-          ansible-galaxy collection install -r galaxy.yml || true
+          ansible-galaxy collection install community.general community.crypto ansible.posix kewlfft.aur
 
       - name: Run ansible-lint
         run: ansible-lint
@@ -147,8 +147,7 @@ jobs:
 
       - name: Install collection dependencies
         run: |
-          ansible-galaxy collection install containers.podman
-          ansible-galaxy collection install -r galaxy.yml || true
+          ansible-galaxy collection install community.general community.crypto ansible.posix kewlfft.aur containers.podman
 
       - name: Run Molecule test
         working-directory: roles/${{ matrix.role }}
