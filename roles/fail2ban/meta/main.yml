@@ -1,8 +1,8 @@
 ---
 galaxy_info:
-  author: 'Marc Straube'
-  description: 'Ansible role for Fail2ban intrusion prevention'
-  license: 'MIT'
+  author: Marc Straube
+  description: Ansible role for Fail2ban intrusion prevention
+  license: MIT
   min_ansible_version: '2.17'
 
   platforms:

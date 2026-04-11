@@ -1,8 +1,8 @@
 ---
 galaxy_info:
-  author: 'Marc Straube'
-  description: 'Install and configure Lynis for automated security auditing'
-  license: 'MIT'
+  author: Marc Straube
+  description: Install and configure Lynis for automated security auditing
+  license: MIT
   min_ansible_version: '2.17'
 
   platforms:

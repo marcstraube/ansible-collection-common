@@ -4,28 +4,27 @@
 # =============================================================================
 
 galaxy_info:
-  author: 'Marc Straube'
-  description: 'Configure sudo with security hardening and granular access control'
-  license: 'MIT'
+  author: Marc Straube
+  description: Configure sudo with security hardening and granular access control
+  license: MIT
   min_ansible_version: '2.17'
 
   platforms:
-    - name: 'ArchLinux'
+    - name: ArchLinux
       versions:
-        - 'all'
-    - name: 'Debian'
+        - all
+    - name: Debian
       versions:
-        - 'trixie'
-    - name: 'EL'
+        - trixie
+    - name: EL
       versions:
-        - '9'
-        - '10'
+        - all
 
   galaxy_tags:
-    - 'sudo'
-    - 'security'
-    - 'system'
-    - 'linux'
-    - 'privileges'
+    - sudo
+    - security
+    - system
+    - linux
+    - privileges
 
 dependencies: []

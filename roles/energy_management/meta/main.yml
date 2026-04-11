@@ -1,36 +1,35 @@
 ---
 galaxy_info:
-  author: 'Marc Straube'
-  description: 'Energy management for desktops and laptops (logind, sleep, PPD/TLP, battery, backlight)'
-  license: 'MIT'
+  author: Marc Straube
+  description: Energy management for desktops and laptops (logind, sleep, PPD/TLP, battery, backlight)
+  license: MIT
   min_ansible_version: '2.17'
 
   platforms:
-    - name: 'ArchLinux'
+    - name: ArchLinux
       versions:
-        - 'all'
-    - name: 'Debian'
+        - all
+    - name: Debian
       versions:
-        - 'trixie'
-    - name: 'EL'
+        - trixie
+    - name: EL
       versions:
-        - '9'
-        - '10'
+        - all
 
   galaxy_tags:
-    - 'archlinux'
-    - 'debian'
-    - 'rhel'
-    - 'power'
-    - 'energy'
-    - 'suspend'
-    - 'hibernate'
-    - 'tlp'
-    - 'battery'
-    - 'laptop'
-    - 'desktop'
+    - archlinux
+    - debian
+    - rhel
+    - power
+    - energy
+    - suspend
+    - hibernate
+    - tlp
+    - battery
+    - laptop
+    - desktop
 
 dependencies: []
 
 collections:
-  - 'community.general'
+  - community.general
