@@ -3,7 +3,7 @@
 # NODE.JS - SYSTEM PACKAGE INSTALLATION
 # =============================================================================
 
-- name: Package | Install Node.js
+- name: Install Package | Install Node.js
   ansible.builtin.package:
     name: '{{ __nodejs_packages }}'
     state: present

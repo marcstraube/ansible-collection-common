@@ -3,7 +3,7 @@
 # NODE.JS ROLE - MAIN TASKS
 # =============================================================================
 
-- name: Node.js | Load OS-specific variables
+- name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
@@ -14,14 +14,14 @@
         - 'vars'
   tags: [nodejs]
 
-- name: Node.js | Validate install method
+- name: Main | Validate install method
   ansible.builtin.assert:
     that:
       - nodejs_install_method in ['nodesource', 'package', 'nvm']
     fail_msg: "nodejs_install_method must be one of: nodesource, package, nvm (got '{{ nodejs_install_method }}')"
   tags: [nodejs]
 
-- name: Node.js | Auto-fallback to package on Arch (NodeSource not supported)
+- name: Main | Auto-fallback to package on Arch (NodeSource not supported)
   ansible.builtin.set_fact:
     _nodejs_install_method: 'package'
   when:
@@ -29,12 +29,12 @@
     - nodejs_install_method == 'nodesource'
   tags: [nodejs]
 
-- name: Node.js | Set effective install method
+- name: Main | Set effective install method
   ansible.builtin.set_fact:
     _nodejs_install_method: '{{ _nodejs_install_method | default(nodejs_install_method) }}'
   tags: [nodejs]
 
-- name: Node.js | Include NodeSource installation tasks
+- name: Main | Include NodeSource installation tasks
   ansible.builtin.include_tasks:
     file: install_nodesource.yml
     apply:
@@ -42,7 +42,7 @@
   when: _nodejs_install_method == 'nodesource'
   tags: [nodejs, nodejs:install]
 
-- name: Node.js | Include system package installation tasks
+- name: Main | Include system package installation tasks
   ansible.builtin.include_tasks:
     file: install_package.yml
     apply:
@@ -50,7 +50,7 @@
   when: _nodejs_install_method == 'package'
   tags: [nodejs, nodejs:install]
 
-- name: Node.js | Include nvm installation tasks
+- name: Main | Include nvm installation tasks
   ansible.builtin.include_tasks:
     file: install_nvm.yml
     apply:
@@ -58,7 +58,7 @@
   when: _nodejs_install_method == 'nvm'
   tags: [nodejs, nodejs:install]
 
-- name: Node.js | Include npm configuration tasks
+- name: Main | Include npm configuration tasks
   ansible.builtin.include_tasks:
     file: configure.yml
     apply:
@@ -66,7 +66,7 @@
   when: _nodejs_install_method != 'nvm'
   tags: [nodejs, nodejs:configure]
 
-- name: Node.js | Include additional package managers tasks
+- name: Main | Include additional package managers tasks
   ansible.builtin.include_tasks:
     file: package_managers.yml
     apply:
@@ -76,7 +76,7 @@
     - _nodejs_install_method != 'nvm'
   tags: [nodejs, nodejs:configure]
 
-- name: Node.js | Include installation verification tasks
+- name: Main | Include installation verification tasks
   ansible.builtin.include_tasks:
     file: verify.yml
     apply:

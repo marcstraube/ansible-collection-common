@@ -3,7 +3,7 @@
 # Lynis - Installation Tasks
 # =============================================================================
 
-- name: Install | Install lynis package
+- name: Install | lynis package
   ansible.builtin.package:
     name: '{{ __lynis_package }}'
     state: present
@@ -11,7 +11,7 @@
     - lynis_enabled | bool
     - lynis_install_method == 'package'
 
-- name: Install | Install git for lynis download
+- name: Install | git for lynis download
   ansible.builtin.package:
     name: git
     state: present

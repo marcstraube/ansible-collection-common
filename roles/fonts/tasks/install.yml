@@ -3,7 +3,7 @@
 # Font Package Installation
 # =============================================================================
 
-- name: Install | Install fontconfig dependency
+- name: Install | fontconfig dependency
   ansible.builtin.package:
     name: fontconfig
     state: present
@@ -52,7 +52,7 @@
   ansible.builtin.set_fact:
     __fonts_packages: '{{ __fonts_packages | select("string") | reject("equalto", "") | list }}'
 
-- name: Install | Install font packages
+- name: Install | Font packages
   ansible.builtin.package:
     name: '{{ __fonts_packages }}'
     state: present

@@ -1,12 +1,12 @@
 ---
-- name: Ensure SFTP chroot group exists
+- name: Configure | Ensure SFTP chroot group exists
   ansible.builtin.group:
     name: "{{ openssh_server_sftp_chroot_group }}"
     state: present
     system: true
   when: openssh_server_sftp_chroot_enabled | default(false) | bool
 
-- name: Ensure sshd_config.d directory exists
+- name: Configure | Ensure sshd_config.d directory exists
   ansible.builtin.file:
     path: "{{ __openssh_server_config_d_dir }}"
     state: directory
@@ -14,7 +14,7 @@
     group: 'root'
     mode: '0700'
 
-- name: Ensure sshd_config includes config.d
+- name: Configure | Ensure sshd_config includes config.d
   ansible.builtin.lineinfile:
     path: "{{ __openssh_server_config_file }}"
     line: "Include {{ __openssh_server_config_d_dir }}/*.conf"
@@ -22,14 +22,14 @@
     state: present
   notify: 'restart sshd'
 
-- name: Remove default Subsystem directive from sshd_config
+- name: Configure | Remove default Subsystem directive from sshd_config
   ansible.builtin.lineinfile:
     path: "{{ __openssh_server_config_file }}"
     regexp: '^\s*Subsystem\s+'
     state: absent
   notify: 'restart sshd'
 
-- name: Configure SSH server - network settings
+- name: Configure | SSH server - network settings
   ansible.builtin.template:
     src: 10-network.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/10-network.conf"
@@ -39,7 +39,7 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
-- name: Configure SSH server - host keys
+- name: Configure | SSH server - host keys
   ansible.builtin.template:
     src: 20-hostkeys.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/20-hostkeys.conf"
@@ -49,7 +49,7 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
-- name: Configure SSH server - cryptography
+- name: Configure | SSH server - cryptography
   ansible.builtin.template:
     src: 30-crypto.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/30-crypto.conf"
@@ -59,7 +59,7 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
-- name: Configure SSH server - authentication
+- name: Configure | SSH server - authentication
   ansible.builtin.template:
     src: 40-authentication.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/40-authentication.conf"
@@ -69,7 +69,7 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
-- name: Configure SSH server - access control
+- name: Configure | SSH server - access control
   ansible.builtin.template:
     src: 50-access.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/50-access.conf"
@@ -79,7 +79,7 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
-- name: Configure SSH server - session settings
+- name: Configure | SSH server - session settings
   ansible.builtin.template:
     src: 60-session.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/60-session.conf"
@@ -89,7 +89,7 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
-- name: Configure SSH server - forwarding
+- name: Configure | SSH server - forwarding
   ansible.builtin.template:
     src: 70-forwarding.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/70-forwarding.conf"
@@ -99,7 +99,7 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
-- name: Configure SSH server - subsystems
+- name: Configure | SSH server - subsystems
   ansible.builtin.template:
     src: 80-subsystems.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/80-subsystems.conf"
@@ -109,7 +109,7 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
-- name: Configure SSH server - logging
+- name: Configure | SSH server - logging
   ansible.builtin.template:
     src: 85-logging.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/85-logging.conf"
@@ -119,7 +119,7 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
-- name: Configure SSH server - match blocks
+- name: Configure | SSH server - match blocks
   ansible.builtin.template:
     src: 90-match.conf.j2
     dest: "{{ __openssh_server_config_d_dir }}/90-match.conf"
@@ -130,14 +130,14 @@
   when: openssh_server_match_blocks | length > 0 or (openssh_server_sftp_chroot_enabled | default(false) | bool)
   notify: 'restart sshd'
 
-- name: Remove match blocks config if not needed
+- name: Configure | Remove match blocks config if not needed
   ansible.builtin.file:
     path: "{{ __openssh_server_config_d_dir }}/90-match.conf"
     state: absent
   when: openssh_server_match_blocks | length == 0 and not (openssh_server_sftp_chroot_enabled | default(false) | bool)
   notify: 'restart sshd'
 
-- name: Configure SSH banner
+- name: Configure | SSH banner
   ansible.builtin.copy:
     content: "{{ openssh_server_banner_content }}"
     dest: "{{ openssh_server_banner_file }}"
@@ -146,14 +146,14 @@
     mode: '0644'
   when: openssh_server_banner_enabled | bool
 
-- name: Generate SSHFP records
+- name: Configure | Generate SSHFP records
   ansible.builtin.command:
     cmd: "ssh-keygen -r {{ openssh_server_sshfp_hostname }}"
   register: __openssh_sshfp_records
   changed_when: false
   when: openssh_server_generate_sshfp_records | bool
 
-- name: Display SSHFP records
+- name: Configure | Display SSHFP records
   ansible.builtin.debug:
     msg: "{{ __openssh_sshfp_records.stdout_lines }}"
   when:

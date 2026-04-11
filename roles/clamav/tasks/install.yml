@@ -1,10 +1,10 @@
 ---
-- name: Install ClamAV packages
+- name: Install | ClamAV packages
   ansible.builtin.package:
     name: '{{ __clamav_packages }}'
     state: present
 
-- name: Install ClamAV milter packages
+- name: Install | ClamAV milter packages
   ansible.builtin.package:
     name: '{{ __clamav_milter_packages }}'
     state: present

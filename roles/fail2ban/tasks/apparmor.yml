@@ -1,17 +1,17 @@
 ---
-- name: Check if AppArmor is active
+- name: AppArmor | Check if AppArmor is active
   ansible.builtin.stat:
     path: /sys/kernel/security/apparmor
   register: __fail2ban_apparmor_active
 
-- name: Check current AppArmor profile mode for fail2ban-server
+- name: AppArmor | Check current AppArmor profile mode for fail2ban-server
   ansible.builtin.command:
     cmd: aa-status --json
   register: __fail2ban_aa_status
   changed_when: false
   when: __fail2ban_apparmor_active.stat.exists
 
-- name: Enforce AppArmor profile for fail2ban-server
+- name: AppArmor | Enforce AppArmor profile for fail2ban-server
   ansible.builtin.command:
     cmd: aa-enforce {{ __fail2ban_apparmor_profile }}
   changed_when: true

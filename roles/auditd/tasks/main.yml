@@ -3,7 +3,7 @@
 # Auditd Main Tasks
 # =============================================================================
 
-- name: Warn if email notifications use default address
+- name: Main | Warn if email notifications use default address
   ansible.builtin.debug:
     msg: >-
       WARNING: auditd_email_address is set to '{{ auditd_email_address }}'.

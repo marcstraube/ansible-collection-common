@@ -3,7 +3,7 @@
 # Profile Images Tasks — AccountsService Integration
 # =============================================================================
 
-- name: Ensure AccountsService icons directory exists
+- name: Profile Images | Ensure AccountsService icons directory exists
   ansible.builtin.file:
     path: '{{ users_profile_images_dir }}'
     state: directory
@@ -11,7 +11,7 @@
     group: root
     mode: '0755'
 
-- name: Check for user profile images
+- name: Profile Images | Check for user profile images
   ansible.builtin.stat:
     path: >-
       {{ item.profile_image | default(inventory_dir ~ '/files/users/' ~ item.name ~ '.png') }}
@@ -25,7 +25,7 @@
     - item.name != 'root'
   register: __users_profile_images_stat
 
-- name: Copy profile images to AccountsService
+- name: Profile Images | Copy profile images to AccountsService
   ansible.builtin.copy:
     src: '{{ item.stat.path }}'
     dest: '{{ users_profile_images_dir }}/{{ item.item.name }}'
@@ -39,7 +39,7 @@
     - item is not skipped
     - item.stat.exists
 
-- name: Set Icon in AccountsService user config
+- name: Profile Images | Set Icon in AccountsService user config
   community.general.ini_file:
     path: '/var/lib/AccountsService/users/{{ item.item.name }}'
     section: User
@@ -57,7 +57,7 @@
     - item is not skipped
     - item.stat.exists
 
-- name: Create ~/.face symlink for display manager compatibility
+- name: Profile Images | Create ~/.face symlink for display manager compatibility
   ansible.builtin.file:
     src: '{{ users_profile_images_dir }}/{{ item.item.name }}'
     dest: '{{ item.item.home | default(users_default_home_base ~ "/" ~ item.item.name) }}/.face'

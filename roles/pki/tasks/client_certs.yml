@@ -3,7 +3,7 @@
 # Client Certificate Tasks
 # =============================================================================
 
-- name: ClientCerts | Generate client private keys (EC)
+- name: Client Certs | Generate client private keys (EC)
   community.crypto.openssl_privatekey:
     path: '{{ pki_private_dir }}/{{ item.name }}.key'
     type: 'ECC'
@@ -16,7 +16,7 @@
     label: '{{ item.name }}'
   when: (item.key_type | default(pki_client_key_type)) == 'ec'
 
-- name: ClientCerts | Generate client private keys (RSA)
+- name: Client Certs | Generate client private keys (RSA)
   community.crypto.openssl_privatekey:
     path: '{{ pki_private_dir }}/{{ item.name }}.key'
     type: 'RSA'
@@ -29,7 +29,7 @@
     label: '{{ item.name }}'
   when: (item.key_type | default(pki_client_key_type)) == 'rsa'
 
-- name: ClientCerts | Generate client private keys (Ed25519)
+- name: Client Certs | Generate client private keys (Ed25519)
   community.crypto.openssl_privatekey:
     path: '{{ pki_private_dir }}/{{ item.name }}.key'
     type: 'Ed25519'
@@ -41,7 +41,7 @@
     label: '{{ item.name }}'
   when: (item.key_type | default(pki_client_key_type)) == 'ed25519'
 
-- name: ClientCerts | Generate client CSRs
+- name: Client Certs | Generate client CSRs
   community.crypto.openssl_csr:
     path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
     privatekey_path: '{{ pki_private_dir }}/{{ item.name }}.key'
@@ -61,7 +61,7 @@
   loop_control:
     label: '{{ item.name }}'
 
-- name: ClientCerts | Sign client certificates with CA
+- name: Client Certs | Sign client certificates with CA
   community.crypto.x509_certificate:
     path: '{{ pki_certs_dir }}/{{ item.name }}.crt'
     csr_path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
@@ -78,7 +78,7 @@
     label: '{{ item.name }}'
   when: pki_ca_enabled | bool
 
-- name: ClientCerts | Export client certificates as PKCS12
+- name: Client Certs | Export client certificates as PKCS12
   community.crypto.openssl_pkcs12:
     path: '{{ pki_certs_dir }}/{{ item.name }}.p12'
     certificate_path: '{{ pki_certs_dir }}/{{ item.name }}.crt'

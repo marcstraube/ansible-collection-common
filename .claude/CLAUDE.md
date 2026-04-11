@@ -69,6 +69,19 @@ roles/<role_name>/
 - Always add `apply: tags:` when using `include_tasks` inside a block
 - Use `ansible.builtin.` FQCN for all modules
 
+### Task Naming
+
+Prefix = capitalized **filename** (not role name): `Filename | Description`
+
+- Standard: `main.yml` → `Main`, `install.yml` → `Install`, `configure.yml` → `Configure`, `service.yml` → `Service`, `firewall.yml` → `Firewall`
+- Special (acronyms/brands keep their casing): `btrfs.yml` → `BTRFS`, `apparmor.yml` → `AppArmor`, `ca.yml` → `CA`, `amd.yml` → `AMD`, `nvidia.yml` → `NVIDIA`, etc.
+- Multi-word: capitalize each word (`user_config.yml` → `User Config`)
+- No redundant verb: strip if description starts with same word as prefix (`Install packages` → `Install | Packages`)
+- Different verb stays: `Load module` in install.yml → `Install | Load module`
+- First word after `|` capitalized for normal English words; tool/package names keep their own casing (`Install | pipx`, not `Install | Pipx`)
+- Block names follow same rule; handler names do NOT use this pattern
+- Reference: `wireguard` role tasks
+
 ### Templates
 
 - Always include `{{ ansible_managed | comment }}` at the top

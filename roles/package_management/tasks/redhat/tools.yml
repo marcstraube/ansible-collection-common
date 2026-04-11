@@ -3,7 +3,7 @@
 # Additional Tools (RHEL/Fedora/Rocky)
 # =============================================================================
 
-- name: Install dnf-utils (dnf4)
+- name: Tools | Install dnf-utils (dnf4)
   ansible.builtin.dnf:
     name: dnf-utils
     state: present
@@ -11,7 +11,7 @@
     - dnf_install_utils | bool
     - ansible_facts['distribution_major_version'] | int < 10
 
-- name: Install needs-restarting helper (dnf4)
+- name: Tools | Install needs-restarting helper (dnf4)
   ansible.builtin.dnf:
     name: yum-utils
     state: present
@@ -19,7 +19,7 @@
     - dnf_install_needs_restarting | bool
     - ansible_facts['distribution_major_version'] | int < 10
 
-- name: Install rpm-build for package building
+- name: Tools | Install rpm-build for package building
   ansible.builtin.dnf:
     name:
       - rpm-build
@@ -27,13 +27,13 @@
     state: present
   when: dnf_install_rpmbuild | bool
 
-- name: Install mock for chroot building
+- name: Tools | Install mock for chroot building
   ansible.builtin.dnf:
     name: mock
     state: present
   when: dnf_install_mock | bool
 
-- name: Add user to mock group
+- name: Tools | Add user to mock group
   ansible.builtin.user:
     name: '{{ item }}'
     groups: mock

@@ -3,20 +3,20 @@
 # AUR Tasks - AUR Helper Installation
 # =============================================================================
 
-- name: Install AUR helper dependencies
+- name: AUR | Install AUR helper dependencies
   community.general.pacman:
     name:
       - git
       - base-devel
     state: present
 
-- name: Create AUR builder group
+- name: AUR | Create AUR builder group
   ansible.builtin.group:
     name: '{{ aur_builder_user }}'
     system: true
     state: present
 
-- name: Create AUR builder user
+- name: AUR | Create AUR builder user
   ansible.builtin.user:
     name: '{{ aur_builder_user }}'
     group: '{{ aur_builder_user }}'
@@ -26,7 +26,7 @@
     create_home: true
     state: present
 
-- name: Allow AUR builder to run pacman without password
+- name: AUR | Allow AUR builder to run pacman without password
   ansible.builtin.lineinfile:
     path: '/etc/sudoers.d/99-{{ aur_builder_user }}'
     line: '{{ aur_builder_user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman'
@@ -36,14 +36,14 @@
     mode: '0440'
     validate: 'visudo -cf %s'
 
-- name: Check if AUR helper is installed
+- name: AUR | Check if AUR helper is installed
   ansible.builtin.command:
     cmd: 'pacman -Qi {{ aur_helper }}'
   register: aur_helper_check
   changed_when: false
   failed_when: false
 
-- name: Install AUR helper
+- name: AUR | Install AUR helper
   become: true
   become_user: '{{ aur_builder_user }}'
   kewlfft.aur.aur:

@@ -2,14 +2,14 @@
 # ============================================================================
 # ClamAV daemon (clamd)
 # ============================================================================
-- name: Enable and start ClamAV daemon
+- name: Service | Enable and start ClamAV daemon
   ansible.builtin.systemd:
     name: '{{ __clamav_daemon_service }}'
     enabled: true
     state: started
   when: clamav_daemon_enabled | bool
 
-- name: Stop and disable ClamAV daemon
+- name: Service | Stop and disable ClamAV daemon
   ansible.builtin.systemd:
     name: '{{ __clamav_daemon_service }}'
     enabled: false
@@ -19,14 +19,14 @@
 # ============================================================================
 # Freshclam (database updates)
 # ============================================================================
-- name: Enable and start freshclam service
+- name: Service | Enable and start freshclam service
   ansible.builtin.systemd:
     name: '{{ __clamav_freshclam_service }}'
     enabled: true
     state: started
   when: clamav_freshclam_enabled | bool
 
-- name: Stop and disable freshclam service
+- name: Service | Stop and disable freshclam service
   ansible.builtin.systemd:
     name: '{{ __clamav_freshclam_service }}'
     enabled: false
@@ -36,7 +36,7 @@
 # ============================================================================
 # ClamAV milter (only managed when milter is enabled)
 # ============================================================================
-- name: Enable and start clamav-milter service
+- name: Service | Enable and start clamav-milter service
   ansible.builtin.systemd:
     name: '{{ __clamav_milter_service }}'
     enabled: true

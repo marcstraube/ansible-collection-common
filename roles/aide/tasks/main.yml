@@ -7,7 +7,7 @@
 # VALIDATION
 # =============================================================================
 
-- name: Warn if email notifications use localhost address
+- name: Main | Warn if email notifications use localhost address
   ansible.builtin.debug:
     msg: >-
       WARNING: aide_email_to is set to '{{ aide_email_to }}'.

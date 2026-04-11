@@ -3,7 +3,7 @@
 # Pacman Tasks - Package Manager Configuration
 # =============================================================================
 
-- name: Ensure pacman hook directory exists
+- name: pacman | Ensure pacman hook directory exists
   ansible.builtin.file:
     path: '{{ pacman_hook_dir }}'
     state: directory
@@ -11,7 +11,7 @@
     group: root
     mode: '0755'
 
-- name: Import GPG keys for custom repositories
+- name: pacman | Import GPG keys for custom repositories
   ansible.builtin.command:
     cmd: >-
       pacman-key --recv-keys {{ item.key_id }}
@@ -26,7 +26,7 @@
     - gpg_import.rc != 0
     - "'already in keyring' not in gpg_import.stderr"
 
-- name: Check if GPG keys are locally signed
+- name: pacman | Check if GPG keys are locally signed
   ansible.builtin.command:
     cmd: pacman-key --list-sigs {{ item.key_id }}
   loop: '{{ pacman_custom_repositories }}'
@@ -37,7 +37,7 @@
   changed_when: false
   failed_when: false
 
-- name: Sign imported GPG keys
+- name: pacman | Sign imported GPG keys
   ansible.builtin.command:
     cmd: pacman-key --lsign-key {{ item.item.key_id }}
   loop: '{{ gpg_sig_check.results | default([]) }}'
@@ -48,7 +48,7 @@
     - "'[ultimate]' not in (item.stdout | default(''))"
   changed_when: true
 
-- name: Configure Pacman
+- name: pacman | Configure Pacman
   ansible.builtin.template:
     src: 'archlinux/pacman.conf.j2'
     dest: '/etc/pacman.conf'
@@ -58,15 +58,15 @@
     backup: true
   notify: 'pacman configuration changed'
 
-- name: Flush handlers to update pacman cache
+- name: pacman | Flush handlers to update pacman cache
   ansible.builtin.meta: flush_handlers
 
-- name: Install pacman-contrib
+- name: pacman | Install pacman-contrib
   community.general.pacman:
     name: 'pacman-contrib'
     state: present
 
-- name: Configure paccache
+- name: pacman | Configure paccache
   ansible.builtin.lineinfile:
     path: '/etc/conf.d/pacman-contrib'
     regexp: '^PACCACHE_ARGS=.*'
@@ -77,21 +77,21 @@
     create: true
   when: paccache_enabled | bool
 
-- name: Enable paccache timer
+- name: pacman | Enable paccache timer
   ansible.builtin.systemd:
     name: 'paccache.timer'
     state: started
     enabled: true
   when: paccache_enabled | bool
 
-- name: Disable paccache timer
+- name: pacman | Disable paccache timer
   ansible.builtin.systemd:
     name: 'paccache.timer'
     state: stopped
     enabled: false
   when: not (paccache_enabled | bool)
 
-- name: Install custom pacman hooks
+- name: pacman | Install custom pacman hooks
   ansible.builtin.copy:
     src: '{{ item }}'
     dest: '{{ pacman_hook_dir }}/{{ item | basename }}'

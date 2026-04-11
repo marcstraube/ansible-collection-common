@@ -24,7 +24,7 @@
 # =============================================================================
 # ARCHLINUX — Molecule, drivers, lint via pacman/AUR
 # =============================================================================
-- name: Archlinux installation
+- name: Install | Archlinux installation
   when: ansible_facts['os_family'] == 'Archlinux'
   block:
     - name: Install | Molecule package (Arch)
@@ -73,7 +73,7 @@
 # =============================================================================
 # DEBIAN — Molecule, drivers, lint via pipx
 # =============================================================================
-- name: Debian installation
+- name: Install | Debian installation
   when: ansible_facts['os_family'] == 'Debian'
   block:
     - name: Install | Molecule via pipx (Debian)
@@ -126,7 +126,7 @@
 # =============================================================================
 # REDHAT — Molecule, drivers, lint via pipx
 # =============================================================================
-- name: RedHat installation
+- name: Install | RedHat installation
   when: ansible_facts['os_family'] == 'RedHat'
   block:
     - name: Install | Molecule via pipx (RedHat)

@@ -45,7 +45,7 @@
         ] | reject('equalto', '') | list
       }}
 
-- name: Install | Install utils packages
+- name: Install | Utils packages
   ansible.builtin.package:
     name: '{{ _utils_packages }}'
     state: present
@@ -82,7 +82,7 @@
   when:
     - ansible_facts['os_family'] == 'Archlinux'
 
-- name: Install | Install AUR packages (Arch)
+- name: Install | AUR packages (Arch)
   become: true
   become_user: 'aur_builder'
   kewlfft.aur.aur:

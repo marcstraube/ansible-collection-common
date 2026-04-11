@@ -3,16 +3,16 @@
 # AppArmor Kernel Tasks
 # =============================================================================
 
-- name: Check if AppArmor is supported by kernel
+- name: Kernel | Check if AppArmor is supported by kernel
   ansible.builtin.stat:
     path: '{{ apparmor_securityfs }}/apparmor'
   register: __apparmor_kernel_check
 
-- name: Set AppArmor kernel status fact
+- name: Kernel | Set AppArmor kernel status fact
   ansible.builtin.set_fact:
     apparmor_kernel_active: "{{ __apparmor_kernel_check.stat.exists }}"
 
-- name: Display AppArmor kernel status
+- name: Kernel | Display AppArmor kernel status
   ansible.builtin.debug:
     msg: >-
       AppArmor kernel support: {{ 'active' if apparmor_kernel_active else
@@ -22,7 +22,7 @@
 # GRUB CONFIGURATION — Arch Linux (lsm= kernel parameter)
 # =============================================================================
 
-- name: Check if AppArmor LSM is configured in GRUB (Arch Linux)
+- name: Kernel | Check if AppArmor LSM is configured in GRUB (Arch Linux)
   ansible.builtin.command:
     cmd: grep -cP 'lsm=\S*apparmor' /etc/default/grub
   register: __apparmor_grub_lsm_check
@@ -33,7 +33,7 @@
     - apparmor_boot_enabled | bool
     - ansible_facts['os_family'] == 'Archlinux'
 
-- name: Add AppArmor LSM to GRUB config (Arch Linux)
+- name: Kernel | Add AppArmor LSM to GRUB config (Arch Linux)
   ansible.builtin.replace:
     path: /etc/default/grub
     regexp: '^(GRUB_CMDLINE_LINUX_DEFAULT="[^"]*)'
@@ -50,7 +50,7 @@
 # GRUB CONFIGURATION — Debian (apparmor=1 security=apparmor)
 # =============================================================================
 
-- name: Check if AppArmor is configured in GRUB (Debian)
+- name: Kernel | Check if AppArmor is configured in GRUB (Debian)
   ansible.builtin.command:
     cmd: grep -c 'security=apparmor' /etc/default/grub
   register: __apparmor_grub_debian_check
@@ -61,7 +61,7 @@
     - apparmor_boot_enabled | bool
     - ansible_facts['os_family'] == 'Debian'
 
-- name: Add AppArmor to GRUB config (Debian)
+- name: Kernel | Add AppArmor to GRUB config (Debian)
   ansible.builtin.replace:
     path: /etc/default/grub
     regexp: '^(GRUB_CMDLINE_LINUX="[^"]*)'
@@ -84,7 +84,7 @@
 # This MUST run immediately — handlers would be skipped on play failure.
 # =============================================================================
 
-- name: Regenerate GRUB config (Arch Linux)
+- name: Kernel | Regenerate GRUB config (Arch Linux)
   ansible.builtin.command:
     cmd: grub-mkconfig -o /boot/grub/grub.cfg
   changed_when: true
@@ -93,7 +93,7 @@
     - __apparmor_grub_changed is defined
     - __apparmor_grub_changed is changed
 
-- name: Regenerate GRUB config (Debian)
+- name: Kernel | Regenerate GRUB config (Debian)
   ansible.builtin.command:
     cmd: update-grub
   changed_when: true
@@ -102,7 +102,7 @@
     - __apparmor_grub_changed_deb is defined
     - __apparmor_grub_changed_deb is changed
 
-- name: Re-sign boot files (sbctl)
+- name: Kernel | Re-sign boot files (sbctl)
   ansible.builtin.command:
     cmd: sbctl sign-all
   changed_when: true
@@ -114,7 +114,7 @@
     - archlinux_secureboot.enabled | default(false) | bool
     - archlinux_secureboot.method | default('sbctl') != 'hsm'
 
-- name: Re-sign boot files (HSM)
+- name: Kernel | Re-sign boot files (HSM)
   ansible.builtin.command:
     cmd: /usr/local/bin/secureboot-hsm-sign.sh
   changed_when: true
@@ -126,7 +126,7 @@
     - archlinux_secureboot.enabled | default(false) | bool
     - archlinux_secureboot.method | default('sbctl') == 'hsm'
 
-- name: TPM re-seal required after reboot (PCR 4 bound)
+- name: Kernel | TPM re-seal required after reboot (PCR 4 bound)
   ansible.builtin.pause:
     prompt: |
 
@@ -156,7 +156,7 @@
 # STATUS CHECK (only when kernel module is active)
 # =============================================================================
 
-- name: Check AppArmor module status
+- name: Kernel | Check AppArmor module status
   ansible.builtin.command:
     cmd: aa-status
   register: __apparmor_status_check

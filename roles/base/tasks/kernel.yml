@@ -3,7 +3,7 @@
 # Kernel Configuration Tasks
 # =============================================================================
 
-- name: Detect CPU vendor for microcode
+- name: Kernel | Detect CPU vendor for microcode
   ansible.builtin.set_fact:
     _base_microcode_package: |-
       {% if base_microcode == 'auto' %}
@@ -17,12 +17,12 @@
       {% else %}{{ base_microcode }}{% endif %}
   when: base_microcode != ''
 
-- name: Install kernel packages
+- name: Kernel | Install kernel packages
   community.general.pacman:
     name: '{{ [base_kernel] + base_kernel_extra_packages }}'
     state: present
 
-- name: Install microcode package
+- name: Kernel | Install microcode package
   community.general.pacman:
     name: '{{ _base_microcode_package }}'
     state: present
@@ -40,7 +40,7 @@
 # differs at regeneration time (e.g. smartcard not present), the initramfs
 # breaks and the system becomes unbootable.
 
-- name: Check if mkinitcpio is explicitly configured
+- name: Kernel | Check if mkinitcpio is explicitly configured
   ansible.builtin.set_fact:
     _base_mkinitcpio_managed: >-
       {{ (base_mkinitcpio_hooks | length > 0) or
@@ -48,7 +48,7 @@
          (base_mkinitcpio_binaries | length > 0) or
          (base_mkinitcpio_files | length > 0) }}
 
-- name: Update mkinitcpio hooks
+- name: Kernel | Update mkinitcpio hooks
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^HOOKS=\(.*\)'
@@ -57,7 +57,7 @@
   notify: 'regenerate initramfs'
   when: base_mkinitcpio_hooks | length > 0
 
-- name: Update mkinitcpio modules
+- name: Kernel | Update mkinitcpio modules
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^MODULES=\(.*\)'
@@ -65,7 +65,7 @@
   notify: 'regenerate initramfs'
   when: base_mkinitcpio_modules | length > 0
 
-- name: Update mkinitcpio binaries
+- name: Kernel | Update mkinitcpio binaries
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^BINARIES=\(.*\)'
@@ -73,7 +73,7 @@
   notify: 'regenerate initramfs'
   when: base_mkinitcpio_binaries | length > 0
 
-- name: Update mkinitcpio files
+- name: Kernel | Update mkinitcpio files
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^FILES=\(.*\)'
@@ -81,7 +81,7 @@
   notify: 'regenerate initramfs'
   when: base_mkinitcpio_files | length > 0
 
-- name: Update mkinitcpio compression
+- name: Kernel | Update mkinitcpio compression
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^COMPRESSION='

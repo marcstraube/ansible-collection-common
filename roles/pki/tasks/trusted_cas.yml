@@ -3,7 +3,7 @@
 # Trusted CA Certificates Tasks
 # =============================================================================
 
-- name: TrustedCAs | Install trusted CA certificates (from content)
+- name: Trusted CAs | Install trusted CA certificates (from content)
   ansible.builtin.copy:
     content: '{{ item.cert }}'
     dest: '{{ __pki_ca_certificates_path }}/{{ item.name }}.crt'
@@ -16,7 +16,7 @@
   when: item.cert is defined
   notify: Update CA trust
 
-- name: TrustedCAs | Install trusted CA certificates (from file)
+- name: Trusted CAs | Install trusted CA certificates (from file)
   ansible.builtin.copy:
     src: '{{ item.src }}'
     dest: '{{ __pki_ca_certificates_path }}/{{ item.name }}.crt'
@@ -29,7 +29,7 @@
   when: item.src is defined
   notify: Update CA trust
 
-- name: TrustedCAs | Install local CA as trusted (if enabled)
+- name: Trusted CAs | Install local CA as trusted (if enabled)
   ansible.builtin.copy:
     src: '{{ pki_ca_dir }}/certs/ca.crt'
     dest: '{{ __pki_ca_certificates_path }}/local-ca.crt'

@@ -7,14 +7,14 @@
 # PREREQUISITES
 # -----------------------------------------------------------------------------
 
-- name: NodeSource | Install prerequisite packages (Debian)
+- name: Install NodeSource | Install prerequisite packages (Debian)
   ansible.builtin.apt:
     name: '{{ __nodejs_prerequisite_packages }}'
     state: present
     update_cache: true
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: NodeSource | Install prerequisite packages (RedHat)
+- name: Install NodeSource | Install prerequisite packages (RedHat)
   ansible.builtin.dnf:
     name: '{{ __nodejs_prerequisite_packages }}'
     state: present
@@ -24,21 +24,21 @@
 # GPG KEY & REPOSITORY (Debian - always NodeSource)
 # -----------------------------------------------------------------------------
 
-- name: NodeSource | Add GPG key (Debian)
+- name: Install NodeSource | Add GPG key (Debian)
   ansible.builtin.get_url:
     url: '{{ __nodejs_nodesource_key_url }}'
     dest: /etc/apt/keyrings/nodesource.asc
     mode: '0644'
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: NodeSource | Add repository (Debian)
+- name: Install NodeSource | Add repository (Debian)
   ansible.builtin.apt_repository:
     repo: '{{ __nodejs_nodesource_repo }}'
     state: present
     filename: nodesource
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: NodeSource | Install Node.js (Debian)
+- name: Install NodeSource | Install Node.js (Debian)
   ansible.builtin.apt:
     name: '{{ __nodejs_packages }}'
     state: present
@@ -56,14 +56,14 @@
 #     4b. AppStream doesn't have it -> disable module, add NodeSource, install
 # -----------------------------------------------------------------------------
 
-- name: NodeSource | Check current Node.js version (RedHat)
+- name: Install NodeSource | Check current Node.js version (RedHat)
   ansible.builtin.command: node --version
   register: __nodejs_current_version
   changed_when: false
   failed_when: false
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: NodeSource | Set version match fact (RedHat)
+- name: Install NodeSource | Set version match fact (RedHat)
   ansible.builtin.set_fact:
     __nodejs_version_ok: >-
       {{ __nodejs_current_version.rc == 0 and
@@ -72,33 +72,33 @@
 
 # --- Rocky 9: AppStream module stream logic ---
 
-- name: NodeSource | Handle Node.js via AppStream modules (RedHat < 10)
+- name: Install NodeSource | Handle Node.js via AppStream modules (RedHat < 10)
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - ansible_facts['distribution_major_version'] | int < 10
     - not __nodejs_version_ok | bool
   block:
-    - name: NodeSource | List available AppStream nodejs module streams (RedHat)
+    - name: Install NodeSource | List available AppStream nodejs module streams (RedHat)
       ansible.builtin.command: dnf module list nodejs --quiet
       register: __nodejs_module_list
       changed_when: false
       failed_when: false
 
-    - name: NodeSource | Check if AppStream provides requested stream (RedHat)
+    - name: Install NodeSource | Check if AppStream provides requested stream (RedHat)
       ansible.builtin.set_fact:
         __nodejs_appstream_has_version: >-
           {{ __nodejs_module_list.stdout is regex('nodejs\s+' + nodejs_version + '\s') }}
 
     # --- Remove old installation (both nodejs and npm to avoid file conflicts) ---
 
-    - name: NodeSource | Get npm global root before removal (RedHat)
+    - name: Install NodeSource | Get npm global root before removal (RedHat)
       ansible.builtin.command: npm root -g
       register: __nodejs_old_npm_root
       changed_when: false
       failed_when: false
       when: __nodejs_current_version.rc == 0
 
-    - name: NodeSource | Remove old Node.js and npm packages (RedHat)
+    - name: Install NodeSource | Remove old Node.js and npm packages (RedHat)
       ansible.builtin.dnf:
         name:
           - nodejs
@@ -106,7 +106,7 @@
         state: absent
       when: __nodejs_current_version.rc == 0
 
-    - name: NodeSource | Clean stale npm global modules (RedHat)
+    - name: Install NodeSource | Clean stale npm global modules (RedHat)
       ansible.builtin.file:
         path: '{{ __nodejs_old_npm_root.stdout }}'
         state: absent
@@ -117,33 +117,33 @@
 
     # --- Path A: AppStream has the requested version ---
 
-    - name: NodeSource | Install via AppStream module stream (RedHat)
+    - name: Install NodeSource | Install via AppStream module stream (RedHat)
       when: __nodejs_appstream_has_version | bool
       block:
-        - name: NodeSource | Reset nodejs AppStream module (RedHat)
+        - name: Install NodeSource | Reset nodejs AppStream module (RedHat)
           ansible.builtin.command: "dnf module reset nodejs -y"
           changed_when: true
 
-        - name: NodeSource | Enable nodejs AppStream (RedHat)  # noqa: command-instead-of-module
+        - name: Install NodeSource | Enable nodejs AppStream (RedHat)  # noqa: command-instead-of-module
           ansible.builtin.command: "dnf module enable nodejs:{{ nodejs_version }} -y"
           changed_when: true
 
-        - name: NodeSource | Install Node.js from AppStream (RedHat)
+        - name: Install NodeSource | Install Node.js from AppStream (RedHat)
           ansible.builtin.dnf:
             name: nodejs
             state: present
 
     # --- Path B: AppStream doesn't have it, use NodeSource ---
 
-    - name: NodeSource | Install via NodeSource repository (RedHat < 10)
+    - name: Install NodeSource | Install via NodeSource repository (RedHat < 10)
       when: not __nodejs_appstream_has_version | bool
       block:
-        - name: NodeSource | Disable nodejs AppStream module (RedHat)
+        - name: Install NodeSource | Disable nodejs AppStream module (RedHat)
           ansible.builtin.command: dnf module disable nodejs -y
           register: __nodejs_module_disable
           changed_when: "'Nothing to do' not in __nodejs_module_disable.stdout"
 
-        - name: NodeSource | Add NodeSource repository (RedHat)
+        - name: Install NodeSource | Add NodeSource repository (RedHat)
           ansible.builtin.yum_repository:
             name: nodesource
             description: >-
@@ -155,20 +155,20 @@
             module_hotfixes: true
             priority: '9'
 
-        - name: NodeSource | Install Node.js from NodeSource (RedHat)
+        - name: Install NodeSource | Install Node.js from NodeSource (RedHat)
           ansible.builtin.dnf:
             name: '{{ __nodejs_packages }}'
             state: present
 
 # --- Rocky 10+: No modularity, use NodeSource directly ---
 
-- name: NodeSource | Install via NodeSource repository (RedHat >= 10)
+- name: Install NodeSource | Install via NodeSource repository (RedHat >= 10)
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - ansible_facts['distribution_major_version'] | int >= 10
     - not __nodejs_version_ok | bool
   block:
-    - name: NodeSource | Add NodeSource repository (RedHat >= 10)
+    - name: Install NodeSource | Add NodeSource repository (RedHat >= 10)
       ansible.builtin.yum_repository:
         name: nodesource
         description: >-
@@ -179,13 +179,13 @@
         gpgcheck: true
         priority: '9'
 
-    - name: NodeSource | Install Node.js from NodeSource (RedHat >= 10)
+    - name: Install NodeSource | Install Node.js from NodeSource (RedHat >= 10)
       ansible.builtin.dnf:
         name: '{{ __nodejs_packages }}'
         state: present
 
 # Ensure npm is always present (separate package on RedHat)
-- name: NodeSource | Ensure npm is installed (RedHat)
+- name: Install NodeSource | Ensure npm is installed (RedHat)
   ansible.builtin.dnf:
     name: npm
     state: present

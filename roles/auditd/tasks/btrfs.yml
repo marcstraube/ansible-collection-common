@@ -3,18 +3,18 @@
 # Auditd BTRFS Tasks — Subvolume + NoCOW for audit log directory
 # =============================================================================
 
-- name: Check if audit log parent filesystem is BTRFS
+- name: BTRFS | Check if audit log parent filesystem is BTRFS
   ansible.builtin.command:
     cmd: stat -f -c %T {{ (auditd_log_file | dirname) | dirname }}
   register: __auditd_fstype
   changed_when: false
   failed_when: false
 
-- name: Set BTRFS detection fact
+- name: BTRFS | Set BTRFS detection fact
   ansible.builtin.set_fact:
     __auditd_is_btrfs: "{{ __auditd_fstype.stdout | default('') == 'btrfs' }}"
 
-- name: Check if audit log directory is already a BTRFS subvolume
+- name: BTRFS | Check if audit log directory is already a BTRFS subvolume
   ansible.builtin.command:
     cmd: btrfs subvolume show {{ auditd_log_file | dirname }}
   register: __auditd_subvol_check
@@ -22,7 +22,7 @@
   failed_when: false
   when: __auditd_is_btrfs | bool
 
-- name: Check if audit log directory exists and has content
+- name: BTRFS | Check if audit log directory exists and has content
   ansible.builtin.find:
     paths: '{{ auditd_log_file | dirname }}'
     file_type: any
@@ -31,23 +31,23 @@
     - __auditd_is_btrfs | bool
     - __auditd_subvol_check.rc != 0
 
-- name: Create BTRFS subvolume for audit log directory
+- name: BTRFS | Create BTRFS subvolume for audit log directory
   when:
     - __auditd_is_btrfs | bool
     - __auditd_subvol_check.rc != 0
     - __auditd_dir_contents.matched == 0
   block:
-    - name: Remove empty audit log directory for subvolume creation
+    - name: BTRFS | Remove empty audit log directory for subvolume creation
       ansible.builtin.file:
         path: '{{ auditd_log_file | dirname }}'
         state: absent
 
-    - name: Create BTRFS subvolume
+    - name: BTRFS | Create BTRFS subvolume
       ansible.builtin.command:
         cmd: btrfs subvolume create {{ auditd_log_file | dirname }}
       changed_when: true
 
-    - name: Set ownership on subvolume
+    - name: BTRFS | Set ownership on subvolume
       ansible.builtin.file:
         path: '{{ auditd_log_file | dirname }}'
         owner: root
@@ -55,7 +55,7 @@
         mode: '0700'
         state: directory
 
-- name: Set NoCOW attribute on audit log directory
+- name: BTRFS | Set NoCOW attribute on audit log directory
   ansible.builtin.command:
     cmd: chattr +C {{ auditd_log_file | dirname }}
   register: __auditd_chattr

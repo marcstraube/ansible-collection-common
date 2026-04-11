@@ -3,7 +3,7 @@
 # Fontconfig Configuration
 # =============================================================================
 
-- name: Fontconfig | Deploy custom fontconfig
+- name: fontconfig | Deploy custom fontconfig
   ansible.builtin.template:
     src: 'local.conf.j2'
     dest: '/etc/fonts/local.conf'

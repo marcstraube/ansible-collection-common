@@ -3,7 +3,7 @@
 # Auditd Configuration Tasks
 # =============================================================================
 
-- name: Configure auditd.conf
+- name: Configure | auditd.conf
   ansible.builtin.template:
     src: 'auditd.conf.j2'
     dest: '/etc/audit/auditd.conf'
@@ -12,7 +12,7 @@
     mode: '0640'
   notify: Reload auditd config
 
-- name: Configure syslog plugin
+- name: Configure | syslog plugin
   ansible.builtin.template:
     src: 'syslog.conf.j2'
     dest: '/etc/audit/plugins.d/syslog.conf'

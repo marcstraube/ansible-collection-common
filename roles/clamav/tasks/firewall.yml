@@ -1,5 +1,5 @@
 ---
-- name: Allow ClamAV TCP port through firewalld
+- name: Firewall | Allow ClamAV TCP port through firewalld
   ansible.posix.firewalld:
     port: '{{ clamav_tcp_socket }}/tcp'
     zone: '{{ clamav_firewalld_zone }}'

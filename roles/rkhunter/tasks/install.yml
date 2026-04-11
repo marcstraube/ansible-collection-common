@@ -3,7 +3,7 @@
 # rkhunter - Installation Tasks
 # =============================================================================
 
-- name: Install | Install rkhunter package
+- name: Install | rkhunter package
   ansible.builtin.package:
     name: '{{ __rkhunter_package }}'
     state: present

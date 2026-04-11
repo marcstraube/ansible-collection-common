@@ -1,5 +1,5 @@
 ---
-- name: Check for weak moduli
+- name: Moduli | Check for weak moduli
   ansible.builtin.shell:
     cmd: "set -o pipefail && awk '$5 < {{ openssh_server_moduli_minimum_size }}' {{ __openssh_moduli_file }} | wc -l"
     executable: /bin/bash
@@ -7,17 +7,17 @@
   changed_when: false
   failed_when: false
 
-- name: Remove weak Diffie-Hellman moduli
+- name: Moduli | Remove weak Diffie-Hellman moduli
   when: __openssh_weak_moduli.stdout | int > 0
   block:
-    - name: Filter weak moduli to temporary file
+    - name: Moduli | Filter weak moduli to temporary file
       ansible.builtin.shell:
         cmd: >-
           awk '$5 >= {{ openssh_server_moduli_minimum_size }}'
           {{ __openssh_moduli_file }} > {{ __openssh_moduli_file }}.safe
       changed_when: true
 
-    - name: Install hardened moduli file
+    - name: Moduli | Install hardened moduli file
       ansible.builtin.copy:
         src: "{{ __openssh_moduli_file }}.safe"
         remote_src: true
@@ -28,7 +28,7 @@
         backup: true
       notify: 'restart sshd'
 
-    - name: Remove temporary moduli file
+    - name: Moduli | Remove temporary moduli file
       ansible.builtin.file:
         path: "{{ __openssh_moduli_file }}.safe"
         state: absent

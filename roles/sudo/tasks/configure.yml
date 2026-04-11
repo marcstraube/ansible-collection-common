@@ -3,7 +3,7 @@
 # Sudo Configuration
 # =============================================================================
 
-- name: Configure main sudoers file
+- name: Configure | Main sudoers file
   ansible.builtin.template:
     src: 'sudoers.j2'
     dest: '/etc/sudoers'
@@ -13,7 +13,7 @@
     validate: 'visudo -cf %s'
   when: sudo_enabled | bool
 
-- name: Ensure sudoers.d directory exists
+- name: Configure | Ensure sudoers.d directory exists
   ansible.builtin.file:
     path: '/etc/sudoers.d'
     state: directory
@@ -22,13 +22,13 @@
     mode: '0750'
   when: sudo_enabled | bool
 
-- name: Remove legacy wheel/sudo group drop-in (now in main sudoers)
+- name: Configure | Remove legacy wheel/sudo group drop-in (now in main sudoers)
   ansible.builtin.file:
     path: '/etc/sudoers.d/10-{{ __sudo_group }}'
     state: absent
   when: sudo_enabled | bool
 
-- name: Configure sudo users
+- name: Configure | sudo users
   ansible.builtin.template:
     src: 'sudoers.d/user.j2'
     dest: '/etc/sudoers.d/20-user-{{ item.name }}'
@@ -43,7 +43,7 @@
     - sudo_enabled | bool
     - sudo_users | length > 0
 
-- name: Configure sudo groups
+- name: Configure | sudo groups
   ansible.builtin.template:
     src: 'sudoers.d/custom_group.j2'
     dest: '/etc/sudoers.d/30-group-{{ item.name }}'
@@ -58,7 +58,7 @@
     - sudo_enabled | bool
     - sudo_groups | length > 0
 
-- name: Configure custom sudoers files
+- name: Configure | Custom sudoers files
   ansible.builtin.template:
     src: 'sudoers.d/custom.j2'
     dest: '/etc/sudoers.d/50-{{ item.name }}'
@@ -73,7 +73,7 @@
     - sudo_enabled | bool
     - sudo_sudoers_files | length > 0
 
-- name: Find unmanaged sudoers.d files
+- name: Configure | Find unmanaged sudoers.d files
   ansible.builtin.find:
     paths: '/etc/sudoers.d'
     patterns: '*'
@@ -83,7 +83,7 @@
     - sudo_enabled | bool
     - sudo_purge_sudoers_d | bool
 
-- name: Build list of managed sudoers.d files
+- name: Configure | Build list of managed sudoers.d files
   ansible.builtin.set_fact:
     _sudo_managed_files: >-
       {{
@@ -96,7 +96,7 @@
     - sudo_enabled | bool
     - sudo_purge_sudoers_d | bool
 
-- name: Remove unmanaged sudoers.d files
+- name: Configure | Remove unmanaged sudoers.d files
   ansible.builtin.file:
     path: '{{ item.path }}'
     state: absent

@@ -3,7 +3,7 @@
 # Restic - Installation Tasks
 # =============================================================================
 
-- name: Install | Restic from package manager
+- name: Install | restic from package manager
   ansible.builtin.package:
     name: '{{ __restic_packages }}'
     state: present
@@ -12,7 +12,7 @@
 - name: Install | Download restic binary
   when: not restic_install_from_package | bool
   block:
-    - name: Install | Install bzip2 for binary extraction
+    - name: Install | bzip2 for binary extraction
       ansible.builtin.package:
         name: '{{ __restic_binary_packages }}'
         state: present
@@ -28,7 +28,7 @@
         cmd: 'bunzip2 -f /tmp/restic.bz2'
         creates: '/tmp/restic'
 
-    - name: Install | Install restic binary
+    - name: Install | restic binary
       ansible.builtin.copy:
         src: '/tmp/restic'
         dest: '{{ restic_binary_path }}'
@@ -42,7 +42,7 @@
         path: '/tmp/restic'
         state: absent
 
-- name: Install | Install mail package for notifications
+- name: Install | Mail package for notifications
   ansible.builtin.package:
     name: '{{ __restic_mail_package }}'
     state: present

@@ -3,19 +3,19 @@
 # AIDE Database Tasks
 # =============================================================================
 
-- name: Set database paths based on format
+- name: Database | Set database paths based on format
   ansible.builtin.set_fact:
     __aide_db_path: >-
       {{ aide_database }}{{ '.gz' if aide_database_format == 'gzip' else '' }}
     __aide_db_new_path: >-
       {{ aide_database_new }}{{ '.gz' if aide_database_format == 'gzip' else '' }}
 
-- name: Check if AIDE database exists
+- name: Database | Check if AIDE database exists
   ansible.builtin.stat:
     path: '{{ __aide_db_path }}'
   register: aide_db_check
 
-- name: Initialize AIDE database
+- name: Database | Initialize AIDE database
   ansible.builtin.command:
     cmd: '{{ __aide_init_command }}'
   when:
@@ -26,7 +26,7 @@
   async: 3600
   poll: 10
 
-- name: Move new database to production  # noqa: no-handler
+- name: Database | Move new database to production  # noqa: no-handler
   ansible.builtin.command:
     cmd: 'mv {{ __aide_db_new_path }} {{ __aide_db_path }}'
     removes: '{{ __aide_db_new_path }}'

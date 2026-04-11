@@ -1,5 +1,5 @@
 ---
-- name: Ensure host key directory exists
+- name: Hostkeys | Ensure host key directory exists
   ansible.builtin.file:
     path: "{{ __openssh_host_keys_dir }}"
     state: directory
@@ -7,7 +7,7 @@
     group: 'root'
     mode: '0755'
 
-- name: Generate ED25519 host key
+- name: Hostkeys | Generate ED25519 host key
   community.crypto.openssh_keypair:
     path: "{{ __openssh_host_keys_dir }}/ssh_host_ed25519_key"
     type: 'ed25519'
@@ -17,7 +17,7 @@
   when: "'ed25519' in openssh_server_host_key_types"
   notify: 'restart sshd'
 
-- name: Generate RSA host key
+- name: Hostkeys | Generate RSA host key
   community.crypto.openssh_keypair:
     path: "{{ __openssh_host_keys_dir }}/ssh_host_rsa_key"
     type: 'rsa'
@@ -28,7 +28,7 @@
   when: "'rsa' in openssh_server_host_key_types"
   notify: 'restart sshd'
 
-- name: Generate ECDSA host key
+- name: Hostkeys | Generate ECDSA host key
   community.crypto.openssh_keypair:
     path: "{{ __openssh_host_keys_dir }}/ssh_host_ecdsa_key"
     type: 'ecdsa'
@@ -39,13 +39,13 @@
   when: "'ecdsa' in openssh_server_host_key_types"
   notify: 'restart sshd'
 
-- name: Remove DSA host key (deprecated)
+- name: Hostkeys | Remove DSA host key (deprecated)
   ansible.builtin.file:
     path: "{{ __openssh_host_keys_dir }}/ssh_host_dsa_key"
     state: absent
   notify: 'restart sshd'
 
-- name: Remove DSA host key public file
+- name: Hostkeys | Remove DSA host key public file
   ansible.builtin.file:
     path: "{{ __openssh_host_keys_dir }}/ssh_host_dsa_key.pub"
     state: absent

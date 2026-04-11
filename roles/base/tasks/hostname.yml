@@ -3,12 +3,12 @@
 # Hostname Configuration Tasks
 # =============================================================================
 
-- name: Set system hostname
+- name: Hostname | Set system hostname
   ansible.builtin.hostname:
     name: '{{ base_hostname }}'
     use: systemd
 
-- name: Configure machine-info
+- name: Hostname | Configure machine-info
   ansible.builtin.template:
     src: 'machine-info.j2'
     dest: '/etc/machine-info'
@@ -22,7 +22,7 @@
     base_icon_name | length > 0 or
     base_location | length > 0
 
-- name: Update /etc/hosts with hostname
+- name: Hostname | Update /etc/hosts with hostname
   ansible.builtin.lineinfile:
     path: '/etc/hosts'
     regexp: '^127\.0\.1\.1'

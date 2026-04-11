@@ -3,12 +3,12 @@
 # Reflector Tasks - Mirror Management
 # =============================================================================
 
-- name: Install Reflector
+- name: reflector | Install Reflector
   community.general.pacman:
     name: 'reflector'
     state: present
 
-- name: Configure Reflector
+- name: reflector | Configure Reflector
   ansible.builtin.template:
     src: 'archlinux/reflector.conf.j2'
     dest: '/etc/xdg/reflector/reflector.conf'
@@ -18,19 +18,19 @@
     backup: true
   notify: 'reflector configuration changed'
 
-- name: Enable Reflector service
+- name: reflector | Enable Reflector service
   ansible.builtin.systemd:
     name: 'reflector.service'
     enabled: true
 
-- name: Enable Reflector timer
+- name: reflector | Enable Reflector timer
   ansible.builtin.systemd:
     name: 'reflector.timer'
     state: started
     enabled: true
   when: reflector_timer_enabled | bool
 
-- name: Disable Reflector timer
+- name: reflector | Disable Reflector timer
   ansible.builtin.systemd:
     name: 'reflector.timer'
     state: stopped

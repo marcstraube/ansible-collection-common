@@ -3,18 +3,18 @@
 # PAM Hardening — Package Installation
 # =============================================================================
 
-- name: Install PAM packages
+- name: Install | PAM packages
   ansible.builtin.package:
     name: '{{ __pam_packages }}'
     state: present
 
-- name: Install libpwquality
+- name: Install | libpwquality
   ansible.builtin.package:
     name: '{{ __pam_pwquality_package }}'
     state: present
   when: pam_pwquality_enabled | bool
 
-- name: Install Google Authenticator PAM module
+- name: Install | Google Authenticator PAM module
   ansible.builtin.package:
     name: '{{ __pam_google_authenticator_package }}'
     state: present

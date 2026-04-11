@@ -3,19 +3,19 @@
 # NODE.JS - NVM INSTALLATION
 # =============================================================================
 
-- name: NVM | Validate nvm users are defined
+- name: Install NVM | Validate nvm users are defined
   ansible.builtin.assert:
     that:
       - nodejs_nvm_users | length > 0
     fail_msg: "nodejs_nvm_users must contain at least one user when nodejs_install_method is 'nvm'"
 
-- name: NVM | Install nvm system package (Archlinux)
+- name: Install NVM | Install nvm system package (Archlinux)
   community.general.pacman:
     name: '{{ __nodejs_nvm_packages }}'
     state: present
   when: ansible_facts['os_family'] == 'Archlinux'
 
-- name: NVM | Install nvm for each user
+- name: Install NVM | Install nvm for each user
   ansible.builtin.include_tasks:
     file: install_nvm_user.yml
     apply:

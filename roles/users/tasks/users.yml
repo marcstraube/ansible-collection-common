@@ -7,7 +7,7 @@
 # Determine Default User (for become_password)
 # =============================================================================
 
-- name: Find users with default flag
+- name: Users | Find users with default flag
   ansible.builtin.set_fact:
     users_with_default_flag: >-
       {{ users_list | selectattr('default', 'defined')
@@ -15,12 +15,12 @@
     users_non_root: >-
       {{ users_list | rejectattr('name', 'equalto', 'root') | list }}
 
-- name: Warn if multiple users have default flag
+- name: Users | Warn if multiple users have default flag
   ansible.builtin.debug:
     msg: "WARNING: Multiple users have 'default: true'. Using first one: {{ users_with_default_flag[0].name }}"
   when: users_with_default_flag | length > 1
 
-- name: Set default user fact
+- name: Users | Set default user fact
   ansible.builtin.set_fact:
     users_default_user: >-
       {%- if users_with_default_flag | length > 0 -%}
@@ -31,7 +31,7 @@
         {{ {} }}
       {%- endif -%}
 
-- name: Display default user
+- name: Users | Display default user
   ansible.builtin.debug:
     msg: "Default user: {{ users_default_user.name | default('none') }} (used for become_password)"
   when: users_default_user.name is defined
@@ -40,7 +40,7 @@
 # Root User (Special Handling - password/shell only)
 # =============================================================================
 
-- name: Update root password
+- name: Users | Update root password
   ansible.builtin.user:
     name: root
     password: >-
@@ -61,7 +61,7 @@
   no_log: true
   when: item.password is defined
 
-- name: Update root shell
+- name: Users | Update root shell
   ansible.builtin.user:
     name: root
     shell: >-
@@ -84,7 +84,7 @@
 # Random Password Generation
 # =============================================================================
 
-- name: Generate random passwords for users without one
+- name: Users | Generate random passwords for users without one
   ansible.builtin.set_fact:
     __users_generated_passwords: >-
       {% set result = {} -%}
@@ -100,7 +100,7 @@
   when: users_generate_random_password | default(false) | bool
   no_log: true
 
-- name: Store generated passwords to file
+- name: Users | Store generated passwords to file
   ansible.builtin.lineinfile:
     path: '{{ users_password_store_file }}'
     line: '{{ item.key }}: {{ item.value }}'
@@ -124,7 +124,7 @@
 # Shell Binary Validation (fallback to /bin/bash if missing)
 # =============================================================================
 
-- name: Check if configured shell exists for each user
+- name: Users | Check if configured shell exists for each user
   ansible.builtin.stat:
     path: '{{ item.shell | default(users_default_shell) }}'
   register: users_shell_check
@@ -132,7 +132,7 @@
   loop_control:
     label: '{{ item.name }}'
 
-- name: Warn about missing shell binaries (falling back to /bin/bash)
+- name: Users | Warn about missing shell binaries (falling back to /bin/bash)
   ansible.builtin.debug:
     msg: >-
       WARNING: Shell '{{ item.item.shell }}' for user '{{ item.item.name }}'
@@ -144,7 +144,7 @@
     - item.item.shell is defined
     - not (item.stat.exists | default(false))
 
-- name: Create users
+- name: Users | Create users
   ansible.builtin.user:
     name: '{{ item.name }}'
     comment: '{{ item.comment | default(omit) }}'
@@ -200,7 +200,7 @@
   no_log: true
   register: __users_create_result
 
-- name: Set list of newly created users
+- name: Users | Set list of newly created users
   ansible.builtin.set_fact:
     __users_newly_created: >-
       {{ __users_create_result.results
@@ -210,7 +210,7 @@
          | map(attribute='name')
          | list }}
 
-- name: Set home directory permissions
+- name: Users | Set home directory permissions
   ansible.builtin.file:
     path: '{{ item.home | default(users_default_home_base + "/" + item.name) }}'
     state: directory
@@ -224,7 +224,7 @@
     - item.state | default('present') == 'present'
     - item.create_home | default(users_default_create_home)
 
-- name: Create SSH directory
+- name: Users | Create SSH directory
   ansible.builtin.file:
     path: '{{ item.home | default(users_default_home_base + "/" + item.name) }}/{{ users_ssh_authorized_keys_dir }}'
     state: directory
@@ -243,18 +243,18 @@
 # Exclusive Mode — remove unlisted users
 # =============================================================================
 
-- name: Get existing regular users from passwd
+- name: Users | Get existing regular users from passwd
   ansible.builtin.getent:
     database: passwd
   when: users_exclusive | default(false) | bool
 
-- name: Build list of managed usernames
+- name: Users | Build list of managed usernames
   ansible.builtin.set_fact:
     __users_managed_names: >-
       {{ users_list | map(attribute='name') | list + users_keep }}
   when: users_exclusive | default(false) | bool
 
-- name: Identify users to remove (exclusive mode)
+- name: Users | Identify users to remove (exclusive mode)
   ansible.builtin.set_fact:
     __users_to_remove: >-
       {% set result = [] -%}
@@ -267,7 +267,7 @@
       {{ result }}
   when: users_exclusive | default(false) | bool
 
-- name: Remove unlisted users (exclusive mode)
+- name: Users | Remove unlisted users (exclusive mode)
   ansible.builtin.user:
     name: '{{ item }}'
     state: absent

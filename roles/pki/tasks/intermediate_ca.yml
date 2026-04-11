@@ -3,7 +3,7 @@
 # Intermediate CA Tasks
 # =============================================================================
 
-- name: IntermediateCA | Ensure intermediate CA directory structure exists
+- name: Intermediate CA | Ensure intermediate CA directory structure exists
   ansible.builtin.file:
     path: '{{ pki_intermediate_ca_dir }}/{{ item }}'
     state: directory
@@ -18,7 +18,7 @@
     - 'private'
     - 'csr'
 
-- name: IntermediateCA | Ensure intermediate CA index file exists
+- name: Intermediate CA | Ensure intermediate CA index file exists
   ansible.builtin.file:
     path: '{{ pki_intermediate_ca_dir }}/index.txt'
     state: touch
@@ -28,7 +28,7 @@
     modification_time: preserve
     access_time: preserve
 
-- name: IntermediateCA | Ensure intermediate CA serial file exists
+- name: Intermediate CA | Ensure intermediate CA serial file exists
   ansible.builtin.copy:
     content: '1000'
     dest: '{{ pki_intermediate_ca_dir }}/serial'
@@ -37,7 +37,7 @@
     mode: '0600'
     force: false
 
-- name: IntermediateCA | Ensure intermediate CA CRL number file exists
+- name: Intermediate CA | Ensure intermediate CA CRL number file exists
   ansible.builtin.copy:
     content: '1000'
     dest: '{{ pki_intermediate_ca_dir }}/crlnumber'
@@ -46,12 +46,12 @@
     mode: '0600'
     force: false
 
-- name: IntermediateCA | Check if intermediate CA private key exists
+- name: Intermediate CA | Check if intermediate CA private key exists
   ansible.builtin.stat:
     path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
   register: _pki_intermediate_ca_key_stat
 
-- name: IntermediateCA | Generate intermediate CA private key (EC)
+- name: Intermediate CA | Generate intermediate CA private key (EC)
   community.crypto.openssl_privatekey:
     path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
     type: 'ECC'
@@ -65,7 +65,7 @@
     - not _pki_intermediate_ca_key_stat.stat.exists
     - pki_intermediate_ca_key_type == 'ec'
 
-- name: IntermediateCA | Generate intermediate CA private key (RSA)
+- name: Intermediate CA | Generate intermediate CA private key (RSA)
   community.crypto.openssl_privatekey:
     path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
     type: 'RSA'
@@ -79,7 +79,7 @@
     - not _pki_intermediate_ca_key_stat.stat.exists
     - pki_intermediate_ca_key_type == 'rsa'
 
-- name: IntermediateCA | Generate intermediate CA private key (Ed25519)
+- name: Intermediate CA | Generate intermediate CA private key (Ed25519)
   community.crypto.openssl_privatekey:
     path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
     type: 'Ed25519'
@@ -92,12 +92,12 @@
     - not _pki_intermediate_ca_key_stat.stat.exists
     - pki_intermediate_ca_key_type == 'ed25519'
 
-- name: IntermediateCA | Check if intermediate CA certificate exists
+- name: Intermediate CA | Check if intermediate CA certificate exists
   ansible.builtin.stat:
     path: '{{ pki_intermediate_ca_dir }}/certs/intermediate.crt'
   register: _pki_intermediate_ca_cert_stat
 
-- name: IntermediateCA | Generate intermediate CA CSR
+- name: Intermediate CA | Generate intermediate CA CSR
   community.crypto.openssl_csr:
     path: '{{ pki_intermediate_ca_dir }}/csr/intermediate.csr'
     privatekey_path: '{{ pki_intermediate_ca_dir }}/private/intermediate.key'
@@ -123,7 +123,7 @@
     mode: '0600'
   when: not _pki_intermediate_ca_cert_stat.stat.exists
 
-- name: IntermediateCA | Sign intermediate CA certificate with root CA
+- name: Intermediate CA | Sign intermediate CA certificate with root CA
   community.crypto.x509_certificate:
     path: '{{ pki_intermediate_ca_dir }}/certs/intermediate.crt'
     csr_path: '{{ pki_intermediate_ca_dir }}/csr/intermediate.csr'
@@ -137,17 +137,17 @@
     mode: '0644'
   when: not _pki_intermediate_ca_cert_stat.stat.exists
 
-- name: IntermediateCA | Read intermediate CA certificate
+- name: Intermediate CA | Read intermediate CA certificate
   ansible.builtin.slurp:
     src: '{{ pki_intermediate_ca_dir }}/certs/intermediate.crt'
   register: _pki_intermediate_cert_content
 
-- name: IntermediateCA | Read root CA certificate
+- name: Intermediate CA | Read root CA certificate
   ansible.builtin.slurp:
     src: '{{ pki_ca_dir }}/certs/ca.crt'
   register: _pki_root_cert_content
 
-- name: IntermediateCA | Create CA chain file
+- name: Intermediate CA | Create CA chain file
   ansible.builtin.copy:
     content: |
       {{ _pki_intermediate_cert_content.content | b64decode }}{{ _pki_root_cert_content.content | b64decode }}

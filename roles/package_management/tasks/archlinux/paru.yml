@@ -3,7 +3,7 @@
 # Paru Configuration - Shared clone directory and cleanup settings
 # =============================================================================
 
-- name: Paru | Derive shared users from wheel group (exclude system users)  # noqa: var-naming[no-role-prefix]
+- name: paru | Derive shared users from wheel group (exclude system users)  # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     paru_shared_users: >-
       {{ (users_list
@@ -21,26 +21,26 @@
     - users_list is defined
     - users_list | length > 0
 
-- name: Create shared AUR group
+- name: paru | Create shared AUR group
   ansible.builtin.group:
     name: aur_shared
     system: true
     state: present
 
-- name: Add aur_builder to shared AUR group
+- name: paru | Add aur_builder to shared AUR group
   ansible.builtin.user:
     name: '{{ aur_builder_user }}'
     groups: aur_shared
     append: true
 
-- name: Add users to shared AUR group
+- name: paru | Add users to shared AUR group
   ansible.builtin.user:
     name: '{{ item }}'
     groups: aur_shared
     append: true
   loop: '{{ paru_shared_users }}'
 
-- name: Create shared clone directory
+- name: paru | Create shared clone directory
   ansible.builtin.file:
     path: '{{ paru_clone_dir }}'
     state: directory
@@ -48,13 +48,13 @@
     group: aur_shared
     mode: '2775'
 
-- name: Disable Copy-on-Write on shared clone directory (btrfs)
+- name: paru | Disable Copy-on-Write on shared clone directory (btrfs)
   ansible.builtin.file:
     path: '{{ paru_clone_dir }}'
     attr: +C
   failed_when: false
 
-- name: Deploy paru.conf
+- name: paru | Deploy paru.conf
   ansible.builtin.template:
     src: archlinux/paru.conf.j2
     dest: /etc/paru.conf

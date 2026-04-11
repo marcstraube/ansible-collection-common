@@ -1,17 +1,17 @@
 ---
-- name: Check if AppArmor is active
+- name: AppArmor | Check if AppArmor is active
   ansible.builtin.stat:
     path: /sys/kernel/security/apparmor
   register: __clamav_apparmor_active
 
-- name: Check current AppArmor profile mode for clamd
+- name: AppArmor | Check current AppArmor profile mode for clamd
   ansible.builtin.command:
     cmd: aa-status --json
   register: __clamav_aa_status
   changed_when: false
   when: __clamav_apparmor_active.stat.exists
 
-- name: Enforce AppArmor profile for clamd
+- name: AppArmor | Enforce AppArmor profile for clamd
   ansible.builtin.command:
     cmd: aa-enforce {{ __clamav_apparmor_profile }}
   changed_when: true

@@ -11,14 +11,14 @@
 # aa-status --json returns {"profiles": {"/path": "enforce"|"complain", ...}}
 # Keys are inconsistent: sometimes full path (/usr/bin/man), sometimes
 # basename only (tcpdump). We check both forms for reliable matching.
-- name: Get current AppArmor profile status
+- name: Profiles | Get current AppArmor profile status
   ansible.builtin.command:
     cmd: aa-status --json
   register: __apparmor_status_json
   changed_when: false
   failed_when: false
 
-- name: Build profile mode lookup sets
+- name: Profiles | Build profile mode lookup sets
   ansible.builtin.set_fact:
     __apparmor_enforce_set: >-
       {{ (__apparmor_status_json.stdout | default('{}') | from_json).get('profiles', {})
@@ -34,7 +34,7 @@
 # ENFORCE PROFILES
 # =============================================================================
 
-- name: Set profiles to enforce mode
+- name: Profiles | Set profiles to enforce mode
   ansible.builtin.command:
     cmd: 'aa-enforce {{ item }}'
   loop: '{{ apparmor_enforce_profiles }}'
@@ -48,7 +48,7 @@
 # COMPLAIN PROFILES
 # =============================================================================
 
-- name: Set profiles to complain mode
+- name: Profiles | Set profiles to complain mode
   ansible.builtin.command:
     cmd: 'aa-complain {{ item }}'
   loop: '{{ apparmor_complain_profiles }}'
@@ -62,7 +62,7 @@
 # DISABLE PROFILES
 # =============================================================================
 
-- name: Disable profiles
+- name: Profiles | Disable profiles
   ansible.builtin.command:
     cmd: 'aa-disable {{ item }}'
   loop: '{{ apparmor_disable_profiles }}'
@@ -78,7 +78,7 @@
 # CUSTOM PROFILES
 # =============================================================================
 
-- name: Deploy custom AppArmor profiles
+- name: Profiles | Deploy custom AppArmor profiles
   ansible.builtin.copy:
     content: '{{ item.content }}'
     dest: '/etc/apparmor.d/{{ item.name }}'
@@ -93,7 +93,7 @@
 # Only enforce custom profiles when the file was actually changed.
 # The profile name inside the file differs from the filename, making
 # aa-status lookup unreliable for custom profiles.
-- name: Enforce custom profiles
+- name: Profiles | Enforce custom profiles
   ansible.builtin.command:
     cmd: 'aa-enforce /etc/apparmor.d/{{ item.item.name }}'
   loop: '{{ __apparmor_custom_deployed.results | default([]) }}'
