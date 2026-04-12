@@ -29,7 +29,6 @@
           - locales
           - dbus
         state: present
-        update_cache: true
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Replace curl-minimal with curl on RedHat (Docker image conflict)

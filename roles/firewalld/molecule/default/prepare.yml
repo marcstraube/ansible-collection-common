@@ -4,6 +4,21 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - systemd
+        - dbus
+        - procps-ng
+      Debian:
+        - systemd
+        - dbus
+        - procps
+      RedHat:
+        - systemd
+        - dbus
+        - procps-ng
+
   tasks:
     - name: Update package cache (Arch)
       community.general.pacman:
@@ -21,32 +36,10 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Install systemd and dbus (Archlinux)
-      community.general.pacman:
-        name:
-          - systemd
-          - dbus
-          - procps-ng
+    - name: Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Install systemd and dbus (Debian)
-      ansible.builtin.apt:
-        name:
-          - systemd
-          - dbus
-          - procps
-        state: present
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Install systemd and dbus (RedHat)
-      ansible.builtin.dnf:
-        name:
-          - systemd
-          - dbus
-          - procps-ng
-        state: present
-      when: ansible_facts['os_family'] == 'RedHat'
 
     - name: Start dbus
       ansible.builtin.systemd:

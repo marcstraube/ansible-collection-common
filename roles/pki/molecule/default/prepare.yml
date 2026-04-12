@@ -1,7 +1,17 @@
 ---
 - name: Prepare
   hosts: all
+  become: true
   gather_facts: true
+
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - python-cryptography
+      Debian:
+        - python3-cryptography
+      RedHat:
+        - python3-cryptography
 
   tasks:
     - name: Update package cache (Arch)
@@ -20,25 +30,7 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Install cryptography library (Arch)
-      community.general.pacman:
-        name:
-          - python-cryptography
+    - name: Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Install cryptography library (Debian)
-      ansible.builtin.apt:
-        name:
-          - python3-cryptography
-        state: present
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Install cryptography library (RedHat)
-      ansible.builtin.dnf:
-        name:
-          - python3-cryptography
-        state: present
-      when: ansible_facts['os_family'] == 'RedHat'

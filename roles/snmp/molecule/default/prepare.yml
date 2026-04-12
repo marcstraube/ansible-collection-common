@@ -4,6 +4,15 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Debian:
+        - systemd
+        - procps
+      RedHat:
+        - systemd
+        - procps-ng
+
   tasks:
     - name: Update package cache (Arch)
       community.general.pacman:
@@ -21,18 +30,8 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Install systemd (Debian)
-      ansible.builtin.apt:
-        name:
-          - systemd
-          - procps
+    - name: Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Install systemd (RedHat)
-      ansible.builtin.dnf:
-        name:
-          - systemd
-          - procps-ng
-        state: present
-      when: ansible_facts['os_family'] == 'RedHat'
+      when: ansible_facts['os_family'] in __prepare_packages

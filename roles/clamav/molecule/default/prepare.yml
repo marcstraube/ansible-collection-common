@@ -4,6 +4,18 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - systemd
+        - which
+      Debian:
+        - systemd
+        - procps
+      RedHat:
+        - systemd
+        - procps-ng
+
   tasks:
     - name: Update package cache (Arch)
       community.general.pacman:
@@ -21,29 +33,10 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Install systemd on Archlinux
-      community.general.pacman:
-        name:
-          - systemd
-          - which
+    - name: Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Install systemd on Debian
-      ansible.builtin.apt:
-        name:
-          - systemd
-          - procps
-        state: present
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Install systemd on RedHat
-      ansible.builtin.dnf:
-        name:
-          - systemd
-          - procps-ng
-        state: present
-      when: ansible_facts['os_family'] == 'RedHat'
 
     # ClamAV daemon may fail to start in containers without override
     - name: Create systemd override directory for clamd (Arch)
