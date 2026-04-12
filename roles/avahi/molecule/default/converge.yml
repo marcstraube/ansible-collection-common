@@ -25,16 +25,6 @@
     avahi_firewalld_enabled: false
     avahi_apparmor_enabled: false
 
-  pre_tasks:
-    - name: Install systemd and dbus on Debian (minimal image)
-      ansible.builtin.apt:
-        name:
-          - systemd
-          - dbus
-        state: present
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
   tasks:
     - name: Include avahi role  # noqa: role-name[path]
       ansible.builtin.include_role:

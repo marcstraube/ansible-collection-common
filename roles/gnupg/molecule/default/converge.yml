@@ -5,18 +5,6 @@
   become: true
 
   pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      changed_when: false
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
     - name: Create test user
       ansible.builtin.user:
         name: testuser

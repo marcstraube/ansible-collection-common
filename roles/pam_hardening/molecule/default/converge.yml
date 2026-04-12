@@ -8,17 +8,6 @@
   become: true
   gather_facts: true
 
-  pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update apt cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
   vars:
     pam_hardening_enabled: true
 

@@ -4,41 +4,6 @@
   become: true
   gather_facts: true
 
-  pre_tasks:
-    - name: Update package cache and install iptables (Archlinux)
-      community.general.pacman:
-        name:
-          - which
-          - iptables
-        state: present
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache and install iptables (Debian)
-      ansible.builtin.apt:
-        name:
-          - iptables
-        state: present
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Install iptables (RedHat)
-      ansible.builtin.dnf:
-        name:
-          - iptables
-        state: present
-      when: ansible_facts['os_family'] == 'RedHat'
-
-    # Containers lack syslog — create auth log files for sshd jail
-    - name: Create system auth log (container)
-      ansible.builtin.copy:
-        content: ''
-        dest: "{{ '/var/log/secure' if ansible_facts['os_family'] == 'RedHat' else '/var/log/auth.log' }}"
-        owner: root
-        group: root
-        mode: '0640'
-        force: false
-
   vars:
     # SSH jail
     fail2ban_sshd_enabled: true

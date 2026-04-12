@@ -4,24 +4,6 @@
   become: true
   gather_facts: true
 
-  pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Install EPEL repository (Rocky)
-      ansible.builtin.dnf:
-        name: epel-release
-        state: present
-      when: ansible_facts['os_family'] == 'RedHat'
-
   vars:
     lynis_enabled: true
     lynis_timer_enabled: true
