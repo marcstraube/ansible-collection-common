@@ -1,5 +1,5 @@
 ---
-# BTRFS: NoCOW for write-heavy log directory
+# NoCOW for log directory
 - name: BTRFS | Check log directory filesystem type
   ansible.builtin.command:
     cmd: stat -f -c %T {{ chrony_log_dir | dirname }}

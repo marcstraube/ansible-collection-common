@@ -1,5 +1,5 @@
 ---
-# NoCOW for container storage directory
+# Subvolume + NoCOW for container storage directory
 
 - name: BTRFS | Check if storage parent filesystem is BTRFS
   ansible.builtin.command:

@@ -1,5 +1,5 @@
 ---
-# NoCOW for rkhunter database directory (updated during --propupd/--update)
+# NoCOW for database directory
 
 - name: BTRFS | Check if /var/lib/rkhunter/db is on BTRFS
   ansible.builtin.command:

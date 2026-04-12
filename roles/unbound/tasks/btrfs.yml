@@ -1,5 +1,5 @@
 ---
-# BTRFS: NoCOW for write-heavy data directory
+# NoCOW for data directory
 - name: BTRFS | Check data directory filesystem type
   ansible.builtin.command:
     cmd: stat -f -c %T /var/lib/unbound

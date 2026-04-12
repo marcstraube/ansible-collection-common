@@ -1,5 +1,5 @@
 ---
-# NoCOW for write-heavy audit log directory
+# Subvolume + NoCOW for audit log directory
 
 - name: BTRFS | Check if audit log parent filesystem is BTRFS
   ansible.builtin.command:

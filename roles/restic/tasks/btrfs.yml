@@ -1,6 +1,5 @@
 ---
-# NoCOW for log directory to avoid CoW overhead on write-heavy log files.
-# Only applies when restic_log_to_file is true.
+# NoCOW for log directory
 
 - name: BTRFS | Check filesystem type for log directory
   ansible.builtin.command:
