@@ -1,99 +1,47 @@
 ---
-- name: Prepare instances
+- name: Prepare
   hosts: all
-  gather_facts: false
   become: true
+  gather_facts: true
+
+  vars:
+    __prepare_packages:
+      Debian: [systemd, procps, network-manager]
+      RedHat: [systemd, procps-ng, NetworkManager]
+
   tasks:
-    # =========================================================================
-    # BASE PREPARATION (all platforms)
-    # =========================================================================
-
-    - name: Gather facts after Python installation
-      ansible.builtin.setup:
-
-    # =========================================================================
-    # ARCH LINUX PREPARATION
-    # =========================================================================
-
-    - name: Initialize pacman keyring (Arch Linux)
-      ansible.builtin.raw: |
-        pacman-key --init
-        pacman-key --populate archlinux
-      when: ansible_facts['os_family'] == 'Archlinux'
-      changed_when: false
-
-    - name: Update archlinux-keyring first (Arch Linux)
-      community.general.pacman:
-        name:
-          - archlinux-keyring
-        state: latest
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-      retries: 3
-      delay: 10
-      register: keyring_update
-      until: keyring_update is succeeded
-
-    - name: Full system update (Arch Linux)
+    - name: Prepare | Update package cache (Arch)
       community.general.pacman:
         update_cache: true
         upgrade: true
       when: ansible_facts['os_family'] == 'Archlinux'
-      retries: 3
-      delay: 10
-      register: system_update
-      until: system_update is succeeded
 
-    - name: Ensure Python is installed (Arch Linux)
-      community.general.pacman:
-        name:
-          - python
-        state: present
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    # =========================================================================
-    # DEBIAN PREPARATION
-    # =========================================================================
-
-    - name: Update apt cache (Debian)
+    - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
         update_cache: true
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Install base packages (Debian)
-      ansible.builtin.apt:
-        name:
-          - systemd
-          - procps
-          - network-manager
-        state: present
-      when: ansible_facts['os_family'] == 'Debian'
-
-    # =========================================================================
-    # REDHAT PREPARATION
-    # =========================================================================
-
-    - name: Install base packages (RedHat)
+    - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
-        name:
-          - systemd
-          - procps-ng
-          - NetworkManager
-        state: present
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    # =========================================================================
-    # WIFI SIMULATION (Arch Linux only)
-    # =========================================================================
+    - name: Prepare | Install VM dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
+        state: present
+      when: ansible_facts['os_family'] in __prepare_packages
 
-    - name: Ensure iw package is installed (Arch Linux)
-      community.general.pacman:
-        name: iw
+    # WiFi simulation (Arch only)
+    - name: Prepare | Install WiFi tools (Arch)
+      ansible.builtin.package:
+        name:
+          - iw
+          - hostapd
         state: present
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Unload mac80211_hwsim module if already loaded
+    - name: Prepare | Unload mac80211_hwsim module if loaded
       ansible.builtin.shell: |
         set -o pipefail
         if lsmod | grep -q mac80211_hwsim; then
@@ -102,7 +50,7 @@
       changed_when: false
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Load mac80211_hwsim kernel module with 4 radios
+    - name: Prepare | Load mac80211_hwsim kernel module with 4 radios
       ansible.builtin.shell: |
         # Create 4 radios: 2 for APs (wlan0, wlan1) and 2 for clients (wlan2, wlan3)
         modprobe mac80211_hwsim radios=4
@@ -110,24 +58,18 @@
       changed_when: false
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Verify WiFi interfaces were created
+    - name: Prepare | Verify WiFi interfaces were created
       ansible.builtin.command: iw dev
       register: wifi_devices
       changed_when: false
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Display created WiFi interfaces
+    - name: Prepare | Display created WiFi interfaces
       ansible.builtin.debug:
         msg: "{{ wifi_devices.stdout_lines }}"
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Ensure hostapd is installed (Arch Linux)
-      community.general.pacman:
-        name: hostapd
-        state: present
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Bring wlan interfaces up
+    - name: Prepare | Bring wlan interfaces up
       ansible.builtin.command: ip link set {{ item }} up
       loop:
         - wlan0
@@ -135,7 +77,7 @@
       changed_when: false
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Create hostapd configuration for Office WiFi
+    - name: Prepare | Create hostapd configuration for Office WiFi
       ansible.builtin.copy:
         dest: /tmp/hostapd_office.conf
         content: |
@@ -151,7 +93,7 @@
         mode: "0644"
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Create hostapd configuration for Home WiFi
+    - name: Prepare | Create hostapd configuration for Home WiFi
       ansible.builtin.copy:
         dest: /tmp/hostapd_home.conf
         content: |
@@ -167,21 +109,21 @@
         mode: "0644"
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Start hostapd for Office WiFi in background
+    - name: Prepare | Start hostapd for Office WiFi in background
       ansible.builtin.shell: |
         nohup hostapd /tmp/hostapd_office.conf > /tmp/hostapd_office.log 2>&1 &
         sleep 2
       changed_when: false
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Start hostapd for Home WiFi in background
+    - name: Prepare | Start hostapd for Home WiFi in background
       ansible.builtin.shell: |
         nohup hostapd /tmp/hostapd_home.conf > /tmp/hostapd_home.log 2>&1 &
         sleep 2
       changed_when: false
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Bring client WiFi interfaces up
+    - name: Prepare | Bring client WiFi interfaces up
       ansible.builtin.command: ip link set {{ item }} up
       loop:
         - wlan2
@@ -189,7 +131,7 @@
       changed_when: false
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Wait for WiFi APs to be fully operational
+    - name: Prepare | Wait for WiFi APs to be fully operational
       ansible.builtin.pause:
         seconds: 5
       when: ansible_facts['os_family'] == 'Archlinux'
