@@ -17,6 +17,7 @@
     state: started
   listen: Start auditd
 
+  # failed_when: false — auditctl requires kernel audit subsystem (unavailable in containers)
 - name: Reload auditd config
   ansible.builtin.command:
     cmd: auditctl --signal HUP
@@ -24,6 +25,7 @@
   failed_when: false
   listen: Reload auditd config
 
+  # failed_when: false — augenrules requires kernel audit subsystem (unavailable in containers)
 - name: Reload auditd rules
   ansible.builtin.command:
     cmd: augenrules --load

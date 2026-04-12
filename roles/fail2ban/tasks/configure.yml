@@ -80,14 +80,14 @@
     owner: root
     group: root
     mode: '0644'
-  when: fail2ban_recidive_enabled
+  when: fail2ban_recidive_enabled | bool
   notify: Reload fail2ban
 
 - name: Configure | Remove recidive jail if disabled
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/recidive.local'
     state: absent
-  when: not fail2ban_recidive_enabled
+  when: not (fail2ban_recidive_enabled | bool)
   notify: Reload fail2ban
 
 # =============================================================================
@@ -156,14 +156,14 @@
     owner: root
     group: root
     mode: '0644'
-  when: fail2ban_mysqld_enabled or fail2ban_postgresql_enabled
+  when: (fail2ban_mysqld_enabled | bool) or (fail2ban_postgresql_enabled | bool)
   notify: Reload fail2ban
 
 - name: Configure | Remove database jails if disabled
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/database.local'
     state: absent
-  when: not (fail2ban_mysqld_enabled or fail2ban_postgresql_enabled)
+  when: not ((fail2ban_mysqld_enabled | bool) or (fail2ban_postgresql_enabled | bool))
   notify: Reload fail2ban
 
 # =============================================================================
@@ -176,14 +176,14 @@
     owner: root
     group: root
     mode: '0644'
-  when: fail2ban_grafana_enabled
+  when: fail2ban_grafana_enabled | bool
   notify: Reload fail2ban
 
 - name: Configure | Remove Grafana jail if disabled
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/grafana.local'
     state: absent
-  when: not fail2ban_grafana_enabled
+  when: not (fail2ban_grafana_enabled | bool)
   notify: Reload fail2ban
 
 # =============================================================================
