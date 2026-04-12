@@ -5,6 +5,55 @@
   gather_facts: true
 
   tasks:
+    - name: Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Install systemd and dbus (Archlinux)
+      community.general.pacman:
+        name:
+          - systemd
+          - dbus
+          - procps-ng
+        state: present
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Install systemd and dbus (Debian)
+      ansible.builtin.apt:
+        name:
+          - systemd
+          - dbus
+          - procps
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install systemd and dbus (RedHat)
+      ansible.builtin.dnf:
+        name:
+          - systemd
+          - dbus
+          - procps-ng
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Start dbus
+      ansible.builtin.systemd:
+        name: dbus
+        state: started
+      failed_when: false
+
     # Debian containers need polkitd installed and dbus restarted
     # before firewalld can acquire its D-Bus name
     - name: Prepare | Install polkitd (Debian)

@@ -4,24 +4,6 @@
   become: true
   gather_facts: true
 
-  pre_tasks:
-    - name: Full system update (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      changed_when: false
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update apt cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Update dnf cache (RedHat)
-      ansible.builtin.dnf:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'RedHat'
-
   vars:
     graphics_enabled: true
     # In containers, no real GPU — set manually

@@ -38,19 +38,6 @@
     unbound_insecure_domains:
       - 'test.example.com'
 
-  pre_tasks:
-    - name: Update apt cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-      changed_when: false
-
-    - name: Update dnf cache (RedHat)
-      ansible.builtin.dnf:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'RedHat'
-      changed_when: false
-
   tasks:
     - name: Include unbound role  # noqa: role-name[path]
       ansible.builtin.include_role:
