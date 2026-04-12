@@ -12,9 +12,10 @@
     - python_pipx_enabled | default(true) | bool
     - __python_pipx_packages | length > 0
 
-# -----------------------------------------------------------------------------
+#
 # Bootstrap pipx (Rocky 9 — system pipx too old)
-# -----------------------------------------------------------------------------
+#
+
 - name: Install | Create pipx bootstrap venv
   ansible.builtin.command:
     cmd: '{{ __python_venv_command }} /opt/pipx-bootstrap'
@@ -32,9 +33,10 @@
     - python_pipx_enabled | default(true) | bool
     - __python_bootstrap_pipx | default(false) | bool
 
-# -----------------------------------------------------------------------------
+#
 # Extra packages
-# -----------------------------------------------------------------------------
+#
+
 - name: Install | Extra Python packages (AUR)
   become: true
   become_user: 'aur_builder'

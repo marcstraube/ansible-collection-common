@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 firejail_enabled: true
 
-# =============================================================================
-# APPLICATION EXCLUSIONS
-# =============================================================================
+#
+# Application Exclusions
+#
 
 # Applications to exclude from Firejail sandboxing
 # These are commented out in /etc/firejail/firecfg.config so firecfg skips them
@@ -16,9 +16,9 @@ firejail_exclude:
   - 'patch'                       # Breaks fakeroot/makepkg (AUR builds)
   - 'steam'                       # Gaming platform - complex requirements
 
-# =============================================================================
-# GLOBAL SETTINGS
-# =============================================================================
+#
+# Global Settings
+#
 
 # Global Firejail settings (/etc/firejail/firejail.config)
 firejail_config:
@@ -37,9 +37,9 @@ firejail_globals: []
 #   - 'blacklist ${HOME}/.ssh'
 #   - 'blacklist ${HOME}/.gnupg'
 
-# =============================================================================
-# CUSTOM PROFILES
-# =============================================================================
+#
+# Custom Profiles
+#
 
 # Per-application profile overrides (/etc/firejail/<app>.local)
 # Dict of app name -> list of profile directives
@@ -54,9 +54,9 @@ firejail_profiles: {}
 #     - 'whitelist ${HOME}/.config/chromium'
 #     - 'private-tmp'
 
-# =============================================================================
-# PACMAN HOOK (Arch Linux only)
-# =============================================================================
+#
+# Pacman Hook (Arch Linux Only)
+#
 
 # Install pacman hook to re-run firecfg after package installs/upgrades
 firejail_pacman_hook: true

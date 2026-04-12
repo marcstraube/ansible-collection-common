@@ -1,7 +1,7 @@
 ---
-# -----------------------------------------------------------------------------
-# HTTP(S) PROXY
-# -----------------------------------------------------------------------------
+#
+# HTTP(S) Proxy
+#
 
 - name: Configure | Check current npm HTTP proxy
   ansible.builtin.command: npm config get proxy
@@ -61,9 +61,9 @@
     - nodejs_npm_proxy | length == 0
     - __nodejs_current_https_proxy_remove.stdout | default('null') | trim not in ['null', 'undefined', '']
 
-# -----------------------------------------------------------------------------
-# CUSTOM NPM CONFIG
-# -----------------------------------------------------------------------------
+#
+# Custom NPM Config
+#
 
 - name: Configure | Query current npm config values
   ansible.builtin.command: npm config get {{ item.key }}

@@ -1,7 +1,7 @@
 ---
-# -----------------------------------------------------------------------------
-# PREREQUISITES
-# -----------------------------------------------------------------------------
+#
+# Prerequisites
+#
 
 - name: Install NodeSource | Install prerequisite packages (Debian)
   ansible.builtin.apt:
@@ -16,9 +16,9 @@
     state: present
   when: ansible_facts['os_family'] == 'RedHat'
 
-# -----------------------------------------------------------------------------
-# GPG KEY & REPOSITORY (Debian - always NodeSource)
-# -----------------------------------------------------------------------------
+#
+# GPG Key & Repository (Debian - always NodeSource)
+#
 
 - name: Install NodeSource | Add GPG key (Debian)
   ansible.builtin.get_url:
@@ -41,8 +41,9 @@
     update_cache: true
   when: ansible_facts['os_family'] == 'Debian'
 
-# -----------------------------------------------------------------------------
-# REDHAT: Smart version handling
+#
+# RedHat: Smart version handling
+#
 #   Rocky 10+ (dnf5): modularity removed, go straight to NodeSource
 #   Rocky 9:
 #     1. Check current version
@@ -50,7 +51,6 @@
 #     3. If wrong or missing -> check if AppStream has the requested stream
 #     4a. AppStream has it -> enable stream, install/swap
 #     4b. AppStream doesn't have it -> disable module, add NodeSource, install
-# -----------------------------------------------------------------------------
 
 - name: Install NodeSource | Check current Node.js version (RedHat)
   ansible.builtin.command: node --version

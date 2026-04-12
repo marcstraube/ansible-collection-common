@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 hardening_enabled: true
 
-# =============================================================================
-# KERNEL HARDENING (sysctl)
-# =============================================================================
+#
+# Kernel Hardening (sysctl)
+#
 # Security-focused sysctl settings deployed to /etc/sysctl.d/99-hardening.conf
 # Note: Network-level sysctl (ip_forward, rp_filter, etc.) is in the sysctl role
 
@@ -61,9 +61,9 @@ hardening_kernel_perf_event_paranoid: true
 # Set to 0 if PostgreSQL or other io_uring consumers are in use
 hardening_kernel_io_uring_disabled: 2
 
-# =============================================================================
-# KERNEL MODULE BLACKLISTING
-# =============================================================================
+#
+# Kernel Module Blacklisting
+#
 # Blacklist unused kernel modules to reduce attack surface
 # Deployed to /etc/modprobe.d/hardening-blacklist.conf
 
@@ -93,9 +93,9 @@ hardening_modules_blacklist_extra: []
 # Use when a host needs a module that is in the default lists above
 hardening_modules_blacklist_exclude: []
 
-# =============================================================================
-# FILESYSTEM MOUNT HARDENING
-# =============================================================================
+#
+# Filesystem Mount Hardening
+#
 # Harden mount options for sensitive directories via fstab
 
 hardening_fs_enabled: true

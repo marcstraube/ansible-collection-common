@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 graphics_enabled: true
 
-# =============================================================================
-# GPU VENDOR SELECTION
-# =============================================================================
+#
+# GPU Vendor Selection
+#
 
 # GPU vendor: intel, amd, nvidia, auto
 # 'auto' will attempt to detect GPU(s) from lspci
@@ -17,9 +17,9 @@ graphics_gpu: 'auto'
 # Example: ['intel', 'nvidia'] for Intel + NVIDIA laptop
 graphics_gpus: []
 
-# =============================================================================
-# INTEL GPU
-# =============================================================================
+#
+# Intel GPU
+#
 
 # Install Intel GPU drivers
 graphics_intel_enabled: false
@@ -42,9 +42,9 @@ graphics_intel_guc_huc: false
 # 32-bit support (for Steam, Wine, etc.)
 graphics_intel_32bit: false
 
-# =============================================================================
+#
 # AMD GPU
-# =============================================================================
+#
 
 # Install AMD GPU drivers
 graphics_amd_enabled: false
@@ -58,9 +58,9 @@ graphics_amd_vulkan: true
 # 32-bit support (for Steam, Wine, etc.)
 graphics_amd_32bit: false
 
-# =============================================================================
+#
 # NVIDIA GPU
-# =============================================================================
+#
 
 # Install NVIDIA GPU drivers
 graphics_nvidia_enabled: false
@@ -82,9 +82,9 @@ graphics_nvidia_32bit: false
 # Install CUDA support
 graphics_nvidia_cuda: false
 
-# =============================================================================
-# COMMON OPTIONS
-# =============================================================================
+#
+# Common Options
+#
 
 # Install Vulkan loader and tools
 graphics_vulkan_tools: true
@@ -98,9 +98,9 @@ graphics_vdpau_tools: false
 # Install Mesa utilities (glxinfo, glxgears)
 graphics_mesa_utils: true
 
-# =============================================================================
-# HYBRID GRAPHICS (PRIME)
-# =============================================================================
+#
+# Hybrid Graphics (PRIME)
+#
 
 # Enable hybrid graphics support (Intel/AMD iGPU + NVIDIA dGPU)
 graphics_hybrid_enabled: false
@@ -125,9 +125,9 @@ graphics_hybrid_nvidia_rtd3_level: '0x02'
 # Enable nvidia-persistenced service (recommended with RTD3)
 graphics_hybrid_nvidia_persistenced: false
 
-# =============================================================================
-# KERNEL PARAMETERS (modprobe.d)
-# =============================================================================
+#
+# Kernel Parameters (modprobe.d)
+#
 
 # Deploy modprobe.d config files for GPU kernel module options
 graphics_kernel_params_enabled: false

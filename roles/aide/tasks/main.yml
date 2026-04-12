@@ -1,7 +1,7 @@
 ---
-# =============================================================================
-# VALIDATION
-# =============================================================================
+#
+# Validation
+#
 
 - name: Main | Warn if email notifications use localhost address
   ansible.builtin.debug:
@@ -14,9 +14,9 @@
     - "'localhost' in aide_email_to"
   tags: [aide]
 
-# =============================================================================
-# INSTALLATION
-# =============================================================================
+#
+# Installation
+#
 
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'

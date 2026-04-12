@@ -10,9 +10,7 @@
         - 'vars'
   tags: [energy]
 
-# ---------------------------------------------------------------------------
 # Logind configuration (all systemd distros)
-# ---------------------------------------------------------------------------
 - name: Main | Include logind tasks
   ansible.builtin.include_tasks:
     file: logind.yml
@@ -23,9 +21,7 @@
     - energy_management_enabled | bool
     - energy_management_logind_enabled | bool
 
-# ---------------------------------------------------------------------------
 # Sleep configuration (all systemd distros)
-# ---------------------------------------------------------------------------
 - name: Main | Include sleep tasks
   ansible.builtin.include_tasks:
     file: sleep.yml
@@ -36,9 +32,7 @@
     - energy_management_enabled | bool
     - energy_management_sleep_enabled | bool
 
-# ---------------------------------------------------------------------------
 # Power manager: PPD or TLP (OS-specific)
-# ---------------------------------------------------------------------------
 - name: Main | Include power-profiles-daemon tasks
   ansible.builtin.include_tasks:
     file: ppd.yml
@@ -59,9 +53,7 @@
     - energy_management_enabled | bool
     - energy_management_power_manager == 'tlp'
 
-# ---------------------------------------------------------------------------
 # Battery threshold (laptop only, OS-specific)
-# ---------------------------------------------------------------------------
 - name: Main | Include battery tasks
   ansible.builtin.include_tasks:
     file: battery.yml
@@ -73,9 +65,7 @@
     - energy_management_battery_enabled | bool
     - energy_management_system_type == 'laptop'
 
-# ---------------------------------------------------------------------------
 # Backlight (laptop only, OS-specific)
-# ---------------------------------------------------------------------------
 - name: Main | Include backlight tasks
   ansible.builtin.include_tasks:
     file: backlight.yml

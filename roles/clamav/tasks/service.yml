@@ -13,9 +13,10 @@
     state: stopped
   when: not (clamav_daemon_enabled | bool)
 
-# ============================================================================
+#
 # Freshclam (database updates)
-# ============================================================================
+#
+
 - name: Service | Enable and start freshclam service
   ansible.builtin.systemd:
     name: '{{ __clamav_freshclam_service }}'
@@ -30,9 +31,10 @@
     state: stopped
   when: not (clamav_freshclam_enabled | bool)
 
-# ============================================================================
+#
 # ClamAV milter (only managed when milter is enabled)
-# ============================================================================
+#
+
 - name: Service | Enable and start clamav-milter service
   ansible.builtin.systemd:
     name: '{{ __clamav_milter_service }}'

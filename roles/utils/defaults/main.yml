@@ -1,14 +1,14 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 # Enable the utils role
 utils_enabled: true
 
-# =============================================================================
-# SYSTEM MONITORS
-# =============================================================================
+#
+# System Monitors
+#
 
 # Interactive process viewer (htop)
 utils_monitor_htop: true
@@ -22,9 +22,9 @@ utils_monitor_bottom: false
 # Advanced system & process monitor with logging (atop)
 utils_monitor_atop: false
 
-# =============================================================================
-# TERMINAL MULTIPLEXERS
-# =============================================================================
+#
+# Terminal Multiplexers
+#
 
 # Terminal multiplexer (tmux)
 utils_mux_tmux: true
@@ -36,16 +36,16 @@ utils_mux_zellij: false
 # GNU Screen terminal multiplexer
 utils_mux_screen: false
 
-# =============================================================================
-# FILE TRANSFER
-# =============================================================================
+#
+# File Transfer
+#
 
 # Fast file copying tool (rsync)
 utils_transfer_rsync: true
 
-# =============================================================================
-# SEARCH TOOLS
-# =============================================================================
+#
+# Search Tools
+#
 
 # Install ripgrep (fast grep replacement)
 utils_search_ripgrep: false
@@ -53,9 +53,9 @@ utils_search_ripgrep: false
 # Install fd (fast find replacement)
 utils_search_fd: false
 
-# =============================================================================
-# SYSTEM INFO (FETCH TOOLS)
-# =============================================================================
+#
+# System Info (Fetch Tools)
+#
 
 # Fast system information tool written in C (fastfetch)
 utils_fetch_fastfetch: false
@@ -72,9 +72,9 @@ utils_fetch_archey4: false
 # Arch only
 utils_fetch_cpufetch: false
 
-# =============================================================================
-# FUN TOOLS (ASCII ART & TERMINAL ENTERTAINMENT)
-# =============================================================================
+#
+# Fun Tools (ASCII Art & Terminal Entertainment)
+#
 
 # Configurable talking cow (cowsay)
 utils_fun_cowsay: false

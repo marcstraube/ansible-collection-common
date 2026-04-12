@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 gnupg_enabled: true
 
-# =============================================================================
-# PACKAGES
-# =============================================================================
+#
+# Packages
+#
 
 # Install GUI tools (seahorse, etc.)
 gnupg_install_gui: false
@@ -15,9 +15,9 @@ gnupg_install_gui: false
 # Install additional CLI tools (hopenpgp-tools, paperkey)
 gnupg_install_tools: true
 
-# =============================================================================
-# GPG CONFIGURATION (gpg.conf)
-# =============================================================================
+#
+# GPG Configuration (gpg.conf)
+#
 
 # Default key for signing (empty = no default)
 gnupg_default_key: ''
@@ -67,9 +67,9 @@ gnupg_keyserver: 'hkps://keys.openpgp.org'
 # Options: local, cert, pka, dane, wkd, ldap, keyserver, nodefault, clear
 gnupg_auto_key_locate: 'local,wkd'
 
-# =============================================================================
-# GPG AGENT (gpg-agent.conf)
-# =============================================================================
+#
+# GPG Agent (gpg-agent.conf)
+#
 
 gnupg_agent_enabled: true
 
@@ -106,9 +106,9 @@ gnupg_agent_no_allow_external_cache: false
 # Disable scdaemon (smartcard support)
 gnupg_agent_disable_scdaemon: false
 
-# =============================================================================
-# SCDAEMON (scdaemon.conf — smartcard daemon)
-# =============================================================================
+#
+# Scdaemon (scdaemon.conf — smartcard daemon)
+#
 
 gnupg_scdaemon_enabled: true
 
@@ -147,9 +147,9 @@ gnupg_scdaemon_debug_level: ''
 # Log file path (empty = no file logging)
 gnupg_scdaemon_log_file: ''
 
-# =============================================================================
-# DIRMNGR (dirmngr.conf — keyserver daemon)
-# =============================================================================
+#
+# Dirmngr (dirmngr.conf — keyserver daemon)
+#
 
 gnupg_dirmngr_enabled: true
 
@@ -176,9 +176,9 @@ gnupg_dirmngr_http_proxy: ''
 # Enable OCSP support
 gnupg_dirmngr_allow_ocsp: false
 
-# =============================================================================
-# KEY MANAGEMENT
-# =============================================================================
+#
+# Key Management
+#
 
 # Public keys to import (from files or keyservers)
 gnupg_import_keys: []
@@ -192,9 +192,9 @@ gnupg_trust_keys: []
 # gnupg_trust_keys:
 #   - '1234567890ABCDEF1234567890ABCDEF12345678'
 
-# =============================================================================
-# USER CONFIGURATION
-# =============================================================================
+#
+# User Configuration
+#
 
 # Users for whom to configure GnuPG
 #

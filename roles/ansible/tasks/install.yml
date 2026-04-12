@@ -1,7 +1,7 @@
 ---
-# =============================================================================
-# COMMON (all OS families)
-# =============================================================================
+#
+# Common (all OS families)
+#
 
 - name: Install | Enable EPEL repository (RedHat)
   ansible.builtin.dnf:
@@ -17,9 +17,10 @@
     state: present
   when: ansible_tools_install_ansible | bool
 
-# =============================================================================
-# ARCHLINUX — Molecule, drivers, lint via pacman/AUR
-# =============================================================================
+#
+# Archlinux — Molecule, drivers, lint via pacman/AUR
+#
+
 - name: Install | Archlinux installation
   when: ansible_facts['os_family'] == 'Archlinux'
   block:
@@ -66,9 +67,10 @@
         state: present
       when: ansible_tools_install_lint | bool
 
-# =============================================================================
-# DEBIAN — Molecule, drivers, lint via pipx
-# =============================================================================
+#
+# Debian — Molecule, drivers, lint via pipx
+#
+
 - name: Install | Debian installation
   when: ansible_facts['os_family'] == 'Debian'
   block:
@@ -119,9 +121,10 @@
         executable: '{{ __ansible_tools_pipx_cmd }}'
       when: ansible_tools_install_lint | bool
 
-# =============================================================================
-# REDHAT — Molecule, drivers, lint via pipx
-# =============================================================================
+#
+# RedHat — Molecule, drivers, lint via pipx
+#
+
 - name: Install | RedHat installation
   when: ansible_facts['os_family'] == 'RedHat'
   block:

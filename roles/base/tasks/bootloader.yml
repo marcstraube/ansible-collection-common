@@ -1,7 +1,7 @@
 ---
-# =============================================================================
+#
 # GRUB
-# =============================================================================
+#
 
 - name: Bootloader | Set GRUB timeout
   ansible.builtin.lineinfile:
@@ -29,9 +29,9 @@
     - base_bootloader == 'grub'
     - base_kernel_parameters | length > 0
 
-# =============================================================================
-# SYSTEMD-BOOT
-# =============================================================================
+#
+# Systemd-Boot
+#
 
 - name: Bootloader | Configure systemd-boot loader.conf
   ansible.builtin.template:

@@ -1,14 +1,14 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 # Enable or disable the entire role
 pam_hardening_enabled: true
 
-# =============================================================================
-# PASSWORD QUALITY (pwquality.conf)
-# =============================================================================
+#
+# Password Quality (pwquality.conf)
+#
 
 # Enable password quality checking via pam_pwquality
 pam_pwquality_enabled: true
@@ -78,9 +78,9 @@ pam_pwquality_enforce_for_root: true
 # Only check local users in /etc/passwd (skip LDAP/NIS)
 pam_pwquality_local_users_only: false
 
-# =============================================================================
-# ACCOUNT LOCKOUT (faillock.conf)
-# =============================================================================
+#
+# Account Lockout (faillock.conf)
+#
 
 # Enable account lockout on failed attempts via pam_faillock
 pam_faillock_enabled: true
@@ -123,17 +123,17 @@ pam_faillock_nodelay: false
 # Group members treated like root for lockout (empty = disabled)
 pam_faillock_admin_group: ''
 
-# =============================================================================
-# PASSWORD HISTORY
-# =============================================================================
+#
+# Password History
+#
 
 # Number of old passwords to remember (0 = disabled)
 # Uses pam_pwhistory on Arch/RedHat, pam_unix remember= on Debian
 pam_password_remember: 5
 
-# =============================================================================
-# PASSWORD AGING (login.defs)
-# =============================================================================
+#
+# Password Aging (login.defs)
+#
 
 # Enable password aging enforcement
 # NIST/BSI/ANSSI recommend against forced rotation
@@ -151,9 +151,9 @@ pam_password_warn_age: 7
 # Inactive period after password expiration in days (-1 = disabled)
 pam_password_inactive: -1
 
-# =============================================================================
-# PASSWORD HASHING (login.defs + pam_unix)
-# =============================================================================
+#
+# Password Hashing (login.defs + pam_unix)
+#
 
 # Password hashing algorithm
 # yescrypt: memory-hard (recommended, default on Arch/Debian 12+/Fedora 35+)
@@ -165,9 +165,9 @@ pam_password_hash: 'yescrypt'
 # sha512:   iteration rounds (recommended 65536+, STIG minimum 5000)
 pam_password_rounds: 5
 
-# =============================================================================
-# SESSION LIMITS (limits.d/99-hardening.conf)
-# =============================================================================
+#
+# Session Limits (limits.d/99-hardening.conf)
+#
 
 # Enable session limits via pam_limits
 pam_limits_enabled: true
@@ -191,9 +191,9 @@ pam_limits_custom: []
 #    item: nproc
 #    value: 50
 
-# =============================================================================
-# ACCESS CONTROL (access.conf)
-# =============================================================================
+#
+# Access Control (access.conf)
+#
 
 # Enable access control via pam_access
 pam_access_enabled: true
@@ -204,9 +204,9 @@ pam_access_rules:
   - '+:wheel:ALL'
   - '+:root:LOCAL'
 
-# =============================================================================
-# UMASK (login.defs + pam_umask)
-# =============================================================================
+#
+# Umask (login.defs + pam_umask)
+#
 
 # Default umask for user sessions (0077 = restrictive, 0022 = permissive)
 pam_umask: '0077'
@@ -214,9 +214,9 @@ pam_umask: '0077'
 # Enable usergroups mode (umask 002 for users whose primary group = username)
 pam_umask_usergroups: false
 
-# =============================================================================
-# LOGIN SECURITY
-# =============================================================================
+#
+# Login Security
+#
 
 # Delay after failed login attempt in microseconds (Debian/Arch only)
 pam_delay: 4000000
@@ -237,9 +237,9 @@ pam_securetty_ttys:
   - tty5
   - tty6
 
-# =============================================================================
-# TWO-FACTOR AUTHENTICATION (Google Authenticator)
-# =============================================================================
+#
+# Two-Factor Authentication (Google Authenticator)
+#
 
 # Enable TOTP 2FA with Google Authenticator
 pam_2fa_enabled: false

@@ -31,9 +31,9 @@
     state: present
   when: makepkg_distcc | bool
 
-# =============================================================================
+#
 # Per-User makepkg.conf
-# =============================================================================
+#
 
 - name: makepkg | Deploy user makepkg.conf
   ansible.builtin.template:

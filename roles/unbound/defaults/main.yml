@@ -1,16 +1,14 @@
 ---
-# =============================================================================
-# Unbound - DNS Resolver Configuration
-# =============================================================================
+#
+# Service Control
+#
 
-# -----------------------------------------------------------------------------
-# SERVICE CONTROL
-# -----------------------------------------------------------------------------
 unbound_enabled: true
 
-# -----------------------------------------------------------------------------
-# NETWORK SETTINGS
-# -----------------------------------------------------------------------------
+#
+# Network Settings
+#
+
 # Interfaces to listen on
 unbound_interfaces:
   - '127.0.0.1'
@@ -42,9 +40,10 @@ unbound_access_control:
 # Do not query localhost for upstream (useful when forwarding)
 unbound_do_not_query_localhost: true
 
-# -----------------------------------------------------------------------------
-# PERFORMANCE
-# -----------------------------------------------------------------------------
+#
+# Performance
+#
+
 # Number of threads (0 = auto, based on CPU cores)
 unbound_num_threads: 0
 
@@ -89,9 +88,10 @@ unbound_num_queries_per_thread: 1024
 unbound_so_rcvbuf: '4m'
 unbound_so_sndbuf: '4m'
 
-# -----------------------------------------------------------------------------
-# SECURITY / DNSSEC
-# -----------------------------------------------------------------------------
+#
+# Security / DNSSEC
+#
+
 # Enable DNSSEC validation
 unbound_dnssec_enabled: true
 
@@ -120,18 +120,20 @@ unbound_unwanted_reply_threshold: 10000
 unbound_qname_minimisation: true
 unbound_qname_minimisation_strict: true
 
-# -----------------------------------------------------------------------------
-# PRIVACY
-# -----------------------------------------------------------------------------
+#
+# Privacy
+#
+
 # Use TCP for upstream queries (more private but slower)
 unbound_tcp_upstream: false
 
 # Aggressive NSEC (reduces queries for non-existent domains)
 unbound_aggressive_nsec: true
 
-# -----------------------------------------------------------------------------
-# UPSTREAM DNS
-# -----------------------------------------------------------------------------
+#
+# Upstream DNS
+#
+
 # Forward zones
 unbound_forward_zones: []
 # Example for forwarding all queries:
@@ -149,9 +151,10 @@ unbound_tls_upstream: true
 # TLS certificate bundle path (auto-detected per OS, override via inventory)
 # unbound_tls_cert_bundle: '/etc/ssl/certs/ca-certificates.crt'
 
-# -----------------------------------------------------------------------------
-# LOCAL DATA
-# -----------------------------------------------------------------------------
+#
+# Local Data
+#
+
 # Local zones (for internal DNS)
 unbound_local_zones: []
 # Example:
@@ -174,9 +177,10 @@ unbound_local_data_ptr: []
 #   - ip: '192.168.1.100'
 #     name: 'myserver.local'
 
-# -----------------------------------------------------------------------------
-# BLOCKLIST / AD BLOCKING
-# -----------------------------------------------------------------------------
+#
+# Blocklist / Ad Blocking
+#
+
 # Enable ad/tracker blocking
 unbound_blocklist_enabled: false
 
@@ -187,9 +191,10 @@ unbound_blocklist_urls:
 # Blocklist update schedule (systemd OnCalendar expression)
 unbound_blocklist_schedule: '*-*-* 04:00:00'
 
-# -----------------------------------------------------------------------------
-# LOGGING
-# -----------------------------------------------------------------------------
+#
+# Logging
+#
+
 # Verbosity (0-5, 0 = errors only)
 unbound_verbosity: 1
 
@@ -203,23 +208,26 @@ unbound_log_replies: false
 unbound_use_syslog: true
 unbound_logfile: ''
 
-# -----------------------------------------------------------------------------
-# ROOT HINTS
-# -----------------------------------------------------------------------------
+#
+# Root Hints
+#
+
 # Auto-update root hints via systemd timer
 unbound_root_hints_update: true
 unbound_root_hints_file: '/var/lib/unbound/root.hints'
 
-# -----------------------------------------------------------------------------
-# REMOTE CONTROL
-# -----------------------------------------------------------------------------
+#
+# Remote Control
+#
+
 # Enable unbound-control (required for reload, stats queries)
 unbound_remote_control: true
 unbound_control_interface: '/run/unbound/control'
 
-# -----------------------------------------------------------------------------
-# ADVANCED
-# -----------------------------------------------------------------------------
+#
+# Advanced
+#
+
 # Private addresses (not forwarded)
 unbound_private_addresses:
   - '10.0.0.0/8'
@@ -241,21 +249,24 @@ unbound_chroot: ''
 # Username to drop privileges to (empty = OS default)
 unbound_username: ''
 
-# -----------------------------------------------------------------------------
+#
 # BTRFS
-# -----------------------------------------------------------------------------
+#
+
 # Enable BTRFS NoCOW for data directory (/var/lib/unbound/)
 unbound_btrfs_enabled: true
 
-# -----------------------------------------------------------------------------
-# FIREWALL
-# -----------------------------------------------------------------------------
+#
+# Firewall
+#
+
 # Enable firewalld integration for DNS port
 unbound_firewalld_enabled: false
 unbound_firewalld_zone: 'public'
 
-# -----------------------------------------------------------------------------
-# APPARMOR
-# -----------------------------------------------------------------------------
+#
+# AppArmor
+#
+
 # Enable AppArmor profile enforcement (Arch/Debian only)
 unbound_apparmor_enabled: false

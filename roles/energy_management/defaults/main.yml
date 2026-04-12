@@ -1,14 +1,7 @@
 ---
-# Manages power-related configuration for both desktops and laptops:
-#   - logind.conf (power/suspend/lid keys, idle action)
-#   - sleep.conf (suspend/hibernate behavior)
-#   - Power profiles daemon (PPD) or TLP
-#   - Battery charge thresholds (laptop)
-#   - Backlight access (laptop)
-
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 energy_management_enabled: true
 
@@ -16,13 +9,13 @@ energy_management_enabled: true
 # Auto-detected from inventory variable 'system_type' if set
 energy_management_system_type: "{{ system_type | default('desktop') }}"
 
-# =============================================================================
-# LOGIND CONFIGURATION
-# =============================================================================
+#
+# Logind Configuration
+#
+
 # Deployed as /etc/systemd/logind.conf.d/energy.conf
 # NOTE: security.yml may deploy a separate security.conf — systemd merges
 # alphabetically, so security.conf (s) overrides energy.conf (e) on overlap.
-
 energy_management_logind_enabled: true
 
 # Power key handling (all systems)
@@ -42,11 +35,11 @@ energy_management_handle_lid_switch_docked: 'ignore'
 energy_management_idle_action: ''
 energy_management_idle_action_sec: '30min'
 
-# =============================================================================
-# SLEEP CONFIGURATION
-# =============================================================================
-# Deployed as /etc/systemd/sleep.conf.d/energy.conf
+#
+# Sleep Configuration
+#
 
+# Deployed as /etc/systemd/sleep.conf.d/energy.conf
 energy_management_sleep_enabled: true
 
 energy_management_allow_suspend: true
@@ -66,9 +59,10 @@ energy_management_hibernate_state: 'disk'
 # NOTE: HibernateDelaySec requires systemd >= 256 (not available on RHEL 9)
 energy_management_hibernate_delay_sec: 3600
 
-# =============================================================================
-# POWER MANAGER
-# =============================================================================
+#
+# Power Manager
+#
+
 # Choose ONE: 'ppd' (power-profiles-daemon) or 'tlp' or '' (none)
 # PPD and TLP are mutually exclusive — each task removes the other.
 #
@@ -78,15 +72,14 @@ energy_management_hibernate_delay_sec: 3600
 #
 # TLP: Granular control over many kernel tunables
 #      Best for laptops needing fine-grained battery optimization
-
 energy_management_power_manager: 'ppd'
 
 # PPD settings
 energy_management_ppd_default_profile: 'balanced'
 
-# =============================================================================
-# TLP SETTINGS (when power_manager == 'tlp')
-# =============================================================================
+#
+# TLP Settings (when power_manager == 'tlp')
+#
 
 # CPU energy/performance policy
 energy_management_tlp_cpu_energy_perf_policy_on_ac: 'balance_performance'
@@ -117,9 +110,9 @@ energy_management_tlp_nmi_watchdog: 0
 # Additional TLP settings (raw key=value pairs for tlp.conf)
 energy_management_tlp_extra_settings: {}
 
-# =============================================================================
-# BATTERY THRESHOLD (laptop only)
-# =============================================================================
+#
+# Battery Threshold (laptop only)
+#
 # Controls charge start/stop thresholds via sysfs.
 # Older ThinkPads (T530 etc.) need tp_smapi kernel module.
 # tp_smapi is only available on Arch Linux and Debian (not RHEL).
@@ -132,9 +125,9 @@ energy_management_battery_stop_threshold: 80
 # Use tp_smapi for older ThinkPads (T530 and earlier)
 energy_management_battery_tp_smapi: false
 
-# =============================================================================
-# BACKLIGHT (laptop only)
-# =============================================================================
+#
+# Backlight (laptop only)
+#
 # Installs brightnessctl and sets up udev rules for user access.
 
 energy_management_backlight_enabled: false

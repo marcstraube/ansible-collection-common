@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 fonts_enabled: true
 
-# =============================================================================
-# BASE FONTS
-# =============================================================================
+#
+# Base Fonts
+#
 
 # Install base font set (DejaVu, Liberation, Noto)
 fonts_base: true
@@ -28,9 +28,9 @@ fonts_noto_emoji: true
 # Warning: Large download (~1.5GB)
 fonts_noto_cjk: false
 
-# =============================================================================
-# CODING FONTS
-# =============================================================================
+#
+# Coding Fonts
+#
 
 # Install coding/monospace fonts
 fonts_coding: false
@@ -41,9 +41,9 @@ fonts_coding_families:
   - 'firacode'
   - 'jetbrains'
 
-# =============================================================================
-# NERD FONTS
-# =============================================================================
+#
+# Nerd Fonts
+#
 
 # Install Nerd Fonts (patched fonts with icons)
 fonts_nerd: false
@@ -54,24 +54,25 @@ fonts_nerd: false
 fonts_nerd_families:
   - 'symbols-only'
 
-# =============================================================================
-# LEGACY/COMPATIBILITY FONTS (removed)
-# =============================================================================
+#
+# Legacy/Compatibility Fonts (Removed)
+#
+
 # Microsoft fonts are no longer needed - Liberation fonts are metrically
 # compatible. If you really need MS fonts, add to fonts_extra_packages:
 #   ArchLinux (AUR): fonts_extra_packages: ['ttf-ms-fonts']
 #   Debian/Ubuntu:   fonts_extra_packages: ['ttf-mscorefonts-installer']
 
-# =============================================================================
-# ADDITIONAL FONTS
-# =============================================================================
+#
+# Additional Fonts
+#
 
 # Additional font packages to install (OS-specific package names)
 fonts_extra_packages: []
 
-# =============================================================================
-# FONTCONFIG
-# =============================================================================
+#
+# Fontconfig
+#
 
 # Enable fontconfig customization
 fonts_fontconfig_enabled: true
@@ -94,9 +95,9 @@ fonts_fontconfig_subpixel: 'rgb'
 # LCD filter: none, default, light, legacy
 fonts_fontconfig_lcdfilter: 'default'
 
-# =============================================================================
-# CACHE
-# =============================================================================
+#
+# Cache
+#
 
 # Rebuild font cache after installation
 fonts_rebuild_cache: true

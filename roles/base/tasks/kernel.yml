@@ -26,9 +26,7 @@
     - _base_microcode_package is defined
     - _base_microcode_package | length > 0
 
-# =============================================================================
 # mkinitcpio — only manage when explicitly configured
-# =============================================================================
 # IMPORTANT: Do NOT template mkinitcpio.conf unless the user explicitly sets
 # hooks/modules/etc. The installer sets up mkinitcpio.conf with the correct
 # hooks for the system (encrypt, gpg, sd-encrypt, etc.). Templating it

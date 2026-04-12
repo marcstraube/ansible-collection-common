@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 pki_enabled: true
 
-# =============================================================================
-# OPENSSL SYSTEM CONFIGURATION
-# =============================================================================
+#
+# OpenSSL System Configuration
+#
 
 # Configure system-wide OpenSSL settings
 pki_configure_system: true
@@ -28,9 +28,9 @@ pki_ciphersuites_tls13: 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS
 # Disable legacy/insecure algorithms
 pki_disable_legacy: true
 
-# =============================================================================
-# CERTIFICATE AUTHORITY (CA)
-# =============================================================================
+#
+# Certificate Authority (CA)
+#
 
 # Create a local Certificate Authority
 pki_ca_enabled: false
@@ -59,9 +59,9 @@ pki_ca_email: ''
 # Empty = no passphrase (not recommended for production)
 pki_ca_passphrase: '{{ vault_pki_ca_passphrase | default("") }}'
 
-# =============================================================================
-# SERVER CERTIFICATES
-# =============================================================================
+#
+# Server Certificates
+#
 
 # Server certificates to generate
 # Example:
@@ -91,9 +91,9 @@ pki_server_key_curve: 'secp256r1'
 pki_server_validity_days: 365
 pki_server_key_mode: '0600'
 
-# =============================================================================
-# CLIENT CERTIFICATES
-# =============================================================================
+#
+# Client Certificates
+#
 
 # Client certificates to generate
 # Example:
@@ -112,9 +112,9 @@ pki_client_key_size: 2048
 pki_client_key_curve: 'secp256r1'
 pki_client_validity_days: 365
 
-# =============================================================================
-# CERTIFICATE SIGNING REQUESTS (CSR)
-# =============================================================================
+#
+# Certificate Signing Requests (CSR)
+#
 
 # CSRs to generate (without signing)
 # Example:
@@ -127,9 +127,9 @@ pki_client_validity_days: 365
 #       dest_key: '/etc/ssl/private/external.key'
 pki_csrs: []
 
-# =============================================================================
-# DHPARAM
-# =============================================================================
+#
+# DHparam
+#
 
 # Generate DH parameters (required for perfect forward secrecy)
 pki_dhparam_enabled: true
@@ -140,9 +140,9 @@ pki_dhparam_size: 4096
 # DH parameter file path
 pki_dhparam_path: '/etc/ssl/dhparam.pem'
 
-# =============================================================================
-# CERTIFICATE DIRECTORIES
-# =============================================================================
+#
+# Certificate Directories
+#
 
 # Base directories for certificates
 pki_certs_dir: '/etc/ssl/certs'
@@ -155,9 +155,9 @@ pki_create_dirs: true
 # Private directory permissions
 pki_private_dir_mode: '0700'
 
-# =============================================================================
-# TRUSTED CA CERTIFICATES
-# =============================================================================
+#
+# Trusted CA Certificates
+#
 
 # Additional CA certificates to trust system-wide
 # Example:
@@ -171,9 +171,7 @@ pki_private_dir_mode: '0700'
 #       src: 'files/partner-ca.crt'
 pki_trusted_cas: []
 
-# =============================================================================
-# CERTIFICATE DEPLOYMENT
-# =============================================================================
+# Certificate Deployment
 
 # Deploy externally-obtained certificates from inventory files/ directory.
 # Source path: {{ inventory_dir }}/files/certs/
@@ -196,9 +194,7 @@ pki_trusted_cas: []
 pki_deploy_certs: []
 pki_deploy_certs_host: []
 
-# =============================================================================
-# INTERMEDIATE CA
-# =============================================================================
+# Intermediate CA
 
 # Enable intermediate CA (signs server/client certs instead of root CA)
 pki_intermediate_ca_enabled: false
@@ -220,9 +216,7 @@ pki_intermediate_ca_common_name: 'Private Intermediate CA'
 # Intermediate CA private key passphrase (use vault!)
 pki_intermediate_ca_passphrase: '{{ vault_pki_intermediate_ca_passphrase | default("") }}'
 
-# =============================================================================
-# CERTIFICATE REVOCATION
-# =============================================================================
+# Certificate Revocation
 
 # Enable CRL (Certificate Revocation List) management
 pki_crl_enabled: false
@@ -242,9 +236,7 @@ pki_revoked_certs: []
 # CRL distribution path (empty = no distribution copy)
 pki_crl_distribution_path: ''
 
-# =============================================================================
-# ADVANCED SETTINGS
-# =============================================================================
+# Advanced Settings
 
 # Default message digest
 pki_default_md: 'sha384'
@@ -267,9 +259,7 @@ pki_policy_match:
   commonName: 'supplied'
   emailAddress: 'optional'
 
-# =============================================================================
-# CERTIFICATE RENEWAL MONITORING
-# =============================================================================
+# Certificate Renewal Monitoring
 
 # Enable certificate expiry monitoring via systemd timer
 pki_renewal_enabled: false
@@ -283,9 +273,7 @@ pki_renewal_timer_oncalendar: 'weekly'
 # Email address for expiry notifications
 pki_renewal_report_email: 'root@localhost'
 
-# =============================================================================
-# FIREWALL INTEGRATION
-# =============================================================================
+# Firewall Integration
 
 # Enable firewalld integration for OCSP responder
 pki_firewalld_enabled: false
@@ -293,9 +281,7 @@ pki_firewalld_enabled: false
 # Firewalld zone for OCSP responder
 pki_firewalld_zone: 'public'
 
-# =============================================================================
-# APPARMOR INTEGRATION
-# =============================================================================
+# AppArmor Integration
 
 # Enable AppArmor profile for OCSP responder (Arch/Debian only)
 pki_apparmor_enabled: false

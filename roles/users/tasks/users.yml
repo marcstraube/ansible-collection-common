@@ -1,7 +1,7 @@
 ---
-# =============================================================================
+#
 # Determine Default User (for become_password)
-# =============================================================================
+#
 
 - name: Users | Find users with default flag
   ansible.builtin.set_fact:
@@ -32,9 +32,9 @@
     msg: "Default user: {{ users_default_user.name | default('none') }} (used for become_password)"
   when: users_default_user.name is defined
 
-# =============================================================================
+#
 # Root User (Special Handling - password/shell only)
-# =============================================================================
+#
 
 - name: Users | Update root password
   ansible.builtin.user:
@@ -72,13 +72,11 @@
     label: 'root'
   when: item.shell is defined
 
-# =============================================================================
+#
 # Regular Users (excluding root)
-# =============================================================================
+#
 
-# =============================================================================
 # Random Password Generation
-# =============================================================================
 
 - name: Users | Generate random passwords for users without one
   ansible.builtin.set_fact:
@@ -116,9 +114,7 @@
   delegate_to: localhost
   become: false
 
-# =============================================================================
 # Shell Binary Validation (fallback to /bin/bash if missing)
-# =============================================================================
 
 - name: Users | Check if configured shell exists for each user
   ansible.builtin.stat:
@@ -235,9 +231,9 @@
     - item.create_home | default(users_default_create_home) | bool
     - users_create_ssh_dir | bool
 
-# =============================================================================
+#
 # Exclusive Mode — remove unlisted users
-# =============================================================================
+#
 
 - name: Users | Get existing regular users from passwd
   ansible.builtin.getent:

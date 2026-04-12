@@ -1,7 +1,7 @@
 ---
-# =============================================================================
-# PASSWORD QUALITY
-# =============================================================================
+#
+# Password Quality
+#
 
 - name: Configure | Deploy pwquality configuration
   ansible.builtin.template:
@@ -45,9 +45,9 @@
 # RedHat: pwquality.conf is read automatically when pam_pwquality.so is in the
 # authselect profile — no additional stack changes needed.
 
-# =============================================================================
-# ACCOUNT LOCKOUT
-# =============================================================================
+#
+# Account Lockout
+#
 
 - name: Configure | Deploy faillock configuration
   ansible.builtin.template:
@@ -148,9 +148,9 @@
     - pam_faillock_enabled | bool
     - "'with-faillock' not in (__pam_authselect_current.stdout | default(''))"
 
-# =============================================================================
-# PASSWORD HISTORY
-# =============================================================================
+#
+# Password History
+#
 
 # Arch: add pam_pwhistory to system-auth password stack
 - name: Configure | Add pam_pwhistory to password stack (Arch)
@@ -198,9 +198,9 @@
     - ansible_facts['os_family'] == 'RedHat'
     - pam_password_remember | int > 0
 
-# =============================================================================
-# PASSWORD HASHING & AGING (login.defs)
-# =============================================================================
+#
+# Password Hashing and Aging (login.defs)
+#
 
 - name: Configure | Password hashing algorithm in login.defs
   ansible.builtin.lineinfile:
@@ -241,9 +241,9 @@
     - { key: 'INACTIVE', value: '{{ pam_password_inactive }}' }
   when: pam_password_aging_enabled | bool
 
-# =============================================================================
-# SESSION LIMITS
-# =============================================================================
+#
+# Session Limits
+#
 
 - name: Configure | Ensure limits.d directory exists
   ansible.builtin.file:
@@ -278,9 +278,9 @@
 
 # RedHat: pam_limits.so is unconditionally included in authselect profiles.
 
-# =============================================================================
-# ACCESS CONTROL
-# =============================================================================
+#
+# Access Control
+#
 
 - name: Configure | Deploy access control configuration
   ansible.builtin.template:
@@ -322,9 +322,9 @@
     - pam_access_enabled | bool
     - "'with-pamaccess' not in (__pam_authselect_current.stdout | default(''))"
 
-# =============================================================================
-# UMASK
-# =============================================================================
+#
+# Umask
+#
 
 # All platforms: configure UMASK in login.defs (read by pam_umask and login)
 - name: Configure | Umask in login.defs
@@ -345,9 +345,9 @@
     line: 'USERGROUPS_ENAB {{ "yes" if pam_umask_usergroups else "no" }}'
     state: present
 
-# =============================================================================
-# NULL PASSWORDS
-# =============================================================================
+#
+# Null Passwords
+#
 
 # Arch: remove nullok from all pam_unix.so lines in system-auth
 # (auth line and password line both have nullok by default)
@@ -388,9 +388,9 @@
     - not (pam_permit_empty_passwords | bool)
     - "'without-nullok' not in (__pam_authselect_current.stdout | default(''))"
 
-# =============================================================================
-# LOGIN DELAY
-# =============================================================================
+#
+# Login Delay
+#
 
 # Arch: add pam_faildelay to system-login auth stack
 - name: Configure | Login delay (Arch)
@@ -422,9 +422,9 @@
     state: present
   when: ansible_facts['os_family'] == 'RedHat'
 
-# =============================================================================
-# SECURE TTY
-# =============================================================================
+#
+# Secure TTY
+#
 
 - name: Configure | Deploy securetty configuration
   ansible.builtin.template:
@@ -435,9 +435,9 @@
     mode: '0600'
   when: pam_securetty_enabled | bool
 
-# =============================================================================
-# TWO-FACTOR AUTHENTICATION
-# =============================================================================
+#
+# Two-Factor Authentication
+#
 
 # Arch: add to system-auth or service-specific PAM files
 - name: Configure | 2FA for PAM services (Arch)

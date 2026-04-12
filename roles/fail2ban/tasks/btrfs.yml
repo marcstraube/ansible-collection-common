@@ -60,9 +60,7 @@
   failed_when: false
   when: __fail2ban_db_is_btrfs | bool
 
-# -----------------------------------------------------------------------------
 # Log file: NoCOW only (single file in /var/log, no subvolume)
-# -----------------------------------------------------------------------------
 - name: BTRFS | Check if fail2ban log directory is on BTRFS
   ansible.builtin.command:
     cmd: stat -f -c %T {{ fail2ban_logtarget | dirname }}

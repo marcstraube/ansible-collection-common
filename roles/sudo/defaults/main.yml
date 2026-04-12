@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 sudo_enabled: true
 
-# =============================================================================
-# WHEEL GROUP
-# =============================================================================
+#
+# Wheel Group
+#
 
 # Allow wheel group to use sudo
 sudo_wheel_group: true
@@ -15,9 +15,9 @@ sudo_wheel_group: true
 # Require password for wheel group
 sudo_wheel_requires_password: true
 
-# =============================================================================
-# SUDO USERS
-# =============================================================================
+#
+# Sudo Users
+#
 
 # Users with full sudo access (added to wheel group or direct sudoers)
 # Example:
@@ -29,9 +29,9 @@ sudo_wheel_requires_password: true
 #       commands: ['/usr/bin/systemctl restart myapp']
 sudo_users: []
 
-# =============================================================================
-# SUDO GROUPS
-# =============================================================================
+#
+# Sudo Groups
+#
 
 # Groups with sudo access
 # Example:
@@ -43,9 +43,9 @@ sudo_users: []
 #       commands: ['/usr/bin/systemctl *']
 sudo_groups: []
 
-# =============================================================================
-# SUDOERS.D FILES
-# =============================================================================
+#
+# Sudoers.d Files
+#
 
 # Custom sudoers.d files
 # Example:
@@ -58,9 +58,9 @@ sudo_groups: []
 #       nopasswd: true
 sudo_sudoers_files: []
 
-# =============================================================================
-# SECURITY SETTINGS
-# =============================================================================
+#
+# Security Settings
+#
 
 # Require tty for sudo (breaks Ansible, cron, and other non-interactive tools)
 sudo_require_tty: false
@@ -96,9 +96,9 @@ sudo_lecture: 'once'
 # Insults on wrong password (fun but not recommended for production)
 sudo_insults: false
 
-# =============================================================================
-# ENVIRONMENT
-# =============================================================================
+#
+# Environment
+#
 
 # Environment variables to preserve
 sudo_env_keep:
@@ -115,9 +115,9 @@ sudo_env_reset: true
 # Secure path for sudo commands
 sudo_secure_path: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
-# =============================================================================
-# ADVANCED
-# =============================================================================
+#
+# Advanced
+#
 
 # Mail recipient for sudo alerts (empty = disabled)
 sudo_mailto: ''

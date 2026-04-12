@@ -1,16 +1,13 @@
 ---
-# -----------------------------------------------------------------------------
 # Ensure firewalld is running for configuration
-# -----------------------------------------------------------------------------
-
 - name: Configure | Start firewalld for configuration
   ansible.builtin.systemd:
     name: '{{ __firewalld_service_name }}'
     state: started
 
-# -----------------------------------------------------------------------------
+#
 # Version Detection (for firewalld.conf conditionals)
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Get firewalld version
   ansible.builtin.command:
@@ -24,9 +21,9 @@
     __firewalld_ipv6_rpfilter_legacy: >-
       {{ (__firewalld_version_output.stdout | trim) is version('2.0.0', '<') }}
 
-# -----------------------------------------------------------------------------
+#
 # Global Configuration (firewalld.conf)
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Deploy firewalld.conf
   ansible.builtin.template:
@@ -37,9 +34,9 @@
     mode: '0644'
   notify: Restart firewalld
 
-# -----------------------------------------------------------------------------
+#
 # Zone Management
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Create custom zones
   ansible.posix.firewalld:
@@ -76,9 +73,9 @@
   changed_when: true
   notify: Reload firewalld
 
-# -----------------------------------------------------------------------------
+#
 # Default Zone
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Get current default zone
   ansible.builtin.command:
@@ -92,9 +89,9 @@
   when: (__firewalld_current_zone.stdout | trim) != firewalld_default_zone
   changed_when: true
 
-# -----------------------------------------------------------------------------
+#
 # Custom Services
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Create custom service files
   ansible.builtin.template:
@@ -108,9 +105,9 @@
     label: '{{ item.name }}'
   notify: Reload firewalld
 
-# -----------------------------------------------------------------------------
+#
 # Services - Default Zone
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Enable services in default zone
   ansible.posix.firewalld:
@@ -130,9 +127,9 @@
     immediate: true
   loop: '{{ firewalld_services_disabled }}'
 
-# -----------------------------------------------------------------------------
+#
 # Services - Per Zone
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Enable services per zone
   ansible.posix.firewalld:
@@ -145,9 +142,9 @@
   loop_control:
     label: '{{ item.0.zone }}: {{ item.1 }}'
 
-# -----------------------------------------------------------------------------
+#
 # Ports - Default Zone
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Open ports in default zone
   ansible.posix.firewalld:
@@ -158,9 +155,9 @@
     immediate: true
   loop: '{{ firewalld_ports }}'
 
-# -----------------------------------------------------------------------------
+#
 # Ports - Per Zone
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Open ports per zone
   ansible.posix.firewalld:
@@ -173,9 +170,9 @@
   loop_control:
     label: '{{ item.0.zone }}: {{ item.1 }}'
 
-# -----------------------------------------------------------------------------
+#
 # Rich Rules
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Add rich rules
   ansible.posix.firewalld:
@@ -188,9 +185,9 @@
   loop_control:
     label: '{{ item.zone | default(firewalld_default_zone) }}: {{ item.rule | truncate(50) }}'
 
-# -----------------------------------------------------------------------------
+#
 # Source-Based Routing
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Assign sources to zones
   ansible.posix.firewalld:
@@ -203,9 +200,9 @@
   loop_control:
     label: '{{ item.zone }}: {{ item.source }}'
 
-# -----------------------------------------------------------------------------
+#
 # Interface Assignment
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Assign interfaces to zones
   ansible.posix.firewalld:
@@ -218,9 +215,9 @@
   loop_control:
     label: '{{ item.zone }}: {{ item.interface }}'
 
-# -----------------------------------------------------------------------------
+#
 # Port Forwarding
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Add port forwards
   ansible.posix.firewalld:
@@ -238,9 +235,9 @@
     label: '{{ item.port }} -> {{ item.to_port }}'
   when: firewalld_forwards | length > 0
 
-# -----------------------------------------------------------------------------
+#
 # Masquerading
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Enable masquerading per zone
   ansible.posix.firewalld:
@@ -254,9 +251,9 @@
     label: '{{ item.zone }}'
   when: item.enabled | default(true) | bool
 
-# -----------------------------------------------------------------------------
+#
 # ICMP Blocks
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Add ICMP blocks
   ansible.posix.firewalld:
@@ -269,9 +266,9 @@
   loop_control:
     label: '{{ item.0.zone | default(firewalld_default_zone) }}: {{ item.1 }}'
 
-# -----------------------------------------------------------------------------
+#
 # Direct Rules (deprecated in firewalld 2.x)
-# -----------------------------------------------------------------------------
+#
 
 - name: Configure | Add direct rules
   ansible.builtin.command:

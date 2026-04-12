@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 apparmor_enabled: true
 
-# =============================================================================
-# BOOT CONFIGURATION
-# =============================================================================
+#
+# Boot Configuration
+#
 
 # Enable AppArmor at boot via GRUB kernel parameters
 apparmor_boot_enabled: true
@@ -15,9 +15,9 @@ apparmor_boot_enabled: true
 # Security filesystem path (used to detect kernel support)
 apparmor_securityfs: '/sys/kernel/security'
 
-# =============================================================================
-# PROFILE MANAGEMENT
-# =============================================================================
+#
+# Profile Management
+#
 
 # Profiles to put in enforce mode (list of binary paths)
 apparmor_enforce_profiles:
@@ -30,9 +30,9 @@ apparmor_complain_profiles: []
 # Profiles to disable
 apparmor_disable_profiles: []
 
-# =============================================================================
-# CUSTOM PROFILES
-# =============================================================================
+#
+# Custom Profiles
+#
 
 # Custom profile definitions (deployed to /etc/apparmor.d/)
 # Use AppArmor ABI 4.0 syntax (include instead of #include)
@@ -50,9 +50,9 @@ apparmor_disable_profiles: []
 #         }
 apparmor_custom_profiles: []
 
-# =============================================================================
-# PROFILE TUNABLES
-# =============================================================================
+#
+# Profile Tunables
+#
 
 # Custom tunables deployed to /etc/apparmor.d/tunables/custom
 # These override default AppArmor path variables used in profiles.
@@ -62,9 +62,9 @@ apparmor_custom_profiles: []
 #     HOMEDIRS: '/home'
 apparmor_tunables: {}
 
-# =============================================================================
-# UTILITIES
-# =============================================================================
+#
+# Utilities
+#
 
 # Install apparmor-utils (aa-status, aa-enforce, etc.)
 apparmor_utils_enabled: true

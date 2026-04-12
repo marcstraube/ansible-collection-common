@@ -1,14 +1,14 @@
 ---
-# =============================================================================
-# SERVICE CONTROL
-# =============================================================================
+#
+# Service Control
+#
 
 # Enable or disable chrony service
 chrony_enabled: true
 
-# =============================================================================
-# NTP SERVERS
-# =============================================================================
+#
+# NTP Servers
+#
 
 # NTP servers to use for synchronization
 # Each entry has 'server' and optional 'options' (default: 'iburst')
@@ -29,9 +29,9 @@ chrony_ntp_pools: []
 #   - pool: 'pool.ntp.org'
 #     options: 'iburst maxsources 4'
 
-# =============================================================================
-# NTP SERVER MODE
-# =============================================================================
+#
+# NTP Server Mode
+#
 
 # Allow these networks to use this host as NTP server
 chrony_allow_networks: []
@@ -46,17 +46,17 @@ chrony_deny_networks: []
 # Useful for isolated networks (0 = disabled, 10 = typical for local server)
 chrony_local_stratum: 0
 
-# =============================================================================
-# SOURCE SELECTION
-# =============================================================================
+#
+# Source Selection
+#
 
 # Minimum number of sources required for clock synchronization
 # Increase for better reliability (0 = use chrony default)
 chrony_minsources: 0
 
-# =============================================================================
-# TIMING OPTIONS
-# =============================================================================
+#
+# Timing Options
+#
 
 # Step clock if offset > threshold in first N updates (makestep directive)
 chrony_makestep_threshold: 1.0
@@ -73,9 +73,9 @@ chrony_max_offset: 0
 chrony_maxchange_start: 1
 chrony_maxchange_ignore: true
 
-# =============================================================================
-# RTC (REAL-TIME CLOCK)
-# =============================================================================
+#
+# RTC (Real-Time Clock)
+#
 
 # Sync system time to RTC on clock updates
 chrony_rtcsync: true
@@ -83,9 +83,9 @@ chrony_rtcsync: true
 # RTC is in local time instead of UTC (for dual-boot with Windows)
 chrony_rtc_local: false
 
-# =============================================================================
-# LOGGING
-# =============================================================================
+#
+# Logging
+#
 
 # Log directory
 chrony_log_dir: '/var/log/chrony'
@@ -96,16 +96,16 @@ chrony_log_options:
   - 'statistics'
   - 'tracking'
 
-# =============================================================================
-# DRIFT FILE
-# =============================================================================
+#
+# Drift File
+#
 
 # File to store clock drift information
 chrony_drift_file: '/var/lib/chrony/drift'
 
-# =============================================================================
-# KEYS (AUTHENTICATION)
-# =============================================================================
+#
+# Keys (Authentication)
+#
 
 # Key file for NTP symmetric key authentication
 chrony_keys_file: '/etc/chrony.keys'
@@ -113,9 +113,9 @@ chrony_keys_file: '/etc/chrony.keys'
 # Generate authentication key if key file does not exist
 chrony_generate_keys: false
 
-# =============================================================================
-# NTS (NETWORK TIME SECURITY)
-# =============================================================================
+#
+# NTS (Network Time Security)
+#
 
 # Enable NTS server mode (requires certificate and key)
 # Client-side NTS: add 'nts' to server options instead
@@ -128,9 +128,9 @@ chrony_nts_server_key: ''
 # Directory for NTS cookie/key dump files
 chrony_ntsdumpdir: '/var/lib/chrony'
 
-# =============================================================================
-# HARDWARE TIMESTAMPING
-# =============================================================================
+#
+# Hardware Timestamping
+#
 
 # Enable hardware timestamping on interfaces
 chrony_hw_timestamp_interfaces: []
@@ -138,9 +138,9 @@ chrony_hw_timestamp_interfaces: []
 #   - 'eth0'
 #   - '*'  # All interfaces
 
-# =============================================================================
-# LEAP SECONDS
-# =============================================================================
+#
+# Leap Seconds
+#
 
 # Timezone with leap seconds (e.g. 'right/UTC')
 chrony_leapsectz: ''
@@ -149,16 +149,16 @@ chrony_leapsectz: ''
 chrony_leapseclist: ''
 # Example: '/usr/share/zoneinfo/leap-seconds.list'
 
-# =============================================================================
-# SECURITY
-# =============================================================================
+#
+# Security
+#
 
 # Bind command interface to specific address
 chrony_bind_cmd_address: '127.0.0.1'
 
-# =============================================================================
-# FIREWALL
-# =============================================================================
+#
+# Firewall
+#
 
 # Enable firewalld integration (opens NTP port 123/UDP in server mode)
 chrony_firewalld_enabled: false
@@ -166,24 +166,24 @@ chrony_firewalld_enabled: false
 # firewalld zone to add NTP service to
 chrony_firewalld_zone: 'public'
 
-# =============================================================================
-# APPARMOR
-# =============================================================================
+#
+# AppArmor
+#
 
 # Enable AppArmor profile enforcement (Debian/Arch only, not RHEL/Rocky)
 chrony_apparmor_enabled: false
 
-# =============================================================================
+#
 # BTRFS
-# =============================================================================
+#
 
 # Enable BTRFS NoCOW optimization for log directory
 # Auto-detected: only applies on BTRFS filesystems with empty log dirs
 chrony_btrfs_nocow: true
 
-# =============================================================================
-# EXTRA CONFIGURATION
-# =============================================================================
+#
+# Extra Configuration
+#
 
 # Additional chrony.conf directives (list of strings)
 chrony_extra_config: []

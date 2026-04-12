@@ -1,206 +1,283 @@
 ---
-# =============================================================================
-# SERVICE CONTROL
-# =============================================================================
+#
+# Service Control
+#
+
 # Enable the entire clamav role
 clamav_enabled: true
+
 # Enable the clamd scanning daemon
 clamav_daemon_enabled: true
+
 # Enable the freshclam signature update service
 clamav_freshclam_enabled: true
+
 # Enable the clamav-milter mail filter (for Postfix integration)
 clamav_milter_enabled: false
 
-# =============================================================================
-# PROCESS / PRIVILEGES
-# =============================================================================
+#
+# Process / Privileges
+#
+
 # Override OS-specific defaults (clamav on Arch/Debian, clamscan on RedHat).
 # Leave empty to use OS default from vars/.
 clamav_user: ''
 clamav_group: ''
 
-# =============================================================================
-# SOCKET / NETWORK
-# =============================================================================
+#
+# Socket / Network
+#
+
 # Unix socket path for clamd
 clamav_socket: '/run/clamav/clamd.sock'
+
 # Unix socket file permissions
 clamav_socket_mode: '0660'
+
 # Additional group for socket access (e.g. 'postfix')
 clamav_socket_group: ''
 
 # TCP socket port (leave empty to disable TCP listening)
 clamav_tcp_socket: ''  # e.g., '3310'
+
 # TCP socket bind address
 clamav_tcp_addr: '127.0.0.1'
 
-# =============================================================================
-# SCANNING LIMITS
-# =============================================================================
+#
+# Scanning Limits
+#
+
 # Maximum file size to scan (clamd: MaxFileSize)
 clamav_max_filesize: '25M'
+
 # Maximum data size scanned per file, including archives (clamd: MaxScanSize)
 clamav_max_scansize: '100M'
+
 # Maximum scan time in milliseconds, 0 = unlimited (clamd: MaxScanTime)
 clamav_max_scantime: 120000
+
 # Maximum recursion depth for archives (clamd: MaxRecursion)
 clamav_max_recursion: 16
+
 # Maximum number of files scanned within an archive (clamd: MaxFiles)
 clamav_max_files: 10000
+
 # Maximum size of an embedded PE file to extract (clamd: MaxEmbeddedPE)
 clamav_max_embeddedpe: '10M'
+
 # Maximum size of an HTML file to normalize (clamd: MaxHTMLNormalize)
 clamav_max_htmlnormalize: '10M'
+
 # Maximum size of a normalized HTML file without tags (clamd: MaxHTMLNoTags)
 clamav_max_htmlnotags: '2M'
+
 # Maximum size of a script to normalize (clamd: MaxScriptNormalize)
 clamav_max_scriptnormalize: '5M'
+
 # Maximum size of a ZIP type-recognition entry (clamd: MaxZipTypeRcg)
 clamav_max_ziptypercg: '1M'
+
 # Maximum number of partitions to scan in a disk image (clamd: MaxPartitions)
 clamav_max_partitions: 50
+
 # Maximum number of icons in a PE file to scan (clamd: MaxIconsPE)
 clamav_max_iconspe: 100
+
 # Maximum HWP3 recursion depth (clamd: MaxRecHWP3)
 clamav_max_rechwp3: 16
 
-# =============================================================================
-# DAEMON SETTINGS
-# =============================================================================
+#
+# Daemon Settings
+#
+
 # Maximum number of concurrent scanning threads (clamd: MaxThreads)
 clamav_max_threads: 10
+
 # Maximum number of queued items waiting for a thread (clamd: MaxQueue)
 clamav_max_queue: 100
+
 # Timeout in seconds for idle client connections (clamd: IdleTimeout)
 clamav_idle_timeout: 30
+
 # Timeout in seconds for client data reads (clamd: ReadTimeout)
 clamav_read_timeout: 180
+
 # Timeout in milliseconds for sending responses to client (clamd: SendBufTimeout)
 clamav_send_buf_timeout: 200
+
 # Timeout in seconds for reading a command from client (clamd: CommandReadTimeout)
 clamav_command_read_timeout: 30
 
 # Seconds between self-checks for database changes (clamd: SelfCheck)
 clamav_self_check: 3600
+
 # Run clamd in the foreground (clamd: Foreground)
 clamav_foreground: false
+
 # Enable debug messages from libclamav (clamd: Debug)
 clamav_debug: false
 
-# =============================================================================
-# SCAN OPTIONS
-# =============================================================================
+#
+# Scan Options
+#
+
 # Archive scanning
+
 # Scan within archives (clamd: ScanArchive)
 clamav_scan_archive: true
+
 # Block encrypted archives (clamd: ArchiveBlockEncrypted)
 clamav_archive_block_encrypted: false
+
 # Block archives that exceed limits (clamd: ArchiveBlockMax)
 clamav_archive_block_max: false
 
 # Document scanning
+
 # Scan OLE2 containers (MS Office, VBA) (clamd: ScanOLE2)
 clamav_scan_ole2: true
+
 # Block OLE2 files with VBA macros (clamd: OLE2BlockMacros)
 clamav_ole2_block_macros: false
+
 # Scan PDF files (clamd: ScanPDF)
 clamav_scan_pdf: true
+
 # Scan SWF (Flash) files (clamd: ScanSWF)
 clamav_scan_swf: true
+
 # Scan XML-based documents (clamd: ScanXMLDOCS)
 clamav_scan_xmldocs: true
+
 # Scan HWP3 (Hangul Word Processor) files (clamd: ScanHWP3)
 clamav_scan_hwp3: true
 
 # Mail scanning
+
 # Scan mail files (clamd: ScanMail)
 clamav_scan_mail: true
+
 # Scan RFC1341 partial messages (clamd: ScanPartialMessages)
 clamav_mail_partial_message: false
+
 # Use phishing signatures (clamd: PhishingSignatures)
 clamav_phishing_signatures: true
+
 # Scan URLs for phishing (clamd: PhishingScanURLs)
 clamav_phishing_scan_urls: true
+
 # Always block SSL mismatches in phishing checks (clamd: PhishingAlwaysBlockSSLMismatch)
 clamav_phishing_always_block_ssl_mismatch: false
+
 # Always block cloaked URLs in phishing checks (clamd: PhishingAlwaysBlockCloak)
 clamav_phishing_always_block_cloak: false
 
 # Executable scanning
+
 # Scan PE (Windows executable) files (clamd: ScanPE)
 clamav_scan_pe: true
+
 # Disable PE authenticode certificate chain verification (clamd: DisableCertCheck)
 clamav_pe_disable_cert_check: false
+
 # Scan ELF (Linux executable) files (clamd: ScanELF)
 clamav_scan_elf: true
 
 # Other scanning
+
 # Scan HTML files (clamd: ScanHTML)
 clamav_scan_html: true
+
 # Detect Potentially Unwanted Applications (clamd: DetectPUA)
 clamav_detect_pua: false
+
 # List of PUA categories to include
 clamav_pua_include: []
+
 # List of PUA categories to exclude
 clamav_pua_exclude: []
 
 # Heuristics
+
 # Enable heuristic alerts (clamd: HeuristicAlerts)
 clamav_heuristic_alerts: true
+
 # Allow heuristic match to take precedence over signatures (clamd: HeuristicScanPrecedence)
 clamav_heuristic_scan_precedence: false
+
 # Alert on broken executables (clamd: AlertBrokenExecutables)
 clamav_alert_broken_executables: false
+
 # Alert on broken media files (clamd: AlertBrokenMedia)
 clamav_alert_broken_media: false
+
 # Alert on encrypted archives (clamd: AlertEncryptedArchive)
 clamav_alert_encrypted_archive: false
+
 # Alert on encrypted documents (clamd: AlertEncryptedDoc)
 clamav_alert_encrypted_doc: false
+
 # Alert on OOXML files with macros (clamd: AlertOOXMLMacros)
 clamav_alert_ooxml_macros: false
+
 # Alert on SSL mismatches in phishing (clamd: AlertPhishingSSLMismatch)
 clamav_alert_phishing_ssl_mismatch: false
+
 # Alert on cloaked URLs in phishing (clamd: AlertPhishingCloak)
 clamav_alert_phishing_cloak: false
+
 # Alert on partition table intersections (clamd: AlertPartitionIntersection)
 clamav_alert_partition_intersection: false
 
 # Structured data detection (credit cards, SSNs)
+
 # Enable structured data detection (clamd: StructuredDataDetection)
 clamav_structured_data_detection: false
+
 # Minimum credit card numbers to trigger alert (clamd: StructuredMinCreditCardCount)
 clamav_structured_min_cc_count: 3
+
 # Minimum SSNs to trigger alert (clamd: StructuredMinSSNCount)
 clamav_structured_min_ssn_count: 3
+
 # Detect normal-format SSNs (xxx-xx-xxxx) (clamd: StructuredSSNFormatNormal)
 clamav_structured_ssn_format_normal: true
+
 # Detect stripped SSNs (xxxxxxxxx) (clamd: StructuredSSNFormatStripped)
 clamav_structured_ssn_format_stripped: false
 
-# =============================================================================
-# BYTECODE
-# =============================================================================
+#
+# Bytecode
+#
+
 # Enable bytecode signatures (clamd: Bytecode)
 clamav_bytecode: true
+
 # Bytecode security mode: TrustSigned or Paranoid (clamd: BytecodeSecurity)
 clamav_bytecode_security: 'TrustSigned'
+
 # Bytecode execution timeout in milliseconds (clamd: BytecodeTimeout)
 clamav_bytecode_timeout: 10000
+
 # Allow loading unsigned bytecode (clamd: BytecodeUnsigned)
 clamav_bytecode_unsigned: false
+
 # Bytecode execution mode: Auto, ForceJIT, ForceInterpreter, Test (clamd: BytecodeMode)
 clamav_bytecode_mode: 'Auto'
 
-# =============================================================================
-# FRESHCLAM SETTINGS
-# =============================================================================
+#
+# Freshclam Settings
+#
+
 # Number of signature checks per day (freshclam: Checks)
 clamav_freshclam_checks_per_day: 12
+
 # Primary database mirror hostname (freshclam: DatabaseMirror)
 clamav_freshclam_database_mirror: 'database.clamav.net'
+
 # Private mirror URL, used instead of public mirror if set (freshclam: PrivateMirror)
 clamav_freshclam_private_mirror: ''
+
 # List of extra database URLs to download (freshclam: ExtraDatabase)
 clamav_freshclam_extra_databases: []
 # Example for unofficial signatures:
@@ -208,102 +285,138 @@ clamav_freshclam_extra_databases: []
 
 # Use scripted updates via cdiffs (freshclam: ScriptedUpdates)
 clamav_freshclam_scripted_updates: true
+
 # Compress local database to save disk space (freshclam: CompressLocalDatabase)
 clamav_freshclam_compress_local_database: false
+
 # Download bytecode.cvd signatures (freshclam: Bytecode)
 clamav_freshclam_bytecode: true
+
 # Connection timeout in seconds (freshclam: ConnectTimeout)
 clamav_freshclam_connect_timeout: 30
+
 # Receive timeout in seconds (freshclam: ReceiveTimeout)
 clamav_freshclam_receive_timeout: 60
+
 # Test databases before replacing active ones (freshclam: TestDatabases)
 clamav_freshclam_test_databases: true
 
 # HTTP proxy hostname for freshclam updates (freshclam: HTTPProxyServer)
 clamav_freshclam_http_proxy: ''
+
 # HTTP proxy port (freshclam: HTTPProxyPort)
 clamav_freshclam_http_proxy_port: ''
+
 # HTTP proxy username (freshclam: HTTPProxyUsername)
 clamav_freshclam_http_proxy_user: ''
+
 # HTTP proxy password, stored in vault (freshclam: HTTPProxyPassword)
 clamav_freshclam_http_proxy_password: '{{ vault_clamav_freshclam_http_proxy_password | default("") }}'
 
-# =============================================================================
-# LOGGING
-# =============================================================================
+#
+# Logging
+#
+
 # clamd log file path (clamd: LogFile)
+
 clamav_log_file: '/var/log/clamav/clamd.log'
+
 # Maximum log file size before rotation, 0 = unlimited (clamd: LogFileMaxSize)
 clamav_log_filesize: '2M'
+
 # Enable built-in log rotation (clamd: LogRotate)
 clamav_log_rotate: true
+
 # Include timestamps in log messages (clamd: LogTime)
 clamav_log_time: true
+
 # Send log messages to syslog (clamd: LogSyslog)
 clamav_log_syslog: false
+
 # Syslog facility to use (clamd: LogFacility)
 clamav_log_facility: 'LOG_LOCAL6'
+
 # Enable verbose logging (clamd: LogVerbose)
 clamav_log_verbose: false
+
 # Log clean (non-infected) files (clamd: LogCleanFiles)
 clamav_log_clean: false
+
 # Include extended detection info in log messages (clamd: ExtendedDetectionInfo)
 clamav_extended_detection_info: true
 
 # freshclam log file path (freshclam: UpdateLogFile)
 clamav_freshclam_log_file: '/var/log/clamav/freshclam.log'
+
 # Maximum freshclam log file size (freshclam: LogFileMaxSize)
 clamav_freshclam_log_filesize: '2M'
 
-# =============================================================================
-# DATABASE
-# =============================================================================
+#
+# Database
+#
+
 # Directory for virus signature databases (clamd/freshclam: DatabaseDirectory)
 clamav_database_directory: '/var/lib/clamav'
+
 # Only load official ClamAV databases (clamd: OfficialDatabaseOnly)
 clamav_official_database_only: false
+
 # List of additional database URLs (clamd: DatabaseCustomURL)
 clamav_database_custom_url: []
 # Example:
 #   - 'http://myserver.com/sigs/custom.ndb'
 
-# =============================================================================
-# ON ACCESS SCANNING (Linux only, requires kernel support)
-# =============================================================================
+#
+# On Access Scanning (Linux only, requires kernel support)
+#
+
 # Enable on-access scanning via fanotify (clamd: OnAccessScan)
 clamav_on_access_enabled: false
+
 # Mount points to monitor (clamd: OnAccessMountPath)
 clamav_on_access_mount_path: []
+
 # Specific paths to include in on-access scanning (clamd: OnAccessIncludePath)
 clamav_on_access_include_paths: []
+
 # Paths to exclude from on-access scanning (clamd: OnAccessExcludePath)
 clamav_on_access_exclude_paths: []
+
 # UIDs excluded from on-access scanning (clamd: OnAccessExcludeUname/UID)
 clamav_on_access_exclude_uids: []
+
 # Maximum file size for on-access scanning (clamd: OnAccessMaxFileSize)
 clamav_on_access_max_file_size: '5M'
+
 # Block access to infected files (clamd: OnAccessPrevention)
 clamav_on_access_prevention: false
+
 # Perform extra scanning on file modifications (clamd: OnAccessExtraScanning)
 clamav_on_access_extra_scanning: false
+
 # Disable directory-deletion detection (clamd: OnAccessDisableDDD)
 clamav_on_access_disable_ddd: false
+
 # Deny access on scan errors (clamd: OnAccessDenyOnError)
 clamav_on_access_deny_on_error: false
+
 # Number of retry attempts for on-access scans (clamd: OnAccessRetryAttempts)
 clamav_on_access_retry_attempts: 0
 
-# =============================================================================
-# TEMPORARY FILES
-# =============================================================================
+#
+# Temporary Files
+#
+
 # Directory for temporary files during scanning (clamd: TemporaryDirectory)
 clamav_temp_directory: '/tmp'
+
 # Keep temporary files after scanning (clamd: LeaveTemporaryFiles)
 clamav_leave_temporary_files: false
 
-# =============================================================================
-# EXCLUDE PATTERNS
-# =============================================================================
+#
+# Exclude Patterns
+#
+
 # Regex patterns for paths to exclude from scanning (clamd: ExcludePath)
 clamav_exclude_path: []
 # Example:
@@ -311,85 +424,111 @@ clamav_exclude_path: []
 #   - '^/sys/'
 #   - '\.log$'
 
-# =============================================================================
-# PRELUDE/ALERTING
-# =============================================================================
+#
+# Prelude/Alerting
+#
+
 # Enable Prelude SIEM integration (clamd: PreludeEnable)
 clamav_prelude_enabled: false
+
 # Analyzer name reported to Prelude (clamd: PreludeAnalyzerName)
 clamav_prelude_analyzer_name: 'ClamAV'
 
-# =============================================================================
-# STATS
-# =============================================================================
+#
+# Stats
+#
+
 # Submit detection statistics to ClamAV (clamd: StatsEnabled)
 clamav_stats_enabled: false
+
 # Disable submission of PE section stats (clamd: StatsPEDisabled)
 clamav_stats_pe_disabled: true
+
 # Host ID for stats submission, 'auto' uses clamd-generated UUID (clamd: StatsHostID)
 clamav_stats_host_id: 'auto'
+
 # Timeout in seconds for stats submission (clamd: StatsTimeout)
 clamav_stats_timeout: 10
 
-# =============================================================================
-# MILTER (for direct Postfix integration without rspamd)
-# =============================================================================
+#
+# Milter (for direct Postfix integration without rspamd)
+#
+
 # Unix socket path for clamav-milter (milter: MilterSocket)
 clamav_milter_socket: '/run/clamav/clamav-milter.sock'
+
 # Milter socket file permissions (milter: MilterSocketMode)
 clamav_milter_socket_mode: '0660'
+
 # Group for milter socket access, e.g. 'postfix' (milter: MilterSocketGroup)
 clamav_milter_socket_group: ''
+
 # Action for clean messages: Accept, Reject, Defer, Blackhole, Quarantine (milter: OnClean)
 clamav_milter_on_clean: 'Accept'
+
 # Action for infected messages: Accept, Reject, Defer, Blackhole, Quarantine (milter: OnInfected)
 clamav_milter_on_infected: 'Reject'
+
 # Action on scan failure: Accept, Reject, Defer (milter: OnFail)
 clamav_milter_on_fail: 'Defer'
+
 # Header handling: Add, Replace, Yes, No (milter: AddHeader)
 clamav_milter_add_header: 'Replace'
+
 # Rejection message, %v is replaced with virus name (milter: RejectMsg)
 clamav_milter_reject_msg: 'Virus detected: %v'
+
 # Log infected messages: Off, Basic, Full (milter: LogInfected)
 clamav_milter_log_infected: 'Full'
+
 # Log clean messages: Off, Basic, Full (milter: LogClean)
 clamav_milter_log_clean: 'Off'
+
 # Maximum file size for milter scanning (milter: MaxFileSize)
 clamav_milter_max_filesize: '25M'
+
 # Timeout in seconds for clamd communication (milter: ReadTimeout)
 clamav_milter_timeout: 300
+
 # List of hosts/networks to skip scanning for (milter: Whitelist)
 clamav_milter_whitelist_hosts: []
 
-# =============================================================================
-# MAIL SERVER INTEGRATION (optional)
-# =============================================================================
+#
+# Mail Server Integration (optional)
+#
+
 # Add postfix user to clamav group for socket access
 clamav_postfix_integration: false
+
 # Ensure clamd socket is accessible by rspamd
 clamav_rspamd_integration: false
 
-# =============================================================================
-# FIREWALL (firewalld integration)
-# =============================================================================
+#
+# Firewall (firewalld integration)
+#
+
 # Manage firewalld rules for clamd TCP socket access
 clamav_firewalld_enabled: false
 
 # Firewalld zone for clamd TCP socket
 clamav_firewalld_zone: 'public'
 
-# =============================================================================
-# APPARMOR (Arch/Debian only, not RHEL/Rocky)
-# =============================================================================
+#
+# AppArmor (Arch/Debian only, not RHEL/Rocky)
+#
+
 # Enable AppArmor profile enforcement for clamd
 clamav_apparmor_enabled: false
 
-# =============================================================================
-# EXTRA CONFIG (pass-through directives)
-# =============================================================================
+#
+# Extra Config (pass-through directives)
+#
+
 # Additional clamd.conf directives as key-value pairs
 clamav_extra_config: {}
+
 # Additional freshclam.conf directives as key-value pairs
 clamav_freshclam_extra_config: {}
+
 # Additional clamav-milter.conf directives as key-value pairs
 clamav_milter_extra_config: {}

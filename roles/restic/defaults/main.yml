@@ -1,16 +1,14 @@
 ---
-# =============================================================================
-# Restic - Backup Management
-# =============================================================================
+#
+# Service Control
+#
 
-# -----------------------------------------------------------------------------
-# SERVICE CONTROL
-# -----------------------------------------------------------------------------
 restic_enabled: true
 
-# -----------------------------------------------------------------------------
-# INSTALLATION
-# -----------------------------------------------------------------------------
+#
+# Installation
+#
+
 # Install from package manager (true) or download binary (false)
 restic_install_from_package: true
 
@@ -22,10 +20,11 @@ restic_binary_url: >-
   restic_binary_version }}_linux_amd64.bz2
 restic_binary_path: '/usr/local/bin/restic'
 
-# -----------------------------------------------------------------------------
-# BACKUP JOBS
+#
+# Backup Jobs
+#
+
 # List of backup job configurations
-# -----------------------------------------------------------------------------
 restic_jobs: []
 # Example:
 #   - name: 'system'
@@ -85,9 +84,10 @@ restic_jobs: []
 #     # Additional restic options
 #     backup_options: '--exclude-caches --one-file-system'
 
-# -----------------------------------------------------------------------------
-# GLOBAL SETTINGS
-# -----------------------------------------------------------------------------
+#
+# Global Settings
+#
+
 # User to run backups as
 restic_user: 'root'
 restic_group: 'root'
@@ -128,9 +128,10 @@ restic_nice_level: 10
 # IO scheduling class (0=none, 1=realtime, 2=best-effort, 3=idle)
 restic_ionice_class: 3
 
-# -----------------------------------------------------------------------------
-# MONITORING
-# -----------------------------------------------------------------------------
+#
+# Monitoring
+#
+
 # Enable healthcheck pings (for services like healthchecks.io)
 restic_healthcheck_enabled: false
 restic_healthcheck_url: ''

@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 editors_enabled: true
 
-# =============================================================================
-# EDITORS TO INSTALL
-# =============================================================================
+#
+# Editors to Install
+#
 
 editors_nano: true
 editors_vim: true
@@ -17,27 +17,27 @@ editors_neovim: true
 # Options: nano, vim, nvim
 editors_default: 'nvim'
 
-# =============================================================================
-# CONFIGURATION MANAGEMENT
-# =============================================================================
+#
+# Configuration Management
+#
 # Set to false to skip deploying global config (e.g. when using own dotfiles)
 
 editors_nano_config_manage: true
 editors_vim_config_manage: true
 editors_neovim_config_manage: true
 
-# =============================================================================
-# NEOVIM BINARY INSTALL (RedHat/Rocky only)
-# =============================================================================
+#
+# Neovim Binary Install (RedHat/Rocky only)
+#
 # Neovim is not in EPEL — install pre-built binary from GitHub releases.
 # Set to true on RedHat systems. Ignored on Arch/Debian (uses package manager).
 
 editors_neovim_binary_install: false
 editors_neovim_version: 'v0.10.4'
 
-# =============================================================================
-# NANO CONFIGURATION
-# =============================================================================
+#
+# Nano Configuration
+#
 
 editors_nano_config:
   set_autoindent: true
@@ -51,9 +51,9 @@ editors_nano_config:
   set_stateflags: true               # Show state flags in title bar
   syntax_highlighting: true
 
-# =============================================================================
-# VIM CONFIGURATION
-# =============================================================================
+#
+# Vim Configuration
+#
 
 editors_vim_config:
   # Syntax and line numbers
@@ -87,13 +87,10 @@ editors_vim_config:
   # Colorscheme (empty = default)
   colorscheme: ''
 
-# =============================================================================
-# NEOVIM CONFIGURATION
-# =============================================================================
+#
+# Per-User Configuration
+#
 
-# =============================================================================
-# PER-USER CONFIGURATION
-# =============================================================================
 # Per-user editor config deployment. Each entry controls which editor configs
 # are deployed to the user's home directory.
 #
@@ -125,9 +122,9 @@ editors_user_config_mode: 'managed'
 # Default config_merge: true = global | combine(user), false = user only
 editors_user_config_merge: true
 
-# =============================================================================
-# NEOVIM CONFIGURATION
-# =============================================================================
+#
+# Neovim Configuration
+#
 
 editors_neovim_config:
   # Syntax and line numbers

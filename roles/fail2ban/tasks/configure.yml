@@ -7,9 +7,10 @@
     group: root
     mode: '0755'
 
-# =============================================================================
+#
 # Main configuration
-# =============================================================================
+#
+
 - name: Configure | Deploy jail.local
   ansible.builtin.template:
     src: 'jail.local.j2'
@@ -29,9 +30,10 @@
     force: false
   when: fail2ban_logtarget is not search('SYSLOG|SYSTEMD|STDOUT|STDERR')
 
-# =============================================================================
+#
 # SSH jail
-# =============================================================================
+#
+
 - name: Configure | Deploy SSH jail
   ansible.builtin.template:
     src: 'jail.d/sshd.local.j2'
@@ -41,9 +43,10 @@
     mode: '0644'
   notify: Reload fail2ban
 
-# =============================================================================
+#
 # Mail server jails
-# =============================================================================
+#
+
 - name: Configure | Deploy mail server jails
   ansible.builtin.template:
     src: 'jail.d/mail.local.j2'
@@ -67,9 +70,10 @@
     fail2ban_sogo_enabled or fail2ban_roundcube_enabled)
   notify: Reload fail2ban
 
-# =============================================================================
+#
 # Recidive jail
-# =============================================================================
+#
+
 - name: Configure | Deploy recidive jail
   ansible.builtin.template:
     src: 'jail.d/recidive.local.j2'
@@ -87,9 +91,10 @@
   when: not (fail2ban_recidive_enabled | bool)
   notify: Reload fail2ban
 
-# =============================================================================
+#
 # Apache jails
-# =============================================================================
+#
+
 - name: Configure | Deploy Apache jails
   ansible.builtin.template:
     src: 'jail.d/apache.local.j2'
@@ -117,9 +122,10 @@
     fail2ban_apache_shellshock_enabled)
   notify: Reload fail2ban
 
-# =============================================================================
+#
 # Nginx jails
-# =============================================================================
+#
+
 - name: Configure | Deploy Nginx jails
   ansible.builtin.template:
     src: 'jail.d/nginx.local.j2'
@@ -143,9 +149,10 @@
     fail2ban_nginx_bad_request_enabled)
   notify: Reload fail2ban
 
-# =============================================================================
+#
 # Database jails
-# =============================================================================
+#
+
 - name: Configure | Deploy database jails
   ansible.builtin.template:
     src: 'jail.d/database.local.j2'
@@ -163,9 +170,10 @@
   when: not ((fail2ban_mysqld_enabled | bool) or (fail2ban_postgresql_enabled | bool))
   notify: Reload fail2ban
 
-# =============================================================================
+#
 # Grafana jail
-# =============================================================================
+#
+
 - name: Configure | Deploy Grafana jail
   ansible.builtin.template:
     src: 'jail.d/grafana.local.j2'
@@ -183,9 +191,10 @@
   when: not (fail2ban_grafana_enabled | bool)
   notify: Reload fail2ban
 
-# =============================================================================
+#
 # Custom jails, filters, and actions
-# =============================================================================
+#
+
 - name: Configure | Deploy custom jails
   ansible.builtin.template:
     src: 'jail.d/custom.local.j2'

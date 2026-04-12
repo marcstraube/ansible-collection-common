@@ -1,7 +1,7 @@
 ---
-# -----------------------------------------------------------------------------
+#
 # ArchLinux Handlers
-# -----------------------------------------------------------------------------
+#
 
 - name: Update pacman cache
   community.general.pacman:
@@ -20,9 +20,9 @@
   changed_when: true
   listen: 'pkgfile installed'
 
-# -----------------------------------------------------------------------------
+#
 # Debian/Ubuntu Handlers
-# -----------------------------------------------------------------------------
+#
 
 - name: Update apt cache
   ansible.builtin.apt:
@@ -35,9 +35,9 @@
   changed_when: true
   listen: 'apt-file installed'
 
-# -----------------------------------------------------------------------------
+#
 # RHEL/Fedora/Rocky Handlers
-# -----------------------------------------------------------------------------
+#
 
 - name: Update dnf cache
   ansible.builtin.dnf:

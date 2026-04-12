@@ -1,7 +1,8 @@
 ---
-# -----------------------------------------------------------------------------
+#
 # PowerTools / CRB (CodeReady Builder)
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Enable PowerTools/CRB repository
   when:
     - dnf_powertools_enabled | bool
@@ -54,9 +55,9 @@
       when: ansible_facts['distribution'] == 'RedHat'
       notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # EPEL (Extra Packages for Enterprise Linux)
-# -----------------------------------------------------------------------------
+#
 
 # On fresh Rocky/RHEL installs the distribution GPG key is not yet imported into
 # the RPM keyring. The Ansible dnf module cannot handle the interactive GPG key
@@ -82,9 +83,10 @@
     - ansible_facts['distribution'] != 'Fedora'
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Remi Repository (PHP, MariaDB)
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Setup Remi repository
   when:
     - dnf_remi_enabled | bool
@@ -116,9 +118,10 @@
         - ansible_facts['distribution_major_version'] | int < 10
         - "'remi-' + dnf_remi_php_version not in (remi_php_current.stdout | default(''))"
 
-# -----------------------------------------------------------------------------
+#
 # RPM Fusion (Free)
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Install RPM Fusion Free repository
   vars:
     __rpmfusion_distro: "{{ 'fedora' if ansible_facts['distribution'] == 'Fedora' else 'el' }}"
@@ -131,9 +134,10 @@
   when: dnf_rpmfusion_free | bool
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # RPM Fusion (Nonfree)
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Install RPM Fusion Nonfree repository
   vars:
     __rpmfusion_distro: "{{ 'fedora' if ansible_facts['distribution'] == 'Fedora' else 'el' }}"
@@ -148,9 +152,10 @@
   when: dnf_rpmfusion_nonfree | bool
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # ELRepo (Kernel, Hardware drivers)
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Install ELRepo repository
   vars:
     __distro_ver: "{{ ansible_facts['distribution_major_version'] }}"
@@ -164,9 +169,10 @@
     - ansible_facts['distribution'] != 'Fedora'
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Docker CE
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Setup Docker CE repository
   when: dnf_docker_repo | bool
   vars:
@@ -184,9 +190,10 @@
         creates: '/etc/yum.repos.d/docker-ce.repo'
       notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # PostgreSQL PGDG
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Install PostgreSQL repository
   vars:
     __distro_ver: "{{ ansible_facts['distribution_major_version'] }}"
@@ -201,9 +208,10 @@
     - ansible_facts['distribution'] != 'Fedora'
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Grafana
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Setup Grafana repository
   when: dnf_grafana_repo | bool
   block:
@@ -217,9 +225,10 @@
         enabled: true
       notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Kubernetes
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Setup Kubernetes repository
   when: dnf_kubernetes_repo | bool
   block:
@@ -234,9 +243,10 @@
         exclude: 'kubelet kubeadm kubectl cri-tools kubernetes-cni'
       notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # COPR repositories
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Check enabled COPR repositories
   ansible.builtin.command:
     cmd: dnf copr list --enabled
@@ -254,9 +264,10 @@
     - dnf_copr_repos | length > 0
     - item not in (copr_list.stdout | default(''))
 
-# -----------------------------------------------------------------------------
+#
 # Custom repositories
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Add custom repositories
   ansible.builtin.yum_repository:
     name: '{{ item.name }}'

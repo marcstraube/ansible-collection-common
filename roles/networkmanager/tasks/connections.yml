@@ -68,7 +68,7 @@
     route_metric4: "{{ item.value.route_metric4 | default(omit) }}"
     route_metric6: "{{ item.value.route_metric6 | default(omit) }}"
     routing_rules4: "{{ item.value.routing_rules4 | default(omit) }}"
-    # Other options
+    # Other Options
     never_default4: "{{ item.value.never_default4 | default(omit) }}"
     may_fail4: "{{ item.value.may_fail4 | default(omit) }}"
     method4: "{{ item.value.method4 | default(omit) }}"
@@ -150,7 +150,7 @@
     route_metric4: "{{ item.value.route_metric4 | default(omit) }}"
     route_metric6: "{{ item.value.route_metric6 | default(omit) }}"
     routing_rules4: "{{ item.value.routing_rules4 | default(omit) }}"
-    # Other options
+    # Other Options
     never_default4: "{{ item.value.never_default4 | default(omit) }}"
     may_fail4: "{{ item.value.may_fail4 | default(omit) }}"
     method4: "{{ item.value.method4 | default(omit) }}"

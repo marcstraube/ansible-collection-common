@@ -1,7 +1,7 @@
 ---
-# -----------------------------------------------------------------------------
+#
 # Backports (Debian only)
-# -----------------------------------------------------------------------------
+#
 - name: Repos | Enable Debian Backports
   ansible.builtin.apt_repository:
     repo: "deb http://deb.debian.org/debian {{ ansible_facts['distribution_release'] }}-backports main contrib non-free"
@@ -12,9 +12,9 @@
     - ansible_facts['distribution'] == 'Debian'
   notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # PPAs (Ubuntu only)
-# -----------------------------------------------------------------------------
+#
 - name: Repos | Add PPAs
   ansible.builtin.apt_repository:
     repo: '{{ item }}'
@@ -25,9 +25,9 @@
     - ansible_facts['distribution'] == 'Ubuntu'
   notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Docker CE
-# -----------------------------------------------------------------------------
+#
 - name: Repos | Setup Docker CE repository
   when: apt_docker_repo | bool
   block:
@@ -48,9 +48,9 @@
         filename: 'docker-ce'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # PostgreSQL PGDG
-# -----------------------------------------------------------------------------
+#
 - name: Repos | Setup PostgreSQL repository
   when: apt_postgresql_repo | bool
   block:
@@ -70,16 +70,10 @@
         filename: 'postgresql'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
-# NodeSource (Node.js)
-# -----------------------------------------------------------------------------
-# REMOVED: NodeSource repository management has been consolidated into the
-# marcstraube.common.nodejs role. Use that role instead of
-# apt_nodesource_repo/apt_nodesource_version.
-
-# -----------------------------------------------------------------------------
+#
 # PHP Sury (Debian/Ubuntu)
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Setup PHP Sury repository
   when: apt_php_sury_repo | bool
   block:
@@ -107,9 +101,9 @@
       when: ansible_facts['distribution'] == 'Ubuntu'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Grafana
-# -----------------------------------------------------------------------------
+#
 - name: Repos | Setup Grafana repository
   when: apt_grafana_repo | bool
   block:
@@ -128,9 +122,9 @@
         filename: 'grafana'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Kubernetes
-# -----------------------------------------------------------------------------
+#
 - name: Repos | Setup Kubernetes repository
   when: apt_kubernetes_repo | bool
   block:
@@ -149,9 +143,10 @@
         filename: 'kubernetes'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Custom repositories
-# -----------------------------------------------------------------------------
+#
+
 - name: Repos | Add custom repository GPG keys
   ansible.builtin.get_url:
     url: '{{ item.gpg_key }}'

@@ -1,14 +1,14 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 # Enable the lynis role
 lynis_enabled: true
 
-# =============================================================================
-# INSTALLATION
-# =============================================================================
+#
+# Installation
+#
 
 # Installation method: 'package' (OS package manager) or 'git' (upstream repo)
 lynis_install_method: 'package'
@@ -22,9 +22,9 @@ lynis_install_dir: '/usr/local/lynis'
 # Git version/branch/tag to checkout
 lynis_version: 'master'
 
-# =============================================================================
-# PROFILE CONFIGURATION (custom.prf)
-# =============================================================================
+#
+# Profile Configuration (custom.prf)
+#
 
 # Machine role: 'personal', 'workstation', or 'server'
 # Affects which tests are run and scoring weights
@@ -61,9 +61,9 @@ lynis_skip_tests: []
 # Empty list = use default plugin set from default.prf
 lynis_plugins: []
 
-# =============================================================================
-# COMPLIANCE
-# =============================================================================
+#
+# Compliance
+#
 
 # Enable compliance standard annotations in reports
 lynis_compliance_enabled: false
@@ -71,9 +71,9 @@ lynis_compliance_enabled: false
 # Compliance standards to check (pci-dss, hipaa, iso27001, cis)
 lynis_compliance_standards: []
 
-# =============================================================================
-# REPORTING
-# =============================================================================
+#
+# Reporting
+#
 
 # Log file location (lynis runtime log)
 lynis_log_file: '/var/log/lynis.log'
@@ -99,9 +99,9 @@ lynis_email_report: ''
 # Upload results to Lynis Enterprise (requires license)
 lynis_upload_results: false
 
-# =============================================================================
-# CUSTOM TESTS
-# =============================================================================
+#
+# Custom Tests
+#
 
 # Directory for custom test plugins
 lynis_custom_tests_dir: '/etc/lynis/custom'
@@ -109,9 +109,9 @@ lynis_custom_tests_dir: '/etc/lynis/custom'
 # Deploy and enable custom tests directory
 lynis_custom_tests_enabled: false
 
-# =============================================================================
-# SCHEDULED AUDITS (systemd timer)
-# =============================================================================
+#
+# Scheduled Audits (systemd timer)
+#
 
 # Enable systemd timer for scheduled audits
 lynis_timer_enabled: true
@@ -122,9 +122,9 @@ lynis_timer_oncalendar: 'daily'
 # Randomized delay to avoid load spikes on multiple hosts
 lynis_timer_randomized_delay: '1h'
 
-# =============================================================================
+#
 # BTRFS
-# =============================================================================
+#
 
 # Set NoCOW attribute on report directory (prevents CoW overhead on BTRFS)
 lynis_btrfs_nocow: true

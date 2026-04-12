@@ -1,14 +1,14 @@
 ---
-# =============================================================================
-# SERVICE CONTROL
-# =============================================================================
+#
+# Service Control
+#
 
 # Enable or disable the avahi-daemon service
 avahi_enabled: true
 
-# =============================================================================
-# SERVER SETTINGS
-# =============================================================================
+#
+# Server Settings
+#
 
 # Hostname to publish via mDNS (empty = system hostname)
 avahi_hostname: ''
@@ -25,9 +25,9 @@ avahi_allow_point_to_point: false
 # Prevent other mDNS stacks from running (exclusively bind UDP 5353)
 avahi_disallow_other_stacks: false
 
-# =============================================================================
-# NETWORK SETTINGS
-# =============================================================================
+#
+# Network Settings
+#
 
 # IP protocol support
 avahi_use_ipv4: true
@@ -44,23 +44,23 @@ avahi_cache_entries_max: 4096
 avahi_ratelimit_interval_usec: 1000000
 avahi_ratelimit_burst: 1000
 
-# =============================================================================
+#
 # DBUS
-# =============================================================================
+#
 
 # Enable D-Bus interface (required for most client functionality)
 avahi_enable_dbus: true
 
-# =============================================================================
-# WIDE AREA
-# =============================================================================
+#
+# Wide Area
+#
 
 # Enable DNS-SD over unicast DNS for non-.local domains
 avahi_enable_wide_area: false
 
-# =============================================================================
-# PUBLISH SETTINGS
-# =============================================================================
+#
+# Publish Settings
+#
 
 # Disable all record publishing (querying-only mode)
 avahi_disable_publishing: false
@@ -86,9 +86,9 @@ avahi_publish_aaaa_on_ipv4: true
 # Publish IPv4 A records via IPv6 transport
 avahi_publish_a_on_ipv6: false
 
-# =============================================================================
-# REFLECTOR
-# =============================================================================
+#
+# Reflector
+#
 
 # Forward mDNS between interfaces (gateway/bridge mode)
 avahi_enable_reflector: false
@@ -96,9 +96,9 @@ avahi_enable_reflector: false
 # Forward mDNS between IPv4 and IPv6 (requires enable_reflector)
 avahi_reflect_ipv: false
 
-# =============================================================================
-# RLIMITS
-# =============================================================================
+#
+# Rlimits
+#
 
 # Resource limits passed to setrlimit(2) — 0 disables where applicable
 avahi_rlimit_core: 0
@@ -107,9 +107,9 @@ avahi_rlimit_fsize: 0
 avahi_rlimit_nofile: 768
 avahi_rlimit_stack: 8388608
 
-# =============================================================================
-# NSS-MDNS
-# =============================================================================
+#
+# NSS-mDNS
+#
 
 # Install nss-mdns for .local hostname resolution
 avahi_nss_mdns: true
@@ -118,9 +118,9 @@ avahi_nss_mdns: true
 avahi_nsswitch_hosts: >-
   hosts: mymachines mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] files myhostname dns
 
-# =============================================================================
-# FIREWALL
-# =============================================================================
+#
+# Firewall
+#
 
 # Enable firewalld integration (add mDNS service)
 avahi_firewalld_enabled: false
@@ -128,9 +128,9 @@ avahi_firewalld_enabled: false
 # firewalld zone to add the mDNS service to
 avahi_firewalld_zone: 'public'
 
-# =============================================================================
-# APPARMOR
-# =============================================================================
+#
+# AppArmor
+#
 
 # Enable AppArmor profile enforcement (Arch + Debian only, not RHEL/Rocky)
 avahi_apparmor_enabled: false

@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 package_management_enabled: true
 
-# =============================================================================
-# PACMAN - GENERAL OPTIONS
-# =============================================================================
+#
+# Pacman - General Options
+#
 
 # Hold packages (won't be removed accidentally)
 pacman_hold_packages:
@@ -27,9 +27,9 @@ pacman_no_extract:
 # Files to never upgrade (supports globs)
 pacman_no_upgrade: []
 
-# =============================================================================
-# PACMAN - DOWNLOAD OPTIONS
-# =============================================================================
+#
+# Pacman - Download Options
+#
 
 # Number of parallel downloads (1-10, 0 = disable)
 pacman_parallel_downloads: 5
@@ -51,9 +51,9 @@ pacman_disable_sandbox_syscalls: false
 #   '/usr/bin/aria2c --allow-overwrite=true --continue=true -o %o %u'
 pacman_xfer_command: ''
 
-# =============================================================================
-# PACMAN - MISC OPTIONS
-# =============================================================================
+#
+# Pacman - Misc Options
+#
 
 # Enable color output
 pacman_color: true
@@ -73,9 +73,9 @@ pacman_check_space: true
 # Easter egg: animated pacman
 pacman_ilovecandy: true
 
-# =============================================================================
-# PACMAN - SIGNATURE LEVELS
-# =============================================================================
+#
+# Pacman - Signature Levels
+#
 
 # Global signature level
 # Options: Required, Optional, Never, TrustedOnly, TrustAll
@@ -88,9 +88,9 @@ pacman_local_file_sig_level: 'Optional'
 # Remote file signature level (empty = inherit from SigLevel)
 pacman_remote_file_sig_level: ''
 
-# =============================================================================
-# PACMAN - REPOSITORIES
-# =============================================================================
+#
+# Pacman - Repositories
+#
 
 # Enable testing repositories
 pacman_testing_repos: false
@@ -113,9 +113,9 @@ pacman_multilib_testing: false
 #       keyserver: 'keyserver.ubuntu.com'  # optional
 pacman_custom_repositories: []
 
-# =============================================================================
-# PACMAN - HOOKS
-# =============================================================================
+#
+# Pacman - Hooks
+#
 
 # Hook directory
 pacman_hook_dir: '/etc/pacman.d/hooks'
@@ -123,9 +123,9 @@ pacman_hook_dir: '/etc/pacman.d/hooks'
 # Install custom hooks (list of hook files from files/ directory)
 pacman_custom_hooks: []
 
-# =============================================================================
-# REFLECTOR - MIRROR MANAGEMENT
-# =============================================================================
+#
+# Reflector - Mirror Management
+#
 
 # Enable Reflector for automatic mirror management
 reflector_enabled: true
@@ -143,9 +143,9 @@ reflector:
 # Enable Reflector timer for periodic updates
 reflector_timer_enabled: true
 
-# =============================================================================
-# MAKEPKG - PACKAGER INFO
-# =============================================================================
+#
+# Makepkg - Packager Info
+#
 
 # Packager name and email (for built packages)
 # Example: 'John Doe <john@doe.com>'
@@ -154,9 +154,10 @@ makepkg_packager: ''
 # GPG key for signing packages (key ID)
 makepkg_gpg_key: ''
 
-# =============================================================================
-# MAKEPKG - PER-USER CONFIG
-# =============================================================================
+#
+# Makepkg - Per-User Config
+#
+
 # Per-user ~/.makepkg.conf deployment that overrides system /etc/makepkg.conf.
 #
 # Mode controls deployment behavior:
@@ -184,9 +185,9 @@ makepkg_users: []
 # Default mode when user entry has no 'mode' key
 makepkg_user_config_mode: 'managed'
 
-# =============================================================================
-# MAKEPKG - COMPILER FLAGS
-# =============================================================================
+#
+# Makepkg - Compiler Flags
+#
 
 # C preprocessor flags
 makepkg_cppflags: ''
@@ -220,9 +221,9 @@ makepkg_debug_cxxflags: ''
 # Debug Rust flags
 makepkg_debug_rustflags: '-C debuginfo=2'
 
-# =============================================================================
-# MAKEPKG - BUILD ENVIRONMENT
-# =============================================================================
+#
+# Makepkg - Build Environment
+#
 
 # Use distcc for distributed compilation
 makepkg_distcc: false
@@ -249,9 +250,9 @@ makepkg_sign: false
 # Example: '/tmp/makepkg'
 makepkg_builddir: ''
 
-# =============================================================================
-# MAKEPKG - PACKAGE OPTIONS
-# =============================================================================
+#
+# Makepkg - Package Options
+#
 
 # Strip symbols from binaries
 makepkg_strip: true
@@ -283,9 +284,9 @@ makepkg_lto: true
 # Automatic dependency detection
 makepkg_autodeps: false
 
-# =============================================================================
-# MAKEPKG - INTEGRITY & OUTPUT
-# =============================================================================
+#
+# Makepkg - Integrity & Output
+#
 
 # Integrity check algorithms
 makepkg_integrity_check:
@@ -297,9 +298,9 @@ makepkg_pkg_ext: '.pkg.tar.zst'
 # Source package extension
 makepkg_src_ext: '.src.tar.gz'
 
-# =============================================================================
-# MAKEPKG - OUTPUT DIRECTORIES (optional)
-# =============================================================================
+#
+# Makepkg - Output Directories (Optional)
+#
 
 # Package destination (empty = build directory)
 makepkg_pkgdest: ''
@@ -313,9 +314,9 @@ makepkg_srcpkgdest: ''
 # Log destination
 makepkg_logdest: ''
 
-# =============================================================================
-# MAKEPKG - COMPRESSION
-# =============================================================================
+#
+# Makepkg - Compression
+#
 
 # Zstd compression level (1-19, or 'ultra -20' for max)
 makepkg_zstd_level: '--ultra -20'
@@ -326,9 +327,9 @@ makepkg_zstd_threads: 0
 # XZ threads (0 = auto)
 makepkg_xz_threads: 0
 
-# =============================================================================
-# AUR HELPER
-# =============================================================================
+#
+# AUR Helper
+#
 
 # AUR helper to install: paru, yay, or empty to skip
 aur_helper: 'paru'
@@ -339,9 +340,9 @@ aur_builder_user: 'aur_builder'
 # AUR builder home directory
 aur_builder_home: '/var/cache/aur_builder'
 
-# =============================================================================
-# PARU CONFIGURATION
-# =============================================================================
+#
+# Paru Configuration
+#
 
 # Shared clone directory for AUR package sources
 # Both aur_builder and regular users share this directory to avoid
@@ -416,9 +417,9 @@ paru_completion_interval: 7
 paru_shared_users: []
 # Example: ['johndoe']
 
-# =============================================================================
-# PARU - [bin] SECTION
-# =============================================================================
+#
+# Paru - [bin] Section
+#
 
 # Extra flags passed to makepkg
 paru_mflags: ''
@@ -432,9 +433,9 @@ paru_sudo: ''
 # File manager for reviewing PKGBUILDs (empty = default)
 paru_file_manager: ''
 
-# =============================================================================
-# PACKAGE CACHE CLEANUP
-# =============================================================================
+#
+# Package Cache Cleanup
+#
 
 # Enable paccache timer for automatic cleanup
 paccache_enabled: true
@@ -447,9 +448,9 @@ paccache_enabled: true
 #   '-ruk0' = remove all uninstalled packages
 paccache_args: '-rk2'
 
-# =============================================================================
-# ADDITIONAL PACKAGES
-# =============================================================================
+#
+# Additional Packages
+#
 
 # Install rebuild-detector for AUR dependency tracking
 pacman_install_rebuild_detector: true
@@ -460,13 +461,9 @@ pacman_install_pkgfile: true
 # Install informant for Arch news (blocks upgrades until news is read)
 pacman_install_informant: false
 
-# #############################################################################
-#                           DEBIAN / UBUNTU
-# #############################################################################
-
-# =============================================================================
-# APT - GENERAL OPTIONS
-# =============================================================================
+#
+# APT - General Options
+#
 
 # Enable periodic updates (background downloads)
 apt_periodic_enabled: true
@@ -506,9 +503,9 @@ apt_languages: 'none'
 #       priority: 1000
 apt_preferences: []
 
-# =============================================================================
-# APT - EXTERNAL REPOSITORIES
-# =============================================================================
+#
+# APT - External Repositories
+#
 
 # Enable Debian Backports (Debian only)
 apt_backports_enabled: false
@@ -541,9 +538,9 @@ apt_kubernetes_version: '1.29'
 #       gpg_key: 'https://repo.example.com/gpg.key'  # optional
 apt_custom_repos: []
 
-# =============================================================================
-# APT - UNATTENDED UPGRADES
-# =============================================================================
+#
+# APT - Unattended Upgrades
+#
 
 # Enable unattended-upgrades
 apt_unattended_upgrades: false
@@ -567,9 +564,9 @@ apt_unattended_mail_on_error: true
 # Remove unused dependencies
 apt_unattended_autoremove: true
 
-# =============================================================================
-# APT - ADDITIONAL TOOLS
-# =============================================================================
+#
+# APT - Additional Tools
+#
 
 # Install apt-file (command-not-found functionality)
 apt_install_apt_file: true
@@ -590,9 +587,9 @@ apt_install_debian_goodies: true
 #                        RHEL / FEDORA / ROCKY
 # #############################################################################
 
-# =============================================================================
-# DNF - GENERAL OPTIONS
-# =============================================================================
+#
+# DNF - General Options
+#
 
 # Enable fastest mirror plugin
 dnf_fastestmirror: true
@@ -625,9 +622,9 @@ dnf_skip_if_unavailable: false
 # Example: http://proxy.example.com:3128
 dnf_proxy: ''
 
-# =============================================================================
-# DNF - EXTERNAL REPOSITORIES
-# =============================================================================
+#
+# DNF - External Repositories
+#
 
 # Enable PowerTools/CRB (CodeReady Builder)
 dnf_powertools_enabled: false
@@ -676,9 +673,9 @@ dnf_copr_repos: []
 #       gpgcheck: true
 dnf_custom_repos: []
 
-# =============================================================================
-# DNF - AUTOMATIC UPDATES
-# =============================================================================
+#
+# DNF - Automatic Updates
+#
 
 # Enable dnf-automatic
 dnf_automatic_enabled: false
@@ -697,9 +694,9 @@ dnf_automatic_email_host: 'localhost'
 # Emit via: email, stdio, motd
 dnf_automatic_emit_via: 'stdio'
 
-# =============================================================================
-# DNF - ADDITIONAL TOOLS
-# =============================================================================
+#
+# DNF - Additional Tools
+#
 
 # Install dnf-utils
 dnf_install_utils: true

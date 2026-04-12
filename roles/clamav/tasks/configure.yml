@@ -31,9 +31,10 @@
     group: '{{ clamav_group | default(__clamav_group, true) }}'
     mode: '0755'
 
-# ============================================================================
+#
 # Configuration files
-# ============================================================================
+#
+
 - name: Configure | Deploy clamd.conf
   ansible.builtin.template:
     src: 'clamd.conf.j2'
@@ -62,9 +63,10 @@
   notify: Restart clamav-milter
   when: clamav_milter_enabled | bool
 
-# ============================================================================
+#
 # Mail server integration
-# ============================================================================
+#
+
 - name: Configure | Check if postfix user exists
   ansible.builtin.getent:
     database: passwd
@@ -101,9 +103,10 @@
     - __clamav_rspamd_user.ansible_facts.getent_passwd is defined
     - __clamav_rspamd_user.ansible_facts.getent_passwd._rspamd is defined
 
-# ============================================================================
+#
 # Initial database download
-# ============================================================================
+#
+
 - name: Configure | Check if virus database exists
   ansible.builtin.stat:
     path: '{{ clamav_database_directory }}/main.cvd'

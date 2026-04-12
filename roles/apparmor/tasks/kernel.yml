@@ -14,9 +14,9 @@
       AppArmor kernel support: {{ 'active' if apparmor_kernel_active else
       'not active — configure GRUB and reboot' }}
 
-# =============================================================================
-# GRUB CONFIGURATION — Arch Linux (lsm= kernel parameter)
-# =============================================================================
+#
+# GRUB Configuration — Arch Linux (lsm= kernel parameter)
+#
 
 - name: Kernel | Check if AppArmor LSM is configured in GRUB (Arch Linux)
   ansible.builtin.command:
@@ -42,9 +42,9 @@
     - __apparmor_grub_lsm_check is defined
     - __apparmor_grub_lsm_check.stdout | default('0') | int == 0
 
-# =============================================================================
-# GRUB CONFIGURATION — Debian (apparmor=1 security=apparmor)
-# =============================================================================
+#
+# GRUB Configuration — Debian (apparmor=1 security=apparmor)
+#
 
 - name: Kernel | Check if AppArmor is configured in GRUB (Debian)
   ansible.builtin.command:
@@ -70,15 +70,15 @@
     - __apparmor_grub_debian_check is defined
     - __apparmor_grub_debian_check.stdout | default('0') | int == 0
 
-# =============================================================================
-# GRUB UPDATE CHAIN (runs immediately, not as handler)
-# =============================================================================
+#
+# GRUB Update Chain (runs immediately, not as handler)
+#
+
 # On systems with Secure Boot + TPM, GRUB changes require:
 #   1. grub-mkconfig   — regenerate config
 #   2. sbctl sign-all  — re-sign boot files (Secure Boot)
 #   3. pause           — warn about TPM re-seal after reboot
 # This MUST run immediately — handlers would be skipped on play failure.
-# =============================================================================
 
 - name: Kernel | Regenerate GRUB config (Arch Linux)
   ansible.builtin.command:
@@ -148,9 +148,9 @@
     - archlinux_luks_tpm.enabled | default(false) | bool
     - 4 in (archlinux_luks_tpm.pcrs | default([0, 7]))
 
-# =============================================================================
-# STATUS CHECK (only when kernel module is active)
-# =============================================================================
+#
+# Status Check (only when kernel module is active)
+#
 
 - name: Kernel | Check AppArmor module status
   ansible.builtin.command:

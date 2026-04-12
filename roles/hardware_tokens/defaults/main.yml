@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 hardware_tokens_enabled: true
 
-# =============================================================================
-# SUPPORTED DEVICES
-# =============================================================================
+#
+# Supported Devices
+#
 
 # NitroKey support (udev rules + packages)
 hardware_tokens_nitrokey: true
@@ -24,9 +24,9 @@ hardware_tokens_yubikey_manager: false
 # Generic FIDO2/U2F support (udev rules + libfido2 + fido2-tools)
 hardware_tokens_fido2: true
 
-# =============================================================================
-# SMARTCARD / PKCS#11
-# =============================================================================
+#
+# Smartcard / PKCS#11
+#
 
 # Install smartcard diagnostics (pcsc-tools)
 hardware_tokens_smartcard: true
@@ -37,9 +37,9 @@ hardware_tokens_opensc: true
 # Enable PC/SC daemon socket for smartcard communication
 hardware_tokens_pcscd: true
 
-# =============================================================================
-# PAM / LOGIN
-# =============================================================================
+#
+# PAM / Login
+#
 
 # Enable PAM U2F module for login
 hardware_tokens_pam_u2f: false
@@ -74,16 +74,16 @@ hardware_tokens_pam_u2f_config:
   origin: 'pam://{{ ansible_facts["hostname"] }}'
   appid: 'pam://{{ ansible_facts["hostname"] }}'
 
-# =============================================================================
-# UDEV RULES
-# =============================================================================
+#
+# Udev Rules
+#
 
 # Deploy udev rules for device access
 hardware_tokens_udev_rules: true
 
-# =============================================================================
-# LOCK ON REMOVAL
-# =============================================================================
+#
+# Lock on Removal
+#
 
 # Auto-lock screen when hardware token is removed
 hardware_tokens_lock_on_removal: false
@@ -98,9 +98,9 @@ hardware_tokens_lock_on_removal_devices:
     product: '42b1'
     name: 'Nitrokey FIDO2'
 
-# =============================================================================
-# USER CONFIGURATION
-# =============================================================================
+#
+# User Configuration
+#
 
 # Users with hardware token access (group membership)
 hardware_tokens_users: []

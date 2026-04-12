@@ -1,12 +1,14 @@
 ---
-# =============================================================================
-# SERVICE CONTROL
-# =============================================================================
+#
+# Service Control
+#
+
 fail2ban_enabled: true
 
-# =============================================================================
-# GLOBAL SETTINGS
-# =============================================================================
+#
+# Global Settings
+#
+
 fail2ban_ignoreip:
   - '127.0.0.1/8'
   - '::1'
@@ -23,26 +25,29 @@ fail2ban_bantime_formula: 'ban.Time * (1<<(ban.Count if ban.Count<20 else 20)) *
 fail2ban_bantime_maxtime: '5w'
 fail2ban_bantime_overalljails: false
 
-# =============================================================================
-# BAN ACTION
-# =============================================================================
+#
+# Ban Action
+#
+
 # Options: firewallcmd-ipset, firewallcmd-rich-rules, nftables-multiport, iptables-multiport
 # OS-specific defaults set via vars/ (__fail2ban_banaction, __fail2ban_banaction_allports)
 fail2ban_banaction: '{{ __fail2ban_banaction | default("firewallcmd-ipset") }}'
 fail2ban_banaction_allports: '{{ __fail2ban_banaction_allports | default("firewallcmd-ipset") }}'
 fail2ban_chain: 'INPUT'
 
-# =============================================================================
-# LOGGING
-# =============================================================================
+#
+# Logging
+#
+
 fail2ban_loglevel: 'INFO'  # CRITICAL, ERROR, WARNING, NOTICE, INFO, DEBUG
 fail2ban_logtarget: '/var/log/fail2ban.log'
 fail2ban_syslog_target: '/dev/log'
 fail2ban_log_date_pattern: ''
 
-# =============================================================================
-# MAIL NOTIFICATIONS
-# =============================================================================
+#
+# Mail Notifications
+#
+
 fail2ban_destemail: 'root@localhost'
 fail2ban_sender: 'fail2ban@localhost'
 fail2ban_sendername: 'Fail2Ban'
@@ -55,23 +60,26 @@ fail2ban_mta: 'sendmail'
 # %(action_cf_mwl)s - CloudFlare + mail with logs
 fail2ban_action: '%(action_)s'
 
-# =============================================================================
-# DATABASE
-# =============================================================================
+#
+# Database
+#
+
 fail2ban_dbfile: '/var/lib/fail2ban/fail2ban.sqlite3'
 fail2ban_dbpurgeage: '1d'
 fail2ban_dbmaxmatches: 10
 
-# =============================================================================
-# DEFAULT JAIL SETTINGS
-# =============================================================================
+#
+# Default Jail Settings
+#
+
 fail2ban_default_backend: 'auto'  # auto, pyinotify, gamin, polling, systemd
 fail2ban_default_usedns: 'warn'  # yes, no, warn, raw
 fail2ban_default_logencoding: 'auto'
 
-# =============================================================================
-# SSH JAILS
-# =============================================================================
+#
+# SSH Jails
+#
+
 fail2ban_sshd_enabled: true
 fail2ban_sshd_port: 'ssh'
 fail2ban_sshd_logpath: '%(sshd_log)s'
@@ -84,9 +92,10 @@ fail2ban_sshd_ddos_port: 'ssh'
 fail2ban_sshd_ddos_maxretry: 6
 fail2ban_sshd_ddos_bantime: '1h'
 
-# =============================================================================
-# MAIL SERVER JAILS
-# =============================================================================
+#
+# Mail Server Jails
+#
+
 # Postfix
 fail2ban_postfix_enabled: false
 fail2ban_postfix_port: 'smtp,465,submission'
@@ -130,9 +139,10 @@ fail2ban_roundcube_logpath: '/var/log/roundcubemail/errors.log'
 fail2ban_roundcube_maxretry: 5
 fail2ban_roundcube_bantime: '1h'
 
-# =============================================================================
-# WEB SERVER JAILS
-# =============================================================================
+#
+# Web Server Jails
+#
+
 # Nginx
 fail2ban_nginx_http_auth_enabled: false
 fail2ban_nginx_http_auth_port: 'http,https'
@@ -176,9 +186,10 @@ fail2ban_apache_fakegooglebot_enabled: false
 fail2ban_apache_modsecurity_enabled: false
 fail2ban_apache_shellshock_enabled: false
 
-# =============================================================================
-# DATABASE JAILS
-# =============================================================================
+#
+# Database Jails
+#
+
 # MariaDB/MySQL
 fail2ban_mysqld_enabled: false
 fail2ban_mysqld_port: '3306'
@@ -193,9 +204,10 @@ fail2ban_postgresql_logpath: '/var/log/postgresql/*.log'
 fail2ban_postgresql_maxretry: 5
 fail2ban_postgresql_bantime: '1h'
 
-# =============================================================================
-# MONITORING JAILS
-# =============================================================================
+#
+# Monitoring Jails
+#
+
 # Grafana
 fail2ban_grafana_enabled: false
 fail2ban_grafana_port: 'http,https,3000'
@@ -203,17 +215,19 @@ fail2ban_grafana_logpath: '/var/log/grafana/grafana.log'
 fail2ban_grafana_maxretry: 5
 fail2ban_grafana_bantime: '1h'
 
-# =============================================================================
-# RECIDIVE (repeat offenders)
-# =============================================================================
+#
+# Recidive (repeat offenders)
+#
+
 fail2ban_recidive_enabled: false
 fail2ban_recidive_bantime: '1w'
 fail2ban_recidive_findtime: '1d'
 fail2ban_recidive_maxretry: 5
 
-# =============================================================================
-# CUSTOM JAILS
-# =============================================================================
+#
+# Custom Jails
+#
+
 fail2ban_custom_jails: []
 # Example:
 #   - name: 'my-custom-jail'
@@ -229,9 +243,10 @@ fail2ban_custom_jails: []
 #     ignoreip: []
 #     backend: ''
 
-# =============================================================================
-# CUSTOM FILTERS
-# =============================================================================
+#
+# Custom Filters
+#
+
 fail2ban_custom_filters: []
 # Example:
 #   - name: 'my-filter'
@@ -242,9 +257,10 @@ fail2ban_custom_filters: []
 #       ignoreregex =
 #       datepattern = %%Y-%%m-%%d %%H:%%M:%%S
 
-# =============================================================================
-# CUSTOM ACTIONS
-# =============================================================================
+#
+# Custom Actions
+#
+
 fail2ban_custom_actions: []
 # Example:
 #   - name: 'my-action'
@@ -256,7 +272,8 @@ fail2ban_custom_actions: []
 #       actionban = /usr/local/bin/ban.sh <ip>
 #       actionunban = /usr/local/bin/unban.sh <ip>
 
-# =============================================================================
-# APPARMOR (Arch + Debian only, not RHEL/Rocky)
-# =============================================================================
+#
+# AppArmor (Arch + Debian only, not RHEL/Rocky)
+#
+
 fail2ban_apparmor_enabled: false

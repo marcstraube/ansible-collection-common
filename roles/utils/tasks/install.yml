@@ -48,9 +48,9 @@
   when:
     - __utils_packages | length > 0
 
-# =============================================================================
+#
 # AUR packages (Arch Linux only)
-# =============================================================================
+#
 
 - name: Install | Build AUR package list
   ansible.builtin.set_fact:

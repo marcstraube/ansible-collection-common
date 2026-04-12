@@ -39,9 +39,9 @@
          else __editors_user.neovim_config }}
   when: __editors_user.neovim_config is defined
 
-# =============================================================================
+#
 # Nano
-# =============================================================================
+#
 
 - name: User Config | Ensure nano config directory for {{ __editors_user.username }}
   ansible.builtin.file:
@@ -67,9 +67,9 @@
     - editors_nano | bool
     - __editors_user.nano_config is defined
 
-# =============================================================================
+#
 # Vim
-# =============================================================================
+#
 
 - name: User Config | Deploy vim config for {{ __editors_user.username }}
   ansible.builtin.template:
@@ -84,9 +84,9 @@
     - editors_vim | bool
     - __editors_user.vim_config is defined
 
-# =============================================================================
+#
 # Neovim
-# =============================================================================
+#
 
 - name: User Config | Ensure neovim config directory for {{ __editors_user.username }}
   ansible.builtin.file:

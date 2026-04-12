@@ -1,13 +1,13 @@
 ---
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 users_enabled: true
 
-# =============================================================================
-# GROUPS
-# =============================================================================
+#
+# Groups
+#
 
 # Groups to create
 # Example:
@@ -19,9 +19,9 @@ users_enabled: true
 #       system: true
 users_groups: []
 
-# =============================================================================
-# USERS
-# =============================================================================
+#
+# Users
+#
 
 # Users to create/manage
 #
@@ -69,9 +69,9 @@ users_groups: []
 #       state: 'present'           # present, absent
 users_list: []
 
-# =============================================================================
-# USER DEFAULTS
-# =============================================================================
+#
+# User Defaults
+#
 
 # Default shell for new users
 users_default_shell: '/bin/bash'
@@ -100,9 +100,9 @@ users_default_update_password: 'always'
 # Default SSH key type for generated keys
 users_default_ssh_key_type: 'ed25519'
 
-# =============================================================================
-# SSH KEY MANAGEMENT
-# =============================================================================
+#
+# SSH Key Management
+#
 
 # Base directory for SSH authorized_keys
 users_ssh_authorized_keys_dir: '.ssh'
@@ -116,9 +116,9 @@ users_ssh_dir_mode: '0700'
 # Authorized keys file permissions
 users_ssh_authorized_keys_mode: '0600'
 
-# =============================================================================
-# PASSWORD POLICY
-# =============================================================================
+#
+# Password Policy
+#
 
 # Hash algorithm for passwords: sha512, sha256
 users_password_hash_algo: 'sha512'
@@ -138,9 +138,9 @@ users_random_password_length: 24
 # WARNING: Contains plaintext passwords!
 users_password_store_file: ''
 
-# =============================================================================
-# HOME DIRECTORY
-# =============================================================================
+#
+# Home Directory
+#
 
 # Home directory permissions
 users_home_mode: '0700'
@@ -148,9 +148,9 @@ users_home_mode: '0700'
 # Create .ssh directory
 users_create_ssh_dir: true
 
-# =============================================================================
-# USER REMOVAL
-# =============================================================================
+#
+# User Removal
+#
 
 # Remove home directory when user is removed
 users_remove_home: false
@@ -158,9 +158,9 @@ users_remove_home: false
 # Force removal of user even if logged in
 users_force_remove: false
 
-# =============================================================================
-# PROFILE IMAGES
-# =============================================================================
+#
+# Profile Images
+#
 
 # Enable user profile images (for display managers)
 users_profile_images_enabled: false
@@ -171,9 +171,9 @@ users_profile_images_dir: '/var/lib/AccountsService/icons'
 # Create ~/.face symlink for SDDM/LightDM compatibility
 users_profile_images_face_symlink: false
 
-# =============================================================================
-# ADVANCED
-# =============================================================================
+#
+# Advanced
+#
 
 # Exclusive management: remove users not in list
 # WARNING: Dangerous! Only enable if you know what you're doing

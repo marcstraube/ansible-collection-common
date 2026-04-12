@@ -1,18 +1,14 @@
 ---
-# =============================================================================
-# Podman - Container Runtime
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# SERVICE CONTROL
-# -----------------------------------------------------------------------------
+#
+# Service Control
+#
 
 # Enable or disable the podman role
 podman_enabled: true
 
-# -----------------------------------------------------------------------------
-# INSTALLATION
-# -----------------------------------------------------------------------------
+#
+# Installation
+#
 
 # Install podman-compose for docker-compose compatibility
 podman_compose_enabled: true
@@ -31,9 +27,9 @@ podman_tools:
   - 'buildah'
   - 'skopeo'
 
-# -----------------------------------------------------------------------------
-# DOCKER COMPATIBILITY
-# -----------------------------------------------------------------------------
+#
+# Docker Compatibility
+#
 
 # Create docker/docker-compose shell aliases in /etc/profile.d/
 podman_docker_alias: true
@@ -41,9 +37,9 @@ podman_docker_alias: true
 # Create docker.sock symlink for socket compatibility
 podman_docker_socket_symlink: true
 
-# -----------------------------------------------------------------------------
-# ROOTLESS CONFIGURATION
-# -----------------------------------------------------------------------------
+#
+# Rootless Configuration
+#
 
 # Enable rootless podman for specified users
 # Each entry requires: username, optional: subuid_start, subuid_count,
@@ -60,9 +56,9 @@ podman_rootless_users: []
 # Default subuid/subgid range size when not specified per user
 podman_subid_count: 65536
 
-# -----------------------------------------------------------------------------
-# REGISTRIES (registries.conf)
-# -----------------------------------------------------------------------------
+#
+# Registries (registries.conf)
+#
 
 # Unqualified search registries (V2 format: unqualified-search-registries)
 podman_registries_search:
@@ -99,9 +95,9 @@ podman_registries_auth: []
 podman_credential_helpers:
   - 'containers-auth.json'
 
-# -----------------------------------------------------------------------------
-# STORAGE (storage.conf)
-# -----------------------------------------------------------------------------
+#
+# Storage (storage.conf)
+#
 
 # Storage driver (overlay, vfs, btrfs, zfs)
 podman_storage_driver: 'overlay'
@@ -126,9 +122,9 @@ podman_storage_options:
   overlay:
     mountopt: 'nodev,metacopy=on'
 
-# -----------------------------------------------------------------------------
-# NETWORK (containers.conf [network])
-# -----------------------------------------------------------------------------
+#
+# Network (containers.conf [network])
+#
 
 # Network backend (netavark or cni)
 podman_network_backend: 'netavark'
@@ -151,9 +147,9 @@ podman_rootless_network_cmd: 'pasta'
 # pasta options for rootless networking
 podman_pasta_options: []
 
-# -----------------------------------------------------------------------------
-# CONTAINERS (containers.conf [containers])
-# -----------------------------------------------------------------------------
+#
+# Containers (containers.conf [containers])
+#
 
 # Default OCI runtime (crun or runc)
 podman_runtime: 'crun'
@@ -216,9 +212,9 @@ podman_init: false
 # HTTP proxy passthrough to containers
 podman_http_proxy: true
 
-# -----------------------------------------------------------------------------
-# ENGINE (containers.conf [engine])
-# -----------------------------------------------------------------------------
+#
+# Engine (containers.conf [engine])
+#
 
 # Cgroup manager (systemd or cgroupfs)
 podman_cgroup_manager: 'systemd'
@@ -238,9 +234,9 @@ podman_compression_format: 'gzip'
 # Database backend (empty = auto, boltdb, sqlite)
 podman_database_backend: ''
 
-# -----------------------------------------------------------------------------
-# SYSTEMD INTEGRATION
-# -----------------------------------------------------------------------------
+#
+# Systemd Integration
+#
 
 # Enable podman socket for API access
 podman_socket_enabled: true
@@ -260,9 +256,9 @@ podman_prune_all: true
 # Prune volumes during system prune
 podman_prune_volumes: true
 
-# -----------------------------------------------------------------------------
+#
 # BTRFS
-# -----------------------------------------------------------------------------
+#
 
 # Enable BTRFS optimizations for container storage (NoCOW + subvolume)
 podman_btrfs_enabled: true

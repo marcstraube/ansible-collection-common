@@ -26,9 +26,9 @@
          | map(attribute='key') | list }}
   when: __apparmor_status_json.rc == 0
 
-# =============================================================================
-# ENFORCE PROFILES
-# =============================================================================
+#
+# Enforce Profiles
+#
 
 - name: Profiles | Set profiles to enforce mode
   ansible.builtin.command:
@@ -40,9 +40,9 @@
   changed_when: true
   failed_when: false
 
-# =============================================================================
-# COMPLAIN PROFILES
-# =============================================================================
+#
+# Complain Profiles
+#
 
 - name: Profiles | Set profiles to complain mode
   ansible.builtin.command:
@@ -54,9 +54,9 @@
   changed_when: true
   failed_when: false
 
-# =============================================================================
-# DISABLE PROFILES
-# =============================================================================
+#
+# Disable Profiles
+#
 
 - name: Profiles | Disable profiles
   ansible.builtin.command:
@@ -70,9 +70,9 @@
   changed_when: true
   failed_when: false
 
-# =============================================================================
-# CUSTOM PROFILES
-# =============================================================================
+#
+# Custom Profiles
+#
 
 - name: Profiles | Deploy custom AppArmor profiles
   ansible.builtin.copy:

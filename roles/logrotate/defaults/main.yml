@@ -1,18 +1,14 @@
 ---
-# =============================================================================
-# Logrotate - Log Rotation Management
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# SERVICE CONTROL
-# -----------------------------------------------------------------------------
+#
+# Service Control
+#
 
 # Enable/disable the logrotate role
 logrotate_enabled: true
 
-# -----------------------------------------------------------------------------
-# GLOBAL CONFIGURATION (/etc/logrotate.conf)
-# -----------------------------------------------------------------------------
+#
+# Global Configuration (/etc/logrotate.conf)
+#
 
 # Rotation frequency: daily, weekly, monthly, yearly
 logrotate_frequency: 'weekly'
@@ -72,10 +68,11 @@ logrotate_maxsize: ''
 # Size-based rotation instead of time-based (empty = use frequency)
 logrotate_size: ''
 
-# -----------------------------------------------------------------------------
-# CUSTOM LOG CONFIGURATIONS
+#
+# Custom Log Configurations
+#
+
 # List of custom log rotation rules deployed to /etc/logrotate.d/
-# -----------------------------------------------------------------------------
 logrotate_configs: []
 # Example:
 #   - name: 'myapp'
@@ -102,9 +99,9 @@ logrotate_configs: []
 #       systemctl reload myapp > /dev/null 2>&1 || true
 #     prerotate: ''
 
-# -----------------------------------------------------------------------------
-# TIMER CONFIGURATION (systemd)
-# -----------------------------------------------------------------------------
+#
+# Timer Configuration (systemd)
+#
 
 # Override systemd timer schedule (empty = distro default, usually daily)
 # Example: '*-*-* 02:00:00' for 2 AM daily
