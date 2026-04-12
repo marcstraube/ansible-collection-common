@@ -5,7 +5,6 @@
 
 - name: Verify AIDE installation and configuration
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:

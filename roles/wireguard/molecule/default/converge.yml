@@ -4,7 +4,6 @@
 
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
   serial: 1
 

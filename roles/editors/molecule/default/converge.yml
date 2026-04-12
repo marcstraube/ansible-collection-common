@@ -2,7 +2,6 @@
 - name: Converge
   hosts: all
   gather_facts: true
-  become: true
 
   pre_tasks:
     - name: Create test user for per-user config

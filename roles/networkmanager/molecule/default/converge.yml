@@ -4,7 +4,6 @@
 - name: Converge
   hosts: all
   gather_facts: true
-  become: true
   vars:
     # Use centralized test variables from molecule.yml
     networkmanager_install_applet: "{{ test_networkmanager_install_applet }}"

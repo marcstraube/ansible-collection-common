@@ -5,7 +5,6 @@
 
 - name: Verify PAM hardening configuration
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
