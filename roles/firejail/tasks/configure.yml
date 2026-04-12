@@ -1,5 +1,4 @@
 ---
-# Deploy global firejail settings
 - name: Configure | Deploy global configuration
   ansible.builtin.template:
     src: firejail.config.j2
@@ -9,7 +8,6 @@
     mode: '0644'
   notify: apply firecfg
 
-# Comment out excluded apps in firecfg.config so firecfg skips them
 - name: Configure | Exclude applications from firecfg
   ansible.builtin.replace:
     path: '{{ __firejail_config_path }}/firecfg.config'
@@ -18,7 +16,7 @@
   loop: '{{ firejail_exclude }}'
   notify: apply firecfg
 
-# Deploy per-application profile overrides (OS-specific + user-defined, user wins)
+# OS-specific + user-defined overrides, user wins
 - name: Configure | Deploy custom profile overrides
   ansible.builtin.template:
     src: firejail-profile.local.j2
@@ -32,7 +30,6 @@
        | dict2items }}
   when: ((__firejail_profiles_os | default({})) | combine(firejail_profiles)) | length > 0
 
-# Load firejail AppArmor profile into kernel
 - name: Configure | Load firejail AppArmor profile
   ansible.builtin.command:
     cmd: apparmor_parser -r /etc/apparmor.d/firejail-default
@@ -41,7 +38,6 @@
     - firejail_apparmor | bool
     - (ansible_facts['apparmor'] | default({}))['status'] | default('') == 'enabled'
 
-# Deploy global profile overrides
 - name: Configure | Deploy globals.local
   ansible.builtin.template:
     src: globals.local.j2
@@ -51,7 +47,6 @@
     mode: '0644'
   when: (firejail_globals | length > 0) or (firejail_apparmor | bool)
 
-# Deploy pacman hook on Arch Linux
 - name: Configure | Ensure pacman hooks directory exists
   ansible.builtin.file:
     path: /etc/pacman.d/hooks
