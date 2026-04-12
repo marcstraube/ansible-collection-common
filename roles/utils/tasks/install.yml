@@ -8,7 +8,7 @@
 
 - name: Install | Build package list
   ansible.builtin.set_fact:
-    _utils_packages: >-
+    __utils_packages: >-
       {{
         [
           (utils_monitor_htop | bool)      | ternary(__utils_monitor_htop, ''),
@@ -47,10 +47,10 @@
 
 - name: Install | Utils packages
   ansible.builtin.package:
-    name: '{{ _utils_packages }}'
+    name: '{{ __utils_packages }}'
     state: present
   when:
-    - _utils_packages | length > 0
+    - __utils_packages | length > 0
 
 # =============================================================================
 # AUR packages (Arch Linux only)
@@ -58,7 +58,7 @@
 
 - name: Install | Build AUR package list
   ansible.builtin.set_fact:
-    _utils_aur_packages: >-
+    __utils_aur_packages: >-
       {{
         [
           (utils_fun_cbonsai | bool)
@@ -86,8 +86,8 @@
   become: true
   become_user: 'aur_builder'
   kewlfft.aur.aur:
-    name: '{{ _utils_aur_packages }}'
+    name: '{{ __utils_aur_packages }}'
     state: present
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - _utils_aur_packages | length > 0
+    - __utils_aur_packages | length > 0

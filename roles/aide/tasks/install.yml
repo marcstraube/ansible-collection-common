@@ -17,7 +17,7 @@
   become: true
   become_user: 'aur_builder'
   kewlfft.aur.aur:
-    name: '{{ __aide_package }}'
+    name: '{{ __aide_aur_packages.aide }}'
     state: present
   when: __aide_aur | bool
 

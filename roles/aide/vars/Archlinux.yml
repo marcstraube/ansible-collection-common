@@ -8,6 +8,10 @@ __aide_package: 'aide'
 # AIDE is only available in the AUR on Arch Linux
 __aide_aur: true
 
+__aide_aur_packages:
+  aide:
+    - aide
+
 __aide_config_file: '/etc/aide.conf'
 
 # GPG keys required to verify AUR package sources

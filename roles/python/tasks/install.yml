@@ -43,11 +43,11 @@
   become: true
   become_user: 'aur_builder'
   kewlfft.aur.aur:
-    name: '{{ python_extra_packages }}'
+    name: '{{ __python_aur_packages.extra }}'
     state: present
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - python_extra_packages | length > 0
+    - __python_aur_packages.extra | length > 0
 
 - name: Install | Extra Python packages
   ansible.builtin.package:
