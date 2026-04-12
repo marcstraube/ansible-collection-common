@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# SNMP - Service Tasks
-# =============================================================================
-
 - name: Service | Enable and start snmpd
   ansible.builtin.systemd:
     name: '{{ __snmp_service_name }}'

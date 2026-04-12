@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Sysctl - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Build combined sysctl parameters
   ansible.builtin.set_fact:
     __sysctl_combined_parameters: >-

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Hardware Tokens Lock on Removal
-# =============================================================================
-
 - name: Lock On Removal | Deploy lock script
   ansible.builtin.template:
     src: hardware-token-lock.sh.j2

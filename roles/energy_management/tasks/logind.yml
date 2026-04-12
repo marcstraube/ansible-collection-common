@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Energy Management - logind.conf.d Drop-in (all systemd distros)
-# =============================================================================
-
 - name: Logind | Create logind.conf.d directory
   ansible.builtin.file:
     path: '{{ __energy_management_logind_conf_dir }}'

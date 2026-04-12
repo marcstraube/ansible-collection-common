@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Lynis - BTRFS Tasks
-# =============================================================================
 # NoCOW for write-heavy report directory
 
 - name: BTRFS | Check parent directory filesystem type

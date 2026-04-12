@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/tasks/service.yml
-
 - name: Service | Enable and start NetworkManager
   ansible.builtin.systemd:
     name: '{{ __networkmanager_service_name }}'

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Python Role — Install Tasks
-# =============================================================================
-
 - name: Install | Python packages
   ansible.builtin.package:
     name: '{{ __python_packages + __python_pip_packages }}'

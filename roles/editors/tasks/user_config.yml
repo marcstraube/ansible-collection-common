@@ -1,10 +1,6 @@
 ---
-# =============================================================================
-# Per-User Editor Config Deployment
-# =============================================================================
 # Called once per user from users.yml loop.
 # Variable: __editors_user (the current editors_users entry)
-# =============================================================================
 
 - name: User Config | Get user info for {{ __editors_user.username }}
   ansible.builtin.getent:

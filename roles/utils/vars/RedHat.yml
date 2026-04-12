@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# RedHat/Rocky package names for utils (Rocky 10 — latest)
-# =============================================================================
-
 # System monitors
 __utils_monitor_htop: 'htop'
 __utils_monitor_btop: 'btop'

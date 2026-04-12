@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Hardware Tokens udev Rules
-# =============================================================================
-
 # On Arch, nitrokey-udev-rules package provides correct uaccess-based rules.
 # On Debian/RedHat, deploy our own rules (plugdev-based).
 - name: Udev | Deploy NitroKey rules

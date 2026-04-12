@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# NODE.JS ROLE - MAIN TASKS
-# =============================================================================
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:

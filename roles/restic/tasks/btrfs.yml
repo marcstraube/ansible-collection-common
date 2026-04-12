@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Restic - BTRFS Tasks
-# =============================================================================
 # NoCOW for log directory to avoid CoW overhead on write-heavy log files.
 # Only applies when restic_log_to_file is true.
 

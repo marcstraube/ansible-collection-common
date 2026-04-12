@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# WireGuard - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Deploy WireGuard configuration
   ansible.builtin.template:
     src: wg.conf.j2

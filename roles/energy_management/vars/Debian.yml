@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Energy Management - Debian Variables
-# =============================================================================
-
 # Logind
 __energy_management_logind_conf_dir: '/etc/systemd/logind.conf.d'
 __energy_management_logind_conf_file: 'energy.conf'

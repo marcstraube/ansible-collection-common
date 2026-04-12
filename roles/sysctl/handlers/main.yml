@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Sysctl - Handlers
-# =============================================================================
-
 # failed_when: false — sysctl -p writes to /proc/sys which is read-only in containers
 - name: Reload sysctl
   ansible.builtin.command:

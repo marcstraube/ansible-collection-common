@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# ArchLinux-specific variables for hardware tokens
-# =============================================================================
-
 # CCID smart card driver
 __hardware_tokens_ccid_package: 'ccid'
 

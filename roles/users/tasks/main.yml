@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Users Main Tasks
-# =============================================================================
-
 - name: Main | Import groups tasks
   ansible.builtin.import_tasks: groups.yml
   when: users_enabled | bool

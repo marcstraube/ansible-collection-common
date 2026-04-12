@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/vars/Archlinux.yml
-
 __networkmanager_packages:
   - networkmanager
 

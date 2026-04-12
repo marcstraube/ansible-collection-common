@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# rkhunter - Service Tasks (systemd timer)
-# =============================================================================
-
 - name: Service | Deploy rkhunter systemd service
   ansible.builtin.template:
     src: 'rkhunter-check.service.j2'

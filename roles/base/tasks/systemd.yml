@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Systemd Configuration Tasks
-# =============================================================================
-
 - name: Systemd | Ensure journald.conf.d directory exists
   ansible.builtin.file:
     path: '/etc/systemd/journald.conf.d'

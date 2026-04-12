@@ -1,5 +1,3 @@
 ---
-# marcstraube.common.apparmor/molecule/default/collections.yml
-
 collections:
   - name: community.general

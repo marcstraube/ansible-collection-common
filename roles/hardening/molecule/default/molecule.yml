@@ -1,6 +1,4 @@
 ---
-# marcstraube.common.hardening/molecule/default/molecule.yml
-
 dependency:
   name: galaxy
   options:

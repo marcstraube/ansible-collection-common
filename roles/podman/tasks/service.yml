@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Podman - Service Tasks
-# =============================================================================
-
 - name: Service | Enable podman socket
   ansible.builtin.systemd:
     name: '{{ __podman_socket_service }}'

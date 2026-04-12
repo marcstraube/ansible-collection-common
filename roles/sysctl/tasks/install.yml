@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Sysctl - Installation Tasks
-# =============================================================================
-
 - name: Install | Sysctl packages
   ansible.builtin.package:
     name: '{{ __sysctl_packages }}'

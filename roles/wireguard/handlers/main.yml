@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# WireGuard - Handlers
-# =============================================================================
-
 - name: Restart wireguard
   ansible.builtin.systemd:
     name: 'wg-quick@{{ wireguard_interface }}'

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Directory Setup Tasks
-# =============================================================================
-
 - name: Directories | Ensure certificate directories exist
   ansible.builtin.file:
     path: '{{ item }}'

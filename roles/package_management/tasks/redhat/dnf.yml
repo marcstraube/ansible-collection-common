@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# DNF Tasks - Package Manager Configuration (RHEL/Fedora/Rocky)
-# =============================================================================
-
 - name: dnf | Configure DNF
   ansible.builtin.template:
     src: 'redhat/dnf.conf.j2'

@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Filesystem Mount Hardening
-# =============================================================================
 # Uses state: present (fstab only) + raw remount commands to avoid the
 # chicken-and-egg problem where mounting /tmp destroys the Ansible
 # module payload that was extracted there.

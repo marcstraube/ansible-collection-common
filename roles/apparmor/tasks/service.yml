@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# AppArmor Service Tasks
-# =============================================================================
-
 - name: Service | Enable and start AppArmor service
   ansible.builtin.systemd:
     name: '{{ __apparmor_service_name }}'

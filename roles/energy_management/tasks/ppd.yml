@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Energy Management - Power Profiles Daemon / tuned-ppd
-# =============================================================================
 # PPD provides 3 profiles: power-saver, balanced, performance
 # Mutually exclusive with TLP — remove TLP first if present.
 # RHEL 10+ uses tuned + tuned-ppd instead of power-profiles-daemon.

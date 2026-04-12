@@ -1,7 +1,4 @@
 ---
-# ============================================================================
-# ClamAV daemon (clamd)
-# ============================================================================
 - name: Service | Enable and start ClamAV daemon
   ansible.builtin.systemd:
     name: '{{ __clamav_daemon_service }}'

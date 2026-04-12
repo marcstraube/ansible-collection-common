@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# SNMP - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Validate SNMPv3 passphrase length
   ansible.builtin.assert:
     that:

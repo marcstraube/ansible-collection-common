@@ -1,6 +1,4 @@
 ---
-# marcstraube.common.hardware_tokens/molecule/default/converge.yml
-
 - name: Converge
   hosts: all
   gather_facts: true

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Makepkg Tasks - Build System Configuration
-# =============================================================================
-
 - name: makepkg | Install base-devel
   community.general.pacman:
     name: 'base-devel'

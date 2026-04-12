@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Energy Management - Handlers
-# =============================================================================
-
 - name: Restart logind
   ansible.builtin.systemd:
     name: 'systemd-logind.service'

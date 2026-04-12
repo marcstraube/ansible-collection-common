@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# NVIDIA GPU Driver Installation
-# =============================================================================
-
 - name: NVIDIA | Determine driver package
   ansible.builtin.set_fact:
     __nvidia_driver_package: >-

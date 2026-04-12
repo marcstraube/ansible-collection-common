@@ -1,7 +1,5 @@
 ---
-# =============================================================================
-# AIDE BTRFS Tasks — Subvolume + NoCOW for database and log directories
-# =============================================================================
+# NoCOW for write-heavy database and log directories
 
 - name: BTRFS | Check if AIDE database parent filesystem is BTRFS
   ansible.builtin.command:

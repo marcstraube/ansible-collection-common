@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/molecule/default/molecule.yml
-
 dependency:
   name: galaxy
   options:

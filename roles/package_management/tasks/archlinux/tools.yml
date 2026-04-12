@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Additional Tools Tasks
-# =============================================================================
-
 - name: Tools | Install rebuild-detector
   community.general.pacman:
     name: 'rebuild-detector'

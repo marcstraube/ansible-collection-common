@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Pacman Tasks - Package Manager Configuration
-# =============================================================================
-
 - name: pacman | Ensure pacman hook directory exists
   ansible.builtin.file:
     path: '{{ pacman_hook_dir }}'

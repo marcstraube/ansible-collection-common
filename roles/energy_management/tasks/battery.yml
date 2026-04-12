@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Energy Management - Battery Threshold
-# =============================================================================
 # Sets charge start/stop thresholds via sysfs (modern) or tp_smapi (legacy).
 # tp_smapi is needed for older ThinkPads (T530 and earlier).
 # tp_smapi is only available on Arch Linux and Debian.

@@ -1,14 +1,10 @@
 ---
-# =============================================================================
-# SNMP - SNMPv3 User Management
-# =============================================================================
 # SNMPv3 createUser directives in snmpd.conf are processed on first start,
 # then moved to the persistent store. To update users, the persistent store
 # must be wiped so snmpd re-processes the createUser lines.
 #
 # Idempotency: a checksum of the v3 user list is stored on disk. The
 # persistent store is only wiped when the checksum changes.
-# =============================================================================
 
 - name: SNMPv3 Users | Compute user list checksum
   ansible.builtin.set_fact:

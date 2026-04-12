@@ -1,5 +1,4 @@
 ---
-# marcstraube.common.wireguard/molecule/default/prepare.yml
 # NOTE: No full system upgrade on Arch — upgrading the kernel without reboot
 # breaks modprobe (old running kernel, new module paths). The Vagrant box
 # kernel is new enough for built-in wireguard support.

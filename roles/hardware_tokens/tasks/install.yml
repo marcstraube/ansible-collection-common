@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Hardware Tokens Installation
-# =============================================================================
-
 - name: Install | CCID smart card driver
   ansible.builtin.package:
     name: '{{ __hardware_tokens_ccid_package }}'

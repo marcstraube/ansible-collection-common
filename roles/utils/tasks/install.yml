@@ -1,10 +1,6 @@
 ---
-# =============================================================================
-# Utils Installation
-# =============================================================================
 # Build a dynamic package list from enabled toggles, filter empty strings
 # (packages unavailable on the current OS), and install in one transaction.
-# =============================================================================
 
 - name: Install | Build package list
   ansible.builtin.set_fact:

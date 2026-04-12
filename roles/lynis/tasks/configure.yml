@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Lynis - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Create lynis configuration directory
   ansible.builtin.file:
     path: '/etc/lynis'

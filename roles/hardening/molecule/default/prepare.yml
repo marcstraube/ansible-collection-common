@@ -1,6 +1,4 @@
 ---
-# marcstraube.common.hardening/molecule/default/prepare.yml
-
 - name: Prepare instances
   hosts: all
   gather_facts: false

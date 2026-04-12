@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Restic - Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Configure restic backup with systemd timers

@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/handlers/main.yml
-
 - name: Reload NetworkManager connection
   ansible.builtin.command:
     cmd: nmcli connection reload

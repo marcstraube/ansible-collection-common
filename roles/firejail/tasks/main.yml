@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Firejail Main Tasks
-# =============================================================================
-
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: firejail_enabled | bool

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Logrotate - Service (Timer) Tasks
-# =============================================================================
-
 - name: Service | Enable logrotate timer
   ansible.builtin.systemd:
     name: '{{ __logrotate_timer_name }}'

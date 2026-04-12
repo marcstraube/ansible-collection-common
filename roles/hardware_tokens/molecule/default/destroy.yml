@@ -1,6 +1,4 @@
 ---
-# marcstraube.common.hardware_tokens/molecule/default/destroy.yml
-
 - name: Destroy Vagrant instances
   hosts: localhost
   gather_facts: false

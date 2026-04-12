@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Chrony - Service Tasks
-# =============================================================================
-
 - name: Service | Enable and start chrony
   ansible.builtin.systemd:
     name: '{{ __chrony_service_name }}'

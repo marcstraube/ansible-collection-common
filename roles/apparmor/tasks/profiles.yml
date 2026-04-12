@@ -1,11 +1,7 @@
 ---
-# =============================================================================
-# AppArmor Profile Management Tasks
-# =============================================================================
 # Application-specific profiles (nginx, postfix, etc.) are NOT managed here.
 # Each service role manages its own AppArmor profile via <role>_apparmor_enabled.
 # This file handles the generic enforce/complain/disable lists and custom profiles.
-# =============================================================================
 
 # Get current profile modes so we only change what's actually different.
 # aa-status --json returns {"profiles": {"/path": "enforce"|"complain", ...}}

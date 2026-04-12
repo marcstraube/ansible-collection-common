@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/tasks/dispatcher.yml
-
 - name: Dispatcher | Ensure timezone dispatcher script is installed
   ansible.builtin.template:
     src: dispatcher.d/09-timezone.sh.j2

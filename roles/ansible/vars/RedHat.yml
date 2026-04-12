@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# RedHat specific variables (Rocky 10+, Fedora — EPEL pipx works)
-# =============================================================================
-
 __ansible_tools_ansible_packages:
   - 'ansible-core'
 

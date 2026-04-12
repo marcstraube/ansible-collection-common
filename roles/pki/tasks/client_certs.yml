@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Client Certificate Tasks
-# =============================================================================
-
 - name: Client Certs | Generate client private keys (EC)
   community.crypto.openssl_privatekey:
     path: '{{ pki_private_dir }}/{{ item.name }}.key'

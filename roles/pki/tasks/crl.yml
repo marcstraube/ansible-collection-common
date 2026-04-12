@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Certificate Revocation List (CRL) Tasks
-# =============================================================================
-
 - name: CRL | Determine effective CA paths
   ansible.builtin.set_fact:
     _pki_crl_ca_cert: >-

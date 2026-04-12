@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# AppArmor Installation Tasks
-# =============================================================================
-
 - name: Install | AppArmor packages
   ansible.builtin.package:
     name: '{{ __apparmor_packages }}'

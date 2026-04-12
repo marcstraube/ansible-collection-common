@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Logrotate - Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Manage logrotate global configuration, custom drop-in configs, and systemd timer

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Auditd Installation Tasks
-# =============================================================================
-
 - name: Install | auditd packages
   ansible.builtin.package:
     name: '{{ __auditd_packages }}'

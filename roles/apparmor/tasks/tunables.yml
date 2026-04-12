@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# AppArmor Tunables Tasks
-# =============================================================================
-
 - name: Tunables | Deploy custom AppArmor tunables
   ansible.builtin.template:
     src: tunables_custom.j2

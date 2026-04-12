@@ -1,11 +1,5 @@
 ---
-# =============================================================================
-# fail2ban BTRFS Tasks — Subvolume + NoCOW for database, NoCOW for log
-# =============================================================================
-
-# -----------------------------------------------------------------------------
 # Database directory: /var/lib/fail2ban — Subvolume + NoCOW
-# -----------------------------------------------------------------------------
 - name: BTRFS | Check if fail2ban database parent filesystem is BTRFS
   ansible.builtin.command:
     cmd: stat -f -c %T /var/lib

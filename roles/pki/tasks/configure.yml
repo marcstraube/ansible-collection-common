@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# System-wide OpenSSL Configuration Tasks
-# =============================================================================
-
 # RHEL/Rocky: use crypto-policies for system-wide TLS settings
 - name: Configure | Query current crypto policy (RHEL)
   ansible.builtin.command:

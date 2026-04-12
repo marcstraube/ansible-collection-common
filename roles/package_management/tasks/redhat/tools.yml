@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Additional Tools (RHEL/Fedora/Rocky)
-# =============================================================================
-
 - name: Tools | Install dnf-utils (dnf4)
   ansible.builtin.dnf:
     name: dnf-utils

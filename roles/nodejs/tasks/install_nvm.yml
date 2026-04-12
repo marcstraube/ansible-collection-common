@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# NODE.JS - NVM INSTALLATION
-# =============================================================================
-
 - name: Install NVM | Validate nvm users are defined
   ansible.builtin.assert:
     that:

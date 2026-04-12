@@ -1,6 +1,4 @@
 ---
-# marcstraube.common.apparmor/molecule/default/verify.yml
-
 - name: Verify
   hosts: all
   gather_facts: true

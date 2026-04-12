@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# PKI Installation Tasks
-# =============================================================================
-
 - name: Install | Ensure PKI packages are installed
   ansible.builtin.package:
     name: '{{ __pki_packages }}'

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Hardware Tokens Services
-# =============================================================================
-
 - name: Service | Enable pcscd socket
   ansible.builtin.systemd:
     name: '{{ __hardware_tokens_pcscd_service }}'

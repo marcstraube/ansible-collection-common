@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# ArchLinux-specific variables for AppArmor
-# =============================================================================
-
 # On Arch Linux, the single 'apparmor' package includes everything:
 # utils (aa-enforce, aa-complain, etc.), profiles, and aa-notify.
 

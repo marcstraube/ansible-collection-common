@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# AIDE Scheduling Tasks
-# =============================================================================
-
 - name: Schedule | Deploy AIDE check script
   ansible.builtin.template:
     src: 'aide-check.sh.j2'

@@ -1,5 +1,4 @@
 ---
-# marcstraube.common.wireguard/molecule/default/molecule.yml
 # Vagrant-based: needs kernel modules (modprobe wireguard)
 
 dependency:

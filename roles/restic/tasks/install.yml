@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Restic - Installation Tasks
-# =============================================================================
-
 - name: Install | restic from package manager
   ansible.builtin.package:
     name: '{{ __restic_packages }}'

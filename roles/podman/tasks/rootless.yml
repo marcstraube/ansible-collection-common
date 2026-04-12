@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Podman - Rootless Configuration Tasks
-# =============================================================================
-
 - name: Rootless | Configure subuid for users
   ansible.builtin.lineinfile:
     path: '/etc/subuid'

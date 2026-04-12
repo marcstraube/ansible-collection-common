@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Kernel Configuration Tasks
-# =============================================================================
-
 - name: Kernel | Detect CPU vendor for microcode
   ansible.builtin.set_fact:
     _base_microcode_package: |-

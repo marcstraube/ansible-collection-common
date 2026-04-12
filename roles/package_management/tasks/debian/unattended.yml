@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Unattended Upgrades (Debian/Ubuntu)
-# =============================================================================
-
 - name: Unattended | Install unattended-upgrades
   ansible.builtin.apt:
     name:

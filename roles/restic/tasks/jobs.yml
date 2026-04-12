@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Restic - Backup Job Tasks
-# =============================================================================
-
 - name: Jobs | Create backup scripts
   ansible.builtin.template:
     src: backup.sh.j2

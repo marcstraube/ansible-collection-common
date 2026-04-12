@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Firejail OS-independent variables
-# =============================================================================
 # Package name, config path, and profiles path are identical across
 # Arch Linux, Debian, and Rocky Linux (EPEL).
 

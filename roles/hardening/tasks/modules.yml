@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Kernel Module Blacklisting
-# =============================================================================
-
 - name: Modules | Deploy kernel module blacklist
   ansible.builtin.template:
     src: modprobe-blacklist.conf.j2

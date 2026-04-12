@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/molecule/default/create.yml
-
 - name: Create Vagrant instances
   hosts: localhost
   gather_facts: false

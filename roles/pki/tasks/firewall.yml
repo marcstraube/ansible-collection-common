@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# PKI Firewall Tasks (OCSP Responder)
-# =============================================================================
-
 - name: Firewall | Allow OCSP responder port
   ansible.posix.firewalld:
     port: '{{ pki_ocsp_port }}/tcp'

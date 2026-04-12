@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Kernel Hardening — sysctl configuration
-# =============================================================================
-
 - name: Configure | Deploy hardening sysctl settings
   ansible.builtin.template:
     src: sysctl-hardening.conf.j2

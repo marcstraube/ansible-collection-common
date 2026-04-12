@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Intel GPU Driver Installation
-# =============================================================================
-
 - name: Intel | Build package list
   ansible.builtin.set_fact:
     __intel_packages: >-

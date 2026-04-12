@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# rkhunter Handlers
-# =============================================================================
-
 - name: Update rkhunter database
   ansible.builtin.command:
     cmd: 'rkhunter --propupd'

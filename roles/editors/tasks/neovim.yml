@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Neovim Configuration
-# =============================================================================
-
 - name: Neovim | Ensure global config directory exists
   ansible.builtin.file:
     path: '/etc/xdg/nvim'

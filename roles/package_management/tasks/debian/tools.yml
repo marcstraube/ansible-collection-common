@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Additional Tools (Debian/Ubuntu)
-# =============================================================================
-
 - name: Tools | Install apt-file for command-not-found
   ansible.builtin.apt:
     name: apt-file

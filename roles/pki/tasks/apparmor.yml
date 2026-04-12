@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# PKI AppArmor Tasks (OCSP Responder)
-# =============================================================================
-
 - name: AppArmor | Check if AppArmor is active
   ansible.builtin.stat:
     path: /sys/kernel/security/apparmor

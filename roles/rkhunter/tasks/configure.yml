@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# rkhunter - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Deploy rkhunter configuration
   ansible.builtin.template:
     src: 'rkhunter.conf.j2'

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Package Management Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Configure package managers and repositories for ArchLinux, Debian/Ubuntu, and RHEL/Fedora/Rocky

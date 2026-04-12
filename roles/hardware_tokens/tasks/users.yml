@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Hardware Tokens User Configuration
-# =============================================================================
-
 - name: Users | Add users to required groups
   ansible.builtin.user:
     name: '{{ item.0.username }}'

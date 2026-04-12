@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Intermediate CA Tasks
-# =============================================================================
-
 - name: Intermediate CA | Ensure intermediate CA directory structure exists
   ansible.builtin.file:
     path: '{{ pki_intermediate_ca_dir }}/{{ item }}'

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Paru Configuration - Shared clone directory and cleanup settings
-# =============================================================================
-
 - name: paru | Derive shared users from wheel group (exclude system users)  # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     paru_shared_users: >-

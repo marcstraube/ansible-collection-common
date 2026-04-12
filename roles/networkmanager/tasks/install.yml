@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/tasks/install.yml
-
 - name: Install | NetworkManager packages
   ansible.builtin.package:
     name: '{{ __networkmanager_packages }}'

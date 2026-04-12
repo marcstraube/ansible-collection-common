@@ -1,7 +1,5 @@
 ---
-# =============================================================================
-# ClamAV BTRFS Tasks — Subvolume + NoCOW for database directory
-# =============================================================================
+# NoCOW for write-heavy virus database directory
 
 - name: BTRFS | Check if ClamAV database parent filesystem is BTRFS
   ansible.builtin.command:

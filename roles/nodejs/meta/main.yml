@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# NODE.JS ROLE METADATA
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Install and configure Node.js runtime via system packages, NodeSource repository, or nvm

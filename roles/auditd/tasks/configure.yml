@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Auditd Configuration Tasks
-# =============================================================================
-
 - name: Configure | auditd.conf
   ansible.builtin.template:
     src: 'auditd.conf.j2'

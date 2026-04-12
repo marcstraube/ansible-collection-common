@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Molecule Verify Tests for rkhunter Role
-# =============================================================================
-
 - name: Verify rkhunter installation and configuration
   hosts: all
   gather_facts: true

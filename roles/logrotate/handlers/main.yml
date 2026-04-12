@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Logrotate - Handlers
-# =============================================================================
-
 - name: Restart logrotate timer
   ansible.builtin.systemd:
     name: '{{ __logrotate_timer_name }}'

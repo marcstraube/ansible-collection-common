@@ -1,10 +1,4 @@
 ---
-# =============================================================================
-# Package Management - Multi-OS Support
-# =============================================================================
-# Supports: ArchLinux, Debian/Ubuntu, RHEL/Fedora/Rocky
-# =============================================================================
-
 - name: Main | Include ArchLinux tasks
   when:
     - package_management_enabled | bool

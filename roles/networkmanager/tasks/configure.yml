@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/tasks/configure.yml
-
 - name: Configure | Deploy NetworkManager daemon configuration
   ansible.builtin.template:
     src: networkmanager.conf.j2

@@ -1,5 +1,4 @@
 ---
-# marcstraube.common.hardware_tokens/molecule/default/molecule.yml
 # Vagrant-based: needs real udev for hardware token rules
 
 dependency:

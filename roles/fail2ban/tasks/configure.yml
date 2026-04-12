@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Configuration directories
-# =============================================================================
 - name: Configure | Create jail.d directory
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}'

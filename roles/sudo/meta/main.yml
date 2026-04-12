@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Sudo Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Configure sudo with security hardening and granular access control

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Reflector Tasks - Mirror Management
-# =============================================================================
-
 - name: reflector | Install Reflector
   community.general.pacman:
     name: 'reflector'

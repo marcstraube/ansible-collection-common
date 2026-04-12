@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Base System Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Base system configuration (locale, timezone, hostname, keyboard, kernel, bootloader, systemd)

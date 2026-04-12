@@ -1,6 +1,4 @@
 ---
-# marcstraube.common.auditd/molecule/default/molecule.yml
-
 dependency:
   name: galaxy
   options:

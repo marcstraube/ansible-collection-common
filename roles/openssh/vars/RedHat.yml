@@ -1,6 +1,4 @@
 ---
-# RedHat/Fedora/Rocky-specific variables for OpenSSH
-
 __openssh_packages:
   - 'openssh-server'
   - 'openssh-clients'

@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# RedHat Variables for Fonts (RHEL 10+ / Fedora 41+)
-# =============================================================================
 # For RHEL 9 / Rocky 9, see Rocky-9.yml override.
 
 __fonts_dejavu_package: 'dejavu-sans-fonts'

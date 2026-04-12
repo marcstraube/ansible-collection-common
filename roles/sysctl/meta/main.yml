@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Sysctl - Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Configure kernel parameters via sysctl with preset profiles

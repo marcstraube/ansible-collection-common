@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Avahi - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Deploy avahi-daemon configuration
   ansible.builtin.template:
     src: 'avahi-daemon.conf.j2'

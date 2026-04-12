@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Nano Configuration
-# =============================================================================
-
 - name: Nano | Deploy global configuration
   ansible.builtin.template:
     src: nanorc.j2

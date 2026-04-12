@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# GnuPG Handlers
-# =============================================================================
-
 # Reloads gpg-agent for all configured users. The agent runs per-user,
 # so we iterate over gnupg_users to reload each user's agent.
 # failed_when: false — gpg-agent not running in containers (no user session)

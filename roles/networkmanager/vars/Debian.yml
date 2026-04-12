@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/vars/Debian.yml
-
 __networkmanager_packages:
   - network-manager
 

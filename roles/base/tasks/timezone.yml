@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Timezone Configuration Tasks
-# =============================================================================
-
 - name: Timezone | Set timezone
   community.general.timezone:
     name: '{{ base_timezone }}'

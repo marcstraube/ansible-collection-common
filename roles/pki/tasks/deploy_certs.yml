@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# PKI — Deploy externally-obtained certificates from inventory
-# =============================================================================
-
 - name: Deploy Certs | Deploy certificate files
   ansible.builtin.copy:
     src: '{{ inventory_dir }}/files/certs/{{ item.src_cert }}'

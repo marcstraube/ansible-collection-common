@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Profile Images Tasks — AccountsService Integration
-# =============================================================================
-
 - name: Profile Images | Ensure AccountsService icons directory exists
   ansible.builtin.file:
     path: '{{ users_profile_images_dir }}'

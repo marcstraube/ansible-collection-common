@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Rocky 9 Variables for Fonts
-# =============================================================================
 # Rocky 9 uses old emoji package name and lacks some EPEL 10 coding fonts.
 # Overrides RedHat.yml defaults.
 

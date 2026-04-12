@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Unbound - Installation Tasks
-# =============================================================================
-
 - name: Install | Unbound packages
   ansible.builtin.package:
     name: '{{ __unbound_packages }}'

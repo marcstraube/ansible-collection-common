@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Auditd Remote Logging Tasks
-# =============================================================================
-
 - name: Remote | Install remote logging packages
   ansible.builtin.package:
     name: '{{ __auditd_remote_packages }}'

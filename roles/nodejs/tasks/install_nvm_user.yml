@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# NODE.JS - NVM PER-USER INSTALLATION
-# =============================================================================
-
 - name: Install NVM User | Get home directory  # noqa: name[template]
   ansible.builtin.getent:
     database: passwd

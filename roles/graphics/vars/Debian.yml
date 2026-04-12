@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Debian-specific variables for graphics
-# =============================================================================
-
 # Intel packages
 __graphics_intel_mesa: 'mesa-vulkan-drivers'
 __graphics_intel_mesa_32bit: 'mesa-vulkan-drivers:i386'

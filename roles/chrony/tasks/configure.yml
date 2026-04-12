@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Chrony - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Create log directory
   ansible.builtin.file:
     path: '{{ chrony_log_dir }}'

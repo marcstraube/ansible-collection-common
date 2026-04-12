@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Editors Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Install and configure text editors (nano, vim, neovim)

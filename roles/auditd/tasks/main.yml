@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Auditd Main Tasks
-# =============================================================================
-
 - name: Main | Warn if email notifications use default address
   ansible.builtin.debug:
     msg: >-

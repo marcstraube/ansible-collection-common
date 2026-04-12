@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Trusted CA Certificates Tasks
-# =============================================================================
-
 - name: Trusted CAs | Install trusted CA certificates (from content)
   ansible.builtin.copy:
     content: '{{ item.cert }}'

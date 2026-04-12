@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# WireGuard - Key Generation Tasks
-# =============================================================================
-
 - name: Keys | Check if private key exists
   ansible.builtin.stat:
     path: '{{ wireguard_config_dir }}/{{ wireguard_interface }}_private.key'

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Molecule Verify Tests for AIDE Role
-# =============================================================================
-
 - name: Verify AIDE installation and configuration
   hosts: all
   gather_facts: true

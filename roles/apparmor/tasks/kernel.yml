@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# AppArmor Kernel Tasks
-# =============================================================================
-
 - name: Kernel | Check if AppArmor is supported by kernel
   ansible.builtin.stat:
     path: '{{ apparmor_securityfs }}/apparmor'

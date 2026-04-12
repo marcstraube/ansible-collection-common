@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Unbound - Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Configure Unbound DNS resolver with DNSSEC, DNS-over-TLS, and blocklists

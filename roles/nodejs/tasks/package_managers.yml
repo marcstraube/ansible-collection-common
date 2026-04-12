@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# NODE.JS - ADDITIONAL PACKAGE MANAGERS
-# =============================================================================
-
 - name: Package Managers | Install pnpm
   community.general.npm:
     name: pnpm

@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/molecule/default/cleanup.yml
-
 - name: Cleanup
   hosts: all
   gather_facts: false

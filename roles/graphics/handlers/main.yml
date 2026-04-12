@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Graphics Handlers
-# =============================================================================
-
 - name: Reload graphics udev rules
   ansible.builtin.command:
     cmd: udevadm control --reload-rules

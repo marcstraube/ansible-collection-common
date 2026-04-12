@@ -1,5 +1,3 @@
 ---
-# marcstraube.networkmanager/molecule/default/requirements.yml
-
 roles: []
 #  - name: author.role_name

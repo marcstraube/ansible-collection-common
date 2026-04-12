@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/vars/RedHat.yml
-
 # NetworkManager is pre-installed on Rocky/RHEL
 __networkmanager_packages: []
 

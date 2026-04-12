@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# WireGuard - Firewall Tasks
-# =============================================================================
-
 - name: Firewall | Open WireGuard port
   ansible.posix.firewalld:
     port: '{{ wireguard_port }}/udp'

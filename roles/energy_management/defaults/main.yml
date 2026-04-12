@@ -1,17 +1,10 @@
 ---
-# =============================================================================
-# Energy Management - Default Variables
-# =============================================================================
-# Role: marcstraube.common.energy_management
-# Supports: Arch Linux, Debian, RedHat/Rocky/Fedora
-# =============================================================================
 # Manages power-related configuration for both desktops and laptops:
 #   - logind.conf (power/suspend/lid keys, idle action)
 #   - sleep.conf (suspend/hibernate behavior)
 #   - Power profiles daemon (PPD) or TLP
 #   - Battery charge thresholds (laptop)
 #   - Backlight access (laptop)
-# =============================================================================
 
 # =============================================================================
 # ROLE CONTROL

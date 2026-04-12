@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Hostname Configuration Tasks
-# =============================================================================
-
 - name: Hostname | Set system hostname
   ansible.builtin.hostname:
     name: '{{ base_hostname }}'

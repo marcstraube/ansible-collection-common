@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# PAM Hardening — Package Installation
-# =============================================================================
-
 - name: Install | PAM packages
   ansible.builtin.package:
     name: '{{ __pam_packages }}'

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Unbound - Blocklist Tasks
-# =============================================================================
-
 - name: Blocklist | Deploy update script
   ansible.builtin.template:
     src: update-blocklist.sh.j2

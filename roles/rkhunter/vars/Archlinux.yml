@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Arch Linux variables for rkhunter
-# =============================================================================
-
 __rkhunter_package: 'rkhunter'
 __rkhunter_scriptdir: '/usr/lib/rkhunter/scripts'
 __rkhunter_pkgmgr: 'NONE'

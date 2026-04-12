@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Energy Management - TLP
-# =============================================================================
 # TLP provides granular power management for laptops.
 # Mutually exclusive with PPD — remove PPD first if present.
 

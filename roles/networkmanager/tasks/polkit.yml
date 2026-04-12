@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/tasks/polkit.yml
-
 - name: Polkit | Deploy NetworkManager polkit rule
   ansible.builtin.template:
     src: 49-networkmanager.rules.j2

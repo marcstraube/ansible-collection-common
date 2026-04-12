@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# OCSP Responder Tasks
-# =============================================================================
-
 - name: OCSP | Determine effective CA paths
   ansible.builtin.set_fact:
     _pki_ocsp_ca_cert: >-

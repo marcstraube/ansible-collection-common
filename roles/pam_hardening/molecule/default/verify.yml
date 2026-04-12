@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Molecule Verify Tests for PAM Hardening Role
-# =============================================================================
-
 - name: Verify PAM hardening configuration
   hosts: all
   gather_facts: true

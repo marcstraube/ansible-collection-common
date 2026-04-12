@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# DH Parameters Tasks
-# =============================================================================
-
 - name: DH Param | Generate DH parameters
   community.crypto.openssl_dhparam:
     path: '{{ pki_dhparam_path }}'

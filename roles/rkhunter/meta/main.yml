@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# rkhunter Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Install and configure rkhunter for rootkit detection

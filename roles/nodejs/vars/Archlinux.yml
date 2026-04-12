@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# NODE.JS - Arch Linux Variables
-# =============================================================================
-
 # Map nodejs_version to Arch LTS package names
 # Arch 'nodejs' tracks Current (odd-numbered), LTS versions have dedicated packages
 __nodejs_version_package_map:

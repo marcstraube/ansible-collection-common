@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# RedHat/Fedora-specific variables for editors
-# =============================================================================
-
 __editors_nano_package: 'nano'
 __editors_vim_package: 'vim-enhanced'
 __editors_neovim_package: 'neovim'

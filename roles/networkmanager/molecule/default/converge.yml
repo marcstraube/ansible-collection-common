@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/molecule/default/converge.yml
-
 - name: Converge
   hosts: all
   gather_facts: true

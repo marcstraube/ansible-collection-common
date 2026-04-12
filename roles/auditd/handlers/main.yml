@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Auditd Handlers
-# =============================================================================
-
 # Use signal names (TERM, HUP) not aliases (stop, reload) for audit 3.x compat
 - name: Stop auditd via audit subsystem
   ansible.builtin.command:

@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/tasks/connections.yml
-
 - name: Connections | Check existing Ethernet connections
   ansible.builtin.command: nmcli -t -f NAME connection show
   register: __nm_existing_connections

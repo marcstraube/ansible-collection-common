@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Hardware Tokens PAM U2F Configuration
-# =============================================================================
-
 - name: PAM U2F | Ensure authfile directory exists
   ansible.builtin.file:
     path: "{{ hardware_tokens_pam_u2f_config.authfile | dirname }}"

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Font Package Installation
-# =============================================================================
-
 - name: Install | fontconfig dependency
   ansible.builtin.package:
     name: fontconfig

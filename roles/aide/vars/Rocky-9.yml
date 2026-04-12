@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Rocky Linux 9 specific variables for AIDE
-# =============================================================================
 # Rocky 9 ships AIDE 0.16 which uses different directives than 0.18+.
 # This file overrides the RedHat.yml defaults for Rocky 9 only.
 # Rocky 10+ ships AIDE 0.18 and falls through to RedHat.yml.

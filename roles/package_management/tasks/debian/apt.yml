@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# APT Tasks - Package Manager Configuration (Debian/Ubuntu)
-# =============================================================================
-
 - name: apt | Configure APT
   ansible.builtin.template:
     src: 'debian/apt.conf.j2'

@@ -1,10 +1,6 @@
 ---
-# =============================================================================
-# Per-User Editor Configuration
-# =============================================================================
 # Loops over editors_users entries.
 # Respects mode: managed | initial | disabled
-# =============================================================================
 
 - name: Users | Deploy per-user editor config
   ansible.builtin.include_tasks:

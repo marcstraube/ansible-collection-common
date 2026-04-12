@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# RedHat-specific variables for graphics
-# =============================================================================
-
 # Intel packages
 __graphics_intel_mesa: 'mesa-dri-drivers'
 __graphics_intel_mesa_32bit: 'mesa-dri-drivers.i686'

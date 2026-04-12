@@ -1,10 +1,6 @@
 ---
-# =============================================================================
-# Firewalld - Purge Unconfigured Services
-# =============================================================================
 # Removes services from managed zones that are not in the desired state.
 # Desired state = firewalld_services + firewalld_zone_services.
-# =============================================================================
 
 # -----------------------------------------------------------------------------
 # Build desired services map: zone -> [services]

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Firejail Configuration Tasks
-# =============================================================================
-
 # Deploy global firejail settings
 - name: Configure | Deploy global configuration
   ansible.builtin.template:

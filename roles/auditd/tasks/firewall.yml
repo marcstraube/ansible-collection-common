@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Auditd - Firewall Tasks
-# =============================================================================
-
 - name: Firewall | Allow audit remote logging port
   ansible.posix.firewalld:
     port: '{{ auditd_remote_port }}/tcp'

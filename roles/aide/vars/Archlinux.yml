@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# ArchLinux-specific variables for AIDE
-# =============================================================================
-
 __aide_package: 'aide'
 
 # AIDE is only available in the AUR on Arch Linux

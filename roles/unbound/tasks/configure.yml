@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Unbound - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Set number of threads
   ansible.builtin.set_fact:
     __unbound_threads: >-

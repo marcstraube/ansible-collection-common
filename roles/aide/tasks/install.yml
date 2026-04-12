@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# AIDE Installation Tasks
-# =============================================================================
-
 - name: Install | Import GPG keys for AUR package verification
   become: true
   become_user: 'aur_builder'

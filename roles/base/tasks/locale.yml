@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Locale Configuration Tasks
-# =============================================================================
-
 - name: Locale | Install locale source data (RedHat)
   ansible.builtin.package:
     name:

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Debian-specific variables for fonts
-# =============================================================================
-
 __fonts_dejavu_package: 'fonts-dejavu'
 __fonts_liberation_package: 'fonts-liberation2'
 __fonts_noto_package: 'fonts-noto-core'

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Fonts Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Install and configure system fonts

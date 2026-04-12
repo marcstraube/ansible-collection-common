@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Energy Management - Rocky 9 Variables
-# =============================================================================
 # Rocky 9 uses classic power-profiles-daemon (not tuned-ppd).
 # Overrides RedHat.yml defaults for PPD packages and service.
 

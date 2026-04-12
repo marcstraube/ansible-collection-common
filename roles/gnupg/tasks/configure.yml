@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# GnuPG User Configuration
-# =============================================================================
-
 - name: Configure | Get user info
   ansible.builtin.getent:
     database: passwd

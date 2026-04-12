@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# AIDE Database Tasks
-# =============================================================================
-
 - name: Database | Set database paths based on format
   ansible.builtin.set_fact:
     __aide_db_path: >-

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Package Installation Tasks
-# =============================================================================
-
 - name: Packages | Remove unwanted packages
   ansible.builtin.package:
     name: '{{ base_remove_packages }}'

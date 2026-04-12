@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Firewalld - Service Tasks
-# =============================================================================
-
 - name: Service | Enable and start firewalld
   ansible.builtin.systemd:
     name: '{{ __firewalld_service_name }}'

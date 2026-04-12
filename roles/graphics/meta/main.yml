@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Graphics Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Install GPU drivers, Vulkan, video acceleration, and hybrid graphics

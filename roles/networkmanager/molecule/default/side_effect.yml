@@ -1,5 +1,4 @@
 ---
-# marcstraube.networkmanager/molecule/default/tasks/side_effect.yml
 # Optional: Test side effects or changes after role application
 
 - name: Side Effect Tests

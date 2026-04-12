@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Server Certificate Tasks
-# =============================================================================
-
 - name: Server Certs | Generate server private keys (EC)
   community.crypto.openssl_privatekey:
     path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'

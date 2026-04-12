@@ -1,6 +1,4 @@
 ---
-# Archlinux-specific variables for OpenSSH
-
 __openssh_packages:
   - 'openssh'
 

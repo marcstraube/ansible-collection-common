@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Neovim Binary Installation (RedHat/Rocky)
-# =============================================================================
 # Installs pre-built neovim binary from GitHub releases.
 # Used when neovim is not available via package manager.
 

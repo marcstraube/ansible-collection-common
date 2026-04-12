@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Keyboard Configuration Tasks
-# =============================================================================
-
 - name: Keyboard | Configure console keymap
   ansible.builtin.template:
     src: 'vconsole.conf.j2'

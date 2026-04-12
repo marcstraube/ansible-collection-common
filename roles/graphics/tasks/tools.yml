@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Graphics Tools Installation
-# =============================================================================
-
 - name: Tools | Build package list
   ansible.builtin.set_fact:
     __tools_packages: >-

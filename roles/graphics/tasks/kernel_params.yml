@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Kernel Parameter Configuration (modprobe.d)
-# =============================================================================
-
 - name: Kernel Params | Deploy i915 modprobe config
   ansible.builtin.template:
     src: modprobe-i915.conf.j2

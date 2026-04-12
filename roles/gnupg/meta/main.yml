@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# GnuPG Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Configure GnuPG for encryption and signing

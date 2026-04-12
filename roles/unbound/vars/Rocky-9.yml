@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Unbound - Rocky 9 Variables
-# =============================================================================
 # Rocky 9 bundles unbound-anchor in the main unbound package.
 
 __unbound_packages:

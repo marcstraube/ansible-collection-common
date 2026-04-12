@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Certificate Renewal Monitoring Tasks
-# =============================================================================
-
 - name: Renewal | Deploy certificate check script
   ansible.builtin.template:
     src: 'pki-cert-check.sh.j2'
