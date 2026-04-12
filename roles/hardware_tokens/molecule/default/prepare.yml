@@ -29,12 +29,13 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Ensure EPEL repository (Rocky)
-      ansible.builtin.command:
-        cmd: dnf install -y epel-release
-      register: _epel_install
-      changed_when: "'Installing' in _epel_install.stdout"
-      failed_when:
-        - _epel_install.rc != 0
-        - "'already installed' not in _epel_install.stdout"
+    - name: Enable EPEL repository (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'

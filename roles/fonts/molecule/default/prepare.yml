@@ -16,8 +16,13 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Prepare | Install EPEL repository (Rocky)
+    - name: Prepare | Enable EPEL repository (RedHat)
       ansible.builtin.dnf:
         name: epel-release
         state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Update dnf package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
