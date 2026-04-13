@@ -583,10 +583,6 @@ apt_install_debsums: false
 # Install debian-goodies (checkrestart, etc.)
 apt_install_debian_goodies: true
 
-# #############################################################################
-#                        RHEL / FEDORA / ROCKY
-# #############################################################################
-
 #
 # DNF - General Options
 #
