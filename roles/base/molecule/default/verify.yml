@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # HOSTNAME VERIFICATION
-    # =========================================================================
+    #
+    # Hostname Verification
+    #
+
     - name: Verify | Check hostname
       ansible.builtin.command:
         cmd: hostnamectl hostname
@@ -53,9 +54,10 @@
       changed_when: false
       failed_when: base_hosts_check.rc != 0
 
-    # =========================================================================
-    # LOCALE VERIFICATION
-    # =========================================================================
+    #
+    # Locale Verification
+    #
+
     - name: Verify | Check locale.conf exists
       ansible.builtin.stat:
         path: /etc/locale.conf
@@ -92,9 +94,10 @@
         fail_msg: 'de_DE.UTF-8 locale not generated'
       when: ansible_facts['os_family'] != 'Archlinux'
 
-    # =========================================================================
-    # TIMEZONE VERIFICATION
-    # =========================================================================
+    #
+    # Timezone Verification
+    #
+
     - name: Verify | Check timezone symlink
       ansible.builtin.stat:
         path: /etc/localtime
@@ -108,9 +111,10 @@
       changed_when: false
       failed_when: base_timezone_check.stdout != 'Europe/Berlin'
 
-    # =========================================================================
-    # KEYBOARD VERIFICATION
-    # =========================================================================
+    #
+    # Keyboard Verification
+    #
+
     - name: Verify | Check vconsole.conf exists
       ansible.builtin.stat:
         path: /etc/vconsole.conf
@@ -146,9 +150,10 @@
           - "'XkbLayout' in (base_keyboard_content.content | b64decode)"
         fail_msg: 'X11 keyboard layout not configured'
 
-    # =========================================================================
-    # PACKAGES VERIFICATION
-    # =========================================================================
+    #
+    # Packages Verification
+    #
+
     - name: Verify | Check common packages installed
       ansible.builtin.package:
         name: '{{ item }}'
@@ -194,9 +199,10 @@
       register: base_vim_check
       failed_when: base_vim_check.changed
 
-    # =========================================================================
-    # BINARIES VERIFICATION
-    # =========================================================================
+    #
+    # Binaries Verification
+    #
+
     - name: Verify | Check key binaries exist
       ansible.builtin.shell:
         cmd: 'command -v {{ item }}'
@@ -214,9 +220,10 @@
     # Sysctl verification skipped — not testable in Docker (procfs read-only)
     # Tested by dedicated sysctl role
 
-    # =========================================================================
-    # SYSTEMD VERIFICATION
-    # =========================================================================
+    #
+    # Systemd Verification
+    #
+
     - name: Verify | Check journald override config exists
       ansible.builtin.stat:
         path: /etc/systemd/journald.conf.d/ansible.conf
@@ -253,9 +260,10 @@
           - "'Compress=yes' in (base_coredump_content.content | b64decode)"
         fail_msg: 'Coredump settings not configured correctly'
 
-    # =========================================================================
-    # TEMPLATE HEADERS
-    # =========================================================================
+    #
+    # Template Headers
+    #
+
     - name: Verify | Check ansible_managed header in locale.conf
       ansible.builtin.assert:
         that:
@@ -268,9 +276,10 @@
           - "'Ansible managed' in (base_journald_content.content | b64decode)"
         fail_msg: 'journald config missing ansible_managed header'
 
-    # =========================================================================
-    # KERNEL TASKS NOT RUN ON NON-ARCH
-    # =========================================================================
+    #
+    # Kernel Tasks Not Run on Non-Arch
+    #
+
     - name: Verify | Check mkinitcpio not present on RedHat/Debian
       ansible.builtin.shell:
         cmd: command -v mkinitcpio
@@ -279,9 +288,10 @@
       failed_when: base_mkinitcpio_check.rc == 0
       when: ansible_facts['os_family'] != 'Archlinux'
 
-    # =========================================================================
-    # FUNCTIONAL TESTS
-    # =========================================================================
+    #
+    # Functional Tests
+    #
+
     - name: Verify | Test timedatectl works
       ansible.builtin.command:
         cmd: timedatectl status

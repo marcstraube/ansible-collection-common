@@ -60,6 +60,6 @@
     snmp_agentx_enabled: true
 
   tasks:
-    - name: Include snmp role  # noqa: role-name[path]
+    - name: Converge | Include snmp role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

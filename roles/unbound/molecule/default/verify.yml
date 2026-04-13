@@ -4,12 +4,20 @@
   gather_facts: true
 
   tasks:
+    #
+    # Installation
+    #
+
     - name: Verify | Check unbound is installed
       ansible.builtin.command:
         cmd: 'unbound -V'
       register: __verify_unbound_version
       changed_when: false
       failed_when: __verify_unbound_version.rc != 0
+
+    #
+    # Main Configuration
+    #
 
     - name: Verify | Check config file exists
       ansible.builtin.stat:
@@ -40,6 +48,10 @@
         that:
           - "'Ansible managed' in __verify_main_config.content | b64decode"
         fail_msg: 'Config must have ansible_managed header'
+
+    #
+    # Configuration Directives
+    #
 
     - name: Verify | Check security directives in config
       ansible.builtin.assert:
@@ -73,6 +85,10 @@
           - "'tcp-upstream: no' in __verify_main_config.content | b64decode"
         fail_msg: 'Privacy directives not properly configured'
 
+    #
+    # TLS and Domain Configuration
+    #
+
     - name: Verify | Check TLS upstream in config
       ansible.builtin.assert:
         that:
@@ -90,6 +106,10 @@
         that:
           - "'domain-insecure: \"test.example.com\"' in __verify_main_config.content | b64decode"
         fail_msg: 'Insecure domains not configured'
+
+    #
+    # Local Zones
+    #
 
     - name: Verify | Check conf.d directory exists
       ansible.builtin.stat:
@@ -121,6 +141,10 @@
           - "'local-data-ptr' in __verify_local_zones_content.content | b64decode"
         fail_msg: 'PTR records not found in local zones'
 
+    #
+    # Forward Zones
+    #
+
     - name: Verify | Check forward zones config exists
       ansible.builtin.stat:
         path: '/etc/unbound/conf.d/90-forward-zones.conf'
@@ -140,6 +164,10 @@
           - "'1.1.1.1' in __verify_forward_zones_content.content | b64decode"
         fail_msg: 'Forward zones not properly configured'
 
+    #
+    # Template Headers
+    #
+
     - name: Verify | Check ansible_managed in local zones
       ansible.builtin.assert:
         that:
@@ -151,6 +179,10 @@
         that:
           - "'Ansible managed' in __verify_forward_zones_content.content | b64decode"
         fail_msg: 'Forward zones config must have ansible_managed header'
+
+    #
+    # Service Verification
+    #
 
     - name: Verify | Check unbound service is running
       ansible.builtin.systemd:

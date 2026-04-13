@@ -31,6 +31,6 @@
     energy_management_backlight_enabled: false
 
   tasks:
-    - name: Include energy_management role  # noqa: role-name[path]
+    - name: Converge | Include energy_management role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

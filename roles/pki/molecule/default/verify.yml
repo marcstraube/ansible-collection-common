@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # PKI INSTALLATION
-    # =========================================================================
+    #
+    # PKI Installation
+    #
+
     - name: Verify | Check openssl binary exists
       ansible.builtin.command:
         cmd: openssl version
@@ -14,15 +15,16 @@
       changed_when: false
       failed_when: _pki_openssl_version.rc != 0
 
-    - name: Verify | Verify OpenSSL version output
+    - name: Verify | Assert OpenSSL version output
       ansible.builtin.assert:
         that:
           - "'OpenSSL' in _pki_openssl_version.stdout"
         fail_msg: 'OpenSSL version output unexpected'
 
-    # =========================================================================
-    # SYSTEM-WIDE CONFIGURATION
-    # =========================================================================
+    #
+    # System-Wide Configuration
+    #
+
     - name: Verify | Check crypto policy (RHEL)
       ansible.builtin.command:
         cmd: update-crypto-policies --show
@@ -53,9 +55,10 @@
         fail_msg: 'System OpenSSL config not deployed'
       when: ansible_facts['os_family'] != 'RedHat'
 
-    # =========================================================================
-    # DIRECTORIES
-    # =========================================================================
+    #
+    # Directories
+    #
+
     - name: Verify | Check certificate directories exist
       ansible.builtin.stat:
         path: '{{ item.path }}'
@@ -78,9 +81,10 @@
           - _pki_private_dir.stat.pw_name == 'root'
         fail_msg: '/etc/ssl/private has incorrect permissions'
 
-    # =========================================================================
-    # ROOT CA VERIFICATION
-    # =========================================================================
+    #
+    # Root CA Verification
+    #
+
     - name: Verify | Check CA private key exists and permissions
       ansible.builtin.stat:
         path: /etc/ssl/ca/private/ca.key
@@ -100,23 +104,24 @@
       register: _pki_ca_cert
       failed_when: not _pki_ca_cert.stat.exists
 
-    - name: Verify | Verify CA certificate subject
+    - name: Verify | Assert CA certificate subject
       ansible.builtin.command:
         cmd: openssl x509 -in /etc/ssl/ca/certs/ca.crt -noout -subject -issuer
       register: _pki_ca_verify
       changed_when: false
       failed_when: "'Test Root CA' not in _pki_ca_verify.stdout"
 
-    - name: Verify | Verify CA openssl.cnf has ansible_managed header
+    - name: Verify | Assert CA openssl.cnf has ansible_managed header
       ansible.builtin.command:
         cmd: grep -c 'Ansible managed' /etc/ssl/ca/openssl.cnf
       register: _pki_ca_cnf_header
       changed_when: false
       failed_when: _pki_ca_cnf_header.rc != 0
 
-    # =========================================================================
-    # INTERMEDIATE CA VERIFICATION
-    # =========================================================================
+    #
+    # Intermediate CA Verification
+    #
+
     - name: Verify | Check intermediate CA private key exists
       ansible.builtin.stat:
         path: /etc/ssl/intermediate/private/intermediate.key
@@ -130,37 +135,38 @@
           - _pki_intermediate_key.stat.pw_name == 'root'
         fail_msg: 'Intermediate CA private key has incorrect permissions'
 
-    - name: Verify | Verify intermediate CA certificate subject
+    - name: Verify | Assert intermediate CA certificate subject
       ansible.builtin.command:
         cmd: openssl x509 -in /etc/ssl/intermediate/certs/intermediate.crt -noout -subject
       register: _pki_intermediate_subject
       changed_when: false
       failed_when: "'Test Intermediate CA' not in _pki_intermediate_subject.stdout"
 
-    - name: Verify | Verify intermediate CA has pathlen constraint
+    - name: Verify | Assert intermediate CA has pathlen constraint
       ansible.builtin.command:
         cmd: openssl x509 -in /etc/ssl/intermediate/certs/intermediate.crt -noout -text
       register: _pki_intermediate_text
       changed_when: false
       failed_when: "'pathlen:0' not in _pki_intermediate_text.stdout"
 
-    - name: Verify | Verify intermediate CA is signed by root CA
+    - name: Verify | Assert intermediate CA is signed by root CA
       ansible.builtin.command:
         cmd: openssl verify -CAfile /etc/ssl/ca/certs/ca.crt /etc/ssl/intermediate/certs/intermediate.crt
       register: _pki_intermediate_verify
       changed_when: false
       failed_when: "'OK' not in _pki_intermediate_verify.stdout"
 
-    - name: Verify | Verify chain file contains both certificates
+    - name: Verify | Assert chain file contains both certificates
       ansible.builtin.command:
         cmd: grep -c 'BEGIN CERTIFICATE' /etc/ssl/intermediate/certs/ca-chain.crt
       register: _pki_chain_count
       changed_when: false
       failed_when: _pki_chain_count.stdout | int < 2
 
-    # =========================================================================
-    # SERVER CERTIFICATE VERIFICATION
-    # =========================================================================
+    #
+    # Server Certificate Verification
+    #
+
     - name: Verify | Check server certificate exists
       ansible.builtin.stat:
         path: /etc/ssl/certs/webserver.crt
@@ -186,14 +192,14 @@
       register: _pki_server_chain
       failed_when: not _pki_server_chain.stat.exists
 
-    - name: Verify | Verify server certificate subject
+    - name: Verify | Assert server certificate subject
       ansible.builtin.command:
         cmd: openssl x509 -in /etc/ssl/certs/webserver.crt -noout -subject
       register: _pki_server_subject
       changed_when: false
       failed_when: "'test.example.com' not in _pki_server_subject.stdout"
 
-    - name: Verify | Verify server certificate SAN
+    - name: Verify | Assert server certificate SAN
       ansible.builtin.command:
         cmd: openssl x509 -in /etc/ssl/certs/webserver.crt -noout -ext subjectAltName
       register: _pki_server_san
@@ -208,16 +214,17 @@
         fail_msg: 'Server certificate SAN incorrect'
       when: _pki_server_san.rc == 0
 
-    - name: Verify | Verify server cert is signed by intermediate CA
+    - name: Verify | Assert server cert is signed by intermediate CA
       ansible.builtin.command:
         cmd: openssl verify -CAfile /etc/ssl/intermediate/certs/ca-chain.crt /etc/ssl/certs/webserver.crt
       register: _pki_server_verify
       changed_when: false
       failed_when: "'OK' not in _pki_server_verify.stdout"
 
-    # =========================================================================
-    # CLIENT CERTIFICATE VERIFICATION
-    # =========================================================================
+    #
+    # Client Certificate Verification
+    #
+
     - name: Verify | Check client certificate exists
       ansible.builtin.stat:
         path: /etc/ssl/certs/testclient.crt
@@ -230,46 +237,48 @@
       register: _pki_client_key
       failed_when: not _pki_client_key.stat.exists
 
-    - name: Verify | Verify client certificate subject
+    - name: Verify | Assert client certificate subject
       ansible.builtin.command:
         cmd: openssl x509 -in /etc/ssl/certs/testclient.crt -noout -subject -email
       register: _pki_client_subject
       changed_when: false
       failed_when: "'testclient@example.com' not in _pki_client_subject.stdout"
 
-    - name: Verify | Verify client cert is signed by intermediate CA
+    - name: Verify | Assert client cert is signed by intermediate CA
       ansible.builtin.command:
         cmd: openssl verify -CAfile /etc/ssl/intermediate/certs/ca-chain.crt /etc/ssl/certs/testclient.crt
       register: _pki_client_verify
       changed_when: false
       failed_when: "'OK' not in _pki_client_verify.stdout"
 
-    # =========================================================================
-    # CSR VERIFICATION
-    # =========================================================================
+    #
+    # CSR Verification
+    #
+
     - name: Verify | Check CSR exists
       ansible.builtin.stat:
         path: /etc/ssl/csr/external.csr
       register: _pki_csr_file
       failed_when: not _pki_csr_file.stat.exists
 
-    - name: Verify | Verify CSR content
+    - name: Verify | Assert CSR content
       ansible.builtin.command:
         cmd: openssl req -in /etc/ssl/csr/external.csr -noout -subject
       register: _pki_csr_subject
       changed_when: false
       failed_when: "'external.example.com' not in _pki_csr_subject.stdout"
 
-    - name: Verify | Verify CSR key matches
+    - name: Verify | Assert CSR key matches
       ansible.builtin.command:
         cmd: openssl req -in /etc/ssl/csr/external.csr -noout -verify
       register: _pki_csr_verify
       changed_when: false
       failed_when: "'verify OK' not in (_pki_csr_verify.stdout + _pki_csr_verify.stderr)"
 
-    # =========================================================================
-    # DHPARAM VERIFICATION
-    # =========================================================================
+    #
+    # DH Param Verification
+    #
+
     - name: Verify | Check DH parameters file exists
       ansible.builtin.stat:
         path: /etc/ssl/dhparam.pem
@@ -282,7 +291,7 @@
           - _pki_dhparam_file.stat.mode == '0644'
         fail_msg: 'DH parameters file has incorrect permissions'
 
-    - name: Verify | Verify DH parameters size
+    - name: Verify | Assert DH parameters size
       ansible.builtin.command:
         cmd: openssl dhparam -in /etc/ssl/dhparam.pem -noout -text
       register: _pki_dhparam_check
@@ -295,16 +304,17 @@
           - "'2048 bit' in _pki_dhparam_check.stdout or '(2048 bit)' in _pki_dhparam_check.stdout"
         fail_msg: 'DH parameters size incorrect'
 
-    # =========================================================================
-    # CRL VERIFICATION
-    # =========================================================================
+    #
+    # CRL Verification
+    #
+
     - name: Verify | Check CRL file exists
       ansible.builtin.stat:
         path: /etc/ssl/intermediate/crl/ca.crl
       register: _pki_crl_file
       failed_when: not _pki_crl_file.stat.exists
 
-    - name: Verify | Verify CRL is valid
+    - name: Verify | Assert CRL is valid
       ansible.builtin.command:
         cmd: >-
           openssl crl -in /etc/ssl/intermediate/crl/ca.crl
@@ -313,16 +323,17 @@
       changed_when: false
       failed_when: _pki_crl_verify.rc != 0
 
-    - name: Verify | Verify CRL issuer is intermediate CA
+    - name: Verify | Assert CRL issuer is intermediate CA
       ansible.builtin.command:
         cmd: openssl crl -in /etc/ssl/intermediate/crl/ca.crl -noout -issuer
       register: _pki_crl_issuer
       changed_when: false
       failed_when: "'Test Intermediate CA' not in _pki_crl_issuer.stdout"
 
-    # =========================================================================
-    # OCSP VERIFICATION
-    # =========================================================================
+    #
+    # OCSP Verification
+    #
+
     - name: Verify | Check OCSP signing key exists and permissions
       ansible.builtin.stat:
         path: /etc/ssl/intermediate/private/ocsp.key
@@ -336,14 +347,14 @@
           - _pki_ocsp_key.stat.pw_name == 'root'
         fail_msg: 'OCSP signing key has incorrect permissions'
 
-    - name: Verify | Verify OCSP cert has OCSPSigning usage
+    - name: Verify | Assert OCSP cert has OCSPSigning usage
       ansible.builtin.command:
         cmd: openssl x509 -in /etc/ssl/intermediate/certs/ocsp.crt -noout -text
       register: _pki_ocsp_text
       changed_when: false
       failed_when: "'OCSP Signing' not in _pki_ocsp_text.stdout"
 
-    - name: Verify | Verify OCSP cert is signed by intermediate CA
+    - name: Verify | Assert OCSP cert is signed by intermediate CA
       ansible.builtin.command:
         cmd: >-
           openssl verify -CAfile /etc/ssl/intermediate/certs/ca-chain.crt
@@ -358,7 +369,7 @@
       register: _pki_ocsp_service
       failed_when: not _pki_ocsp_service.stat.exists
 
-    - name: Verify | Verify OCSP service has ansible_managed header
+    - name: Verify | Assert OCSP service has ansible_managed header
       ansible.builtin.command:
         cmd: grep -c 'Ansible managed' /etc/systemd/system/pki-ocsp.service
       register: _pki_ocsp_header
@@ -376,9 +387,10 @@
           - _pki_ocsp_enabled.status.UnitFileState == 'enabled'
         fail_msg: 'OCSP service is not enabled'
 
-    # =========================================================================
-    # RENEWAL MONITORING VERIFICATION
-    # =========================================================================
+    #
+    # Renewal Monitoring Verification
+    #
+
     - name: Verify | Check cert check script exists
       ansible.builtin.stat:
         path: /usr/local/bin/pki-cert-check

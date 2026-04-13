@@ -4,6 +4,10 @@
   gather_facts: true
 
   tasks:
+    #
+    # Load OS-Specific Variables
+    #
+
     - name: Verify | Load OS-specific variables
       ansible.builtin.include_vars: '{{ item }}'
       with_first_found:
@@ -14,7 +18,10 @@
           paths:
             - '../../vars'
 
-    # Intel mesa package verification
+    #
+    # Intel Mesa Package Verification
+    #
+
     - name: Verify | Check Intel mesa package installed (Arch)
       ansible.builtin.command:
         cmd: 'pacman -Q mesa'
@@ -43,7 +50,10 @@
         fail_msg: 'mesa-dri-drivers package is not installed'
       when: ansible_facts['os_family'] == 'RedHat'
 
-    # Mesa utils verification
+    #
+    # Mesa Utils Verification
+    #
+
     - name: Verify | Check mesa-utils installed (Arch)
       ansible.builtin.command:
         cmd: 'pacman -Q mesa-utils'
@@ -67,7 +77,10 @@
         fail_msg: 'mesa-demos package is not installed'
       when: ansible_facts['os_family'] == 'RedHat'
 
-    # Kernel params verification
+    #
+    # Kernel Params Verification
+    #
+
     - name: Verify | Check i915 modprobe config exists
       ansible.builtin.stat:
         path: /etc/modprobe.d/i915.conf

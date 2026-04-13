@@ -4,16 +4,16 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # LOAD ROLE VARIABLES
-    # =========================================================================
+    #
+    # Load Role Variables
+    #
 
     - name: Verify | Load role variables
       ansible.builtin.include_vars: '{{ playbook_dir }}/../../vars/main.yml'
 
-    # =========================================================================
-    # PACKAGE VERIFICATION
-    # =========================================================================
+    #
+    # Package Verification
+    #
 
     - name: Verify | Check firejail package is installed
       ansible.builtin.package:
@@ -29,9 +29,9 @@
       register: _firejail_bin
       failed_when: not _firejail_bin.stat.exists
 
-    # =========================================================================
-    # CONFIGURATION VERIFICATION
-    # =========================================================================
+    #
+    # Configuration Verification
+    #
 
     - name: Verify | Check firejail config file exists
       ansible.builtin.stat:
@@ -59,9 +59,9 @@
       vars:
         _config: '{{ _firejail_config_content.content | b64decode }}'
 
-    # =========================================================================
-    # FIRECFG.CONFIG EXCLUSION VERIFICATION
-    # =========================================================================
+    #
+    # firecfg.config Exclusion Verification
+    #
 
     - name: Verify | Read firecfg.config
       ansible.builtin.slurp:
@@ -76,9 +76,9 @@
       vars:
         _config: '{{ _firecfg_config_content.content | b64decode }}'
 
-    # =========================================================================
-    # PROFILE VERIFICATION
-    # =========================================================================
+    #
+    # Profile Verification
+    #
 
     - name: Verify | Check firefox.local profile exists
       ansible.builtin.stat:
@@ -100,9 +100,9 @@
       vars:
         _profile: '{{ _firefox_local_content.content | b64decode }}'
 
-    # =========================================================================
-    # GLOBALS.LOCAL VERIFICATION
-    # =========================================================================
+    #
+    # globals.local Verification
+    #
 
     - name: Verify | Check globals.local exists
       ansible.builtin.stat:
@@ -123,9 +123,9 @@
       vars:
         _globals: '{{ _globals_local_content.content | b64decode }}'
 
-    # =========================================================================
-    # PACMAN HOOK VERIFICATION (Arch only)
-    # =========================================================================
+    #
+    # Pacman Hook Verification (Arch Only)
+    #
 
     - name: Verify | Check pacman hook exists (Arch)
       ansible.builtin.stat:

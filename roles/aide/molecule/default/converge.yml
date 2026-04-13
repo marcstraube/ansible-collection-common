@@ -18,13 +18,13 @@
     aide_email_enabled: false
 
   pre_tasks:
-    - name: Create test directory for custom monitoring
+    - name: Converge | Create test directory for custom monitoring
       ansible.builtin.file:
         path: '/opt/test'
         state: directory
         mode: '0755'
 
   tasks:
-    - name: Include aide role  # noqa: role-name[path]
+    - name: Converge | Include aide role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

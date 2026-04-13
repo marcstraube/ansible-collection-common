@@ -17,35 +17,35 @@
         - procps-ng
 
   tasks:
-    - name: Update package cache (Arch)
+    - name: Prepare | Update package cache (Arch)
       community.general.pacman:
         update_cache: true
         upgrade: true
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Update package cache (Debian)
+    - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
         update_cache: true
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Enable EPEL repository (RedHat)
+    - name: Prepare | Enable EPEL repository (RedHat)
       ansible.builtin.dnf:
         name: epel-release
         state: present
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Update package cache (RedHat)
+    - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Install container dependencies
+    - name: Prepare | Install container dependencies
       ansible.builtin.package:
         name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
 
     # ClamAV daemon may fail to start in containers without override
-    - name: Create systemd override directory for clamd (Arch)
+    - name: Prepare | Create systemd override directory for clamd (Arch)
       ansible.builtin.file:
         path: /etc/systemd/system/clamav-daemon.service.d
         state: directory
@@ -54,7 +54,7 @@
         mode: '0755'
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Deploy systemd override for clamd (Arch)
+    - name: Prepare | Deploy systemd override for clamd (Arch)
       ansible.builtin.copy:
         dest: /etc/systemd/system/clamav-daemon.service.d/override.conf
         owner: root
@@ -67,7 +67,7 @@
           ExecStart=/usr/bin/clamd --foreground
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Create systemd override directory for clamd (Debian)
+    - name: Prepare | Create systemd override directory for clamd (Debian)
       ansible.builtin.file:
         path: /etc/systemd/system/clamav-daemon.service.d
         state: directory
@@ -76,7 +76,7 @@
         mode: '0755'
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Deploy systemd override for clamd (Debian)
+    - name: Prepare | Deploy systemd override for clamd (Debian)
       ansible.builtin.copy:
         dest: /etc/systemd/system/clamav-daemon.service.d/override.conf
         owner: root
@@ -89,7 +89,7 @@
           ExecStart=/usr/sbin/clamd --foreground
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Create systemd override directory for clamd@scan (RedHat)
+    - name: Prepare | Create systemd override directory for clamd@scan (RedHat)
       ansible.builtin.file:
         path: /etc/systemd/system/clamd@scan.service.d
         state: directory
@@ -98,7 +98,7 @@
         mode: '0755'
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Deploy systemd override for clamd@scan (RedHat)
+    - name: Prepare | Deploy systemd override for clamd@scan (RedHat)
       ansible.builtin.copy:
         dest: /etc/systemd/system/clamd@scan.service.d/override.conf
         owner: root
@@ -111,7 +111,7 @@
           ExecStart=/usr/sbin/clamd --foreground -c /etc/clamd.d/scan.conf
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Create systemd override directory for freshclam
+    - name: Prepare | Create systemd override directory for freshclam
       ansible.builtin.file:
         path: /etc/systemd/system/clamav-freshclam.service.d
         state: directory
@@ -119,7 +119,7 @@
         group: root
         mode: '0755'
 
-    - name: Deploy systemd override for freshclam
+    - name: Prepare | Deploy systemd override for freshclam
       ansible.builtin.copy:
         dest: /etc/systemd/system/clamav-freshclam.service.d/override.conf
         owner: root
@@ -131,6 +131,6 @@
           ExecStart=
           ExecStart=/usr/bin/freshclam --daemon --foreground
 
-    - name: Reload systemd daemon
+    - name: Prepare | Reload systemd daemon
       ansible.builtin.systemd:
         daemon_reload: true

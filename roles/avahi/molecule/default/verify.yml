@@ -4,9 +4,9 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # LOAD OS-SPECIFIC VARIABLES
-    # =========================================================================
+    #
+    # Load OS-Specific Variables
+    #
 
     - name: Verify | Load OS-specific variables
       ansible.builtin.include_vars: '{{ item }}'
@@ -18,9 +18,9 @@
           paths:
             - '{{ playbook_dir }}/../../vars'
 
-    # =========================================================================
-    # PACKAGE VERIFICATION
-    # =========================================================================
+    #
+    # Package Verification
+    #
 
     - name: Verify | Check avahi packages are installed
       ansible.builtin.package:
@@ -40,9 +40,9 @@
       failed_when: _avahi_nss_pkg is changed
       loop: '{{ __avahi_nss_packages }}'
 
-    # =========================================================================
-    # CONFIGURATION VERIFICATION
-    # =========================================================================
+    #
+    # Configuration Verification
+    #
 
     - name: Verify | Check avahi config file exists
       ansible.builtin.stat:
@@ -90,9 +90,9 @@
       vars:
         _config: '{{ _avahi_config_content.content | b64decode }}'
 
-    # =========================================================================
-    # NSSWITCH VERIFICATION
-    # =========================================================================
+    #
+    # Nsswitch Verification
+    #
 
     - name: Verify | Read nsswitch.conf
       ansible.builtin.slurp:
@@ -105,9 +105,9 @@
           - "'mdns_minimal' in _nsswitch_content.content | b64decode"
         fail_msg: 'nsswitch.conf does not contain mdns_minimal'
 
-    # =========================================================================
-    # SERVICE VERIFICATION
-    # =========================================================================
+    #
+    # Service Verification
+    #
 
     - name: Verify | Check avahi service is enabled  # noqa: command-instead-of-module
       ansible.builtin.command:

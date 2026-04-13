@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # ANSIBLE VERIFICATION
-    # =========================================================================
+    #
+    # Ansible Verification
+    #
+
     - name: Verify | Check ansible version
       ansible.builtin.command:
         cmd: ansible --version
@@ -24,9 +25,10 @@
           - "'ansible' in ansible_tools_verify_ansible.stdout"
         fail_msg: 'ansible is not installed or not working'
 
-    # =========================================================================
-    # MOLECULE VERIFICATION
-    # =========================================================================
+    #
+    # Molecule Verification
+    #
+
     - name: Verify | Check molecule version (Arch — system package)
       ansible.builtin.command:
         cmd: molecule --version
@@ -58,9 +60,10 @@
           - "'molecule' in molecule_result.stdout"
         fail_msg: 'molecule is not installed or not working'
 
-    # =========================================================================
-    # LINT VERIFICATION
-    # =========================================================================
+    #
+    # Lint Verification
+    #
+
     - name: Verify | Check ansible-lint version (Arch)
       ansible.builtin.command:
         cmd: ansible-lint --version
@@ -123,9 +126,10 @@
           - "'yamllint' in yamllint_result.stdout"
         fail_msg: 'yamllint is not installed or not working'
 
-    # =========================================================================
-    # DRIVER VERIFICATION (Debian/RedHat only — Arch skips AUR in tests)
-    # =========================================================================
+    #
+    # Driver Verification (Debian/RedHat only -- Arch skips AUR in tests)
+    #
+
     - name: Verify | Check molecule drivers (pipx — Debian/RedHat)
       ansible.builtin.command:
         cmd: /root/.local/bin/molecule drivers

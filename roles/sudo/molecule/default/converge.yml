@@ -3,18 +3,6 @@
   hosts: all
   gather_facts: true
 
-  pre_tasks:
-    - name: Create test group for sudo
-      ansible.builtin.group:
-        name: testgroup
-        state: present
-
-    - name: Create test user for sudo
-      ansible.builtin.user:
-        name: testuser
-        state: present
-        groups: testgroup
-
   vars:
     sudo_enabled: true
     sudo_wheel_group: true
@@ -95,7 +83,19 @@
     sudo_keep_sudoers_files:
       - 'README'
 
+  pre_tasks:
+    - name: Converge | Create test group for sudo
+      ansible.builtin.group:
+        name: testgroup
+        state: present
+
+    - name: Converge | Create test user for sudo
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        groups: testgroup
+
   tasks:
-    - name: Include sudo role  # noqa: role-name[path]
+    - name: Converge | Include sudo role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

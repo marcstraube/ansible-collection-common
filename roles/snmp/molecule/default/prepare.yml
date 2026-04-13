@@ -14,23 +14,23 @@
         - procps-ng
 
   tasks:
-    - name: Update package cache (Arch)
+    - name: Prepare | Update package cache (Arch)
       community.general.pacman:
         update_cache: true
         upgrade: true
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Update package cache (Debian)
+    - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
         update_cache: true
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Update package cache (RedHat)
+    - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Install container dependencies
+    - name: Prepare | Install container dependencies
       ansible.builtin.package:
         name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present

@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # CONFIGURATION FILE VERIFICATION
-    # =========================================================================
+    #
+    # Configuration File Verification
+    #
+
     - name: Verify | Check sysctl config file exists
       ansible.builtin.stat:
         path: '/etc/sysctl.d/90-ansible.conf'
@@ -36,9 +37,10 @@
           - "'Ansible managed' in __sysctl_config_decoded"
         fail_msg: 'Ansible managed header missing from sysctl config'
 
-    # =========================================================================
-    # CUSTOM PARAMETERS VERIFICATION
-    # =========================================================================
+    #
+    # Custom Parameters Verification
+    #
+
     - name: Verify | Check custom parameters in config
       ansible.builtin.assert:
         that:
@@ -46,9 +48,10 @@
           - "'net.core.somaxconn = 1024' in __sysctl_config_decoded"
         fail_msg: 'Custom sysctl parameters not found in config'
 
-    # =========================================================================
-    # SECURITY PROFILE PARAMETERS VERIFICATION
-    # =========================================================================
+    #
+    # Security Profile Parameters Verification
+    #
+
     - name: Verify | Check security profile parameters
       ansible.builtin.assert:
         that:
@@ -64,9 +67,10 @@
           - "'net.ipv6.conf.all.accept_ra = 0' in __sysctl_config_decoded"
         fail_msg: 'Security profile parameters missing from config'
 
-    # =========================================================================
-    # NETWORK PERFORMANCE PROFILE VERIFICATION
-    # =========================================================================
+    #
+    # Network Performance Profile Verification
+    #
+
     - name: Verify | Check network performance profile parameters
       ansible.builtin.assert:
         that:
@@ -76,9 +80,10 @@
           - "'net.ipv4.tcp_tw_reuse = 1' in __sysctl_config_decoded"
         fail_msg: 'Network performance profile parameters missing from config'
 
-    # =========================================================================
-    # DROP-IN DIRECTORY VERIFICATION
-    # =========================================================================
+    #
+    # Drop-In Directory Verification
+    #
+
     - name: Verify | Check /etc/sysctl.d directory exists
       ansible.builtin.stat:
         path: /etc/sysctl.d
@@ -91,9 +96,10 @@
           - sysctl_d_dir.stat.isdir
         fail_msg: '/etc/sysctl.d is not a directory'
 
-    # =========================================================================
-    # NO DUPLICATE KEYS
-    # =========================================================================
+    #
+    # No Duplicate Keys
+    #
+
     - name: Verify | Check no duplicate keys in config  # noqa: risky-shell-pipe
       ansible.builtin.shell:
         cmd: |
@@ -103,9 +109,10 @@
       changed_when: false
       failed_when: duplicate_keys.stdout | int > 0
 
-    # =========================================================================
-    # SYSCTL COMMAND VERIFICATION
-    # =========================================================================
+    #
+    # sysctl Command Verification
+    #
+
     - name: Verify | Test sysctl command works
       ansible.builtin.command:
         cmd: sysctl -a
@@ -113,9 +120,10 @@
       changed_when: false
       failed_when: sysctl_all.rc != 0
 
-    # =========================================================================
-    # PACKAGE VERIFICATION
-    # =========================================================================
+    #
+    # Package Verification
+    #
+
     - name: Verify | Check procps package installed (Arch)
       ansible.builtin.command:
         cmd: pacman -Qi procps-ng

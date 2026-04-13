@@ -3,19 +3,6 @@
   hosts: all
   gather_facts: true
 
-  pre_tasks:
-    - name: Create test user
-      ansible.builtin.user:
-        name: testuser
-        state: present
-        create_home: true
-
-    - name: Create disabled test user
-      ansible.builtin.user:
-        name: disableduser
-        state: present
-        create_home: true
-
   vars:
     gnupg_enabled: true
     gnupg_install_gui: false
@@ -36,7 +23,20 @@
         mode: 'disabled'
         agent_ssh: false
 
+  pre_tasks:
+    - name: Converge | Create test user
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+
+    - name: Converge | Create disabled test user
+      ansible.builtin.user:
+        name: disableduser
+        state: present
+        create_home: true
+
   tasks:
-    - name: Include gnupg role  # noqa: role-name[path]
+    - name: Converge | Include gnupg role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

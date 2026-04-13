@@ -28,7 +28,7 @@
           true
 
   tasks:
-    - name: Create test log directory
+    - name: Converge | Create test log directory
       ansible.builtin.file:
         path: '/var/log/testapp'
         state: directory
@@ -36,6 +36,6 @@
         group: root
         mode: '0755'
 
-    - name: Include logrotate role  # noqa: role-name[path]
+    - name: Converge | Include logrotate role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

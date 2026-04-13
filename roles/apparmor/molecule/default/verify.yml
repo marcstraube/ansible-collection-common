@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # PACKAGE INSTALLATION
-    # =========================================================================
+    #
+    # Package Installation
+    #
+
     - name: Verify | Check apparmor package installed
       ansible.builtin.package:
         name: apparmor
@@ -24,9 +25,10 @@
       failed_when: __verify_apparmor_utils_pkg.changed
       when: ansible_facts['os_family'] == 'Debian'
 
-    # =========================================================================
-    # BINARY VERIFICATION
-    # =========================================================================
+    #
+    # Binary Verification
+    #
+
     - name: Verify | Check aa-status binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v aa-status
@@ -55,9 +57,10 @@
       changed_when: false
       failed_when: __verify_aa_disable_binary.rc != 0
 
-    # =========================================================================
-    # PROFILE DIRECTORY STRUCTURE
-    # =========================================================================
+    #
+    # Profile Directory Structure
+    #
+
     - name: Verify | Check AppArmor profiles directory exists
       ansible.builtin.stat:
         path: /etc/apparmor.d
@@ -82,19 +85,21 @@
       register: __verify_base_abstraction
       failed_when: not __verify_base_abstraction.stat.exists
 
-    # =========================================================================
-    # KERNEL SUPPORT CHECK (needed before tunables/custom profile checks)
-    # =========================================================================
+    #
+    # Kernel Support Check (needed before tunables/custom profile checks)
+    #
+
     - name: Verify | Check AppArmor securityfs exists
       ansible.builtin.stat:
         path: /sys/kernel/security/apparmor
       register: __verify_apparmor_securityfs
 
-    # =========================================================================
-    # CUSTOM TUNABLES VERIFICATION
+    #
+    # Custom Tunables Verification
+    #
     # Tunables are only deployed when kernel is active (skipped on Arch
     # before reboot)
-    # =========================================================================
+
     - name: Verify | Check custom tunables file exists
       ansible.builtin.stat:
         path: /etc/apparmor.d/tunables/custom
@@ -117,10 +122,11 @@
         fail_msg: 'custom tunables file has incorrect content'
       when: __verify_tunables_content is not skipped
 
-    # =========================================================================
-    # CUSTOM PROFILE VERIFICATION
+    #
+    # Custom Profile Verification
+    #
     # Custom profiles are only deployed when kernel is active
-    # =========================================================================
+
     - name: Verify | Check custom profile exists
       ansible.builtin.stat:
         path: /etc/apparmor.d/test.myapp
@@ -152,9 +158,10 @@
         fail_msg: 'custom profile has incorrect content'
       when: __verify_custom_profile_content is not skipped
 
-    # =========================================================================
-    # GRUB CONFIGURATION
-    # =========================================================================
+    #
+    # GRUB Configuration
+    #
+
     - name: Verify | Check GRUB config exists
       ansible.builtin.stat:
         path: /etc/default/grub
@@ -182,10 +189,12 @@
         fail_msg: 'AppArmor not enabled in GRUB'
       when: ansible_facts['os_family'] == 'Debian'
 
-    # =========================================================================
-    # SERVICE VERIFICATION
+    #
+    # Service Verification
+    #
     # Service is only started when kernel is active
-    # =========================================================================
+    #
+
     - name: Verify | Check apparmor service is enabled
       ansible.builtin.systemd:
         name: apparmor.service
@@ -193,10 +202,11 @@
       failed_when: __verify_apparmor_service.status.UnitFileState != 'enabled'
       when: __verify_apparmor_securityfs.stat.exists
 
-    # =========================================================================
-    # FUNCTIONAL TESTS — Debian only (AppArmor active by default)
+    #
+    # Functional Tests — Debian only (AppArmor active by default)
+    #
     # Arch needs reboot after GRUB config change, so kernel tests skip there
-    # =========================================================================
+
     - name: Verify | Test aa-enabled command (Debian)
       ansible.builtin.command:
         cmd: aa-enabled
@@ -240,9 +250,10 @@
       failed_when: __verify_apparmor_running.status.ActiveState != 'active'
       when: ansible_facts['os_family'] == 'Debian'
 
-    # =========================================================================
-    # ARCH-SPECIFIC VERIFICATION (GRUB config only, no kernel tests)
-    # =========================================================================
+    #
+    # Arch-Specific Verification (GRUB config only, no kernel tests)
+    #
+
     - name: Verify | Test aa-status command (Arch — informational)
       ansible.builtin.command:
         cmd: aa-status

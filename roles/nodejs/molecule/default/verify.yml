@@ -4,72 +4,75 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # NODE.JS VERIFICATION
-    # =========================================================================
-    - name: Check Node.js is installed
+    #
+    # Node.js Verification
+    #
+
+    - name: Verify | Check Node.js is installed
       ansible.builtin.command: node --version
       register: nodejs_version_check
       changed_when: false
       failed_when: nodejs_version_check.rc != 0
 
-    - name: Verify Node.js version output
+    - name: Verify | Assert Node.js version output
       ansible.builtin.assert:
         that:
           - "nodejs_version_check.stdout is match('^v[0-9]+\\.[0-9]+\\.[0-9]+')"
         fail_msg: "Node.js version output unexpected: {{ nodejs_version_check.stdout }}"
 
-    # =========================================================================
-    # NPM VERIFICATION
-    # =========================================================================
-    - name: Check npm is installed
+    #
+    # npm Verification
+    #
+
+    - name: Verify | Check npm is installed
       ansible.builtin.command: npm --version
       register: npm_version_check
       changed_when: false
       failed_when: npm_version_check.rc != 0
 
-    - name: Verify npm version output
+    - name: Verify | Assert npm version output
       ansible.builtin.assert:
         that:
           - "npm_version_check.stdout is match('^[0-9]+\\.[0-9]+\\.[0-9]+')"
         fail_msg: "npm version output unexpected: {{ npm_version_check.stdout }}"
 
-    # =========================================================================
-    # NODESOURCE REPOSITORY VERIFICATION (Debian/RedHat only)
-    # =========================================================================
-    - name: Check NodeSource GPG key exists (Debian)
+    #
+    # NodeSource Repository Verification (Debian/RedHat only)
+    #
+
+    - name: Verify | Check NodeSource GPG key exists (Debian)
       ansible.builtin.stat:
         path: /etc/apt/keyrings/nodesource.asc
       register: nodesource_key_stat
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Verify NodeSource GPG key exists (Debian)
+    - name: Verify | Assert NodeSource GPG key exists (Debian)
       ansible.builtin.assert:
         that:
           - nodesource_key_stat.stat.exists
         fail_msg: "NodeSource GPG key not found"
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Check NodeSource repository file exists (Debian)
+    - name: Verify | Check NodeSource repository file exists (Debian)
       ansible.builtin.stat:
         path: /etc/apt/sources.list.d/nodesource.list
       register: nodesource_repo_stat
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Verify NodeSource repository exists (Debian)
+    - name: Verify | Assert NodeSource repository exists (Debian)
       ansible.builtin.assert:
         that:
           - nodesource_repo_stat.stat.exists
         fail_msg: "NodeSource repository not configured"
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Check NodeSource repository file exists (RedHat)
+    - name: Verify | Check NodeSource repository file exists (RedHat)
       ansible.builtin.stat:
         path: /etc/yum.repos.d/nodesource.repo
       register: nodesource_redhat_repo_stat
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Check AppStream nodejs module enabled (RedHat)
+    - name: Verify | Check AppStream nodejs module enabled (RedHat)
       ansible.builtin.command: dnf module list --enabled nodejs
       register: nodejs_appstream_status
       changed_when: false
@@ -78,7 +81,7 @@
         - ansible_facts['os_family'] == 'RedHat'
         - not (nodesource_redhat_repo_stat.stat.exists | default(false))
 
-    - name: Verify Node.js source configured (RedHat)
+    - name: Verify | Assert Node.js source configured (RedHat)
       ansible.builtin.assert:
         that:
           - (nodesource_redhat_repo_stat.stat.exists | default(false)) or
@@ -86,30 +89,32 @@
         fail_msg: "Neither NodeSource repo nor AppStream nodejs module configured"
       when: ansible_facts['os_family'] == 'RedHat'
 
-    # =========================================================================
-    # VERSION CHECK (should provide version 22+)
-    # =========================================================================
-    - name: Verify Node.js major version
+    #
+    # Version Check (should provide version 22+)
+    #
+
+    - name: Verify | Assert Node.js major version
       ansible.builtin.assert:
         that:
           - (nodejs_version_check.stdout | regex_replace('^v', '') | split('.') | first | int) >= 24
         fail_msg: "Expected Node.js 24+, got {{ nodejs_version_check.stdout }}"
 
-    # =========================================================================
-    # YARN VERIFICATION (installed via package_managers)
-    # =========================================================================
-    - name: Get npm global prefix
+    #
+    # yarn Verification (installed via package_managers)
+    #
+
+    - name: Verify | Get npm global prefix
       ansible.builtin.command: npm prefix -g
       register: npm_global_prefix
       changed_when: false
 
-    - name: Check yarn is installed
+    - name: Verify | Check yarn is installed
       ansible.builtin.command: "{{ npm_global_prefix.stdout | trim }}/bin/yarn --version"
       register: yarn_version_check
       changed_when: false
       failed_when: yarn_version_check.rc != 0
 
-    - name: Verify yarn version output
+    - name: Verify | Assert yarn version output
       ansible.builtin.assert:
         that:
           - "yarn_version_check.stdout is match('^[0-9]+\\.[0-9]+\\.[0-9]+')"

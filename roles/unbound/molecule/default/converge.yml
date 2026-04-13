@@ -38,6 +38,6 @@
       - 'test.example.com'
 
   tasks:
-    - name: Include unbound role  # noqa: role-name[path]
+    - name: Converge | Include unbound role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

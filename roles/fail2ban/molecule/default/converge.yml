@@ -59,6 +59,6 @@
           actionunban = /bin/true <ip>
 
   tasks:
-    - name: Include fail2ban role  # noqa: role-name[path]
+    - name: Converge | Include fail2ban role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

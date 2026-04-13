@@ -34,6 +34,6 @@
             protocol: 'udp'
 
   tasks:
-    - name: Include firewalld role  # noqa: role-name[path]
+    - name: Converge | Include firewalld role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

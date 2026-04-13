@@ -30,6 +30,6 @@
       - '^/sys/'
 
   tasks:
-    - name: Include clamav role  # noqa: role-name[path]
+    - name: Converge | Include clamav role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

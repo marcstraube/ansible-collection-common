@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # FONTCONFIG VERIFICATION
-    # =========================================================================
+    #
+    # fontconfig Verification
+    #
+
     - name: Verify | Check fontconfig local.conf exists
       ansible.builtin.stat:
         path: /etc/fonts/local.conf
@@ -30,9 +31,10 @@
       register: conf_d
       failed_when: not conf_d.stat.exists
 
-    # =========================================================================
-    # FONT PACKAGES VERIFICATION
-    # =========================================================================
+    #
+    # Font Packages Verification
+    #
+
     - name: Verify | Check fc-list binary exists
       ansible.builtin.shell:
         cmd: command -v fc-list
@@ -54,9 +56,10 @@
       changed_when: false
       failed_when: fcmatch_binary.rc != 0
 
-    # =========================================================================
-    # DEJAVU FONTS VERIFICATION
-    # =========================================================================
+    #
+    # DejaVu Fonts Verification
+    #
+
     - name: Verify | Check DejaVu fonts installed
       ansible.builtin.command:
         cmd: 'fc-list : family'
@@ -64,7 +67,7 @@
       changed_when: false
       failed_when: font_families.rc != 0
 
-    - name: Verify | Verify DejaVu fonts are available
+    - name: Verify | Assert DejaVu fonts are available
       ansible.builtin.assert:
         that:
           - "'DejaVu' in font_families.stdout"
@@ -83,9 +86,10 @@
           - dejavu_fonts.stdout_lines | length >= 3
         fail_msg: 'Not enough DejaVu font variants found'
 
-    # =========================================================================
-    # FONT DIRECTORIES VERIFICATION
-    # =========================================================================
+    #
+    # Font Directories Verification
+    #
+
     - name: Verify | Check /usr/share/fonts exists
       ansible.builtin.stat:
         path: /usr/share/fonts
@@ -98,15 +102,16 @@
         file_type: directory
       register: font_dirs
 
-    - name: Verify | Verify multiple font directories exist
+    - name: Verify | Assert multiple font directories exist
       ansible.builtin.assert:
         that:
           - font_dirs.matched > 0
         fail_msg: 'No font directories found in /usr/share/fonts'
 
-    # =========================================================================
-    # FONT CACHE VERIFICATION
-    # =========================================================================
+    #
+    # Font Cache Verification
+    #
+
     - name: Verify | Check font cache directory exists
       ansible.builtin.stat:
         path: /var/cache/fontconfig
@@ -119,15 +124,16 @@
       changed_when: false
       failed_when: fccache_version.rc != 0
 
-    - name: Verify | Verify fc-cache version output
+    - name: Verify | Assert fc-cache version output
       ansible.builtin.assert:
         that:
           - "'fontconfig' in (fccache_version.stdout + fccache_version.stderr)"
         fail_msg: 'fc-cache version output unexpected'
 
-    # =========================================================================
-    # FUNCTIONAL TESTS
-    # =========================================================================
+    #
+    # Functional Tests
+    #
+
     - name: Verify | Test fc-list functionality
       ansible.builtin.command:
         cmd: 'fc-list : file'
@@ -135,7 +141,7 @@
       changed_when: false
       failed_when: fclist_test.rc != 0
 
-    - name: Verify | Verify fonts are listed
+    - name: Verify | Assert fonts are listed
       ansible.builtin.assert:
         that:
           - fclist_test.stdout_lines | length > 10
@@ -148,7 +154,7 @@
       changed_when: false
       failed_when: fcmatch_sans.rc != 0
 
-    - name: Verify | Verify sans-serif match exists
+    - name: Verify | Assert sans-serif match exists
       ansible.builtin.assert:
         that:
           - fcmatch_sans.stdout | length > 0
@@ -168,15 +174,16 @@
       changed_when: false
       failed_when: fcmatch_dejavu.rc != 0
 
-    - name: Verify | Verify DejaVu Sans matches
+    - name: Verify | Assert DejaVu Sans matches
       ansible.builtin.assert:
         that:
           - "'DejaVu' in fcmatch_dejavu.stdout"
         fail_msg: 'DejaVu Sans not matched correctly'
 
-    # =========================================================================
-    # CODING FONTS VERIFICATION
-    # =========================================================================
+    #
+    # Coding Fonts Verification
+    #
+
     - name: Verify | Check Fira Code font installed
       ansible.builtin.command:
         cmd: fc-match 'Fira Code'
@@ -184,15 +191,16 @@
       changed_when: false
       failed_when: fcmatch_firacode.rc != 0
 
-    - name: Verify | Verify Fira Code matches
+    - name: Verify | Assert Fira Code matches
       ansible.builtin.assert:
         that:
           - "'Fira' in fcmatch_firacode.stdout or 'fira' in fcmatch_firacode.stdout"
         fail_msg: 'Fira Code font not matched correctly'
 
-    # =========================================================================
-    # NERD FONTS VERIFICATION (Arch only)
-    # =========================================================================
+    #
+    # Nerd Fonts Verification (Arch Only)
+    #
+
     - name: Verify | Check Nerd Fonts symbols installed (Arch)
       ansible.builtin.command:
         cmd: fc-list 'Symbols Nerd Font'
@@ -200,16 +208,17 @@
       changed_when: false
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Verify | Verify Nerd Fonts symbols available (Arch)
+    - name: Verify | Assert Nerd Fonts symbols available (Arch)
       ansible.builtin.assert:
         that:
           - nerd_symbols.stdout | length > 0
         fail_msg: 'Nerd Fonts symbols not found'
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    # =========================================================================
-    # FONTCONFIG CONTENT VERIFICATION
-    # =========================================================================
+    #
+    # Fontconfig Content Verification
+    #
+
     - name: Verify | Check local.conf contains ansible_managed
       ansible.builtin.command:
         cmd: grep -c 'Ansible managed' /etc/fonts/local.conf

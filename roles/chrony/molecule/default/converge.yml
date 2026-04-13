@@ -13,6 +13,6 @@
     chrony_minsources: 1
 
   tasks:
-    - name: Include chrony role  # noqa: role-name[path]
+    - name: Converge | Include chrony role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

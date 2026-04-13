@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # ==========================================================================
-    # LOAD OS-SPECIFIC VARIABLES
-    # ==========================================================================
+    #
+    # Load OS-Specific Variables
+    #
+
     - name: Verify | Load OS-specific variables
       ansible.builtin.include_vars: '{{ item }}'
       with_first_found:
@@ -17,9 +18,10 @@
           paths:
             - '../../vars'
 
-    # ==========================================================================
-    # PACKAGE VERIFICATION
-    # ==========================================================================
+    #
+    # Package Verification
+    #
+
     - name: Verify | Check chrony package is installed
       ansible.builtin.package:
         name: chrony
@@ -28,9 +30,10 @@
       register: chrony_pkg_check
       failed_when: chrony_pkg_check.changed
 
-    # ==========================================================================
-    # CONFIGURATION FILE VERIFICATION
-    # ==========================================================================
+    #
+    # Configuration File Verification
+    #
+
     - name: Verify | Check configuration file exists
       ansible.builtin.stat:
         path: '{{ __chrony_config_file }}'
@@ -43,9 +46,10 @@
           - chrony_config_stat.stat.mode == '0644'
         fail_msg: 'Chrony config file missing or has incorrect permissions'
 
-    # ==========================================================================
-    # CONFIGURATION CONTENT VALIDATION
-    # ==========================================================================
+    #
+    # Configuration Content Validation
+    #
+
     - name: Verify | Read chrony configuration
       ansible.builtin.slurp:
         src: '{{ __chrony_config_file }}'
@@ -110,9 +114,10 @@
           - "'commandkey' not in __chrony_config_decoded"
         fail_msg: 'Deprecated commandkey directive still present'
 
-    # ==========================================================================
-    # SERVICE VERIFICATION
-    # ==========================================================================
+    #
+    # Service Verification
+    #
+
     - name: Verify | Check chrony service is enabled
       ansible.builtin.systemd:
         name: '{{ __chrony_service_name }}'
@@ -129,9 +134,10 @@
       register: chrony_service_running
       failed_when: chrony_service_running.changed
 
-    # ==========================================================================
-    # FUNCTIONAL TESTS
-    # ==========================================================================
+    #
+    # Functional Tests
+    #
+
     - name: Verify | Test chronyc tracking command works
       ansible.builtin.command:
         cmd: chronyc tracking
@@ -165,9 +171,10 @@
       changed_when: false
       failed_when: chrony_activity.rc != 0
 
-    # ==========================================================================
-    # LOG DIRECTORY VERIFICATION
-    # ==========================================================================
+    #
+    # Log Directory Verification
+    #
+
     - name: Verify | Check log directory exists
       ansible.builtin.stat:
         path: /var/log/chrony
@@ -181,9 +188,10 @@
           - chrony_log_dir.stat.mode == '0750'
         fail_msg: 'Chrony log directory missing or wrong permissions'
 
-    # ==========================================================================
-    # DRIFT FILE VERIFICATION
-    # ==========================================================================
+    #
+    # Drift File Verification
+    #
+
     - name: Verify | Check drift file parent directory exists
       ansible.builtin.stat:
         path: /var/lib/chrony

@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # GNUPG INSTALLATION
-    # =========================================================================
+    #
+    # GnuPG Installation
+    #
+
     - name: Verify | Set expected package name
       ansible.builtin.set_fact:
         _gnupg_expected_pkg: >-
@@ -34,15 +35,16 @@
       changed_when: false
       failed_when: gpg_version.rc != 0
 
-    - name: Verify | Verify gpg version output
+    - name: Verify | Assert gpg version output
       ansible.builtin.assert:
         that:
           - "'gpg (GnuPG)' in gpg_version.stdout"
         fail_msg: 'gpg version output unexpected'
 
-    # =========================================================================
-    # GPG-AGENT
-    # =========================================================================
+    #
+    # GPG-Agent
+    #
+
     - name: Verify | Check gpg-agent binary exists
       ansible.builtin.command:
         cmd: which gpg-agent
@@ -50,9 +52,10 @@
       changed_when: false
       failed_when: gpg_agent_binary.rc != 0
 
-    # =========================================================================
-    # GPG UTILITIES
-    # =========================================================================
+    #
+    # GPG Utilities
+    #
+
     - name: Verify | Check gpg-connect-agent exists
       ansible.builtin.command:
         cmd: which gpg-connect-agent
@@ -74,9 +77,10 @@
       changed_when: false
       failed_when: gpgconf_binary.rc != 0
 
-    # =========================================================================
-    # ROOT USER CONFIGURATION
-    # =========================================================================
+    #
+    # Root User Configuration
+    #
+
     - name: Verify | Check root .gnupg directory
       ansible.builtin.stat:
         path: /root/.gnupg
@@ -177,9 +181,10 @@
           - "'Ansible managed' in root_dirmngr_conf_content.content | b64decode"
         fail_msg: 'dirmngr.conf missing expected directives'
 
-    # =========================================================================
-    # TEST USER CONFIGURATION
-    # =========================================================================
+    #
+    # Test User Configuration
+    #
+
     - name: Verify | Check testuser .gnupg directory
       ansible.builtin.stat:
         path: /home/testuser/.gnupg
@@ -241,9 +246,10 @@
           - not root_ssh_env.stat.exists
         fail_msg: 'root should not have SSH environment file (agent_ssh: false)'
 
-    # =========================================================================
-    # FUNCTIONAL TESTS
-    # =========================================================================
+    #
+    # Functional Tests
+    #
+
     - name: Verify | Test gpg list keys
       ansible.builtin.command:
         cmd: gpg --list-keys
@@ -258,16 +264,17 @@
       changed_when: false
       failed_when: gpgconf_components.rc != 0
 
-    - name: Verify | Verify gpgconf components output
+    - name: Verify | Assert gpgconf components output
       ansible.builtin.assert:
         that:
           - "'gpg:' in gpgconf_components.stdout"
           - "'gpg-agent:' in gpgconf_components.stdout"
         fail_msg: 'gpgconf components output unexpected'
 
-    # =========================================================================
-    # DISABLED USER — must have no config
-    # =========================================================================
+    #
+    # Disabled User — Must Have No Config
+    #
+
     - name: Verify | Check disableduser has no .gnupg directory
       ansible.builtin.stat:
         path: /home/disableduser/.gnupg

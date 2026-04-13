@@ -20,6 +20,6 @@
     firejail_pacman_hook: true
 
   tasks:
-    - name: Include firejail role  # noqa: role-name[path]
+    - name: Converge | Include firejail role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

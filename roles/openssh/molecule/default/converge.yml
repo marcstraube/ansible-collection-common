@@ -66,6 +66,6 @@
     openssh_server_banner_content: 'Test banner'
 
   tasks:
-    - name: Include ansible-openssh role  # noqa: role-name[path]
+    - name: Converge | Include ansible-openssh role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

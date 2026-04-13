@@ -4,12 +4,20 @@
   gather_facts: true
 
   tasks:
+    #
+    # Package Verification
+    #
+
     - name: Verify | Check restic is installed
       ansible.builtin.command:
         cmd: 'restic version'
       register: __restic_version
       changed_when: false
       failed_when: __restic_version.rc != 0
+
+    #
+    # Configuration Verification
+    #
 
     - name: Verify | Check configuration directory exists
       ansible.builtin.stat:
@@ -53,6 +61,10 @@
       register: __restic_excludes_file
       failed_when: not __restic_excludes_file.stat.exists
 
+    #
+    # Backup Script Verification
+    #
+
     - name: Verify | Check backup script exists
       ansible.builtin.stat:
         path: '/usr/local/bin/restic-backup-test'
@@ -71,6 +83,10 @@
       register: __restic_script_header
       changed_when: false
       failed_when: "'Ansible managed' not in __restic_script_header.stdout"
+
+    #
+    # Systemd Verification
+    #
 
     - name: Verify | Check systemd service exists
       ansible.builtin.stat:
@@ -97,17 +113,29 @@
       register: __restic_timer_status
       failed_when: __restic_timer_status.status.UnitFileState != 'enabled'
 
+    #
+    # Repository Verification
+    #
+
     - name: Verify | Check repository was initialized
       ansible.builtin.stat:
         path: '/tmp/restic-test-repo/config'
       register: __restic_repo_config
       failed_when: not __restic_repo_config.stat.exists
 
+    #
+    # Logging Verification
+    #
+
     - name: Verify | Check log directory does NOT exist (log_to_file disabled)
       ansible.builtin.stat:
         path: '/var/log/restic'
       register: __restic_log_dir
       failed_when: __restic_log_dir.stat.exists
+
+    #
+    # Service Hardening Verification
+    #
 
     - name: Verify | Check systemd service hardening
       ansible.builtin.command:

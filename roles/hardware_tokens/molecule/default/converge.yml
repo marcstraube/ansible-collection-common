@@ -4,6 +4,6 @@
   gather_facts: true
 
   tasks:
-    - name: Include hardware_tokens role  # noqa: role-name[path]
+    - name: Converge | Include hardware_tokens role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

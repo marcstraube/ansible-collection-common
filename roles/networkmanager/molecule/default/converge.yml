@@ -21,7 +21,7 @@
     networkmanager_polkit_group: "{{ test_networkmanager_polkit_group }}"
 
   tasks:
-    - name: Ensure Vagrant-managed interfaces are ignored by NetworkManager
+    - name: Converge | Ensure Vagrant-managed interfaces are ignored by NetworkManager
       community.general.ini_file:
         path: /etc/NetworkManager/conf.d/99-unmanaged-vagrant-interfaces.conf
         create: true
@@ -33,7 +33,7 @@
         mode: "0644"
       notify: Restart NetworkManager
 
-    - name: Include networkmanager role
+    - name: Converge | Include networkmanager role
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'  # noqa: role-name[path]
 

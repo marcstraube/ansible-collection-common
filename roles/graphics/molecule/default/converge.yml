@@ -27,6 +27,6 @@
     graphics_hybrid_enabled: false
 
   tasks:
-    - name: Include graphics role  # noqa: role-name[path]
+    - name: Converge | Include graphics role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

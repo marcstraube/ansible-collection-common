@@ -74,6 +74,6 @@
     pam_2fa_enabled: false
 
   tasks:
-    - name: Include pam_hardening role  # noqa: role-name[path]
+    - name: Converge | Include pam_hardening role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

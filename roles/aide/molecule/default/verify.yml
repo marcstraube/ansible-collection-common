@@ -4,29 +4,29 @@
   gather_facts: true
 
   tasks:
-    # =============================================================================
-    # PACKAGE AND BINARY VERIFICATION
-    # =============================================================================
+    #
+    # Package and Binary Verification
+    #
 
-    - name: Gather package facts
+    - name: Verify | Gather package facts
       ansible.builtin.package_facts:
         manager: auto
 
-    - name: Verify AIDE package is installed
+    - name: Verify | Assert AIDE package is installed
       ansible.builtin.assert:
         that:
           - "'aide' in ansible_facts.packages"
         fail_msg: "AIDE package is not installed"
         success_msg: "AIDE package is installed"
 
-    - name: Check aide binary exists  # noqa: command-instead-of-shell
+    - name: Verify | Check aide binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v aide
       register: aide_binary
       changed_when: false
       failed_when: aide_binary.rc != 0
 
-    - name: Verify aide binary location
+    - name: Verify | Assert AIDE binary location
       ansible.builtin.assert:
         that:
           - aide_binary.stdout | length > 0
@@ -34,23 +34,23 @@
         fail_msg: "AIDE binary not found in expected location"
         success_msg: "AIDE binary found at {{ aide_binary.stdout }}"
 
-    # =============================================================================
-    # CONFIGURATION FILE VERIFICATION
-    # =============================================================================
+    #
+    # Configuration File Verification
+    #
 
-    - name: Check AIDE config file exists (Debian)
+    - name: Verify | Check AIDE config file exists (Debian)
       ansible.builtin.stat:
         path: '/etc/aide/aide.conf'
       register: aide_config_debian
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Check AIDE config file exists (non-Debian)
+    - name: Verify | Check AIDE config file exists (non-Debian)
       ansible.builtin.stat:
         path: '/etc/aide.conf'
       register: aide_config_other
       when: ansible_facts['os_family'] != 'Debian'
 
-    - name: Verify AIDE config exists (Debian)
+    - name: Verify | Assert AIDE config exists (Debian)
       ansible.builtin.assert:
         that:
           - aide_config_debian.stat.exists
@@ -60,7 +60,7 @@
         success_msg: "AIDE config file exists with correct permissions (Debian)"
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Verify AIDE config exists (non-Debian)
+    - name: Verify | Assert AIDE config exists (non-Debian)
       ansible.builtin.assert:
         that:
           - aide_config_other.stat.exists
@@ -70,19 +70,19 @@
         success_msg: "AIDE config file exists with correct permissions"
       when: ansible_facts['os_family'] != 'Debian'
 
-    - name: Read AIDE config content (Debian)
+    - name: Verify | Read AIDE config content (Debian)
       ansible.builtin.slurp:
         src: '/etc/aide/aide.conf'
       register: aide_config_content_debian
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Read AIDE config content (non-Debian)
+    - name: Verify | Read AIDE config content (non-Debian)
       ansible.builtin.slurp:
         src: '/etc/aide.conf'
       register: aide_config_content_other
       when: ansible_facts['os_family'] != 'Debian'
 
-    - name: Set AIDE config content fact
+    - name: Verify | Set AIDE config content fact
       ansible.builtin.set_fact:
         aide_config_decoded: >-
           {{
@@ -91,7 +91,7 @@
             else (aide_config_content_other.content | default('') | b64decode)
           }}
 
-    - name: Verify AIDE config contains monitoring rules
+    - name: Verify | Assert AIDE config contains monitoring rules
       ansible.builtin.assert:
         that:
           - "'database_in=' in aide_config_decoded or 'database=' in aide_config_decoded"
@@ -100,30 +100,30 @@
         fail_msg: "AIDE config missing essential monitoring rules"
         success_msg: "AIDE config contains required monitoring rules"
 
-    - name: Verify custom monitoring rule
+    - name: Verify | Assert custom monitoring rule
       ansible.builtin.assert:
         that:
           - "'/opt/test' in aide_config_decoded"
         fail_msg: "Custom monitoring rule not found in config"
         success_msg: "Custom monitoring rule configured correctly"
 
-    - name: Verify /home monitoring is configured
+    - name: Verify | Assert /home monitoring is configured
       ansible.builtin.assert:
         that:
           - "'/home NORMAL' in aide_config_decoded"
         fail_msg: "/home monitoring rule not found in config"
         success_msg: "/home monitoring rule configured correctly"
 
-    # =============================================================================
-    # DATABASE VERIFICATION
-    # =============================================================================
+    #
+    # Database Verification
+    #
 
-    - name: Check AIDE database directory exists
+    - name: Verify | Check AIDE database directory exists
       ansible.builtin.stat:
         path: '/var/lib/aide'
       register: aide_db_dir
 
-    - name: Verify AIDE database directory
+    - name: Verify | Assert AIDE database directory
       ansible.builtin.assert:
         that:
           - aide_db_dir.stat.exists
@@ -131,33 +131,33 @@
         fail_msg: "AIDE database directory does not exist"
         success_msg: "AIDE database directory exists"
 
-    - name: Check if AIDE database file exists (gzip)
+    - name: Verify | Check if AIDE database file exists (gzip)
       ansible.builtin.stat:
         path: '/var/lib/aide/aide.db.gz'
       register: aide_database_gz
 
-    - name: Check if AIDE database file exists (plain)
+    - name: Verify | Check if AIDE database file exists (plain)
       ansible.builtin.stat:
         path: '/var/lib/aide/aide.db'
       register: aide_database_plain
 
-    - name: Verify AIDE database was initialized
+    - name: Verify | Assert AIDE database was initialized
       ansible.builtin.assert:
         that:
           - aide_database_gz.stat.exists or aide_database_plain.stat.exists
         fail_msg: "AIDE database not initialized"
         success_msg: "AIDE database initialized successfully"
 
-    # =============================================================================
-    # SCHEDULED CHECK VERIFICATION
-    # =============================================================================
+    #
+    # Scheduled Check Verification
+    #
 
-    - name: Check AIDE check script exists
+    - name: Verify | Check AIDE check script exists
       ansible.builtin.stat:
         path: '/usr/local/bin/aide-check.sh'
       register: aide_check_script
 
-    - name: Verify AIDE check script
+    - name: Verify | Assert AIDE check script
       ansible.builtin.assert:
         that:
           - aide_check_script.stat.exists
@@ -167,16 +167,16 @@
         fail_msg: "AIDE check script missing or not executable"
         success_msg: "AIDE check script exists and is executable"
 
-    # =============================================================================
-    # SYSTEMD TIMER VERIFICATION
-    # =============================================================================
+    #
+    # Systemd Timer Verification
+    #
 
-    - name: Check AIDE systemd service file
+    - name: Verify | Check AIDE systemd service file
       ansible.builtin.stat:
         path: '/etc/systemd/system/aide-check.service'
       register: aide_service_file
 
-    - name: Verify AIDE systemd service
+    - name: Verify | Assert AIDE systemd service
       ansible.builtin.assert:
         that:
           - aide_service_file.stat.exists
@@ -184,12 +184,12 @@
         fail_msg: "AIDE systemd service file missing"
         success_msg: "AIDE systemd service file exists"
 
-    - name: Read AIDE systemd service content
+    - name: Verify | Read AIDE systemd service content
       ansible.builtin.slurp:
         src: '/etc/systemd/system/aide-check.service'
       register: aide_service_content
 
-    - name: Verify systemd hardening directives
+    - name: Verify | Assert systemd hardening directives
       ansible.builtin.assert:
         that:
           - "'ProtectSystem=full' in (aide_service_content.content | b64decode)"
@@ -199,12 +199,12 @@
         fail_msg: "AIDE systemd service missing hardening directives"
         success_msg: "AIDE systemd service has hardening directives"
 
-    - name: Check AIDE systemd timer file
+    - name: Verify | Check AIDE systemd timer file
       ansible.builtin.stat:
         path: '/etc/systemd/system/aide-check.timer'
       register: aide_timer_file
 
-    - name: Verify AIDE systemd timer
+    - name: Verify | Assert AIDE systemd timer
       ansible.builtin.assert:
         that:
           - aide_timer_file.stat.exists
@@ -212,12 +212,12 @@
         fail_msg: "AIDE systemd timer file missing"
         success_msg: "AIDE systemd timer file exists"
 
-    - name: Get AIDE timer status
+    - name: Verify | Get AIDE timer status
       ansible.builtin.systemd:
         name: aide-check.timer
       register: aide_timer_status
 
-    - name: Verify AIDE timer is enabled and running
+    - name: Verify | Assert AIDE timer is enabled and running
       ansible.builtin.assert:
         that:
           - aide_timer_status.status.ActiveState == 'active'
@@ -225,16 +225,16 @@
         fail_msg: "AIDE timer not active or enabled"
         success_msg: "AIDE timer is active and enabled"
 
-    # =============================================================================
-    # LOG DIRECTORY VERIFICATION
-    # =============================================================================
+    #
+    # Log Directory Verification
+    #
 
-    - name: Check AIDE log directory
+    - name: Verify | Check AIDE log directory
       ansible.builtin.stat:
         path: '/var/log/aide'
       register: aide_log_dir
 
-    - name: Verify AIDE log directory exists
+    - name: Verify | Assert AIDE log directory exists
       ansible.builtin.assert:
         that:
           - aide_log_dir.stat.exists
@@ -242,23 +242,23 @@
         fail_msg: "AIDE log directory does not exist"
         success_msg: "AIDE log directory exists"
 
-    # =============================================================================
-    # FUNCTIONAL TESTS
-    # =============================================================================
+    #
+    # Functional Tests
+    #
 
-    - name: Test AIDE version command
+    - name: Verify | Test AIDE version command
       ansible.builtin.command:
         cmd: aide --version
       register: aide_version
       changed_when: false
       failed_when: aide_version.rc != 0
 
-    - name: Set AIDE version output fact
+    - name: Verify | Set AIDE version output fact
       ansible.builtin.set_fact:
         aide_version_output: >-
           {{ aide_version.stdout | default("", true) }}{{ aide_version.stderr | default("", true) }}
 
-    - name: Verify AIDE version output
+    - name: Verify | Assert AIDE version output
       ansible.builtin.assert:
         that:
           - aide_version_output | length > 0
@@ -266,38 +266,38 @@
         fail_msg: "AIDE version command failed"
         success_msg: "AIDE version output received"
 
-    - name: Set AIDE config path fact
+    - name: Verify | Set AIDE config path fact
       ansible.builtin.set_fact:
         aide_config_path: >-
           {{ '/etc/aide/aide.conf'
              if ansible_facts['os_family'] == 'Debian'
              else '/etc/aide.conf' }}
 
-    - name: Test AIDE check command (dry-run)
+    - name: Verify | Test AIDE check command (dry-run)
       ansible.builtin.command:
         cmd: 'aide --check -c {{ aide_config_path }}'
       register: aide_check_test
       changed_when: false
       failed_when: false
 
-    - name: Show AIDE check result (informational)
+    - name: Verify | Show AIDE check result (informational)
       ansible.builtin.debug:
         msg: "AIDE check exit code: {{ aide_check_test.rc }} (0-7 = normal, >7 = error)"
 
-    - name: Create test file to verify monitoring
+    - name: Verify | Create test file to verify monitoring
       ansible.builtin.file:
         path: '/opt/test/testfile.txt'
         state: touch
         mode: '0644'
 
-    - name: Run AIDE check script
+    - name: Verify | Run AIDE check script
       ansible.builtin.command:
         cmd: /usr/local/bin/aide-check.sh
       register: aide_script_run
       changed_when: false
       failed_when: false
 
-    - name: Verify AIDE check script executed
+    - name: Verify | AIDE check script executed
       ansible.builtin.assert:
         that:
           - aide_script_run.rc in [0, 1, 2, 3, 4, 5, 6, 7]

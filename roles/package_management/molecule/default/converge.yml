@@ -3,21 +3,6 @@
   hosts: all
   gather_facts: true
 
-  pre_tasks:
-    - name: Create test user for makepkg (Arch only)
-      ansible.builtin.user:
-        name: testuser
-        state: present
-        create_home: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Create disabled test user (Arch only)
-      ansible.builtin.user:
-        name: disableduser
-        state: present
-        create_home: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
   vars:
     package_management_enabled: true
 
@@ -61,7 +46,22 @@
     dnf_automatic_enabled: false
     dnf_install_utils: true
 
+  pre_tasks:
+    - name: Converge | Create test user for makepkg (Arch only)
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Converge | Create disabled test user (Arch only)
+      ansible.builtin.user:
+        name: disableduser
+        state: present
+        create_home: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
   tasks:
-    - name: Include package_management role  # noqa: role-name[path]
+    - name: Converge | Include package_management role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

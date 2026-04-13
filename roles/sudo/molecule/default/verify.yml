@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # OS-SPECIFIC VARIABLES
-    # =========================================================================
+    #
+    # Load OS-Specific Variables
+    #
+
     - name: Verify | Load OS-specific variables
       ansible.builtin.include_vars: '{{ item }}'
       with_first_found:
@@ -17,9 +18,10 @@
           paths:
             - '../../vars'
 
-    # =========================================================================
-    # PACKAGE INSTALLATION
-    # =========================================================================
+    #
+    # Package Installation
+    #
+
     - name: Verify | Check sudo package is installed
       ansible.builtin.package:
         name: '{{ __sudo_package }}'
@@ -42,9 +44,10 @@
       changed_when: false
       failed_when: visudo_binary.rc != 0
 
-    # =========================================================================
-    # MAIN SUDOERS FILE
-    # =========================================================================
+    #
+    # Main sudoers File
+    #
+
     - name: Verify | Check /etc/sudoers exists
       ansible.builtin.stat:
         path: /etc/sudoers
@@ -143,9 +146,10 @@
           - "'@includedir /etc/sudoers.d' in _sudoers_text"
         fail_msg: 'sudoers missing @includedir directive'
 
-    # =========================================================================
-    # SUDOERS.D DIRECTORY
-    # =========================================================================
+    #
+    # sudoers.d Directory
+    #
+
     - name: Verify | Check /etc/sudoers.d directory exists
       ansible.builtin.stat:
         path: /etc/sudoers.d
@@ -161,9 +165,10 @@
           - sudoers_d.stat.gr_name == 'root'
         fail_msg: '/etc/sudoers.d has incorrect permissions'
 
-    # =========================================================================
-    # WHEEL/SUDO GROUP CONFIGURATION (in main sudoers, not drop-in)
-    # =========================================================================
+    #
+    # wheel/sudo Group Configuration (in main sudoers, not drop-in)
+    #
+
     - name: Verify | Check legacy wheel/sudo group drop-in is absent
       ansible.builtin.stat:
         path: '/etc/sudoers.d/10-{{ __sudo_group }}'
@@ -176,9 +181,10 @@
           - "'%' ~ __sudo_group in _sudoers_text"
         fail_msg: 'wheel/sudo group not configured in main sudoers'
 
-    # =========================================================================
-    # USER SUDOERS FILES
-    # =========================================================================
+    #
+    # User sudoers Files
+    #
+
     - name: Verify | Check testuser sudoers file exists
       ansible.builtin.stat:
         path: /etc/sudoers.d/20-user-testuser
@@ -230,9 +236,10 @@
           - "'systemctl restart nginx' in (admin_content.content | b64decode)"
         fail_msg: 'testadmin sudoers file incorrect'
 
-    # =========================================================================
-    # GROUP SUDOERS FILES
-    # =========================================================================
+    #
+    # Group sudoers Files
+    #
+
     - name: Verify | Check testgroup sudoers file exists
       ansible.builtin.stat:
         path: /etc/sudoers.d/30-group-testgroup
@@ -264,9 +271,10 @@
           - "'systemctl' in (operators_content.content | b64decode)"
         fail_msg: 'operators sudoers file incorrect'
 
-    # =========================================================================
-    # CUSTOM SUDOERS FILES
-    # =========================================================================
+    #
+    # Custom sudoers Files
+    #
+
     - name: Verify | Check backup sudoers file exists
       ansible.builtin.stat:
         path: /etc/sudoers.d/50-backup
@@ -317,9 +325,10 @@
           - "'NOPASSWD' in (monitoring_content.content | b64decode)"
         fail_msg: 'monitoring sudoers file incorrect'
 
-    # =========================================================================
-    # ALL SUDOERS FILES VALIDATION
-    # =========================================================================
+    #
+    # All sudoers Files Validation
+    #
+
     - name: Verify | Find all sudoers.d files
       ansible.builtin.find:
         paths: /etc/sudoers.d
@@ -338,9 +347,10 @@
       failed_when: visudo_all.rc != 0
       when: item.path | basename != 'README'
 
-    # =========================================================================
-    # FUNCTIONAL TEST
-    # =========================================================================
+    #
+    # Functional Test
+    #
+
     - name: Verify | Test sudo version command
       ansible.builtin.command:
         cmd: sudo --version

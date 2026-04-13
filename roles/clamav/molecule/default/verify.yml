@@ -4,10 +4,11 @@
   gather_facts: true
 
   tasks:
-    # ==========================================================================
-    # PACKAGE VERIFICATION
-    # ==========================================================================
-    - name: Check ClamAV package is installed
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Check ClamAV package is installed
       ansible.builtin.package:
         name: clamav
         state: present
@@ -15,10 +16,11 @@
       register: __verify_pkg_check
       failed_when: __verify_pkg_check.changed
 
-    # ==========================================================================
-    # CONFIGURATION FILES
-    # ==========================================================================
-    - name: Set config path facts
+    #
+    # Configuration Files
+    #
+
+    - name: Verify | Set config path facts
       ansible.builtin.set_fact:
         __verify_clamd_conf_path: >-
           {{ '/etc/clamd.d/scan.conf' if ansible_facts['os_family'] == 'RedHat'
@@ -27,47 +29,48 @@
           {{ '/etc/freshclam.conf' if ansible_facts['os_family'] == 'RedHat'
           else '/etc/clamav/freshclam.conf' }}
 
-    - name: Check clamd.conf exists
+    - name: Verify | Check clamd.conf exists
       ansible.builtin.stat:
         path: '{{ __verify_clamd_conf_path }}'
       register: __verify_clamd_conf
 
-    - name: Verify clamd.conf exists
+    - name: Verify | Assert clamd.conf exists
       ansible.builtin.assert:
         that:
           - __verify_clamd_conf.stat.exists
         fail_msg: 'clamd.conf does not exist at {{ __verify_clamd_conf_path }}'
 
-    - name: Check freshclam.conf exists
+    - name: Verify | Check freshclam.conf exists
       ansible.builtin.stat:
         path: '{{ __verify_freshclam_conf_path }}'
       register: __verify_freshclam_conf
 
-    - name: Verify freshclam.conf exists
+    - name: Verify | Assert freshclam.conf exists
       ansible.builtin.assert:
         that:
           - __verify_freshclam_conf.stat.exists
         fail_msg: 'freshclam.conf does not exist'
 
-    # ==========================================================================
-    # CONFIGURATION CONTENT
-    # ==========================================================================
-    - name: Read clamd.conf content
+    #
+    # Configuration Content
+    #
+
+    - name: Verify | Read clamd.conf content
       ansible.builtin.slurp:
         src: '{{ __verify_clamd_conf_path }}'
       register: __verify_clamd_content
 
-    - name: Set clamd content fact
+    - name: Verify | Set clamd content fact
       ansible.builtin.set_fact:
         __verify_clamd_text: '{{ __verify_clamd_content.content | b64decode }}'
 
-    - name: Verify clamd.conf contains ansible_managed header
+    - name: Verify | Assert clamd.conf contains ansible_managed header
       ansible.builtin.assert:
         that:
           - "'Ansible managed' in __verify_clamd_text"
         fail_msg: 'clamd.conf missing ansible_managed header'
 
-    - name: Verify clamd.conf contains custom settings
+    - name: Verify | Assert clamd.conf contains custom settings
       ansible.builtin.assert:
         that:
           - "'MaxFileSize 50M' in __verify_clamd_text"
@@ -83,7 +86,7 @@
           - "'ExcludePath ^/sys/' in __verify_clamd_text"
         fail_msg: 'clamd.conf does not contain expected settings'
 
-    - name: Verify clamd.conf contains limit directives
+    - name: Verify | Assert clamd.conf contains limit directives
       ansible.builtin.assert:
         that:
           - "'MaxScanTime' in __verify_clamd_text"
@@ -95,22 +98,22 @@
           - "'ExtendedDetectionInfo' in __verify_clamd_text"
         fail_msg: 'clamd.conf missing limit/daemon directives'
 
-    - name: Read freshclam.conf content
+    - name: Verify | Read freshclam.conf content
       ansible.builtin.slurp:
         src: '{{ __verify_freshclam_conf_path }}'
       register: __verify_freshclam_content
 
-    - name: Set freshclam content fact
+    - name: Verify | Set freshclam content fact
       ansible.builtin.set_fact:
         __verify_freshclam_text: '{{ __verify_freshclam_content.content | b64decode }}'
 
-    - name: Verify freshclam.conf contains ansible_managed header
+    - name: Verify | Assert freshclam.conf contains ansible_managed header
       ansible.builtin.assert:
         that:
           - "'Ansible managed' in __verify_freshclam_text"
         fail_msg: 'freshclam.conf missing ansible_managed header'
 
-    - name: Verify freshclam.conf contains required directives
+    - name: Verify | Assert freshclam.conf contains required directives
       ansible.builtin.assert:
         that:
           - "'DatabaseDirectory' in __verify_freshclam_text"
@@ -123,90 +126,94 @@
           - "'TestDatabases' in __verify_freshclam_text"
         fail_msg: 'freshclam.conf missing expected directives'
 
-    # ==========================================================================
-    # DIRECTORY STRUCTURE
-    # ==========================================================================
-    - name: Check ClamAV database directory exists
+    #
+    # Directory Structure
+    #
+
+    - name: Verify | Check ClamAV database directory exists
       ansible.builtin.stat:
         path: /var/lib/clamav
       register: __verify_db_dir
 
-    - name: Verify database directory exists
+    - name: Verify | Assert database directory exists
       ansible.builtin.assert:
         that:
           - __verify_db_dir.stat.exists
           - __verify_db_dir.stat.isdir
         fail_msg: 'ClamAV database directory does not exist'
 
-    - name: Check log directory exists
+    - name: Verify | Check log directory exists
       ansible.builtin.stat:
         path: /var/log/clamav
       register: __verify_log_dir
 
-    - name: Verify log directory exists
+    - name: Verify | Assert log directory exists
       ansible.builtin.assert:
         that:
           - __verify_log_dir.stat.exists
           - __verify_log_dir.stat.isdir
         fail_msg: 'ClamAV log directory does not exist'
 
-    - name: Check run directory exists
+    - name: Verify | Check run directory exists
       ansible.builtin.stat:
         path: /run/clamav
       register: __verify_run_dir
 
-    - name: Verify run directory exists
+    - name: Verify | Assert run directory exists
       ansible.builtin.assert:
         that:
           - __verify_run_dir.stat.exists
           - __verify_run_dir.stat.isdir
         fail_msg: 'ClamAV run directory does not exist'
 
-    # ==========================================================================
-    # USER/GROUP VERIFICATION
-    # ==========================================================================
-    - name: Set expected user fact
+    #
+    # User/Group Verification
+    #
+
+    - name: Verify | Set expected user fact
       ansible.builtin.set_fact:
         __verify_expected_user: >-
           {{ 'clamscan' if ansible_facts['os_family'] == 'RedHat' else 'clamav' }}
 
-    - name: Get clamav user info
+    - name: Verify | Get ClamAV user info
       ansible.builtin.getent:
         database: passwd
         key: '{{ __verify_expected_user }}'
       register: __verify_clamav_user
 
-    - name: Verify clamav user exists
+    - name: Verify | Assert ClamAV user exists
       ansible.builtin.assert:
         that:
           - __verify_clamav_user.ansible_facts.getent_passwd is defined
         fail_msg: 'ClamAV user {{ __verify_expected_user }} does not exist'
 
-    # ==========================================================================
-    # FILE PERMISSIONS
-    # ==========================================================================
-    - name: Check clamd.conf permissions
+    #
+    # File Permissions
+    #
+
+    - name: Verify | Check clamd.conf permissions
       ansible.builtin.assert:
         that:
           - __verify_clamd_conf.stat.mode == '0644'
         fail_msg: 'clamd.conf has incorrect permissions'
 
-    - name: Check freshclam.conf permissions
+    - name: Verify | Check freshclam.conf permissions
       ansible.builtin.assert:
         that:
           - __verify_freshclam_conf.stat.mode == '0640'
         fail_msg: 'freshclam.conf has incorrect permissions (should be 0640)'
 
-    # ==========================================================================
-    # FUNCTIONAL TEST
-    # ==========================================================================
-    - name: Test clamscan version
+    #
+    # Functional Test
+    #
+
+    - name: Verify | Test clamscan version
       ansible.builtin.command: clamscan --version
       register: __verify_clamscan_version
       changed_when: false
       failed_when: __verify_clamscan_version.rc != 0
 
-    - name: Verify clamscan is working
+    - name: Verify | Assert clamscan is working
       ansible.builtin.assert:
         that:
           - "'ClamAV' in __verify_clamscan_version.stdout"

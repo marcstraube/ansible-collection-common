@@ -87,6 +87,6 @@
     pki_renewal_report_email: 'root'
 
   tasks:
-    - name: Include pki role  # noqa: role-name[path]
+    - name: Converge | Include pki role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

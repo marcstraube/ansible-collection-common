@@ -13,6 +13,6 @@
     - role: "{{ playbook_dir }}/../../../python"  # noqa: role-name[path]
 
   tasks:
-    - name: Include ansible role  # noqa: role-name[path]
+    - name: Converge | Include ansible role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

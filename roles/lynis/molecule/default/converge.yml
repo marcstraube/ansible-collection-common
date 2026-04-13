@@ -16,6 +16,6 @@
     lynis_btrfs_nocow: true
 
   tasks:
-    - name: Include lynis role  # noqa: role-name[path]
+    - name: Converge | Include lynis role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

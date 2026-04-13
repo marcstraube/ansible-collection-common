@@ -12,6 +12,6 @@
       - '/dev/.udev'
 
   tasks:
-    - name: Include rkhunter role  # noqa: role-name[path]
+    - name: Converge | Include rkhunter role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

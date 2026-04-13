@@ -3,25 +3,6 @@
   hosts: all
   gather_facts: true
 
-  pre_tasks:
-    - name: Create test user for per-user config
-      ansible.builtin.user:
-        name: testuser
-        state: present
-        create_home: true
-
-    - name: Create disabled test user
-      ansible.builtin.user:
-        name: disableduser
-        state: present
-        create_home: true
-
-    - name: Simulate newly created user fact
-      ansible.builtin.set_fact:
-        __users_newly_created:
-          - 'testuser'
-          - 'disableduser'
-
   vars:
     editors_enabled: true
     editors_nano: true
@@ -41,7 +22,26 @@
       - username: 'disableduser'
         mode: 'disabled'
 
+  pre_tasks:
+    - name: Converge | Create test user for per-user config
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+
+    - name: Converge | Create disabled test user
+      ansible.builtin.user:
+        name: disableduser
+        state: present
+        create_home: true
+
+    - name: Converge | Simulate newly created user fact
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'testuser'
+          - 'disableduser'
+
   tasks:
-    - name: Include editors role  # noqa: role-name[path]
+    - name: Converge | Include editors role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

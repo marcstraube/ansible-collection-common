@@ -4,9 +4,10 @@
   gather_facts: true
 
   tasks:
-    # ==========================================================================
-    # PACKAGE VERIFICATION
-    # ==========================================================================
+    #
+    # Package Verification
+    #
+
     - name: Verify | Check WireGuard tools installed
       ansible.builtin.command:
         cmd: 'wg --version'
@@ -14,9 +15,10 @@
       changed_when: false
       failed_when: wg_version.rc != 0
 
-    # ==========================================================================
-    # KERNEL MODULE VERIFICATION
-    # ==========================================================================
+    #
+    # Kernel Module Verification
+    #
+
     - name: Verify | Check wireguard kernel module loaded
       ansible.builtin.command:
         cmd: 'lsmod'
@@ -29,9 +31,10 @@
           - "'wireguard' in lsmod_output.stdout"
         fail_msg: 'WireGuard kernel module is not loaded'
 
-    # ==========================================================================
-    # CONFIGURATION VERIFICATION
-    # ==========================================================================
+    #
+    # Configuration Verification
+    #
+
     - name: Verify | Check config directory exists
       ansible.builtin.stat:
         path: '/etc/wireguard'
@@ -56,9 +59,10 @@
           - config_file.stat.mode == '0600'
         fail_msg: 'Config file has incorrect permissions'
 
-    # ==========================================================================
-    # KEY VERIFICATION
-    # ==========================================================================
+    #
+    # Key Verification
+    #
+
     - name: Verify | Check private key exists
       ansible.builtin.stat:
         path: '/etc/wireguard/wg0_private.key'
@@ -78,9 +82,10 @@
           - public_key.stat.mode == '0644'
         fail_msg: 'Key files have incorrect permissions'
 
-    # ==========================================================================
-    # CONFIG CONTENT VERIFICATION
-    # ==========================================================================
+    #
+    # Config Content Verification
+    #
+
     - name: Verify | Read config file
       ansible.builtin.slurp:
         src: '/etc/wireguard/wg0.conf'
@@ -105,9 +110,10 @@
           - "'Ansible managed' in config_content.content | b64decode"
         fail_msg: 'Config file does not contain ansible_managed header'
 
-    # ==========================================================================
-    # SERVICE VERIFICATION
-    # ==========================================================================
+    #
+    # Service Verification
+    #
+
     - name: Verify | Check wg-quick service is active
       ansible.builtin.systemd:
         name: 'wg-quick@wg0'
@@ -120,9 +126,10 @@
           - wg_service.status.UnitFileState == 'enabled'
         fail_msg: 'wg-quick@wg0 service is not active and enabled'
 
-    # ==========================================================================
-    # INTERFACE VERIFICATION
-    # ==========================================================================
+    #
+    # Interface Verification
+    #
+
     - name: Verify | Check WireGuard interface exists
       ansible.builtin.command:
         cmd: 'wg show wg0'
@@ -136,9 +143,10 @@
           - "'51820' in wg_show.stdout"
         fail_msg: 'WireGuard interface does not have expected port'
 
-    # ==========================================================================
-    # IP FORWARDING VERIFICATION
-    # ==========================================================================
+    #
+    # IP Forwarding Verification
+    #
+
     - name: Verify | Check IPv4 forwarding is enabled
       ansible.builtin.command:
         cmd: 'sysctl net.ipv4.ip_forward'

@@ -4,9 +4,9 @@
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # LOAD OS-SPECIFIC VARIABLES
-    # =========================================================================
+    #
+    # Load OS-Specific Variables
+    #
 
     - name: Verify | Load OS-specific variables
       ansible.builtin.include_vars: '{{ item }}'
@@ -18,9 +18,9 @@
           paths:
             - '../../vars'
 
-    # =========================================================================
-    # LOGIND VERIFICATION
-    # =========================================================================
+    #
+    # logind Verification
+    #
 
     - name: Verify | Check logind.conf.d directory exists
       ansible.builtin.stat:
@@ -56,9 +56,9 @@
           # ansible_managed header present
           - "'Ansible managed' in logind_content.content | b64decode"
 
-    # =========================================================================
-    # SLEEP VERIFICATION
-    # =========================================================================
+    #
+    # Sleep Verification
+    #
 
     - name: Verify | Check sleep.conf.d directory exists
       ansible.builtin.stat:
@@ -97,9 +97,9 @@
         that:
           - "'HibernateDelaySec=3600' in sleep_content.content | b64decode"
 
-    # =========================================================================
-    # PPD VERIFICATION (package installed — service may not run in container)
-    # =========================================================================
+    #
+    # PPD Verification (Package Installed -- Service May Not Run in Container)
+    #
 
     - name: Verify | Check PPD packages are installed
       ansible.builtin.package:
