@@ -1,8 +1,8 @@
 ---
 galaxy_info:
-  author: 'Marc Straube'
-  description: 'Configure firewalld zones, services, ports, and rich rules'
-  license: 'MIT'
+  author: Marc Straube
+  description: Configure firewalld zones, services, ports, and rich rules
+  license: MIT
   min_ansible_version: '2.17'
 
   platforms:
@@ -24,6 +24,3 @@ galaxy_info:
     - nftables
 
 dependencies: []
-
-collections:
-  - 'ansible.posix'

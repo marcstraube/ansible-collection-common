@@ -11,42 +11,65 @@ service units, config paths, and user/group settings.
 
 ## Requirements
 
-- **Ansible**: >= 2.17
+- ansible-core >= 2.17
 - EPEL repository on RedHat/Rocky (installed automatically in molecule tests)
 
 ## Supported Platforms
 
-| Platform           | ClamAV Source | Notes |
-| ------------------ | ------------- | ----- |
-| Arch Linux         | pacman        |       |
-| Debian Trixie (13) | apt           |       |
-| Rocky Linux 9      | EPEL          |       |
-| Rocky Linux 10     | EPEL          |       |
+| Platform                   | Notes |
+|----------------------------|-------|
+| Arch Linux                 |       |
+| Debian Trixie              |       |
+| EL 9 (Rocky, Alma, RHEL)   |       |
+| EL 10 (Rocky, Alma, RHEL)  |       |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
 All variables are defined in `defaults/main.yml` with sensible defaults.
 
-### Service Control
+### Role Control
 
-| Variable                   | Default | Description                             |
-| -------------------------- | ------- | --------------------------------------- |
-| `clamav_enabled`           | `true`  | Enable the ClamAV role                  |
-| `clamav_daemon_enabled`    | `true`  | Enable clamd daemon                     |
-| `clamav_freshclam_enabled` | `true`  | Enable freshclam database updates       |
-| `clamav_milter_enabled`    | `false` | Enable clamav-milter (mail integration) |
+| Variable         | Default | Description            |
+|------------------|---------|------------------------|
+| `clamav_enabled` | `true`  | Enable the clamav role |
+
+### Daemon Settings
+
+| Variable                | Default | Description                  |
+|-------------------------|---------|------------------------------|
+| `clamav_daemon_enabled` | `true`  | Enable clamd scanning daemon |
+
+### Freshclam Settings
+
+| Variable                           | Default               | Description                       |
+|------------------------------------|-----------------------|-----------------------------------|
+| `clamav_freshclam_enabled`         | `true`                | Enable freshclam database updates |
+| `clamav_freshclam_checks_per_day`  | `12`                  | Daily update checks               |
+| `clamav_freshclam_database_mirror` | `database.clamav.net` | Update mirror                     |
+| `clamav_freshclam_private_mirror`  | `''`                  | Private mirror (overrides public) |
+| `clamav_freshclam_http_proxy`      | `''`                  | HTTP proxy server                 |
+
+### Milter
+
+| Variable                | Default | Description                             |
+|-------------------------|---------|-----------------------------------------|
+| `clamav_milter_enabled` | `false` | Enable clamav-milter (mail integration) |
 
 ### Process / Privileges
 
 | Variable       | Default | Description                                     |
-| -------------- | ------- | ----------------------------------------------- |
+|----------------|---------|-------------------------------------------------|
 | `clamav_user`  | `''`    | Override OS-specific user (empty = OS default)  |
 | `clamav_group` | `''`    | Override OS-specific group (empty = OS default) |
 
 ### Socket / Network
 
 | Variable            | Default                  | Description                 |
-| ------------------- | ------------------------ | --------------------------- |
+|---------------------|--------------------------|-----------------------------|
 | `clamav_socket`     | `/run/clamav/clamd.sock` | Unix socket path            |
 | `clamav_tcp_socket` | `''`                     | TCP port (empty = disabled) |
 | `clamav_tcp_addr`   | `127.0.0.1`              | TCP bind address            |
@@ -59,23 +82,30 @@ See `defaults/main.yml` for all `clamav_max_*` variables.
 
 See `defaults/main.yml` for all scan, heuristic, bytecode, and structured data detection options.
 
-### Freshclam Settings
-
-| Variable                           | Default               | Description                       |
-| ---------------------------------- | --------------------- | --------------------------------- |
-| `clamav_freshclam_checks_per_day`  | `12`                  | Daily update checks               |
-| `clamav_freshclam_database_mirror` | `database.clamav.net` | Update mirror                     |
-| `clamav_freshclam_private_mirror`  | `''`                  | Private mirror (overrides public) |
-| `clamav_freshclam_http_proxy`      | `''`                  | HTTP proxy server                 |
-
 ### Integration
 
-| Variable                     | Default | Description                            |
-| ---------------------------- | ------- | -------------------------------------- |
-| `clamav_postfix_integration` | `false` | Add postfix user to clamav group       |
-| `clamav_rspamd_integration`  | `false` | Socket accessible by rspamd            |
-| `clamav_firewalld_enabled`   | `false` | Open TCP port in firewalld             |
-| `clamav_apparmor_enabled`    | `false` | Enforce AppArmor profile (Arch/Debian) |
+| Variable                             | Default | Description                      |
+|--------------------------------------|---------|----------------------------------|
+| `clamav_postfix_integration_enabled` | `false` | Add postfix user to clamav group |
+| `clamav_rspamd_integration_enabled`  | `false` | Socket accessible by rspamd      |
+
+**Deprecated** (removed in v2.0.0):
+
+- `clamav_postfix_integration` -- use `clamav_postfix_integration_enabled` instead
+- `clamav_rspamd_integration` -- use `clamav_rspamd_integration_enabled` instead
+
+### Firewall
+
+| Variable                   | Default    | Description                |
+|----------------------------|------------|----------------------------|
+| `clamav_firewalld_enabled` | `false`    | Open TCP port in firewalld |
+| `clamav_firewalld_zone`    | `'public'` | Firewalld zone             |
+
+### AppArmor
+
+| Variable                  | Default | Description                            |
+|---------------------------|---------|----------------------------------------|
+| `clamav_apparmor_enabled` | `false` | Enforce AppArmor profile (Arch/Debian) |
 
 ### Extra Config
 
@@ -90,10 +120,10 @@ clamav_milter_extra_config:
   SomeDirective: value
 ```
 
-## OS-Specific Defaults
+### OS-Specific Defaults
 
 | Setting        | Arch Linux             | Debian                 | RedHat/Rocky           |
-| -------------- | ---------------------- | ---------------------- | ---------------------- |
+|----------------|------------------------|------------------------|------------------------|
 | User           | clamav                 | clamav                 | clamscan               |
 | Daemon service | clamav-daemon.service  | clamav-daemon          | clamd@scan             |
 | Config path    | /etc/clamav/clamd.conf | /etc/clamav/clamd.conf | /etc/clamd.d/scan.conf |
@@ -101,7 +131,7 @@ clamav_milter_extra_config:
 ## Tags
 
 | Tag                | Scope                               |
-| ------------------ | ----------------------------------- |
+|--------------------|-------------------------------------|
 | `clamav`           | All role tasks                      |
 | `clamav:install`   | Package installation                |
 | `clamav:configure` | Configuration files and directories |
@@ -115,8 +145,11 @@ clamav_milter_extra_config:
 - name: Include clamav role
   ansible.builtin.include_role:
     name: marcstraube.common.clamav
-  tags: [security, security-extended, clamav]
-  when: clamav_enabled | default(false) | bool
+  tags:
+    - security
+    - security-extended
+    - clamav
+  when: clamav_enabled | default(true) | bool
 ```
 
 ### Desktop (on-demand scanning only)
@@ -132,7 +165,7 @@ clamav_freshclam_enabled: true
 ```yaml
 clamav_enabled: true
 clamav_milter_enabled: true
-clamav_postfix_integration: true
+clamav_postfix_integration_enabled: true
 clamav_milter_socket_group: 'postfix'
 ```
 
@@ -145,7 +178,7 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
-## BTRFS
+## Notes
 
 The role sets NoCOW (`chattr +C`) on the database directory (`/var/lib/clamav`)
 when running on BTRFS to reduce copy-on-write overhead from frequent database updates.

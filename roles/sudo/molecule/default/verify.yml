@@ -1,356 +1,366 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # OS-SPECIFIC VARIABLES
-    # =========================================================================
+    #
+    # Load OS-Specific Variables
+    #
+
     - name: Verify | Load OS-specific variables
       ansible.builtin.include_vars: '{{ item }}'
       with_first_found:
         - files:
             - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
             - '{{ ansible_facts["distribution"] }}.yml'
             - '{{ ansible_facts["os_family"] }}.yml'
           paths:
             - '../../vars'
 
-    # =========================================================================
-    # PACKAGE INSTALLATION
-    # =========================================================================
+    #
+    # Package Installation
+    #
+
     - name: Verify | Check sudo package is installed
       ansible.builtin.package:
-        name: '{{ __sudo_package }}'
+        name: '{{ __sudo_packages }}'
         state: present
       check_mode: true
-      register: pkg_check
-      failed_when: pkg_check.changed
+      register: __sudo_pkg_check
+      failed_when: __sudo_pkg_check.changed
 
     - name: Verify | Check sudo binary exists
-      ansible.builtin.shell:
-        cmd: command -v sudo
-      register: sudo_binary
+      ansible.builtin.command:
+        cmd: which sudo
       changed_when: false
-      failed_when: sudo_binary.rc != 0
+      failed_when: __sudo_binary.rc != 0
+      register: __sudo_binary
 
     - name: Verify | Check visudo binary exists
-      ansible.builtin.shell:
-        cmd: command -v visudo
-      register: visudo_binary
+      ansible.builtin.command:
+        cmd: which visudo
       changed_when: false
-      failed_when: visudo_binary.rc != 0
+      failed_when: __sudo_visudo_binary.rc != 0
+      register: __sudo_visudo_binary
 
-    # =========================================================================
-    # MAIN SUDOERS FILE
-    # =========================================================================
+    #
+    # Main Sudoers File
+    #
+
     - name: Verify | Check /etc/sudoers exists
       ansible.builtin.stat:
         path: /etc/sudoers
-      register: sudoers_file
-      failed_when: not sudoers_file.stat.exists
+      register: __sudo_sudoers_file
+      failed_when: not __sudo_sudoers_file.stat.exists
 
     - name: Verify | Check /etc/sudoers permissions
       ansible.builtin.assert:
         that:
-          - sudoers_file.stat.mode == '0440'
-          - sudoers_file.stat.pw_name == 'root'
-          - sudoers_file.stat.gr_name == 'root'
+          - __sudo_sudoers_file.stat.mode == '0440'
+          - __sudo_sudoers_file.stat.pw_name == 'root'
+          - __sudo_sudoers_file.stat.gr_name == 'root'
         fail_msg: '/etc/sudoers has incorrect permissions'
 
     - name: Verify | Validate sudoers syntax
       ansible.builtin.command:
         cmd: visudo -cf /etc/sudoers
       changed_when: false
-      register: visudo_check
-      failed_when: visudo_check.rc != 0
+      register: __sudo_visudo_check
+      failed_when: __sudo_visudo_check.rc != 0
 
     - name: Verify | Read sudoers content
       ansible.builtin.slurp:
         src: /etc/sudoers
-      register: sudoers_content
+      register: __sudo_sudoers_content
 
     - name: Verify | Set sudoers decoded content
       ansible.builtin.set_fact:
-        _sudoers_text: "{{ sudoers_content.content | b64decode }}"
+        __sudo_sudoers_text: "{{ __sudo_sudoers_content.content | b64decode }}"
 
     - name: Verify | Check sudoers contains ansible_managed header
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in _sudoers_text"
+          - "'Ansible managed' in __sudo_sudoers_text"
         fail_msg: 'sudoers missing ansible_managed header'
 
     - name: Verify | Check sudoers contains security settings
       ansible.builtin.assert:
         that:
-          - "'use_pty' in _sudoers_text"
-          - "'syslog=auth' in _sudoers_text"
-          - "'env_reset' in _sudoers_text"
-          - "'secure_path' in _sudoers_text"
-          - "'always_set_home' in _sudoers_text"
-          - "'passwd_timeout=5' in _sudoers_text"
-          - "'timestamp_timeout=5' in _sudoers_text"
-          - "'passwd_tries=3' in _sudoers_text"
-          - "'!pwfeedback' in _sudoers_text"
-          - "'lecture=once' in _sudoers_text"
+          - "'use_pty' in __sudo_sudoers_text"
+          - "'syslog=auth' in __sudo_sudoers_text"
+          - "'env_reset' in __sudo_sudoers_text"
+          - "'secure_path' in __sudo_sudoers_text"
+          - "'always_set_home' in __sudo_sudoers_text"
+          - "'passwd_timeout=5' in __sudo_sudoers_text"
+          - "'timestamp_timeout=5' in __sudo_sudoers_text"
+          - "'passwd_tries=3' in __sudo_sudoers_text"
+          - "'!pwfeedback' in __sudo_sudoers_text"
+          - "'lecture=once' in __sudo_sudoers_text"
         fail_msg: 'sudoers missing expected security settings'
 
     - name: Verify | Check sudoers contains logging settings
       ansible.builtin.assert:
         that:
-          - "'log_input' in _sudoers_text"
-          - "'log_output' in _sudoers_text"
-          - "'logfile=\"/var/log/sudo.log\"' in _sudoers_text"
+          - "'log_input' in __sudo_sudoers_text"
+          - "'log_output' in __sudo_sudoers_text"
+          - "'logfile=\"/var/log/sudo.log\"' in __sudo_sudoers_text"
         fail_msg: 'sudoers missing expected logging settings'
 
     - name: Verify | Check sudoers contains insults
       ansible.builtin.assert:
         that:
-          - "'insults' in _sudoers_text"
+          - "'insults' in __sudo_sudoers_text"
         fail_msg: 'sudoers missing insults setting'
 
     - name: Verify | Check sudoers contains mail settings
       ansible.builtin.assert:
         that:
-          - "'mailto=\"root\"' in _sudoers_text"
-          - "'mail_badpass' in _sudoers_text"
-          - "'mail_no_perms' in _sudoers_text"
+          - "'mailto=\"root\"' in __sudo_sudoers_text"
+          - "'mail_badpass' in __sudo_sudoers_text"
+          - "'mail_no_perms' in __sudo_sudoers_text"
         fail_msg: 'sudoers missing expected mail settings'
 
     - name: Verify | Check sudoers contains extra defaults
       ansible.builtin.assert:
         that:
-          - "'umask=0022' in _sudoers_text"
+          - "'umask=0022' in __sudo_sudoers_text"
         fail_msg: 'sudoers missing extra defaults'
 
     - name: Verify | Check sudoers contains env_keep
       ansible.builtin.assert:
         that:
-          - "'env_keep' in _sudoers_text"
-          - "'EDITOR' in _sudoers_text"
+          - "'env_keep' in __sudo_sudoers_text"
+          - "'EDITOR' in __sudo_sudoers_text"
         fail_msg: 'sudoers missing env_keep settings'
 
     - name: Verify | Check sudoers contains editor setting
       ansible.builtin.assert:
         that:
-          - "'editor=\"/usr/bin/nvim:/usr/bin/vim:/usr/bin/vi\"' in _sudoers_text"
+          - "'editor=\"/usr/bin/nvim:/usr/bin/vim:/usr/bin/vi\"' in __sudo_sudoers_text"
         fail_msg: 'sudoers missing editor setting'
 
     - name: Verify | Check sudoers contains includedir
       ansible.builtin.assert:
         that:
-          - "'@includedir /etc/sudoers.d' in _sudoers_text"
+          - "'@includedir /etc/sudoers.d' in __sudo_sudoers_text"
         fail_msg: 'sudoers missing @includedir directive'
 
-    # =========================================================================
-    # SUDOERS.D DIRECTORY
-    # =========================================================================
+    #
+    # sudoers.d Directory
+    #
+
     - name: Verify | Check /etc/sudoers.d directory exists
       ansible.builtin.stat:
         path: /etc/sudoers.d
-      register: sudoers_d
-      failed_when: not sudoers_d.stat.exists
+      register: __sudo_sudoers_d
+      failed_when: not __sudo_sudoers_d.stat.exists
 
     - name: Verify | Check /etc/sudoers.d permissions
       ansible.builtin.assert:
         that:
-          - sudoers_d.stat.mode == '0750'
-          - sudoers_d.stat.isdir
-          - sudoers_d.stat.pw_name == 'root'
-          - sudoers_d.stat.gr_name == 'root'
+          - __sudo_sudoers_d.stat.mode == '0750'
+          - __sudo_sudoers_d.stat.isdir
+          - __sudo_sudoers_d.stat.pw_name == 'root'
+          - __sudo_sudoers_d.stat.gr_name == 'root'
         fail_msg: '/etc/sudoers.d has incorrect permissions'
 
-    # =========================================================================
-    # WHEEL/SUDO GROUP CONFIGURATION (in main sudoers, not drop-in)
-    # =========================================================================
+    #
+    # Wheel/Sudo Group Configuration
+    #
+
     - name: Verify | Check legacy wheel/sudo group drop-in is absent
       ansible.builtin.stat:
         path: '/etc/sudoers.d/10-{{ __sudo_group }}'
-      register: legacy_group_file
-      failed_when: legacy_group_file.stat.exists
+      register: __sudo_legacy_group_file
+      failed_when: __sudo_legacy_group_file.stat.exists
 
     - name: Verify | Check wheel/sudo group in main sudoers
       ansible.builtin.assert:
         that:
-          - "'%' ~ __sudo_group in _sudoers_text"
+          - "'%' ~ __sudo_group in __sudo_sudoers_text"
         fail_msg: 'wheel/sudo group not configured in main sudoers'
 
-    # =========================================================================
-    # USER SUDOERS FILES
-    # =========================================================================
+    #
+    # User Sudoers Files
+    #
+
     - name: Verify | Check testuser sudoers file exists
       ansible.builtin.stat:
         path: /etc/sudoers.d/20-user-testuser
-      register: user_file
-      failed_when: not user_file.stat.exists
+      register: __sudo_user_file
+      failed_when: not __sudo_user_file.stat.exists
 
     - name: Verify | Check user file permissions
       ansible.builtin.assert:
         that:
-          - user_file.stat.mode == '0440'
-          - user_file.stat.pw_name == 'root'
-          - user_file.stat.gr_name == 'root'
+          - __sudo_user_file.stat.mode == '0440'
+          - __sudo_user_file.stat.pw_name == 'root'
+          - __sudo_user_file.stat.gr_name == 'root'
         fail_msg: 'user sudoers file has incorrect permissions'
 
     - name: Verify | Validate user sudoers syntax
       ansible.builtin.command:
         cmd: visudo -cf /etc/sudoers.d/20-user-testuser
       changed_when: false
-      failed_when: visudo_user.rc != 0
-      register: visudo_user
+      register: __sudo_visudo_user
+      failed_when: __sudo_visudo_user.rc != 0
 
     - name: Verify | Read testuser sudoers content
       ansible.builtin.slurp:
         src: /etc/sudoers.d/20-user-testuser
-      register: testuser_content
+      register: __sudo_testuser_content
 
     - name: Verify | Check testuser has ansible_managed header
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in (testuser_content.content | b64decode)"
+          - "'Ansible managed' in (__sudo_testuser_content.content | b64decode)"
         fail_msg: 'testuser sudoers file missing ansible_managed header'
 
     - name: Verify | Check testadmin sudoers file exists
       ansible.builtin.stat:
         path: /etc/sudoers.d/20-user-testadmin
-      register: admin_file
-      failed_when: not admin_file.stat.exists
+      register: __sudo_admin_file
+      failed_when: not __sudo_admin_file.stat.exists
 
     - name: Verify | Read testadmin sudoers content
       ansible.builtin.slurp:
         src: /etc/sudoers.d/20-user-testadmin
-      register: admin_content
+      register: __sudo_admin_content
 
     - name: Verify | Check testadmin has NOPASSWD
       ansible.builtin.assert:
         that:
-          - "'NOPASSWD' in (admin_content.content | b64decode)"
-          - "'testadmin' in (admin_content.content | b64decode)"
-          - "'systemctl restart nginx' in (admin_content.content | b64decode)"
+          - "'NOPASSWD' in (__sudo_admin_content.content | b64decode)"
+          - "'testadmin' in (__sudo_admin_content.content | b64decode)"
+          - "'systemctl restart nginx' in (__sudo_admin_content.content | b64decode)"
         fail_msg: 'testadmin sudoers file incorrect'
 
-    # =========================================================================
-    # GROUP SUDOERS FILES
-    # =========================================================================
+    #
+    # Group Sudoers Files
+    #
+
     - name: Verify | Check testgroup sudoers file exists
       ansible.builtin.stat:
         path: /etc/sudoers.d/30-group-testgroup
-      register: testgroup_file
-      failed_when: not testgroup_file.stat.exists
+      register: __sudo_testgroup_file
+      failed_when: not __sudo_testgroup_file.stat.exists
 
     - name: Verify | Validate testgroup sudoers syntax
       ansible.builtin.command:
         cmd: visudo -cf /etc/sudoers.d/30-group-testgroup
       changed_when: false
-      failed_when: visudo_testgroup.rc != 0
-      register: visudo_testgroup
+      register: __sudo_visudo_testgroup
+      failed_when: __sudo_visudo_testgroup.rc != 0
 
     - name: Verify | Check operators sudoers file exists
       ansible.builtin.stat:
         path: /etc/sudoers.d/30-group-operators
-      register: operators_file
-      failed_when: not operators_file.stat.exists
+      register: __sudo_operators_file
+      failed_when: not __sudo_operators_file.stat.exists
 
     - name: Verify | Read operators sudoers content
       ansible.builtin.slurp:
         src: /etc/sudoers.d/30-group-operators
-      register: operators_content
+      register: __sudo_operators_content
 
     - name: Verify | Check operators has NOPASSWD and systemctl
       ansible.builtin.assert:
         that:
-          - "'NOPASSWD' in (operators_content.content | b64decode)"
-          - "'systemctl' in (operators_content.content | b64decode)"
+          - "'NOPASSWD' in (__sudo_operators_content.content | b64decode)"
+          - "'systemctl' in (__sudo_operators_content.content | b64decode)"
         fail_msg: 'operators sudoers file incorrect'
 
-    # =========================================================================
-    # CUSTOM SUDOERS FILES
-    # =========================================================================
+    #
+    # Custom Sudoers Files
+    #
+
     - name: Verify | Check backup sudoers file exists
       ansible.builtin.stat:
         path: /etc/sudoers.d/50-backup
-      register: backup_file
-      failed_when: not backup_file.stat.exists
+      register: __sudo_backup_file
+      failed_when: not __sudo_backup_file.stat.exists
 
     - name: Verify | Validate backup sudoers syntax
       ansible.builtin.command:
         cmd: visudo -cf /etc/sudoers.d/50-backup
       changed_when: false
-      failed_when: visudo_backup.rc != 0
-      register: visudo_backup
+      register: __sudo_visudo_backup
+      failed_when: __sudo_visudo_backup.rc != 0
 
     - name: Verify | Read backup sudoers content
       ansible.builtin.slurp:
         src: /etc/sudoers.d/50-backup
-      register: backup_content
+      register: __sudo_backup_content
 
     - name: Verify | Check backup custom content
       ansible.builtin.assert:
         that:
-          - "'backup ALL=(root) NOPASSWD: /usr/bin/rsync' in (backup_content.content | b64decode)"
+          - "'backup ALL=(root) NOPASSWD: /usr/bin/rsync' in (__sudo_backup_content.content | b64decode)"
         fail_msg: 'backup sudoers file has incorrect content'
 
     - name: Verify | Check monitoring sudoers file exists
       ansible.builtin.stat:
         path: /etc/sudoers.d/50-monitoring
-      register: monitoring_file
-      failed_when: not monitoring_file.stat.exists
+      register: __sudo_monitoring_file
+      failed_when: not __sudo_monitoring_file.stat.exists
 
     - name: Verify | Validate monitoring sudoers syntax
       ansible.builtin.command:
         cmd: visudo -cf /etc/sudoers.d/50-monitoring
       changed_when: false
-      failed_when: visudo_monitoring.rc != 0
-      register: visudo_monitoring
+      register: __sudo_visudo_monitoring
+      failed_when: __sudo_visudo_monitoring.rc != 0
 
     - name: Verify | Read monitoring sudoers content
       ansible.builtin.slurp:
         src: /etc/sudoers.d/50-monitoring
-      register: monitoring_content
+      register: __sudo_monitoring_content
 
     - name: Verify | Check monitoring has ansible_managed header
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in (monitoring_content.content | b64decode)"
-          - "'nagios' in (monitoring_content.content | b64decode)"
-          - "'NOPASSWD' in (monitoring_content.content | b64decode)"
+          - "'Ansible managed' in (__sudo_monitoring_content.content | b64decode)"
+          - "'nagios' in (__sudo_monitoring_content.content | b64decode)"
+          - "'NOPASSWD' in (__sudo_monitoring_content.content | b64decode)"
         fail_msg: 'monitoring sudoers file incorrect'
 
-    # =========================================================================
-    # ALL SUDOERS FILES VALIDATION
-    # =========================================================================
+    #
+    # All Sudoers Files Validation
+    #
+
     - name: Verify | Find all sudoers.d files
       ansible.builtin.find:
         paths: /etc/sudoers.d
         patterns: '*'
         file_type: file
-      register: all_sudoers_files
+      register: __sudo_all_sudoers_files
 
     - name: Verify | Validate all sudoers.d files syntax
       ansible.builtin.command:
         cmd: 'visudo -cf {{ item.path }}'
-      loop: '{{ all_sudoers_files.files }}'
+      loop: '{{ __sudo_all_sudoers_files.files }}'
       loop_control:
         label: '{{ item.path | basename }}'
       changed_when: false
-      register: visudo_all
-      failed_when: visudo_all.rc != 0
+      register: __sudo_visudo_all
+      failed_when: __sudo_visudo_all.rc != 0
       when: item.path | basename != 'README'
 
-    # =========================================================================
-    # FUNCTIONAL TEST
-    # =========================================================================
+    #
+    # Functional Test
+    #
+
     - name: Verify | Test sudo version command
       ansible.builtin.command:
         cmd: sudo --version
-      register: sudo_version
+      register: __sudo_version
       changed_when: false
-      failed_when: sudo_version.rc != 0
+      failed_when: __sudo_version.rc != 0
 
     - name: Verify | Check sudo version output
       ansible.builtin.assert:
         that:
-          - "'Sudo version' in sudo_version.stdout"
+          - "'Sudo version' in __sudo_version.stdout"
         fail_msg: 'sudo version output unexpected'

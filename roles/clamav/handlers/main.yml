@@ -1,18 +1,24 @@
 ---
-- name: Restart clamav-daemon
-  ansible.builtin.systemd:
+- name: Reload ClamAV systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  failed_when: false
+  when: clamav_enabled | bool
+
+- name: Restart ClamAV daemon
+  ansible.builtin.systemd_service:
     name: '{{ __clamav_daemon_service }}'
     state: restarted
   when: clamav_daemon_enabled | bool
 
-- name: Restart clamav-freshclam
-  ansible.builtin.systemd:
+- name: Restart ClamAV freshclam
+  ansible.builtin.systemd_service:
     name: '{{ __clamav_freshclam_service }}'
     state: restarted
   when: clamav_freshclam_enabled | bool
 
-- name: Restart clamav-milter
-  ansible.builtin.systemd:
+- name: Restart ClamAV milter
+  ansible.builtin.systemd_service:
     name: '{{ __clamav_milter_service }}'
     state: restarted
   when:

@@ -1,24 +1,21 @@
 ---
-# =============================================================================
-# AppArmor Profile Management Tasks
-# =============================================================================
 # Application-specific profiles (nginx, postfix, etc.) are NOT managed here.
 # Each service role manages its own AppArmor profile via <role>_apparmor_enabled.
 # This file handles the generic enforce/complain/disable lists and custom profiles.
-# =============================================================================
 
 # Get current profile modes so we only change what's actually different.
 # aa-status --json returns {"profiles": {"/path": "enforce"|"complain", ...}}
 # Keys are inconsistent: sometimes full path (/usr/bin/man), sometimes
 # basename only (tcpdump). We check both forms for reliable matching.
-- name: Get current AppArmor profile status
+# failed_when: false — aa-status requires kernel AppArmor subsystem (unavailable in containers)
+- name: Profiles | Get current AppArmor profile status
   ansible.builtin.command:
     cmd: aa-status --json
   register: __apparmor_status_json
   changed_when: false
   failed_when: false
 
-- name: Build profile mode lookup sets
+- name: Profiles | Build profile mode lookup sets
   ansible.builtin.set_fact:
     __apparmor_enforce_set: >-
       {{ (__apparmor_status_json.stdout | default('{}') | from_json).get('profiles', {})
@@ -30,11 +27,12 @@
          | map(attribute='key') | list }}
   when: __apparmor_status_json.rc == 0
 
-# =============================================================================
-# ENFORCE PROFILES
-# =============================================================================
+#
+# Enforce Profiles
+#
 
-- name: Set profiles to enforce mode
+# failed_when: false — profile may not exist on system (user-provided list)
+- name: Profiles | Set profiles to enforce mode
   ansible.builtin.command:
     cmd: 'aa-enforce {{ item }}'
   loop: '{{ apparmor_enforce_profiles }}'
@@ -44,11 +42,12 @@
   changed_when: true
   failed_when: false
 
-# =============================================================================
-# COMPLAIN PROFILES
-# =============================================================================
+#
+# Complain Profiles
+#
 
-- name: Set profiles to complain mode
+# failed_when: false — profile may not exist on system (user-provided list)
+- name: Profiles | Set profiles to complain mode
   ansible.builtin.command:
     cmd: 'aa-complain {{ item }}'
   loop: '{{ apparmor_complain_profiles }}'
@@ -58,11 +57,12 @@
   changed_when: true
   failed_when: false
 
-# =============================================================================
-# DISABLE PROFILES
-# =============================================================================
+#
+# Disable Profiles
+#
 
-- name: Disable profiles
+# failed_when: false — profile may not exist on system (user-provided list)
+- name: Profiles | Disable profiles
   ansible.builtin.command:
     cmd: 'aa-disable {{ item }}'
   loop: '{{ apparmor_disable_profiles }}'
@@ -74,11 +74,11 @@
   changed_when: true
   failed_when: false
 
-# =============================================================================
-# CUSTOM PROFILES
-# =============================================================================
+#
+# Custom Profiles
+#
 
-- name: Deploy custom AppArmor profiles
+- name: Profiles | Deploy custom AppArmor profiles
   ansible.builtin.copy:
     content: '{{ item.content }}'
     dest: '/etc/apparmor.d/{{ item.name }}'
@@ -93,7 +93,8 @@
 # Only enforce custom profiles when the file was actually changed.
 # The profile name inside the file differs from the filename, making
 # aa-status lookup unreliable for custom profiles.
-- name: Enforce custom profiles
+# failed_when: false — aa-enforce may fail if AppArmor parser rejects the profile
+- name: Profiles | Enforce custom profiles
   ansible.builtin.command:
     cmd: 'aa-enforce /etc/apparmor.d/{{ item.item.name }}'
   loop: '{{ __apparmor_custom_deployed.results | default([]) }}'

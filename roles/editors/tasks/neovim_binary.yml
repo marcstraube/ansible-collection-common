@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Neovim Binary Installation (RedHat/Rocky)
-# =============================================================================
 # Installs pre-built neovim binary from GitHub releases.
 # Used when neovim is not available via package manager.
 
@@ -10,6 +7,7 @@
     cmd: /usr/local/bin/nvim --version
   register: __editors_nvim_installed_version
   changed_when: false
+  # Binary may not be installed yet
   failed_when: false
 
 - name: Neovim Binary | Download and install neovim
@@ -21,6 +19,8 @@
       ansible.builtin.get_url:
         url: "https://github.com/neovim/neovim/releases/download/{{ editors_neovim_version }}/nvim-linux-x86_64.tar.gz"
         dest: /tmp/nvim-linux-x86_64.tar.gz
+        owner: root
+        group: root
         mode: '0644'
 
     - name: Neovim Binary | Extract to /usr/local
@@ -28,6 +28,9 @@
         src: /tmp/nvim-linux-x86_64.tar.gz
         dest: /usr/local
         remote_src: true
+        owner: root
+        group: root
+        mode: '0755'
         extra_opts:
           - --strip-components=1
 

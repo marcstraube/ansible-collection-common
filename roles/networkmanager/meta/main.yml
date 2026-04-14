@@ -1,13 +1,11 @@
 ---
-# marcstraube.networkmanager/meta/main.yml
-
 galaxy_info:
   author: Marc Straube
   description: >-
     Manage NetworkManager daemon configuration, connections,
     and dispatcher scripts
   license: MIT
-  min_ansible_version: "2.17"
+  min_ansible_version: '2.17'
   platforms:
     - name: ArchLinux
       versions:
@@ -17,8 +15,7 @@ galaxy_info:
         - trixie
     - name: EL
       versions:
-        - "9"
-        - "10"
+        - all
   galaxy_tags:
     - network
     - networkmanager
@@ -28,6 +25,3 @@ galaxy_info:
     - rocky
 
 dependencies: []
-
-collections:
-  - community.general

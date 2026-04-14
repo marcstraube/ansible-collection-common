@@ -2,38 +2,12 @@
 - name: Converge
   hosts: all
   gather_facts: true
-  become: true
-
-  pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      changed_when: false
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Create test user
-      ansible.builtin.user:
-        name: testuser
-        state: present
-        create_home: true
-
-    - name: Create disabled test user
-      ansible.builtin.user:
-        name: disableduser
-        state: present
-        create_home: true
 
   vars:
     gnupg_enabled: true
-    gnupg_install_gui: false
-    gnupg_install_tools: false
-    gnupg_agent_enable_ssh: true
+    gnupg_gui_enabled: false
+    gnupg_tools_enabled: false
+    gnupg_agent_ssh_enabled: true
     gnupg_agent_allow_preset_passphrase: true
     gnupg_no_greeting: true
     gnupg_throw_keyids: false
@@ -49,7 +23,20 @@
         mode: 'disabled'
         agent_ssh: false
 
+  pre_tasks:
+    - name: Converge | Create test user
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+
+    - name: Converge | Create disabled test user
+      ansible.builtin.user:
+        name: disableduser
+        state: present
+        create_home: true
+
   tasks:
-    - name: Include gnupg role  # noqa: role-name[path]
+    - name: Converge | Include gnupg role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

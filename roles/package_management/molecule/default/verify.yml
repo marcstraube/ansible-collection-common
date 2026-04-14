@@ -1,14 +1,14 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # ARCHLINUX VERIFICATION
-    # =========================================================================
-    - name: ArchLinux verification
+    #
+    # Archlinux Verification
+    #
+
+    - name: Verify | ArchLinux verification
       when: ansible_facts['os_family'] == 'Archlinux'
       block:
         - name: Verify | Check pacman.conf exists
@@ -51,7 +51,7 @@
           register: reflector_service
 
         - name: Verify | Check reflector timer enabled
-          ansible.builtin.systemd:
+          ansible.builtin.systemd_service:
             name: reflector.timer
           register: reflector_timer
           failed_when: reflector_timer.status.UnitFileState != 'enabled'
@@ -83,10 +83,11 @@
           changed_when: false
           failed_when: makepkg_version.rc != 0
 
-    # =========================================================================
-    # DEBIAN/UBUNTU VERIFICATION
-    # =========================================================================
-    - name: Debian/Ubuntu verification
+    #
+    # Debian/Ubuntu Verification
+    #
+
+    - name: Verify | Debian/Ubuntu verification
       when: ansible_facts['os_family'] == 'Debian'
       block:
         - name: Verify | Check apt.conf.d directory exists
@@ -153,10 +154,11 @@
           register: apt_lists
           failed_when: not apt_lists.stat.exists
 
-    # =========================================================================
-    # REDHAT/FEDORA VERIFICATION
-    # =========================================================================
-    - name: RedHat/Fedora verification
+    #
+    # RedHat/Fedora Verification
+    #
+
+    - name: Verify | RedHat/Fedora verification
       when: ansible_facts['os_family'] == 'RedHat'
       block:
         - name: Verify | Check dnf.conf exists
@@ -220,10 +222,11 @@
               - "'install_weak_deps' in (dnf_content.content | b64decode)"
             fail_msg: 'dnf.conf missing install_weak_deps setting'
 
-    # =========================================================================
-    # PER-USER MAKEPKG CONFIG (Arch only)
-    # =========================================================================
-    - name: Per-user makepkg verification
+    #
+    # Per-user Makepkg Config (Arch Only)
+    #
+
+    - name: Verify | Per-user makepkg verification
       when: ansible_facts['os_family'] == 'Archlinux'
       block:
         - name: Verify | Check testuser makepkg.conf exists
@@ -263,9 +266,10 @@
               - not disabled_makepkg.stat.exists
             fail_msg: 'disableduser should not have .makepkg.conf (mode: disabled)'
 
-    # =========================================================================
-    # CROSS-PLATFORM VERIFICATION
-    # =========================================================================
+    #
+    # Cross-platform Verification
+    #
+
     - name: Verify | Test package manager works  # noqa: command-instead-of-module
       ansible.builtin.command:
         cmd: curl --version

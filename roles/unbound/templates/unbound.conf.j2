@@ -63,7 +63,7 @@ server:
     # DNSSEC
     auto-trust-anchor-file: "{{ __unbound_root_key }}"
 {% endif %}
-{% if unbound_root_hints_update %}
+{% if unbound_root_hints_update_enabled %}
 
     # Root hints
     root-hints: "{{ unbound_root_hints_file }}"
@@ -95,7 +95,7 @@ server:
 {% if unbound_tls_upstream %}
 
     # TLS upstream
-    tls-cert-bundle: "{{ unbound_tls_cert_bundle | default(__unbound_tls_cert_bundle) }}"
+    tls-cert-bundle: "{{ unbound_tls_cert_bundle | default(__unbound_tls_cert_bundle, true) }}"
 {% endif %}
 {% if unbound_chroot | length > 0 %}
 
@@ -108,7 +108,7 @@ server:
 
     # Include additional configuration
     include: "/etc/unbound/conf.d/*.conf"
-{% if unbound_remote_control %}
+{% if unbound_remote_control_enabled %}
 
 remote-control:
     control-enable: yes

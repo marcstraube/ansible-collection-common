@@ -1,0 +1,47 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - which
+        - iptables
+      Debian:
+        - iptables
+      RedHat:
+        - iptables
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
+        state: present
+
+    # Containers lack syslog — create auth log files for sshd jail
+    - name: Prepare | Create system auth log (container)
+      ansible.builtin.copy:
+        content: ''
+        dest: "{{ '/var/log/secure' if ansible_facts['os_family'] == 'RedHat' else '/var/log/auth.log' }}"
+        owner: root
+        group: root
+        mode: '0640'
+        force: false

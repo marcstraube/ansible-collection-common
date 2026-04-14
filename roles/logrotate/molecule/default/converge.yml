@@ -1,20 +1,7 @@
 ---
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
-
-  pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
 
   vars:
     logrotate_enabled: true
@@ -40,8 +27,8 @@
         postrotate: |
           true
 
-  tasks:
-    - name: Create test log directory
+  pre_tasks:
+    - name: Converge | Create test log directory
       ansible.builtin.file:
         path: '/var/log/testapp'
         state: directory
@@ -49,6 +36,7 @@
         group: root
         mode: '0755'
 
-    - name: Include logrotate role  # noqa: role-name[path]
+  tasks:
+    - name: Converge | Include logrotate role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

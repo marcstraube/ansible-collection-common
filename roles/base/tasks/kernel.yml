@@ -1,11 +1,7 @@
 ---
-# =============================================================================
-# Kernel Configuration Tasks
-# =============================================================================
-
-- name: Detect CPU vendor for microcode
+- name: Kernel | Detect CPU vendor for microcode
   ansible.builtin.set_fact:
-    _base_microcode_package: |-
+    __base_microcode_package: |-
       {% if base_microcode == 'auto' %}
       {%
         if 'GenuineIntel' in ansible_facts['processor']
@@ -17,22 +13,20 @@
       {% else %}{{ base_microcode }}{% endif %}
   when: base_microcode != ''
 
-- name: Install kernel packages
-  community.general.pacman:
+- name: Kernel | Install kernel packages
+  ansible.builtin.package:
     name: '{{ [base_kernel] + base_kernel_extra_packages }}'
     state: present
 
-- name: Install microcode package
-  community.general.pacman:
-    name: '{{ _base_microcode_package }}'
+- name: Kernel | Install microcode package
+  ansible.builtin.package:
+    name: '{{ __base_microcode_package }}'
     state: present
   when:
-    - _base_microcode_package is defined
-    - _base_microcode_package | length > 0
+    - __base_microcode_package is defined
+    - __base_microcode_package | length > 0
 
-# =============================================================================
 # mkinitcpio — only manage when explicitly configured
-# =============================================================================
 # IMPORTANT: Do NOT template mkinitcpio.conf unless the user explicitly sets
 # hooks/modules/etc. The installer sets up mkinitcpio.conf with the correct
 # hooks for the system (encrypt, gpg, sd-encrypt, etc.). Templating it
@@ -40,15 +34,15 @@
 # differs at regeneration time (e.g. smartcard not present), the initramfs
 # breaks and the system becomes unbootable.
 
-- name: Check if mkinitcpio is explicitly configured
+- name: Kernel | Check if mkinitcpio is explicitly configured
   ansible.builtin.set_fact:
-    _base_mkinitcpio_managed: >-
+    __base_mkinitcpio_managed: >-
       {{ (base_mkinitcpio_hooks | length > 0) or
          (base_mkinitcpio_modules | length > 0) or
          (base_mkinitcpio_binaries | length > 0) or
          (base_mkinitcpio_files | length > 0) }}
 
-- name: Update mkinitcpio hooks
+- name: Kernel | Update mkinitcpio hooks
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^HOOKS=\(.*\)'
@@ -57,7 +51,7 @@
   notify: 'regenerate initramfs'
   when: base_mkinitcpio_hooks | length > 0
 
-- name: Update mkinitcpio modules
+- name: Kernel | Update mkinitcpio modules
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^MODULES=\(.*\)'
@@ -65,7 +59,7 @@
   notify: 'regenerate initramfs'
   when: base_mkinitcpio_modules | length > 0
 
-- name: Update mkinitcpio binaries
+- name: Kernel | Update mkinitcpio binaries
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^BINARIES=\(.*\)'
@@ -73,7 +67,7 @@
   notify: 'regenerate initramfs'
   when: base_mkinitcpio_binaries | length > 0
 
-- name: Update mkinitcpio files
+- name: Kernel | Update mkinitcpio files
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^FILES=\(.*\)'
@@ -81,10 +75,10 @@
   notify: 'regenerate initramfs'
   when: base_mkinitcpio_files | length > 0
 
-- name: Update mkinitcpio compression
+- name: Kernel | Update mkinitcpio compression
   ansible.builtin.lineinfile:
     path: '/etc/mkinitcpio.conf'
     regexp: '^COMPRESSION='
     line: 'COMPRESSION="{{ base_mkinitcpio_compression }}"'
   notify: 'regenerate initramfs'
-  when: _base_mkinitcpio_managed | bool
+  when: __base_mkinitcpio_managed | bool

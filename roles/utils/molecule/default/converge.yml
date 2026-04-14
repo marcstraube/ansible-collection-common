@@ -1,73 +1,35 @@
 ---
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
 
   vars:
+    utils_enabled: true
+
     # Monitors
-    utils_monitor_htop: true
-    utils_monitor_btop: true
+    utils_monitor_htop_enabled: true
+    utils_monitor_btop_enabled: true
 
     # Multiplexers
-    utils_mux_tmux: true
-    utils_mux_screen: false
+    utils_mux_tmux_enabled: true
+    utils_mux_screen_enabled: false
 
     # File transfer
-    utils_transfer_rsync: true
+    utils_transfer_rsync_enabled: true
 
     # Search tools
-    utils_search_ripgrep: true
-    utils_search_fd: true
+    utils_search_ripgrep_enabled: true
+    utils_search_fd_enabled: true
 
     # System info
-    utils_fetch_fastfetch: true
+    utils_fetch_fastfetch_enabled: true
 
     # Fun tools (available on all platforms)
-    utils_fun_cowsay: true
-    utils_fun_figlet: true
-    utils_fun_sl: true
-
-  pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-      changed_when: false
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Upgrade all packages (Arch)
-      community.general.pacman:
-        upgrade: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      changed_when: false
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Enable EPEL on Rocky
-      ansible.builtin.dnf:
-        name: epel-release
-        state: present
-      when: ansible_facts['os_family'] == 'RedHat'
-
-    - name: Create aur_builder user for AUR packages (Arch)
-      ansible.builtin.user:
-        name: aur_builder
-        group: wheel
-        create_home: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Allow aur_builder passwordless sudo (Arch)
-      ansible.builtin.lineinfile:
-        path: /etc/sudoers.d/99-aur_builder
-        line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
-        create: true
-        mode: '0440'
-      when: ansible_facts['os_family'] == 'Archlinux'
+    utils_fun_cowsay_enabled: true
+    utils_fun_figlet_enabled: true
+    utils_fun_sl_enabled: true
 
   tasks:
-    - name: Include utils role  # noqa: role-name[path]
+    - name: Converge | Include utils role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# Server Certificate Tasks
-# =============================================================================
-
-- name: ServerCerts | Generate server private keys (EC)
+- name: Server Certs | Generate server private keys (EC)
   community.crypto.openssl_privatekey:
     path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
     type: 'ECC'
@@ -16,7 +12,7 @@
     label: '{{ item.name }}'
   when: (item.key_type | default(pki_server_key_type)) == 'ec'
 
-- name: ServerCerts | Generate server private keys (RSA)
+- name: Server Certs | Generate server private keys (RSA)
   community.crypto.openssl_privatekey:
     path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
     type: 'RSA'
@@ -29,7 +25,7 @@
     label: '{{ item.name }}'
   when: (item.key_type | default(pki_server_key_type)) == 'rsa'
 
-- name: ServerCerts | Generate server private keys (Ed25519)
+- name: Server Certs | Generate server private keys (Ed25519)
   community.crypto.openssl_privatekey:
     path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
     type: 'Ed25519'
@@ -41,7 +37,7 @@
     label: '{{ item.name }}'
   when: (item.key_type | default(pki_server_key_type)) == 'ed25519'
 
-- name: ServerCerts | Generate server CSRs  # noqa: args[module]
+- name: Server Certs | Generate server CSRs  # noqa: args[module]
   community.crypto.openssl_csr:
     path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
     privatekey_path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
@@ -68,13 +64,13 @@
   loop_control:
     label: '{{ item.name }}'
 
-- name: ServerCerts | Sign server certificates with CA
+- name: Server Certs | Sign server certificates with CA
   community.crypto.x509_certificate:
     path: '{{ item.dest_cert | default(pki_certs_dir + "/" + item.name + ".crt") }}'
     csr_path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
-    ownca_path: '{{ _pki_signing_ca_cert }}'
-    ownca_privatekey_path: '{{ _pki_signing_ca_key }}'
-    ownca_privatekey_passphrase: '{{ _pki_signing_ca_passphrase | default(omit, true) }}'
+    ownca_path: '{{ __pki_signing_ca_cert }}'
+    ownca_privatekey_path: '{{ __pki_signing_ca_key }}'
+    ownca_privatekey_passphrase: '{{ __pki_signing_ca_passphrase | default(omit, true) }}'
     ownca_not_after: '+{{ item.validity_days | default(pki_server_validity_days) }}d'
     provider: ownca
     owner: '{{ item.owner | default("root") }}'
@@ -87,7 +83,7 @@
     - item.sign_with_ca | default(true)
     - pki_ca_enabled | bool
 
-- name: ServerCerts | Create self-signed certificates (no CA)
+- name: Server Certs | Create self-signed certificates (no CA)
   community.crypto.x509_certificate:
     path: '{{ item.dest_cert | default(pki_certs_dir + "/" + item.name + ".crt") }}'
     privatekey_path: '{{ item.dest_key | default(pki_private_dir + "/" + item.name + ".key") }}'
@@ -102,11 +98,11 @@
     label: '{{ item.name }}'
   when: not (item.sign_with_ca | default(true)) or not (pki_ca_enabled | bool)
 
-- name: ServerCerts | Read certificate contents for chain files
+- name: Server Certs | Read certificate contents for chain files
   ansible.builtin.shell:
     cmd: >-
       cat "{{ item.dest_cert | default(pki_certs_dir + '/' + item.name + '.crt') }}"
-      "{{ _pki_signing_ca_chain }}"
+      "{{ __pki_signing_ca_chain }}"
     executable: /bin/bash
   register: _pki_server_chain_output
   changed_when: false
@@ -116,7 +112,7 @@
     label: '{{ item.name }}'
   when: pki_ca_enabled | bool
 
-- name: ServerCerts | Deploy certificate chain files
+- name: Server Certs | Deploy certificate chain files
   ansible.builtin.copy:
     content: '{{ item.stdout }}'
     dest: '{{ item.item.dest_chain }}'

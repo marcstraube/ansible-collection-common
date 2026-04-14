@@ -1,19 +1,17 @@
 ---
-# marcstraube.networkmanager/tasks/polkit.yml
-
 - name: Polkit | Deploy NetworkManager polkit rule
   ansible.builtin.template:
     src: 49-networkmanager.rules.j2
     dest: /etc/polkit-1/rules.d/49-networkmanager.rules
     owner: root
     group: root
-    mode: "0644"
-  when: networkmanager_polkit
+    mode: '0644'
+  when: networkmanager_polkit_enabled | bool
   notify: Restart polkitd
 
 - name: Polkit | Remove NetworkManager polkit rule
   ansible.builtin.file:
     path: /etc/polkit-1/rules.d/49-networkmanager.rules
     state: absent
-  when: not networkmanager_polkit
+  when: not (networkmanager_polkit_enabled | bool)
   notify: Restart polkitd

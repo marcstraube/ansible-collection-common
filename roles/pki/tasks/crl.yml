@@ -1,32 +1,29 @@
 ---
-# =============================================================================
-# Certificate Revocation List (CRL) Tasks
-# =============================================================================
-
 - name: CRL | Determine effective CA paths
   ansible.builtin.set_fact:
-    _pki_crl_ca_cert: >-
+    __pki_crl_ca_cert: >-
       {{ pki_intermediate_ca_dir + '/certs/intermediate.crt'
          if (pki_intermediate_ca_enabled | bool)
          else pki_ca_dir + '/certs/ca.crt' }}
-    _pki_crl_ca_key: >-
+    __pki_crl_ca_key: >-
       {{ pki_intermediate_ca_dir + '/private/intermediate.key'
          if (pki_intermediate_ca_enabled | bool)
          else pki_ca_dir + '/private/ca.key' }}
-    _pki_crl_ca_passphrase: >-
+    __pki_crl_ca_passphrase: >-
       {{ pki_intermediate_ca_passphrase
          if (pki_intermediate_ca_enabled | bool)
          else pki_ca_passphrase }}
-    _pki_crl_dir: >-
+    __pki_crl_dir: >-
       {{ pki_intermediate_ca_dir + '/crl'
          if (pki_intermediate_ca_enabled | bool)
          else pki_ca_dir + '/crl' }}
+  no_log: true
 
 - name: CRL | Generate Certificate Revocation List
   community.crypto.x509_crl:
-    path: '{{ _pki_crl_dir }}/ca.crl'
-    privatekey_path: '{{ _pki_crl_ca_key }}'
-    privatekey_passphrase: '{{ _pki_crl_ca_passphrase | default(omit, true) }}'
+    path: '{{ __pki_crl_dir }}/ca.crl'
+    privatekey_path: '{{ __pki_crl_ca_key }}'
+    privatekey_passphrase: '{{ __pki_crl_ca_passphrase | default(omit, true) }}'
     issuer:
       countryName: '{{ pki_ca_country | default(omit, true) }}'
       stateOrProvinceName: '{{ pki_ca_state | default(omit, true) }}'
@@ -46,7 +43,7 @@
 
 - name: CRL | Copy CRL to distribution point
   ansible.builtin.copy:
-    src: '{{ _pki_crl_dir }}/ca.crl'
+    src: '{{ __pki_crl_dir }}/ca.crl'
     dest: '{{ pki_crl_distribution_path }}'
     remote_src: true
     owner: root

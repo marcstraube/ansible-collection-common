@@ -1,20 +1,14 @@
 ---
-# =============================================================================
-# NODE.JS ROLE - DEFAULT VARIABLES
-# =============================================================================
-# This role installs and configures the Node.js runtime.
-# Supports installation via NodeSource repository, system packages, or nvm.
-# =============================================================================
+#
+# Role Control
+#
 
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
-
+# Enable the nodejs role
 nodejs_enabled: true
 
-# =============================================================================
-# INSTALLATION METHOD
-# =============================================================================
+#
+# Installation Method
+#
 
 # Installation method: nodesource | package | nvm
 # - nodesource: Install from NodeSource repository (Debian/RedHat only,
@@ -30,9 +24,9 @@ nodejs_install_method: 'nodesource'
 # On Debian/RedHat: uses NodeSource repository for the specified version
 nodejs_version: '24'
 
-# =============================================================================
-# NPM CONFIGURATION
-# =============================================================================
+#
+# NPM Configuration
+#
 
 # HTTP(S) proxy for npm (empty = no proxy)
 # Example: http://proxy.example.com:3128
@@ -45,17 +39,18 @@ nodejs_npm_proxy: ''
 #     loglevel: 'warn'
 nodejs_npm_config: {}
 
-# =============================================================================
-# PACKAGE MANAGERS
-# =============================================================================
+#
+# Package Managers
+#
 
 # Additional package managers to install via npm
 # Supported: pnpm, yarn
 nodejs_package_managers: []
 
-# =============================================================================
-# NVM SETTINGS (only when nodejs_install_method is 'nvm')
-# =============================================================================
+#
+# NVM Settings
+#
+# Only used when nodejs_install_method is 'nvm'
 
 # nvm version to install ('latest' or specific tag like 'v0.40.1')
 nodejs_nvm_version: 'latest'

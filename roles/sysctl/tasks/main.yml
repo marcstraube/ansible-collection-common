@@ -1,25 +1,50 @@
 ---
-# =============================================================================
-# Sysctl - Main Tasks
-# =============================================================================
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [sysctl]
+  tags:
+    - sysctl
 
-- name: Main | Install packages
-  ansible.builtin.import_tasks:
-    file: install.yml
-  tags: [sysctl, sysctl:install]
+- name: Main | Handle deprecated profile variables
+  ansible.builtin.set_fact:
+    sysctl_profile_security_enabled: >-
+      {{ sysctl_profile_security | default(sysctl_profile_security_enabled) | bool }}
+    sysctl_profile_network_performance_enabled: >-
+      {{ sysctl_profile_network_performance | default(sysctl_profile_network_performance_enabled) | bool }}
+    sysctl_profile_database_enabled: >-
+      {{ sysctl_profile_database | default(sysctl_profile_database_enabled) | bool }}
+    sysctl_profile_webserver_enabled: >-
+      {{ sysctl_profile_webserver | default(sysctl_profile_webserver_enabled) | bool }}
+    sysctl_profile_docker_enabled: >-
+      {{ sysctl_profile_docker | default(sysctl_profile_docker_enabled) | bool }}
+  when:
+    - sysctl_enabled | bool
+    - >-
+      sysctl_profile_security is defined or
+      sysctl_profile_network_performance is defined or
+      sysctl_profile_database is defined or
+      sysctl_profile_webserver is defined or
+      sysctl_profile_docker is defined
+  tags:
+    - sysctl
 
-- name: Main | Configure sysctl
-  ansible.builtin.import_tasks:
-    file: configure.yml
-  tags: [sysctl, sysctl:configure]
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: sysctl_enabled | bool
+  tags:
+    - sysctl
+    - sysctl:install
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: sysctl_enabled | bool
+  tags:
+    - sysctl
+    - sysctl:configure

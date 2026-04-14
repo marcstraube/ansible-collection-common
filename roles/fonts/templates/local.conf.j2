@@ -2,7 +2,7 @@
 {{ ansible_managed | comment('xml') }}
 <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
 <fontconfig>
-{% if fonts_fontconfig_antialias %}
+{% if fonts_fontconfig_antialias_enabled %}
 
   <!-- Enable antialiasing -->
   <match target="font">

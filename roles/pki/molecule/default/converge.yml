@@ -3,24 +3,12 @@
   hosts: all
   gather_facts: true
 
-  pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
   vars:
     pki_enabled: true
-    pki_configure_system: true
+    pki_system_config_enabled: true
     pki_min_protocol: 'TLSv1.2'
-    pki_disable_legacy: true
-    pki_create_dirs: true
+    pki_disable_legacy_enabled: true
+    pki_create_dirs_enabled: true
     pki_crypto_policy: 'DEFAULT'
 
     # Test CA creation
@@ -29,7 +17,7 @@
     pki_ca_key_type: 'ec'
     pki_ca_key_curve: 'secp256r1'
     pki_ca_validity_days: 3650
-    pki_ca_country: 'DE'
+    pki_ca_country: 'US'
     pki_ca_organization: 'Test CA'
     pki_ca_common_name: 'Test Root CA'
     pki_ca_passphrase: ''
@@ -64,9 +52,9 @@
 
     # Test client certificates
     pki_client_certs:
-      - name: 'testclient'
-        common_name: 'testclient@example.com'
-        email: 'testclient@example.com'
+      - name: 'johndoe'
+        common_name: 'john@example.com'
+        email: 'john@example.com'
         validity_days: 365
 
     # Test CSR generation
@@ -99,6 +87,6 @@
     pki_renewal_report_email: 'root'
 
   tasks:
-    - name: Include pki role  # noqa: role-name[path]
+    - name: Converge | Include pki role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

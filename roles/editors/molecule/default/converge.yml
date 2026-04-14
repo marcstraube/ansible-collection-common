@@ -2,43 +2,12 @@
 - name: Converge
   hosts: all
   gather_facts: true
-  become: true
-
-  pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Create test user for per-user config
-      ansible.builtin.user:
-        name: testuser
-        state: present
-        create_home: true
-
-    - name: Create disabled test user
-      ansible.builtin.user:
-        name: disableduser
-        state: present
-        create_home: true
-
-    - name: Simulate newly created user fact
-      ansible.builtin.set_fact:
-        __users_newly_created:
-          - 'testuser'
-          - 'disableduser'
 
   vars:
     editors_enabled: true
-    editors_nano: true
-    editors_vim: true
-    editors_neovim: true
+    editors_nano_enabled: true
+    editors_vim_enabled: true
+    editors_neovim_enabled: true
     editors_default: 'vim'
     editors_users:
       - username: 'testuser'
@@ -53,7 +22,26 @@
       - username: 'disableduser'
         mode: 'disabled'
 
+  pre_tasks:
+    - name: Converge | Create test user for per-user config
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+
+    - name: Converge | Create disabled test user
+      ansible.builtin.user:
+        name: disableduser
+        state: present
+        create_home: true
+
+    - name: Converge | Simulate newly created user fact
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'testuser'
+          - 'disableduser'
+
   tasks:
-    - name: Include editors role  # noqa: role-name[path]
+    - name: Converge | Include editors role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

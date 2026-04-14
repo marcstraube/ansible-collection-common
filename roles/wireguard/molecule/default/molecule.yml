@@ -1,5 +1,4 @@
 ---
-# marcstraube.common.wireguard/molecule/default/molecule.yml
 # Vagrant-based: needs kernel modules (modprobe wireguard)
 
 dependency:
@@ -38,38 +37,44 @@ provisioner:
       stdout_callback: default
       result_format: yaml
       inject_facts_as_vars: false
+      allow_broken_conditionals: true
   inventory:
     host_vars:
       wireguard-archlinux:
+        ansible_python_interpreter: /usr/bin/python
         ansible_port: 2222
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/wireguard-archlinux/virtualbox/private_key
       wireguard-debian-trixie:
-        ansible_port: 2223
         ansible_python_interpreter: /usr/bin/python3
+        ansible_port: 2223
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/wireguard-debian-trixie/virtualbox/private_key
       wireguard-rocky-9:
+        ansible_python_interpreter: /usr/bin/python3
         ansible_port: 2224
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/wireguard-rocky-9/virtualbox/private_key
       wireguard-rocky-10:
+        ansible_python_interpreter: /usr/bin/python3
         ansible_port: 2225
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/wireguard-rocky-10/virtualbox/private_key
     group_vars:
-      all:
+      test_hosts:
         ansible_connection: ssh
         ansible_user: vagrant
+        ansible_become: true
         ansible_host: 127.0.0.1
         ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-
+      all:
         # Centralized test configuration variables
         wireguard_enabled: true
+        wireguard_service_enabled: true
         wireguard_interface: 'wg0'
         wireguard_address: '10.100.0.1/24'
         wireguard_port: 51820

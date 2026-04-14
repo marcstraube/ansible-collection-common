@@ -1,12 +1,8 @@
 ---
-# =============================================================================
-# Debian/Ubuntu-specific variables for PAM
-# =============================================================================
-
-__pam_packages:
+__pam_hardening_packages:
   - libpam-modules
   - libpam-runtime
 
-__pam_pwquality_package: 'libpam-pwquality'
+__pam_hardening_pwquality_package: 'libpam-pwquality'
 
-__pam_google_authenticator_package: 'libpam-google-authenticator'
+__pam_hardening_google_authenticator_package: 'libpam-google-authenticator'

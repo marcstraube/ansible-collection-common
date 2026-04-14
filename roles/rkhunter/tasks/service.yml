@@ -1,21 +1,16 @@
 ---
-# =============================================================================
-# rkhunter - Service Tasks (systemd timer)
-# =============================================================================
-
 - name: Service | Deploy rkhunter systemd service
   ansible.builtin.template:
-    src: 'rkhunter-check.service.j2'
+    src: rkhunter-check.service.j2
     dest: '/etc/systemd/system/rkhunter-check.service'
     owner: root
     group: root
     mode: '0644'
   notify: Reload rkhunter systemd units
-  when: rkhunter_timer_enabled | default(true) | bool
 
 - name: Service | Deploy rkhunter systemd timer
   ansible.builtin.template:
-    src: 'rkhunter-check.timer.j2'
+    src: rkhunter-check.timer.j2
     dest: '/etc/systemd/system/rkhunter-check.timer'
     owner: root
     group: root
@@ -23,22 +18,10 @@
   notify:
     - Reload rkhunter systemd units
     - Restart rkhunter timer
-  when: rkhunter_timer_enabled | default(true) | bool
 
-- name: Service | Enable and start rkhunter timer
-  ansible.builtin.systemd:
-    name: rkhunter-check.timer
-    enabled: true
-    state: started
+- name: Service | Manage rkhunter timer
+  ansible.builtin.systemd_service:
+    name: '{{ __rkhunter_timer_name }}'
+    enabled: "{{ rkhunter_timer_enabled | bool }}"
+    state: "{{ rkhunter_timer_enabled | bool | ternary('started', 'stopped') }}"
     daemon_reload: true
-  when: rkhunter_timer_enabled | default(true) | bool
-
-- name: Service | Remove systemd units when timer disabled
-  ansible.builtin.file:
-    path: '{{ item }}'
-    state: absent
-  loop:
-    - '/etc/systemd/system/rkhunter-check.service'
-    - '/etc/systemd/system/rkhunter-check.timer'
-  notify: Reload rkhunter systemd units
-  when: not (rkhunter_timer_enabled | default(true) | bool)

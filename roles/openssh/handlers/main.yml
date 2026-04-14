@@ -1,14 +1,21 @@
 ---
-- name: Reload sshd
-  ansible.builtin.systemd:
-    name: "{{ __openssh_server_service }}"
-    state: reloaded
-  when: openssh_server_enabled | bool
-  listen: 'reload sshd'
+- name: Reload OpenSSH server systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  # Container-safety for molecule
+  failed_when: false
+  when: openssh_enabled | bool
 
-- name: Restart sshd
-  ansible.builtin.systemd:
-    name: "{{ __openssh_server_service }}"
+- name: Restart OpenSSH server
+  ansible.builtin.systemd_service:
+    name: '{{ __openssh_service_name }}'
     state: restarted
-  when: openssh_server_enabled | bool
+  when: openssh_service_enabled | bool
   listen: 'restart sshd'
+
+- name: Reload OpenSSH server
+  ansible.builtin.systemd_service:
+    name: '{{ __openssh_service_name }}'
+    state: reloaded
+  when: openssh_service_enabled | bool
+  listen: 'reload sshd'

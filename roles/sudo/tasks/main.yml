@@ -1,23 +1,43 @@
 ---
-# =============================================================================
-# Sudo Main Tasks
-# =============================================================================
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [sudo]
+  tags:
+    - sudo
+
+- name: Main | Handle deprecated sudo_wheel_group variable
+  ansible.builtin.set_fact:
+    sudo_wheel_group_enabled: >-
+      {{ sudo_wheel_group | default(sudo_wheel_group_enabled) | bool }}
+  when: sudo_wheel_group is defined
+  tags:
+    - sudo
+
+- name: Main | Handle deprecated sudo_purge_sudoers_d variable
+  ansible.builtin.set_fact:
+    sudo_purge_sudoers_d_enabled: >-
+      {{ sudo_purge_sudoers_d | default(sudo_purge_sudoers_d_enabled) | bool }}
+  when: sudo_purge_sudoers_d is defined
+  tags:
+    - sudo
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [sudo, sudo:install]
+  when: sudo_enabled | bool
+  tags:
+    - sudo
+    - sudo:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
-  tags: [sudo, sudo:configure]
+  when: sudo_enabled | bool
+  tags:
+    - sudo
+    - sudo:configure

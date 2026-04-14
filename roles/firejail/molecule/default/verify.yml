@@ -1,53 +1,52 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # LOAD ROLE VARIABLES
-    # =========================================================================
+    #
+    # Load Role Variables
+    #
 
     - name: Verify | Load role variables
       ansible.builtin.include_vars: '{{ playbook_dir }}/../../vars/main.yml'
 
-    # =========================================================================
-    # PACKAGE VERIFICATION
-    # =========================================================================
+    #
+    # Package Verification
+    #
 
     - name: Verify | Check firejail package is installed
       ansible.builtin.package:
-        name: '{{ __firejail_package }}'
+        name: '{{ __firejail_packages }}'
         state: present
       check_mode: true
-      register: _firejail_pkg
-      failed_when: _firejail_pkg is changed
+      register: __firejail_pkg
+      failed_when: __firejail_pkg is changed
 
     - name: Verify | Check firejail binary exists
       ansible.builtin.stat:
         path: /usr/bin/firejail
-      register: _firejail_bin
-      failed_when: not _firejail_bin.stat.exists
+      register: __firejail_bin
+      failed_when: not __firejail_bin.stat.exists
 
-    # =========================================================================
-    # CONFIGURATION VERIFICATION
-    # =========================================================================
+    #
+    # Configuration Verification
+    #
 
     - name: Verify | Check firejail config file exists
       ansible.builtin.stat:
-        path: '{{ __firejail_config_path }}/firejail.config'
-      register: _firejail_config
+        path: '{{ __firejail_config_dir }}/firejail.config'
+      register: __firejail_config
       failed_when: >-
-        not _firejail_config.stat.exists or
-        _firejail_config.stat.mode != '0644'
+        not __firejail_config.stat.exists or
+        __firejail_config.stat.mode != '0644'
 
     - name: Verify | Read firejail config file
       ansible.builtin.slurp:
-        src: '{{ __firejail_config_path }}/firejail.config'
-      register: _firejail_config_content
+        src: '{{ __firejail_config_dir }}/firejail.config'
+      register: __firejail_config_content
 
-    - name: Verify | Check firejail config uses hyphenated keys
+    - name: Verify | Assert firejail config uses hyphenated keys
       ansible.builtin.assert:
         that:
           - "'browser-disable-u2f no' in _config"
@@ -58,86 +57,86 @@
           - "'restricted_network' not in _config"
         fail_msg: 'Firejail config keys must use hyphens, not underscores'
       vars:
-        _config: '{{ _firejail_config_content.content | b64decode }}'
+        _config: '{{ __firejail_config_content.content | b64decode }}'
 
-    # =========================================================================
-    # FIRECFG.CONFIG EXCLUSION VERIFICATION
-    # =========================================================================
+    #
+    # firecfg.config Exclusion Verification
+    #
 
     - name: Verify | Read firecfg.config
       ansible.builtin.slurp:
-        src: '{{ __firejail_config_path }}/firecfg.config'
-      register: _firecfg_config_content
+        src: '{{ __firejail_config_dir }}/firecfg.config'
+      register: __firecfg_config_content
 
-    - name: Verify | Check excluded apps are commented out
+    - name: Verify | Assert excluded apps are commented out
       ansible.builtin.assert:
         that:
           - "'# keepassxc' in _config"
         fail_msg: 'Excluded apps should be commented out in firecfg.config'
       vars:
-        _config: '{{ _firecfg_config_content.content | b64decode }}'
+        _config: '{{ __firecfg_config_content.content | b64decode }}'
 
-    # =========================================================================
-    # PROFILE VERIFICATION
-    # =========================================================================
+    #
+    # Profile Verification
+    #
 
     - name: Verify | Check firefox.local profile exists
       ansible.builtin.stat:
-        path: '{{ __firejail_profiles_path }}/firefox.local'
-      register: _firefox_local
-      failed_when: not _firefox_local.stat.exists
+        path: '{{ __firejail_profiles_dir }}/firefox.local'
+      register: __firefox_local
+      failed_when: not __firefox_local.stat.exists
 
     - name: Verify | Read firefox.local profile
       ansible.builtin.slurp:
-        src: '{{ __firejail_profiles_path }}/firefox.local'
-      register: _firefox_local_content
+        src: '{{ __firejail_profiles_dir }}/firefox.local'
+      register: __firefox_local_content
 
-    - name: Verify | Check firefox.local profile content
+    - name: Verify | Assert firefox.local profile content
       ansible.builtin.assert:
         that:
           - "'whitelist ${HOME}/.mozilla' in _profile"
           - "'private-tmp' in _profile"
         fail_msg: 'firefox.local should contain expected profile directives'
       vars:
-        _profile: '{{ _firefox_local_content.content | b64decode }}'
+        _profile: '{{ __firefox_local_content.content | b64decode }}'
 
-    # =========================================================================
-    # GLOBALS.LOCAL VERIFICATION
-    # =========================================================================
+    #
+    # globals.local Verification
+    #
 
     - name: Verify | Check globals.local exists
       ansible.builtin.stat:
-        path: '{{ __firejail_config_path }}/globals.local'
-      register: _globals_local
-      failed_when: not _globals_local.stat.exists
+        path: '{{ __firejail_config_dir }}/globals.local'
+      register: __globals_local
+      failed_when: not __globals_local.stat.exists
 
     - name: Verify | Read globals.local
       ansible.builtin.slurp:
-        src: '{{ __firejail_config_path }}/globals.local'
-      register: _globals_local_content
+        src: '{{ __firejail_config_dir }}/globals.local'
+      register: __globals_local_content
 
-    - name: Verify | Check globals.local content
+    - name: Verify | Assert globals.local content
       ansible.builtin.assert:
         that:
           - "'blacklist ${HOME}/.ssh' in _globals"
         fail_msg: 'globals.local should contain expected directives'
       vars:
-        _globals: '{{ _globals_local_content.content | b64decode }}'
+        _globals: '{{ __globals_local_content.content | b64decode }}'
 
-    # =========================================================================
-    # PACMAN HOOK VERIFICATION (Arch only)
-    # =========================================================================
+    #
+    # Pacman Hook Verification (Arch Only)
+    #
 
     - name: Verify | Check pacman hook exists (Arch)
       ansible.builtin.stat:
         path: /etc/pacman.d/hooks/firejail-firecfg.hook
-      register: _pacman_hook
-      failed_when: not _pacman_hook.stat.exists
+      register: __pacman_hook
+      failed_when: not __pacman_hook.stat.exists
       when: ansible_facts['os_family'] == 'Archlinux'
 
     - name: Verify | Check pacman hook does not exist (non-Arch)
       ansible.builtin.stat:
         path: /etc/pacman.d/hooks/firejail-firecfg.hook
-      register: _pacman_hook_other
-      failed_when: _pacman_hook_other.stat.exists
+      register: __pacman_hook_other
+      failed_when: __pacman_hook_other.stat.exists
       when: ansible_facts['os_family'] != 'Archlinux'

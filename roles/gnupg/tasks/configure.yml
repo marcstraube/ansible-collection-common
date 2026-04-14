@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# GnuPG User Configuration
-# =============================================================================
-
 - name: Configure | Get user info
   ansible.builtin.getent:
     database: passwd
@@ -10,12 +6,12 @@
 
 - name: Configure | Set user home fact
   ansible.builtin.set_fact:
-    _gnupg_user_home: '{{ getent_passwd[gnupg_user.username][4] }}'
-    _gnupg_user_uid: '{{ getent_passwd[gnupg_user.username][1] }}'
+    __gnupg_user_home: '{{ getent_passwd[gnupg_user.username][4] }}'
+    __gnupg_user_uid: '{{ getent_passwd[gnupg_user.username][1] }}'
 
 - name: Configure | Ensure .gnupg directory exists
   ansible.builtin.file:
-    path: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}'
+    path: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}'
     state: directory
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
@@ -24,7 +20,7 @@
 - name: Configure | Deploy gpg.conf
   ansible.builtin.template:
     src: gpg.conf.j2
-    dest: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}/gpg.conf'
+    dest: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}/gpg.conf'
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
     mode: '0600'
@@ -32,27 +28,27 @@
 - name: Configure | Deploy gpg-agent.conf
   ansible.builtin.template:
     src: gpg-agent.conf.j2
-    dest: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}/gpg-agent.conf'
+    dest: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}/gpg-agent.conf'
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
     mode: '0600'
-  notify: GnuPG reload agent
+  notify: Reload GnuPG agent
   when: gnupg_agent_enabled | default(true) | bool
 
 - name: Configure | Deploy scdaemon.conf
   ansible.builtin.template:
     src: scdaemon.conf.j2
-    dest: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}/scdaemon.conf'
+    dest: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}/scdaemon.conf'
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
     mode: '0600'
-  notify: GnuPG reload scdaemon
+  notify: Reload GnuPG scdaemon
   when: gnupg_scdaemon_enabled | default(true) | bool
 
 - name: Configure | Deploy dirmngr.conf
   ansible.builtin.template:
     src: dirmngr.conf.j2
-    dest: '{{ _gnupg_user_home }}/{{ __gnupg_config_dir }}/dirmngr.conf'
+    dest: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}/dirmngr.conf'
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
     mode: '0600'
@@ -60,28 +56,29 @@
 
 - name: Configure | Create systemd user environment.d directory
   ansible.builtin.file:
-    path: '{{ _gnupg_user_home }}/.config/environment.d'
+    path: '{{ __gnupg_user_home }}/.config/environment.d'
     state: directory
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
     mode: '0755'
   when:
     - gnupg_agent_enabled | default(true) | bool
-    - gnupg_user.agent_ssh | default(gnupg_agent_enable_ssh) | bool
+    - gnupg_user.agent_ssh | default(gnupg_agent_ssh_enabled) | bool
 
 - name: Configure | Set SSH_AUTH_SOCK to gpg-agent socket
   ansible.builtin.copy:
     content: |
       # GPG agent SSH socket (managed by Ansible)
-      SSH_AUTH_SOCK=/run/user/{{ _gnupg_user_uid }}/gnupg/S.gpg-agent.ssh
-    dest: '{{ _gnupg_user_home }}/.config/environment.d/50-gpg-ssh.conf'
+      SSH_AUTH_SOCK=/run/user/{{ __gnupg_user_uid }}/gnupg/S.gpg-agent.ssh
+    dest: '{{ __gnupg_user_home }}/.config/environment.d/50-gpg-ssh.conf'
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
     mode: '0644'
   when:
     - gnupg_agent_enabled | default(true) | bool
-    - gnupg_user.agent_ssh | default(gnupg_agent_enable_ssh) | bool
+    - gnupg_user.agent_ssh | default(gnupg_agent_ssh_enabled) | bool
 
+# failed_when: false — keyserver may be unreachable or key not found (non-fatal)
 - name: Configure | Import keys from keyserver
   ansible.builtin.command:
     cmd: >
@@ -90,18 +87,19 @@
   loop: '{{ gnupg_import_keys | selectattr("keyid", "defined") | list }}'
   become: true
   become_user: '{{ gnupg_user.username }}'
-  register: _gnupg_import
-  changed_when: "'imported: 1' in _gnupg_import.stderr"
+  register: __gnupg_import
+  changed_when: "'imported: 1' in __gnupg_import.stderr"
   failed_when: false
 
+# failed_when: false — key file may not exist yet on first deployment
 - name: Configure | Import keys from files
   ansible.builtin.command:
     cmd: 'gpg --import {{ item.file }}'
   loop: '{{ gnupg_import_keys | selectattr("file", "defined") | list }}'
   become: true
   become_user: '{{ gnupg_user.username }}'
-  register: _gnupg_import_file
-  changed_when: "'imported: 1' in _gnupg_import_file.stderr"
+  register: __gnupg_import_file
+  changed_when: "'imported: 1' in __gnupg_import_file.stderr"
   failed_when: false
 
 - name: Configure | Set ultimate trust for keys  # noqa: risky-shell-pipe
@@ -110,6 +108,6 @@
   loop: '{{ gnupg_trust_keys }}'
   become: true
   become_user: '{{ gnupg_user.username }}'
-  register: _gnupg_trust
-  changed_when: "'inserted' in (_gnupg_trust.stderr | default(''))"
+  register: __gnupg_trust
+  changed_when: "'inserted' in (__gnupg_trust.stderr | default(''))"
   when: gnupg_trust_keys | length > 0

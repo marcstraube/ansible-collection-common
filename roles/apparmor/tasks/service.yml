@@ -1,11 +1,7 @@
 ---
-# =============================================================================
-# AppArmor Service Tasks
-# =============================================================================
-
-- name: Enable and start AppArmor service
-  ansible.builtin.systemd:
+- name: Service | Manage AppArmor service
+  ansible.builtin.systemd_service:
     name: '{{ __apparmor_service_name }}'
-    enabled: true
-    state: started
+    enabled: "{{ apparmor_service_enabled | bool }}"
+    state: "{{ apparmor_service_enabled | bool | ternary('started', 'stopped') }}"
     daemon_reload: true

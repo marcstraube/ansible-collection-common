@@ -1,12 +1,9 @@
 ---
-# =============================================================================
-# External Repositories (Debian/Ubuntu)
-# =============================================================================
-
-# -----------------------------------------------------------------------------
+#
 # Backports (Debian only)
-# -----------------------------------------------------------------------------
-- name: Enable Debian Backports
+#
+
+- name: Repos | Enable Debian Backports
   ansible.builtin.apt_repository:
     repo: "deb http://deb.debian.org/debian {{ ansible_facts['distribution_release'] }}-backports main contrib non-free"
     state: present
@@ -16,10 +13,11 @@
     - ansible_facts['distribution'] == 'Debian'
   notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # PPAs (Ubuntu only)
-# -----------------------------------------------------------------------------
-- name: Add PPAs
+#
+
+- name: Repos | Add PPAs
   ansible.builtin.apt_repository:
     repo: '{{ item }}'
     state: present
@@ -29,19 +27,22 @@
     - ansible_facts['distribution'] == 'Ubuntu'
   notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Docker CE
-# -----------------------------------------------------------------------------
-- name: Setup Docker CE repository
-  when: apt_docker_repo | bool
+#
+
+- name: Repos | Setup Docker CE repository
+  when: apt_docker_repo_enabled | bool
   block:
-    - name: Add Docker GPG key
+    - name: Repos | Add Docker GPG key
       ansible.builtin.get_url:
         url: 'https://download.docker.com/linux/{{ ansible_facts["distribution"] | lower }}/gpg'
         dest: '/etc/apt/keyrings/docker.asc'
+        owner: root
+        group: root
         mode: '0644'
 
-    - name: Add Docker repository
+    - name: Repos | Add Docker repository
       ansible.builtin.apt_repository:
         repo: >-
           deb [arch={{ ansible_facts['architecture'] | replace('x86_64', 'amd64') }}
@@ -52,19 +53,22 @@
         filename: 'docker-ce'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # PostgreSQL PGDG
-# -----------------------------------------------------------------------------
-- name: Setup PostgreSQL repository
-  when: apt_postgresql_repo | bool
+#
+
+- name: Repos | Setup PostgreSQL repository
+  when: apt_postgresql_repo_enabled | bool
   block:
-    - name: Add PostgreSQL GPG key
+    - name: Repos | Add PostgreSQL GPG key
       ansible.builtin.get_url:
         url: 'https://www.postgresql.org/media/keys/ACCC4CF8.asc'
         dest: '/etc/apt/keyrings/postgresql.asc'
+        owner: root
+        group: root
         mode: '0644'
 
-    - name: Add PostgreSQL repository
+    - name: Repos | Add PostgreSQL repository
       ansible.builtin.apt_repository:
         repo: >-
           deb [signed-by=/etc/apt/keyrings/postgresql.asc]
@@ -74,27 +78,23 @@
         filename: 'postgresql'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
-# NodeSource (Node.js)
-# -----------------------------------------------------------------------------
-# REMOVED: NodeSource repository management has been consolidated into the
-# marcstraube.common.nodejs role. Use that role instead of
-# apt_nodesource_repo/apt_nodesource_version.
-
-# -----------------------------------------------------------------------------
+#
 # PHP Sury (Debian/Ubuntu)
-# -----------------------------------------------------------------------------
-- name: Setup PHP Sury repository
-  when: apt_php_sury_repo | bool
+#
+
+- name: Repos | Setup PHP Sury repository
+  when: apt_php_sury_repo_enabled | bool
   block:
-    - name: Add PHP Sury GPG key
+    - name: Repos | Add PHP Sury GPG key
       ansible.builtin.get_url:
-        url: "https://packages.sury.org/php/apt.gpg"
+        url: 'https://packages.sury.org/php/apt.gpg'
         dest: '/etc/apt/keyrings/php-sury.gpg'
+        owner: root
+        group: root
         mode: '0644'
       when: ansible_facts['distribution'] == 'Debian'
 
-    - name: Add PHP Sury repository (Debian)
+    - name: Repos | Add PHP Sury repository (Debian)
       ansible.builtin.apt_repository:
         repo: >-
           deb [signed-by=/etc/apt/keyrings/php-sury.gpg]
@@ -104,26 +104,29 @@
       when: ansible_facts['distribution'] == 'Debian'
       notify: 'apt configuration changed'
 
-    - name: Add PHP PPA (Ubuntu)
+    - name: Repos | Add PHP PPA (Ubuntu)
       ansible.builtin.apt_repository:
         repo: 'ppa:ondrej/php'
         state: present
       when: ansible_facts['distribution'] == 'Ubuntu'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Grafana
-# -----------------------------------------------------------------------------
-- name: Setup Grafana repository
-  when: apt_grafana_repo | bool
+#
+
+- name: Repos | Setup Grafana repository
+  when: apt_grafana_repo_enabled | bool
   block:
-    - name: Add Grafana GPG key
+    - name: Repos | Add Grafana GPG key
       ansible.builtin.get_url:
         url: 'https://apt.grafana.com/gpg.key'
         dest: '/etc/apt/keyrings/grafana.asc'
+        owner: root
+        group: root
         mode: '0644'
 
-    - name: Add Grafana repository
+    - name: Repos | Add Grafana repository
       ansible.builtin.apt_repository:
         repo: >-
           deb [signed-by=/etc/apt/keyrings/grafana.asc]
@@ -132,19 +135,22 @@
         filename: 'grafana'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Kubernetes
-# -----------------------------------------------------------------------------
-- name: Setup Kubernetes repository
-  when: apt_kubernetes_repo | bool
+#
+
+- name: Repos | Setup Kubernetes repository
+  when: apt_kubernetes_repo_enabled | bool
   block:
-    - name: Add Kubernetes GPG key
+    - name: Repos | Add Kubernetes GPG key
       ansible.builtin.get_url:
         url: "https://pkgs.k8s.io/core:/stable:/v{{ apt_kubernetes_version }}/deb/Release.key"
         dest: '/etc/apt/keyrings/kubernetes.asc'
+        owner: root
+        group: root
         mode: '0644'
 
-    - name: Add Kubernetes repository
+    - name: Repos | Add Kubernetes repository
       ansible.builtin.apt_repository:
         repo: >-
           deb [signed-by=/etc/apt/keyrings/kubernetes.asc]
@@ -153,13 +159,16 @@
         filename: 'kubernetes'
       notify: 'apt configuration changed'
 
-# -----------------------------------------------------------------------------
-# Custom repositories
-# -----------------------------------------------------------------------------
-- name: Add custom repository GPG keys
+#
+# Custom Repositories
+#
+
+- name: Repos | Add custom repository GPG keys
   ansible.builtin.get_url:
     url: '{{ item.gpg_key }}'
     dest: '/etc/apt/keyrings/{{ item.name }}.asc'
+    owner: root
+    group: root
     mode: '0644'
   loop: '{{ apt_custom_repos }}'
   loop_control:
@@ -168,7 +177,7 @@
     - apt_custom_repos | length > 0
     - item.gpg_key is defined
 
-- name: Add custom repositories
+- name: Repos | Add custom repositories
   ansible.builtin.apt_repository:
     repo: '{{ item.repo }}'
     state: present
@@ -179,5 +188,5 @@
   when: apt_custom_repos | length > 0
   notify: 'apt configuration changed'
 
-- name: Flush handlers to update apt cache
+- name: Repos | Flush handlers to update apt cache
   ansible.builtin.meta: flush_handlers

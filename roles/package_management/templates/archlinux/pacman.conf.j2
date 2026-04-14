@@ -136,7 +136,7 @@ RemoteFileSigLevel = {{ pacman_remote_file_sig_level }}
 # repo name header and Include lines. You can add preferred servers immediately
 # after the header, and they will be used before the default mirrors.
 
-{% if pacman_testing_repos %}
+{% if pacman_testing_repos_enabled %}
 [core-testing]
 Include = /etc/pacman.d/mirrorlist
 
@@ -148,7 +148,7 @@ Include = /etc/pacman.d/mirrorlist
 [core]
 Include = /etc/pacman.d/mirrorlist
 
-{% if pacman_testing_repos %}
+{% if pacman_testing_repos_enabled %}
 [extra-testing]
 Include = /etc/pacman.d/mirrorlist
 
@@ -163,7 +163,7 @@ Include = /etc/pacman.d/mirrorlist
 # If you want to run 32 bit applications on your x86_64 system,
 # enable the multilib repositories as required here.
 
-{% if pacman_multilib_testing %}
+{% if pacman_multilib_testing_enabled %}
 [multilib-testing]
 Include = /etc/pacman.d/mirrorlist
 
@@ -172,7 +172,7 @@ Include = /etc/pacman.d/mirrorlist
 #Include = /etc/pacman.d/mirrorlist
 
 {% endif %}
-{% if pacman_multilib %}
+{% if pacman_multilib_enabled %}
 [multilib]
 Include = /etc/pacman.d/mirrorlist
 {% else %}

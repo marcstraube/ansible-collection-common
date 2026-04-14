@@ -19,10 +19,10 @@ MTU = {{ wireguard_mtu }}
 {% if wireguard_table != 'auto' %}
 Table = {{ wireguard_table }}
 {% endif %}
-{% if wireguard_saveconfig | bool %}
+{% if wireguard_saveconfig_enabled | bool %}
 SaveConfig = true
 {% endif %}
-{% if wireguard_dns | length > 0 and wireguard_client_mode | bool %}
+{% if wireguard_dns | length > 0 and wireguard_client_mode_enabled | bool %}
 DNS = {{ wireguard_dns | join(', ') }}
 {% endif %}
 {% for cmd in wireguard_preup %}
@@ -37,7 +37,7 @@ PreDown = {{ cmd }}
 {% for cmd in wireguard_postdown %}
 PostDown = {{ cmd }}
 {% endfor %}
-{% if wireguard_client_mode | bool %}
+{% if wireguard_client_mode_enabled | bool %}
 
 # Client configuration
 [Peer]

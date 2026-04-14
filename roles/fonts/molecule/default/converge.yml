@@ -1,30 +1,29 @@
 ---
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
 
   vars:
     fonts_enabled: true
-    fonts_base: true
-    fonts_dejavu: true
-    fonts_liberation: true
-    fonts_noto: true
-    fonts_noto_emoji: true
-    fonts_noto_cjk: false
-    fonts_coding: true
+    fonts_base_enabled: true
+    fonts_dejavu_enabled: true
+    fonts_liberation_enabled: true
+    fonts_noto_enabled: true
+    fonts_noto_emoji_enabled: true
+    fonts_noto_cjk_enabled: false
+    fonts_coding_enabled: true
     fonts_coding_families:
       - 'firacode'
-    fonts_nerd: "{{ ansible_facts['os_family'] == 'Archlinux' }}"
+    fonts_nerd_enabled: "{{ ansible_facts['os_family'] == 'Archlinux' }}"
     fonts_nerd_families:
       - 'symbols-only'
     fonts_fontconfig_enabled: true
-    fonts_fontconfig_antialias: true
+    fonts_fontconfig_antialias_enabled: true
     fonts_fontconfig_hinting: 'hintslight'
     fonts_fontconfig_subpixel: 'rgb'
     fonts_fontconfig_lcdfilter: 'default'
 
   tasks:
-    - name: Include fonts role  # noqa: role-name[path]
+    - name: Converge | Include fonts role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

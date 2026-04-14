@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# RedHat/Rocky Linux specific variables
-# =============================================================================
-
 __base_default_packages:
   - 'bash-completion'
   - 'htop'
@@ -15,5 +11,9 @@ __base_default_packages:
   - 'tree'
   - 'unzip'
   - 'zip'
+
+__base_locale_packages:
+  - 'glibc-locale-source'
+  - 'glibc-langpack-en'
 
 __base_dialog_package: 'dialog'

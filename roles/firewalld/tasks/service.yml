@@ -1,18 +1,7 @@
 ---
-# =============================================================================
-# Firewalld - Service Tasks
-# =============================================================================
-
-- name: Service | Enable and start firewalld
-  ansible.builtin.systemd:
+- name: Service | Manage firewalld service
+  ansible.builtin.systemd_service:
     name: '{{ __firewalld_service_name }}'
-    enabled: true
-    state: started
-  when: firewalld_enabled | bool
-
-- name: Service | Stop and disable firewalld
-  ansible.builtin.systemd:
-    name: '{{ __firewalld_service_name }}'
-    enabled: false
-    state: stopped
-  when: not (firewalld_enabled | bool)
+    enabled: "{{ firewalld_service_enabled | bool }}"
+    state: "{{ firewalld_service_enabled | bool | ternary('started', 'stopped') }}"
+    daemon_reload: true

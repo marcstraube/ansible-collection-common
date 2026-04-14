@@ -4,49 +4,44 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - systemd
+        - chrony
+      Debian:
+        - systemd
+        - procps
+        - chrony
+      RedHat:
+        - systemd
+        - procps-ng
+        - chrony
+
   tasks:
-    - name: Prepare | Full system update (Arch)
+    - name: Prepare | Update package cache (Arch)
       community.general.pacman:
         update_cache: true
         upgrade: true
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Prepare | Install systemd (Arch)
-      community.general.pacman:
-        name:
-          - systemd
-        state: present
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Prepare | Install systemd and chrony (Debian)
+    - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
-        name:
-          - systemd
-          - procps
-          - chrony
-        state: present
         update_cache: true
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Prepare | Install systemd and chrony (RedHat)
+    - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
-        name:
-          - systemd
-          - procps-ng
-          - chrony
-        state: present
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Prepare | Install chrony (Arch)
-      community.general.pacman:
-        name:
-          - chrony
+    - name: Prepare | Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
-      when: ansible_facts['os_family'] == 'Archlinux'
 
     - name: Prepare | Stop chrony before applying override
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: '{{ __chrony_service_unit }}'
         state: stopped
       failed_when: false
@@ -65,11 +60,15 @@
       ansible.builtin.file:
         path: '/etc/systemd/system/{{ __chrony_service_unit }}.d'
         state: directory
+        owner: root
+        group: root
         mode: '0755'
 
     - name: Prepare | Override chronyd service for container compatibility
       ansible.builtin.copy:
         dest: '/etc/systemd/system/{{ __chrony_service_unit }}.d/override.conf'
+        owner: root
+        group: root
         mode: '0644'
         content: |
           [Unit]
@@ -85,5 +84,5 @@
           ExecStart={{ __chrony_binary }} -d -x
 
     - name: Prepare | Reload systemd
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         daemon_reload: true

@@ -1,14 +1,10 @@
 ---
-# =============================================================================
-# Auditd Installation Tasks
-# =============================================================================
-
-- name: Install auditd packages
+- name: Install | Auditd packages
   ansible.builtin.package:
     name: '{{ __auditd_packages }}'
     state: present
 
-- name: Ensure audit log directory exists
+- name: Install | Ensure audit log directory exists
   ansible.builtin.file:
     path: '{{ auditd_log_file | dirname }}'
     state: directory

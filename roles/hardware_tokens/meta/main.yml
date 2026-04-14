@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Hardware Tokens Role Metadata
-# =============================================================================
-
 galaxy_info:
   author: Marc Straube
   description: Configure hardware security tokens (NitroKey, YubiKey, FIDO2, smart cards)

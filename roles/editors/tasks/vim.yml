@@ -1,12 +1,8 @@
 ---
-# =============================================================================
-# Vim Configuration
-# =============================================================================
-
 - name: Vim | Deploy global configuration
   ansible.builtin.template:
     src: vimrc.j2
-    dest: '{{ __editors_vim_config_global }}'
+    dest: '{{ __editors_vim_config_file }}'
     owner: root
     group: root
     mode: '0644'

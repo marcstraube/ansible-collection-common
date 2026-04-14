@@ -1,14 +1,10 @@
 ---
-# =============================================================================
-# Makepkg Tasks - Build System Configuration
-# =============================================================================
-
-- name: Install base-devel
-  community.general.pacman:
+- name: Makepkg | Install base-devel
+  ansible.builtin.package:
     name: 'base-devel'
     state: present
 
-- name: Configure makepkg
+- name: Makepkg | Deploy makepkg.conf
   ansible.builtin.template:
     src: 'archlinux/makepkg.conf.j2'
     dest: '/etc/makepkg.conf'
@@ -17,29 +13,29 @@
     mode: '0644'
     backup: true
 
-- name: Install ccache
-  community.general.pacman:
+- name: Makepkg | Install ccache
+  ansible.builtin.package:
     name: 'ccache'
     state: present
-  when: makepkg_ccache | bool
+  when: makepkg_ccache_enabled | bool
 
-- name: Install sccache
-  community.general.pacman:
+- name: Makepkg | Install sccache
+  ansible.builtin.package:
     name: 'sccache'
     state: present
-  when: makepkg_sccache | bool
+  when: makepkg_sccache_enabled | bool
 
-- name: Install distcc
-  community.general.pacman:
+- name: Makepkg | Install distcc
+  ansible.builtin.package:
     name: 'distcc'
     state: present
-  when: makepkg_distcc | bool
+  when: makepkg_distcc_enabled | bool
 
-# =============================================================================
+#
 # Per-User makepkg.conf
-# =============================================================================
+#
 
-- name: Deploy user makepkg.conf
+- name: Makepkg | Deploy user makepkg.conf
   ansible.builtin.template:
     src: 'archlinux/makepkg.user.conf.j2'
     dest: '{{ __makepkg_user.home | default("/home/" + __makepkg_user.username) }}/.makepkg.conf'

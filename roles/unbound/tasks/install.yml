@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Unbound - Installation Tasks
-# =============================================================================
-
 - name: Install | Unbound packages
   ansible.builtin.package:
     name: '{{ __unbound_packages }}'
@@ -31,7 +27,7 @@
     owner: '{{ __unbound_user }}'
     group: '{{ __unbound_group }}'
     mode: '0644'
-  when: unbound_root_hints_update | bool
+  when: unbound_root_hints_update_enabled | bool
 
 - name: Install | Deploy root hints update systemd service
   ansible.builtin.template:
@@ -40,7 +36,6 @@
     owner: root
     group: root
     mode: '0644'
-  when: unbound_root_hints_update | bool
   notify: Reload unbound systemd units
 
 - name: Install | Deploy root hints update systemd timer
@@ -50,13 +45,22 @@
     owner: root
     group: root
     mode: '0644'
-  when: unbound_root_hints_update | bool
   notify: Reload unbound systemd units
 
-- name: Install | Enable and start root hints update timer
-  ansible.builtin.systemd:
-    name: unbound-root-hints.timer
-    enabled: true
-    state: started
-    daemon_reload: true
-  when: unbound_root_hints_update | bool
+- name: Install | Deploy blocklist update systemd service
+  ansible.builtin.template:
+    src: 'unbound-blocklist.service.j2'
+    dest: '/etc/systemd/system/unbound-blocklist.service'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload unbound systemd units
+
+- name: Install | Deploy blocklist update systemd timer
+  ansible.builtin.template:
+    src: 'unbound-blocklist.timer.j2'
+    dest: '/etc/systemd/system/unbound-blocklist.timer'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload unbound systemd units

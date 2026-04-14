@@ -12,23 +12,33 @@ test-scan-mode={{ lynis_scan_mode }}
 # Auditor identity
 auditor={{ lynis_auditor }}
 {% endif %}
+{% if lynis_colors %}
 
 # Output
-{% if lynis_colors %}
 colors=yes
 {% else %}
+
+# Output
 colors=no
 {% endif %}
 {% if lynis_quick_mode %}
+
+# Skip interactive prompts
 quick=yes
 {% endif %}
 {% if lynis_verbose %}
+
+# Verbose output
 verbose=yes
 {% endif %}
 {% if lynis_debug %}
+
+# Debug mode
 debug=yes
 {% endif %}
 {% if lynis_show_warnings_only %}
+
+# Show warnings only
 show-warnings-only=yes
 {% endif %}
 {% if lynis_pause_between_tests | int > 0 %}

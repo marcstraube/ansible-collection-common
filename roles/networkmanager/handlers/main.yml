@@ -1,18 +1,18 @@
 ---
-# marcstraube.networkmanager/handlers/main.yml
-
-- name: Reload NetworkManager connection
+- name: Reload NetworkManager connections
   ansible.builtin.command:
     cmd: nmcli connection reload
-  register: __networkmanager_reload_status
   changed_when: false
+  when: networkmanager_enabled | bool
 
 - name: Restart NetworkManager
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __networkmanager_service_name }}'
     state: restarted
+  when: networkmanager_service_enabled | bool
 
 - name: Restart polkitd
-  ansible.builtin.systemd:
-    name: polkit.service
+  ansible.builtin.systemd_service:
+    name: '{{ __networkmanager_polkit_service }}'
     state: restarted
+  when: networkmanager_polkit_enabled | bool

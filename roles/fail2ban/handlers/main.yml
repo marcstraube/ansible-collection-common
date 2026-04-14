@@ -1,12 +1,19 @@
 ---
-- name: Reload fail2ban
-  ansible.builtin.systemd:
-    name: '{{ __fail2ban_service_name }}'
-    state: reloaded
+- name: Reload fail2ban systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  # Container-safety for molecule
+  failed_when: false
   when: fail2ban_enabled | bool
 
 - name: Restart fail2ban
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __fail2ban_service_name }}'
     state: restarted
-  when: fail2ban_enabled | bool
+  when: fail2ban_service_enabled | bool
+
+- name: Reload fail2ban
+  ansible.builtin.systemd_service:
+    name: '{{ __fail2ban_service_name }}'
+    state: reloaded
+  when: fail2ban_service_enabled | bool

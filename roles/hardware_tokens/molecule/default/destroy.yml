@@ -1,18 +1,16 @@
 ---
-# marcstraube.common.hardware_tokens/molecule/default/destroy.yml
-
 - name: Destroy Vagrant instances
   hosts: localhost
   gather_facts: false
   vars:
     molecule_ephemeral_directory: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
   tasks:
-    - name: Check if ephemeral directory exists
+    - name: Destroy | Check if ephemeral directory exists
       ansible.builtin.stat:
         path: "{{ molecule_ephemeral_directory }}"
       register: ephemeral_dir
 
-    - name: Check if Vagrant VMs exist
+    - name: Destroy | Check if Vagrant VMs exist
       ansible.builtin.command:
         cmd: vagrant status --machine-readable
         chdir: "{{ molecule_ephemeral_directory }}"
@@ -21,7 +19,7 @@
       failed_when: false
       when: ephemeral_dir.stat.exists
 
-    - name: Destroy Vagrant VMs
+    - name: Destroy | Vagrant VMs
       ansible.builtin.command:
         cmd: vagrant destroy -f
         chdir: "{{ molecule_ephemeral_directory }}"
@@ -34,10 +32,10 @@
           'saved' in vagrant_status.stdout
       register: vagrant_destroy
       changed_when: vagrant_destroy.rc == 0
-      notify: Display destroy success
+      notify: Destroy | Display success
 
   handlers:
-    - name: Display destroy success
+    - name: Destroy | Display success
       ansible.builtin.debug:
         msg: Vagrant instances destroyed successfully
       when: vagrant_destroy is changed

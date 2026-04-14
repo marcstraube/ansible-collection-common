@@ -1,19 +1,27 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
+    #
+    # Variables
+    #
+
     - name: Verify | Load OS-specific variables
       ansible.builtin.include_vars: '{{ item }}'
       with_first_found:
         - files:
             - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
             - '{{ ansible_facts["distribution"] }}.yml'
             - '{{ ansible_facts["os_family"] }}.yml'
           paths:
             - '../../vars'
+
+    #
+    # Package
+    #
 
     - name: Verify | Check SNMP package is installed
       ansible.builtin.package:
@@ -22,6 +30,10 @@
       check_mode: true
       register: pkg_check
       failed_when: pkg_check.changed
+
+    #
+    # Configuration File
+    #
 
     - name: Verify | Check configuration file exists
       ansible.builtin.stat:
@@ -50,16 +62,28 @@
           - "'Ansible managed' in __snmp_config"
         fail_msg: 'Configuration file missing ansible_managed header'
 
+    #
+    # Service
+    #
+
     - name: Verify | Check snmpd service is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: '{{ __snmp_service_name }}'
       register: service_status
       failed_when: service_status.status.UnitFileState != 'enabled'
+
+    #
+    # System Information
+    #
 
     - name: Verify | Configuration contains sysContact
       ansible.builtin.assert:
         that:
           - "'sysContact' in __snmp_config"
+
+    #
+    # SNMPv2c Communities
+    #
 
     - name: Verify | Configuration contains v2c community
       ansible.builtin.assert:
@@ -71,6 +95,10 @@
         that:
           - "'rwcommunity  testprivate' in __snmp_config"
 
+    #
+    # SNMPv3 Users
+    #
+
     - name: Verify | Configuration contains v3 user
       ansible.builtin.assert:
         that:
@@ -81,6 +109,10 @@
         path: '{{ __snmp_config_dir }}/.snmpv3_users.sha256'
       register: checksum_stat
       failed_when: not checksum_stat.stat.exists
+
+    #
+    # VACM Configuration
+    #
 
     - name: Verify | Configuration contains com2sec directive
       ansible.builtin.assert:
@@ -97,20 +129,36 @@
         that:
           - "'access  mygroup' in __snmp_config"
 
+    #
+    # Trap Configuration
+    #
+
     - name: Verify | Configuration contains trapsink directive
       ansible.builtin.assert:
         that:
           - "'trapsink  127.0.0.1' in __snmp_config"
+
+    #
+    # SMUX Configuration
+    #
 
     - name: Verify | Configuration contains smuxpeer directive
       ansible.builtin.assert:
         that:
           - "'smuxpeer  .1.3.6.1.4.1.674.10893.1' in __snmp_config"
 
+    #
+    # Logging
+    #
+
     - name: Verify | Configuration contains dontLogTCPWrappersConnects
       ansible.builtin.assert:
         that:
           - "'dontLogTCPWrappersConnects  yes' in __snmp_config"
+
+    #
+    # Monitoring
+    #
 
     - name: Verify | Configuration contains disk monitor
       ansible.builtin.assert:
@@ -132,10 +180,18 @@
         that:
           - "'extend  testextend  /bin/echo test' in __snmp_config"
 
+    #
+    # AgentX
+    #
+
     - name: Verify | Configuration contains AgentX
       ansible.builtin.assert:
         that:
           - "'master  agentx' in __snmp_config"
+
+    #
+    # Systemd Override
+    #
 
     - name: Verify | Check systemd override (Arch)
       when: ansible_facts['os_family'] == 'Archlinux'

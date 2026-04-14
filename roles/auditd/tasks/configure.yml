@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# Auditd Configuration Tasks
-# =============================================================================
-
-- name: Configure auditd.conf
+- name: Configure | auditd.conf
   ansible.builtin.template:
     src: 'auditd.conf.j2'
     dest: '/etc/audit/auditd.conf'
@@ -12,7 +8,7 @@
     mode: '0640'
   notify: Reload auditd config
 
-- name: Configure syslog plugin
+- name: Configure | Syslog plugin
   ansible.builtin.template:
     src: 'syslog.conf.j2'
     dest: '/etc/audit/plugins.d/syslog.conf'
@@ -20,4 +16,4 @@
     group: root
     mode: '0640'
   notify: Reload auditd config
-  when: auditd_plugin_syslog | bool
+  when: auditd_plugin_syslog_enabled | bool

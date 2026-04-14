@@ -1,32 +1,26 @@
 ---
-# =============================================================================
-# Firejail Configuration Tasks
-# =============================================================================
-
-# Deploy global firejail settings
 - name: Configure | Deploy global configuration
   ansible.builtin.template:
     src: firejail.config.j2
-    dest: '{{ __firejail_config_path }}/firejail.config'
+    dest: '{{ __firejail_config_dir }}/firejail.config'
     owner: root
     group: root
     mode: '0644'
   notify: apply firecfg
 
-# Comment out excluded apps in firecfg.config so firecfg skips them
 - name: Configure | Exclude applications from firecfg
   ansible.builtin.replace:
-    path: '{{ __firejail_config_path }}/firecfg.config'
+    path: '{{ __firejail_config_dir }}/firecfg.config'
     regexp: '^({{ item | regex_escape }})$'
     replace: '# \1'
   loop: '{{ firejail_exclude }}'
   notify: apply firecfg
 
-# Deploy per-application profile overrides (OS-specific + user-defined, user wins)
+# OS-specific + user-defined overrides, user wins
 - name: Configure | Deploy custom profile overrides
   ansible.builtin.template:
     src: firejail-profile.local.j2
-    dest: '{{ __firejail_profiles_path }}/{{ item.key }}.local'
+    dest: '{{ __firejail_profiles_dir }}/{{ item.key }}.local'
     owner: root
     group: root
     mode: '0644'
@@ -36,26 +30,24 @@
        | dict2items }}
   when: ((__firejail_profiles_os | default({})) | combine(firejail_profiles)) | length > 0
 
-# Load firejail AppArmor profile into kernel
+# Profile reload is idempotent — result identical on every run
 - name: Configure | Load firejail AppArmor profile
   ansible.builtin.command:
     cmd: apparmor_parser -r /etc/apparmor.d/firejail-default
   changed_when: false
   when:
-    - firejail_apparmor | bool
+    - firejail_apparmor_enabled | bool
     - (ansible_facts['apparmor'] | default({}))['status'] | default('') == 'enabled'
 
-# Deploy global profile overrides
 - name: Configure | Deploy globals.local
   ansible.builtin.template:
     src: globals.local.j2
-    dest: '{{ __firejail_config_path }}/globals.local'
+    dest: '{{ __firejail_config_dir }}/globals.local'
     owner: root
     group: root
     mode: '0644'
-  when: (firejail_globals | length > 0) or (firejail_apparmor | bool)
+  when: (firejail_globals | length > 0) or (firejail_apparmor_enabled | bool)
 
-# Deploy pacman hook on Arch Linux
 - name: Configure | Ensure pacman hooks directory exists
   ansible.builtin.file:
     path: /etc/pacman.d/hooks
@@ -65,7 +57,7 @@
     mode: '0755'
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - firejail_pacman_hook | bool
+    - firejail_pacman_hook_enabled | bool
 
 - name: Configure | Deploy pacman hook for firecfg
   ansible.builtin.copy:
@@ -76,7 +68,7 @@
     mode: '0644'
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - firejail_pacman_hook | bool
+    - firejail_pacman_hook_enabled | bool
 
 # Ensure firecfg runs within this role execution
 - name: Configure | Flush handlers

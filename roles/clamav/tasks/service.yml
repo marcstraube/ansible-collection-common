@@ -1,46 +1,19 @@
 ---
-# ============================================================================
-# ClamAV daemon (clamd)
-# ============================================================================
-- name: Enable and start ClamAV daemon
-  ansible.builtin.systemd:
+- name: Service | Manage ClamAV daemon
+  ansible.builtin.systemd_service:
     name: '{{ __clamav_daemon_service }}'
-    enabled: true
-    state: started
-  when: clamav_daemon_enabled | bool
+    enabled: "{{ clamav_daemon_enabled | bool }}"
+    state: "{{ clamav_daemon_enabled | bool | ternary('started', 'stopped') }}"
 
-- name: Stop and disable ClamAV daemon
-  ansible.builtin.systemd:
-    name: '{{ __clamav_daemon_service }}'
-    enabled: false
-    state: stopped
-  when: not (clamav_daemon_enabled | bool)
-
-# ============================================================================
-# Freshclam (database updates)
-# ============================================================================
-- name: Enable and start freshclam service
-  ansible.builtin.systemd:
+- name: Service | Manage ClamAV freshclam service
+  ansible.builtin.systemd_service:
     name: '{{ __clamav_freshclam_service }}'
-    enabled: true
-    state: started
-  when: clamav_freshclam_enabled | bool
+    enabled: "{{ clamav_freshclam_enabled | bool }}"
+    state: "{{ clamav_freshclam_enabled | bool | ternary('started', 'stopped') }}"
 
-- name: Stop and disable freshclam service
-  ansible.builtin.systemd:
-    name: '{{ __clamav_freshclam_service }}'
-    enabled: false
-    state: stopped
-  when: not (clamav_freshclam_enabled | bool)
-
-# ============================================================================
-# ClamAV milter (only managed when milter is enabled)
-# ============================================================================
-- name: Enable and start clamav-milter service
-  ansible.builtin.systemd:
+- name: Service | Manage ClamAV milter service
+  ansible.builtin.systemd_service:
     name: '{{ __clamav_milter_service }}'
-    enabled: true
-    state: started
-  when:
-    - clamav_milter_enabled | bool
-    - __clamav_milter_service | default('') | length > 0
+    enabled: "{{ clamav_milter_enabled | bool }}"
+    state: "{{ clamav_milter_enabled | bool | ternary('started', 'stopped') }}"
+  when: __clamav_milter_service | default('') | length > 0

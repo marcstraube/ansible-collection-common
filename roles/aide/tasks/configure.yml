@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# AIDE Configuration Tasks
-# =============================================================================
-
-- name: Deploy AIDE configuration
+- name: Configure | Deploy AIDE configuration
   ansible.builtin.template:
     src: 'aide.conf.j2'
     dest: '{{ __aide_config_file }}'

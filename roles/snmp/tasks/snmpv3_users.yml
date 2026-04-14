@@ -1,41 +1,37 @@
 ---
-# =============================================================================
-# SNMP - SNMPv3 User Management
-# =============================================================================
 # SNMPv3 createUser directives in snmpd.conf are processed on first start,
 # then moved to the persistent store. To update users, the persistent store
 # must be wiped so snmpd re-processes the createUser lines.
 #
 # Idempotency: a checksum of the v3 user list is stored on disk. The
 # persistent store is only wiped when the checksum changes.
-# =============================================================================
 
-- name: SNMPv3 | Compute user list checksum
+- name: SNMPv3 Users | Compute user list checksum
   ansible.builtin.set_fact:
     __snmp_v3_users_checksum: >-
       {{ snmp_v3_users | to_json | hash('sha256') }}
 
-- name: SNMPv3 | Read previous user checksum
+- name: SNMPv3 Users | Read previous user checksum
   ansible.builtin.slurp:
     src: '{{ __snmp_config_dir }}/.snmpv3_users.sha256'
   register: __snmp_v3_prev_checksum
   failed_when: false
 
-- name: SNMPv3 | Check if user configuration changed
+- name: SNMPv3 Users | Check if user configuration changed
   ansible.builtin.set_fact:
     __snmp_v3_users_changed: >-
       {{ __snmp_v3_prev_checksum is failed
          or (__snmp_v3_prev_checksum.content | default('') | b64decode | trim)
             != (__snmp_v3_users_checksum | trim) }}
 
-- name: SNMPv3 | Wipe persistent store on user change
+- name: SNMPv3 Users | Wipe persistent store on user change
   ansible.builtin.file:
     path: '{{ __snmp_persistent_dir }}/snmpd.conf'
     state: absent
   when: __snmp_v3_users_changed | bool
-  notify: Restart snmpd
+  notify: Restart SNMP daemon
 
-- name: SNMPv3 | Write user checksum file
+- name: SNMPv3 Users | Write user checksum file
   ansible.builtin.copy:
     content: '{{ __snmp_v3_users_checksum | trim }}'
     dest: '{{ __snmp_config_dir }}/.snmpv3_users.sha256'

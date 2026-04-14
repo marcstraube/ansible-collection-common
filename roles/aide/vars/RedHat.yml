@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# RedHat/Fedora-specific variables for AIDE
-# =============================================================================
-
 __aide_package: 'aide'
 
 __aide_aur: false
@@ -12,7 +8,7 @@ __aide_config_file: '/etc/aide.conf'
 __aide_init_command: 'aide --init'
 
 # AIDE 0.18+ uses 'database_in' (Rocky 10, Fedora, RHEL 10+)
-# Rocky 9 (AIDE 0.16) overrides this in Rocky-9.yml
+# EL 9 (AIDE 0.16) overrides this in RedHat-9.yml
 __aide_database_directive: 'database_in'
 
 # AIDE 0.18+ supports log_level/report_level directives

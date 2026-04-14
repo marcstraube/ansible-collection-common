@@ -1,72 +1,158 @@
 ---
-# =============================================================================
-# Auditd Main Tasks
-# =============================================================================
-
-- name: Warn if email notifications use default address
-  ansible.builtin.debug:
-    msg: >-
-      WARNING: auditd_email_address is set to '{{ auditd_email_address }}'.
-      Set a real email address in your vars for production alerting.
-  when:
-    - auditd_email_enabled | bool
-    - auditd_email_address == 'root'
-  tags: [auditd]
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [auditd]
+  tags:
+    - auditd
+
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    "{{ item.new }}": "{{ lookup('vars', item.old) | bool }}"
+  when:
+    - auditd_enabled | bool
+    - lookup('vars', item.old, default='__undefined__') != '__undefined__'
+  loop: "{{ __auditd_deprecated_vars }}"
+  loop_control:
+    label: "{{ item.old }} -> {{ item.new }}"
+  vars:
+    __auditd_deprecated_vars:
+      - old: auditd_pci_dss
+        new: auditd_pci_dss_enabled
+      - old: auditd_hipaa
+        new: auditd_hipaa_enabled
+      - old: auditd_nist
+        new: auditd_nist_enabled
+      - old: auditd_stig
+        new: auditd_stig_enabled
+      - old: auditd_time_change
+        new: auditd_time_change_enabled
+      - old: auditd_identity_change
+        new: auditd_identity_change_enabled
+      - old: auditd_network_change
+        new: auditd_network_change_enabled
+      - old: auditd_system_locale
+        new: auditd_system_locale_enabled
+      - old: auditd_mac_policy
+        new: auditd_mac_policy_enabled
+      - old: auditd_logins
+        new: auditd_logins_enabled
+      - old: auditd_session
+        new: auditd_session_enabled
+      - old: auditd_perm_mod
+        new: auditd_perm_mod_enabled
+      - old: auditd_access
+        new: auditd_access_enabled
+      - old: auditd_delete
+        new: auditd_delete_enabled
+      - old: auditd_scope
+        new: auditd_scope_enabled
+      - old: auditd_actions
+        new: auditd_actions_enabled
+      - old: auditd_modules
+        new: auditd_modules_enabled
+  tags:
+    - auditd
+
+- name: Main | Handle deprecated auditd_remote_logging variable
+  ansible.builtin.set_fact:
+    auditd_remote_logging_enabled: >-
+      {{ auditd_remote_logging | default(auditd_remote_logging_enabled) | bool }}
+  when:
+    - auditd_enabled | bool
+    - auditd_remote_logging is defined
+  tags:
+    - auditd
+
+- name: Main | Handle deprecated auditd_plugin_syslog variable
+  ansible.builtin.set_fact:
+    auditd_plugin_syslog_enabled: >-
+      {{ auditd_plugin_syslog | default(auditd_plugin_syslog_enabled) | bool }}
+  when:
+    - auditd_enabled | bool
+    - auditd_plugin_syslog is defined
+  tags:
+    - auditd
+
+- name: Main | Warn if email notifications use default address
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: auditd_email_address is set to '{{ auditd_email_address }}'.
+      Set a real email address in your vars for production alerting.
+  when:
+    - auditd_enabled | bool
+    - auditd_email_enabled | bool
+    - auditd_email_address == 'root'
+  tags:
+    - auditd
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: auditd_enabled | bool
+  tags:
+    - auditd
+    - auditd:install
 
 - name: Main | Include BTRFS tasks
   ansible.builtin.include_tasks:
     file: btrfs.yml
     apply:
-      tags: [auditd, auditd:install]
-  when:
-    - auditd_enabled | bool
-    - auditd_btrfs_subvolume | bool
-  tags: [auditd, auditd:install]
-
-- name: Main | Import install tasks
-  ansible.builtin.import_tasks: install.yml
+      tags:
+        - auditd
+        - auditd:install
   when: auditd_enabled | bool
-  tags: [auditd, auditd:install]
+  tags:
+    - auditd
+    - auditd:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
   when: auditd_enabled | bool
-  tags: [auditd, auditd:configure]
+  tags:
+    - auditd
+    - auditd:configure
 
 - name: Main | Import rules tasks
   ansible.builtin.import_tasks: rules.yml
   when:
     - auditd_enabled | bool
     - auditd_rules_enabled | bool
-  tags: [auditd, auditd:rules]
+  tags:
+    - auditd
+    - auditd:rules
 
 - name: Main | Import remote tasks
   ansible.builtin.import_tasks: remote.yml
   when:
     - auditd_enabled | bool
-    - auditd_remote_logging | bool
-  tags: [auditd, auditd:remote]
+    - auditd_remote_logging_enabled | bool
+  tags:
+    - auditd
+    - auditd:remote
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
   when: auditd_enabled | bool
-  tags: [auditd, auditd:service]
+  tags:
+    - auditd
+    - auditd:service
 
 - name: Main | Include firewall tasks
   ansible.builtin.include_tasks:
     file: firewall.yml
     apply:
-      tags: [auditd, auditd:firewall]
-  when: auditd_firewalld_enabled | default(false) | bool
-  tags: [auditd, auditd:firewall]
+      tags:
+        - auditd
+        - auditd:firewall
+  when:
+    - auditd_enabled | bool
+    - auditd_firewalld_enabled | bool
+  tags:
+    - auditd
+    - auditd:firewall

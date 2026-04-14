@@ -1,7 +1,6 @@
 ---
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
 
   vars:
@@ -10,8 +9,8 @@
       - '127.0.0.1'
     unbound_port: 5353
     unbound_dnssec_enabled: false
-    unbound_root_hints_update: false
-    unbound_remote_control: false
+    unbound_root_hints_update_enabled: false
+    unbound_remote_control_enabled: false
     unbound_access_control:
       - subnet: '127.0.0.0/8'
         action: 'allow'
@@ -38,20 +37,7 @@
     unbound_insecure_domains:
       - 'test.example.com'
 
-  pre_tasks:
-    - name: Update apt cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-      changed_when: false
-
-    - name: Update dnf cache (RedHat)
-      ansible.builtin.dnf:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'RedHat'
-      changed_when: false
-
   tasks:
-    - name: Include unbound role  # noqa: role-name[path]
+    - name: Converge | Include unbound role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

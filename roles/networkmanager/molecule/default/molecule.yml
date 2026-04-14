@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/molecule/default/molecule.yml
-
 dependency:
   name: galaxy
   options:
@@ -37,6 +35,7 @@ provisioner:
       stdout_callback: default
       result_format: yaml
       inject_facts_as_vars: false
+      allow_broken_conditionals: true
   inventory:
     host_vars:
       networkmanager-archlinux:
@@ -216,28 +215,29 @@ provisioner:
         test_networkmanager_sshfs_shares: []
 
     group_vars:
-      all:
+      test_hosts:
         ansible_connection: ssh
         ansible_user: vagrant
+        ansible_become: true
         ansible_host: 127.0.0.1
         ansible_ssh_common_args: >-
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-
+      all:
         # Shared test configuration (all platforms)
         test_networkmanager_unmanaged_devices:
           - mac: 00:11:22:33:44:55
           - ifname: eth99
           - mac: AA:BB:CC:DD:EE:FF
 
-        test_networkmanager_install_applet: false
-        test_networkmanager_configure_timezone: true
+        test_networkmanager_applet_enabled: false
+        test_networkmanager_timezone_enabled: true
         test_networkmanager_dns: systemd-resolved
         test_networkmanager_log_level: WARN
         test_networkmanager_wifi_powersave: disable
         test_networkmanager_wifi_scan_rand_mac: false
         test_networkmanager_dhcp_send_hostname_ipv4: true
         test_networkmanager_dhcp_send_hostname_ipv6: false
-        test_networkmanager_polkit: true
+        test_networkmanager_polkit_enabled: true
         test_networkmanager_polkit_group: wheel
 
         test_users_list:

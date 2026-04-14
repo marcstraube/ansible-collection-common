@@ -1,25 +1,61 @@
 ---
-# =============================================================================
-# System Hardening Main Tasks
-# =============================================================================
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+      skip: true
+
+- name: Main | Handle deprecated hardening_kernel_perf_event_paranoid
+  ansible.builtin.set_fact:
+    hardening_kernel_perf_event_paranoid_enabled: >-
+      {{ hardening_kernel_perf_event_paranoid | default(hardening_kernel_perf_event_paranoid_enabled) | bool }}
+  when:
+    - hardening_enabled | bool
+    - hardening_kernel_perf_event_paranoid is defined
+  tags:
+    - hardening
+    - hardening:kernel
+
+- name: Main | Handle deprecated hardening_fs_vartmp_bind
+  ansible.builtin.set_fact:
+    hardening_fs_vartmp_bind_enabled: >-
+      {{ hardening_fs_vartmp_bind | default(hardening_fs_vartmp_bind_enabled) | bool }}
+  when:
+    - hardening_enabled | bool
+    - hardening_fs_vartmp_bind is defined
+  tags:
+    - hardening
+    - hardening:filesystem
 
 - name: Main | Import kernel hardening tasks
   ansible.builtin.import_tasks: configure.yml
   when:
     - hardening_enabled | bool
     - hardening_kernel_enabled | bool
-  tags: [hardening, hardening:kernel]
+  tags:
+    - hardening
+    - hardening:kernel
 
 - name: Main | Import module blacklisting tasks
   ansible.builtin.import_tasks: modules.yml
   when:
     - hardening_enabled | bool
     - hardening_modules_enabled | bool
-  tags: [hardening, hardening:modules]
+  tags:
+    - hardening
+    - hardening:modules
 
 - name: Main | Import filesystem hardening tasks
   ansible.builtin.import_tasks: filesystem.yml
   when:
     - hardening_enabled | bool
     - hardening_fs_enabled | bool
-  tags: [hardening, hardening:filesystem]
+  tags:
+    - hardening
+    - hardening:filesystem

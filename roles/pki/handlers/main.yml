@@ -1,21 +1,25 @@
 ---
-# =============================================================================
-# PKI Handlers
-# =============================================================================
+- name: Reload PKI systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  # Container-safety for molecule
+  failed_when: false
+  when: pki_enabled | bool
 
 - name: Update CA trust
   ansible.builtin.command:
     cmd: '{{ __pki_update_ca_trust_cmd }}'
   changed_when: false
+  when: pki_enabled | bool
 
-- name: Restart OCSP responder
-  ansible.builtin.systemd:
+- name: Restart PKI OCSP responder
+  ansible.builtin.systemd_service:
     name: pki-ocsp.service
     state: restarted
-    daemon_reload: true
+  when: pki_ocsp_enabled | bool
 
-- name: Restart cert check timer
-  ansible.builtin.systemd:
+- name: Restart PKI cert check timer
+  ansible.builtin.systemd_service:
     name: pki-cert-check.timer
     state: restarted
-    daemon_reload: true
+  when: pki_renewal_enabled | bool

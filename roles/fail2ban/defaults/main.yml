@@ -1,219 +1,474 @@
 ---
-# =============================================================================
-# SERVICE CONTROL
-# =============================================================================
+#
+# Role Control
+#
+
+# Enable the fail2ban role
 fail2ban_enabled: true
 
-# =============================================================================
-# GLOBAL SETTINGS
-# =============================================================================
+# Enable and start the fail2ban service
+fail2ban_service_enabled: true
+
+#
+# Global Settings
+#
+
+# IPs to never ban
 fail2ban_ignoreip:
   - '127.0.0.1/8'
   - '::1'
+
+# Ignore own IP addresses
 fail2ban_ignoreself: true
 
+# Default ban duration
 fail2ban_bantime: '1h'
+
+# Time window for maxretry
 fail2ban_findtime: '10m'
+
+# Default max retries before ban
 fail2ban_maxretry: 5
 
-# Progressive ban times (requires fail2ban >= 0.11)
-fail2ban_bantime_increment: false
-fail2ban_bantime_factor: 2
-fail2ban_bantime_formula: 'ban.Time * (1<<(ban.Count if ban.Count<20 else 20)) * banFactor'
-fail2ban_bantime_maxtime: '5w'
-fail2ban_bantime_overalljails: false
+#
+# Progressive Ban Times
+#
+# Requires fail2ban >= 0.11
 
-# =============================================================================
-# BAN ACTION
-# =============================================================================
+# Enable progressive ban times
+fail2ban_bantime_increment_enabled: false
+
+# DEPRECATED: Use fail2ban_bantime_increment_enabled instead (removed in v2.0.0)
+# fail2ban_bantime_increment: {{ fail2ban_bantime_increment_enabled }}
+
+# Ban time multiplier
+fail2ban_bantime_factor: 2
+
+# Ban time calculation formula
+fail2ban_bantime_formula: 'ban.Time * (1<<(ban.Count if ban.Count<20 else 20)) * banFactor'
+
+# Maximum ban duration
+fail2ban_bantime_maxtime: '5w'
+
+# Count bans across all jails
+fail2ban_bantime_overalljails_enabled: false
+
+# DEPRECATED: Use fail2ban_bantime_overalljails_enabled instead (removed in v2.0.0)
+# fail2ban_bantime_overalljails: {{ fail2ban_bantime_overalljails_enabled }}
+
+#
+# Ban Action
+#
 # Options: firewallcmd-ipset, firewallcmd-rich-rules, nftables-multiport, iptables-multiport
 # OS-specific defaults set via vars/ (__fail2ban_banaction, __fail2ban_banaction_allports)
+
+# Ban action backend
 fail2ban_banaction: '{{ __fail2ban_banaction | default("firewallcmd-ipset") }}'
+
+# All-ports ban action
 fail2ban_banaction_allports: '{{ __fail2ban_banaction_allports | default("firewallcmd-ipset") }}'
+
+# iptables/nftables chain
 fail2ban_chain: 'INPUT'
 
-# =============================================================================
-# LOGGING
-# =============================================================================
-fail2ban_loglevel: 'INFO'  # CRITICAL, ERROR, WARNING, NOTICE, INFO, DEBUG
+#
+# Logging
+#
+
+# Log level (CRITICAL, ERROR, WARNING, NOTICE, INFO, DEBUG)
+fail2ban_loglevel: 'INFO'
+
+# Log target
 fail2ban_logtarget: '/var/log/fail2ban.log'
+
+# Syslog target
 fail2ban_syslog_target: '/dev/log'
+
+# Log date pattern (empty for auto-detection)
 fail2ban_log_date_pattern: ''
 
-# =============================================================================
-# MAIL NOTIFICATIONS
-# =============================================================================
+#
+# Mail Notifications
+#
+
+# Notification recipient
 fail2ban_destemail: 'root@localhost'
+
+# Sender address
 fail2ban_sender: 'fail2ban@localhost'
+
+# Sender display name
 fail2ban_sendername: 'Fail2Ban'
+
+# Mail transfer agent
 fail2ban_mta: 'sendmail'
 
-# Action types:
+# Action type
 # %(action_)s - ban only
 # %(action_mw)s - ban + mail with whois
 # %(action_mwl)s - ban + mail with whois + logs
 # %(action_cf_mwl)s - CloudFlare + mail with logs
 fail2ban_action: '%(action_)s'
 
-# =============================================================================
-# DATABASE
-# =============================================================================
+#
+# Database
+#
+
+# Database file path
 fail2ban_dbfile: '/var/lib/fail2ban/fail2ban.sqlite3'
+
+# Database purge age
 fail2ban_dbpurgeage: '1d'
+
+# Max matches stored per ticket
 fail2ban_dbmaxmatches: 10
 
-# =============================================================================
-# DEFAULT JAIL SETTINGS
-# =============================================================================
-fail2ban_default_backend: 'auto'  # auto, pyinotify, gamin, polling, systemd
-fail2ban_default_usedns: 'warn'  # yes, no, warn, raw
+#
+# Default Jail Settings
+#
+
+# Detection backend (auto, pyinotify, gamin, polling, systemd)
+fail2ban_default_backend: 'auto'
+
+# DNS usage policy (yes, no, warn, raw)
+fail2ban_default_usedns: 'warn'
+
+# Log file encoding
 fail2ban_default_logencoding: 'auto'
 
-# =============================================================================
-# SSH JAILS
-# =============================================================================
-fail2ban_sshd_enabled: true
-fail2ban_sshd_port: 'ssh'
-fail2ban_sshd_logpath: '%(sshd_log)s'
-fail2ban_sshd_maxretry: 5
-fail2ban_sshd_bantime: '1h'
-fail2ban_sshd_mode: 'normal'  # normal, ddos, aggressive
+#
+# SSH Jails
+#
 
+# Enable SSH jail
+fail2ban_sshd_enabled: true
+
+# SSH port
+fail2ban_sshd_port: 'ssh'
+
+# SSH log path
+fail2ban_sshd_logpath: '%(sshd_log)s'
+
+# SSH max retries
+fail2ban_sshd_maxretry: 5
+
+# SSH ban duration
+fail2ban_sshd_bantime: '1h'
+
+# SSH filter mode (normal, ddos, aggressive)
+fail2ban_sshd_mode: 'normal'
+
+# Enable SSH DDoS jail
 fail2ban_sshd_ddos_enabled: false
+
+# SSH DDoS port
 fail2ban_sshd_ddos_port: 'ssh'
+
+# SSH DDoS max retries
 fail2ban_sshd_ddos_maxretry: 6
+
+# SSH DDoS ban duration
 fail2ban_sshd_ddos_bantime: '1h'
 
-# =============================================================================
-# MAIL SERVER JAILS
-# =============================================================================
+#
+# Mail Server Jails
+#
+
 # Postfix
+
+# Enable Postfix jail
 fail2ban_postfix_enabled: false
+
+# Postfix port
 fail2ban_postfix_port: 'smtp,465,submission'
+
+# Postfix log path
 fail2ban_postfix_logpath: '%(postfix_log)s'
+
+# Postfix max retries
 fail2ban_postfix_maxretry: 5
+
+# Postfix ban duration
 fail2ban_postfix_bantime: '1h'
-fail2ban_postfix_mode: 'aggressive'  # normal, more, aggressive
+
+# Postfix filter mode (normal, more, aggressive)
+fail2ban_postfix_mode: 'aggressive'
 
 # Postfix SASL
+
+# Enable Postfix SASL jail
 fail2ban_postfix_sasl_enabled: false
+
+# Postfix SASL port
 fail2ban_postfix_sasl_port: 'smtp,465,submission,imap,imaps,pop3,pop3s'
+
+# Postfix SASL log path
 fail2ban_postfix_sasl_logpath: '%(postfix_log)s'
+
+# Postfix SASL max retries
 fail2ban_postfix_sasl_maxretry: 3
+
+# Postfix SASL ban duration
 fail2ban_postfix_sasl_bantime: '1h'
 
 # Postfix RBL
+
+# Enable Postfix RBL jail
 fail2ban_postfix_rbl_enabled: false
+
+# Postfix RBL port
 fail2ban_postfix_rbl_port: 'smtp,465,submission'
+
+# Postfix RBL log path
 fail2ban_postfix_rbl_logpath: '%(postfix_log)s'
+
+# Postfix RBL max retries
 fail2ban_postfix_rbl_maxretry: 1
+
+# Postfix RBL ban duration
 fail2ban_postfix_rbl_bantime: '1h'
 
 # Dovecot
+
+# Enable Dovecot jail
 fail2ban_dovecot_enabled: false
+
+# Dovecot port
 fail2ban_dovecot_port: 'pop3,pop3s,imap,imaps,submission,465,sieve'
+
+# Dovecot log path
 fail2ban_dovecot_logpath: '%(dovecot_log)s'
+
+# Dovecot max retries
 fail2ban_dovecot_maxretry: 5
+
+# Dovecot ban duration
 fail2ban_dovecot_bantime: '1h'
 
 # SOGo
+
+# Enable SOGo jail
 fail2ban_sogo_enabled: false
+
+# SOGo port
 fail2ban_sogo_port: 'http,https'
+
+# SOGo log path
 fail2ban_sogo_logpath: '/var/log/sogo/sogo.log'
+
+# SOGo max retries
 fail2ban_sogo_maxretry: 5
+
+# SOGo ban duration
 fail2ban_sogo_bantime: '1h'
 
 # Roundcube
+
+# Enable Roundcube jail
 fail2ban_roundcube_enabled: false
+
+# Roundcube port
 fail2ban_roundcube_port: 'http,https'
+
+# Roundcube log path
 fail2ban_roundcube_logpath: '/var/log/roundcubemail/errors.log'
+
+# Roundcube max retries
 fail2ban_roundcube_maxretry: 5
+
+# Roundcube ban duration
 fail2ban_roundcube_bantime: '1h'
 
-# =============================================================================
-# WEB SERVER JAILS
-# =============================================================================
+#
+# Web Server Jails
+#
+
 # Nginx
+
+# Enable Nginx HTTP auth jail
 fail2ban_nginx_http_auth_enabled: false
+
+# Nginx HTTP auth port
 fail2ban_nginx_http_auth_port: 'http,https'
+
+# Nginx HTTP auth log path
 fail2ban_nginx_http_auth_logpath: '%(nginx_error_log)s'
+
+# Nginx HTTP auth max retries
 fail2ban_nginx_http_auth_maxretry: 5
+
+# Nginx HTTP auth ban duration
 fail2ban_nginx_http_auth_bantime: '1h'
 
+# Enable Nginx limit-req jail
 fail2ban_nginx_limit_req_enabled: false
+
+# Nginx limit-req port
 fail2ban_nginx_limit_req_port: 'http,https'
+
+# Nginx limit-req log path
 fail2ban_nginx_limit_req_logpath: '%(nginx_error_log)s'
+
+# Nginx limit-req max retries
 fail2ban_nginx_limit_req_maxretry: 10
+
+# Nginx limit-req ban duration
 fail2ban_nginx_limit_req_bantime: '1h'
 
+# Enable Nginx bot search jail
 fail2ban_nginx_botsearch_enabled: false
+
+# Nginx bot search port
 fail2ban_nginx_botsearch_port: 'http,https'
+
+# Nginx bot search log path
 fail2ban_nginx_botsearch_logpath: '%(nginx_access_log)s'
+
+# Nginx bot search max retries
 fail2ban_nginx_botsearch_maxretry: 2
+
+# Nginx bot search ban duration
 fail2ban_nginx_botsearch_bantime: '1d'
 
+# Enable Nginx forbidden jail
 fail2ban_nginx_forbidden_enabled: false
+
+# Enable Nginx bad request jail
 fail2ban_nginx_bad_request_enabled: false
 
 # Apache
+
+# Enable Apache auth jail
 fail2ban_apache_auth_enabled: false
+
+# Apache auth port
 fail2ban_apache_auth_port: 'http,https'
+
+# Apache auth log path
 fail2ban_apache_auth_logpath: '%(apache_error_log)s'
+
+# Apache auth max retries
 fail2ban_apache_auth_maxretry: 5
+
+# Apache auth ban duration
 fail2ban_apache_auth_bantime: '1h'
 
+# Enable Apache bad bots jail
 fail2ban_apache_badbots_enabled: false
+
+# Apache bad bots port
 fail2ban_apache_badbots_port: 'http,https'
+
+# Apache bad bots log path
 fail2ban_apache_badbots_logpath: '%(apache_access_log)s'
+
+# Apache bad bots max retries
 fail2ban_apache_badbots_maxretry: 2
+
+# Apache bad bots ban duration
 fail2ban_apache_badbots_bantime: '1d'
 
+# Enable Apache noscript jail
 fail2ban_apache_noscript_enabled: false
+
+# Enable Apache overflows jail
 fail2ban_apache_overflows_enabled: false
+
+# Enable Apache nohome jail
 fail2ban_apache_nohome_enabled: false
+
+# Enable Apache bot search jail
 fail2ban_apache_botsearch_enabled: false
+
+# Enable Apache fake Googlebot jail
 fail2ban_apache_fakegooglebot_enabled: false
+
+# Enable Apache ModSecurity jail
 fail2ban_apache_modsecurity_enabled: false
+
+# Enable Apache Shellshock jail
 fail2ban_apache_shellshock_enabled: false
 
-# =============================================================================
-# DATABASE JAILS
-# =============================================================================
+#
+# Database Jails
+#
+
 # MariaDB/MySQL
+
+# Enable MariaDB/MySQL jail
 fail2ban_mysqld_enabled: false
+
+# MariaDB/MySQL port
 fail2ban_mysqld_port: '3306'
+
+# MariaDB/MySQL log path
 fail2ban_mysqld_logpath: '/var/log/mysql/error.log'
+
+# MariaDB/MySQL max retries
 fail2ban_mysqld_maxretry: 5
+
+# MariaDB/MySQL ban duration
 fail2ban_mysqld_bantime: '1h'
 
 # PostgreSQL
+
+# Enable PostgreSQL jail
 fail2ban_postgresql_enabled: false
+
+# PostgreSQL port
 fail2ban_postgresql_port: '5432'
+
+# PostgreSQL log path
 fail2ban_postgresql_logpath: '/var/log/postgresql/*.log'
+
+# PostgreSQL max retries
 fail2ban_postgresql_maxretry: 5
+
+# PostgreSQL ban duration
 fail2ban_postgresql_bantime: '1h'
 
-# =============================================================================
-# MONITORING JAILS
-# =============================================================================
+#
+# Monitoring Jails
+#
+
 # Grafana
+
+# Enable Grafana jail
 fail2ban_grafana_enabled: false
+
+# Grafana port
 fail2ban_grafana_port: 'http,https,3000'
+
+# Grafana log path
 fail2ban_grafana_logpath: '/var/log/grafana/grafana.log'
+
+# Grafana max retries
 fail2ban_grafana_maxretry: 5
+
+# Grafana ban duration
 fail2ban_grafana_bantime: '1h'
 
-# =============================================================================
-# RECIDIVE (repeat offenders)
-# =============================================================================
+#
+# Recidive (Repeat Offenders)
+#
+
+# Enable recidive jail
 fail2ban_recidive_enabled: false
+
+# Recidive ban duration
 fail2ban_recidive_bantime: '1w'
+
+# Recidive detection window
 fail2ban_recidive_findtime: '1d'
+
+# Bans before recidive triggers
 fail2ban_recidive_maxretry: 5
 
-# =============================================================================
-# CUSTOM JAILS
-# =============================================================================
+#
+# Custom Jails
+#
+
+# Custom jail definitions
 fail2ban_custom_jails: []
 # Example:
 #   - name: 'my-custom-jail'
@@ -229,9 +484,11 @@ fail2ban_custom_jails: []
 #     ignoreip: []
 #     backend: ''
 
-# =============================================================================
-# CUSTOM FILTERS
-# =============================================================================
+#
+# Custom Filters
+#
+
+# Custom filter definitions
 fail2ban_custom_filters: []
 # Example:
 #   - name: 'my-filter'
@@ -242,9 +499,11 @@ fail2ban_custom_filters: []
 #       ignoreregex =
 #       datepattern = %%Y-%%m-%%d %%H:%%M:%%S
 
-# =============================================================================
-# CUSTOM ACTIONS
-# =============================================================================
+#
+# Custom Actions
+#
+
+# Custom action definitions
 fail2ban_custom_actions: []
 # Example:
 #   - name: 'my-action'
@@ -256,7 +515,10 @@ fail2ban_custom_actions: []
 #       actionban = /usr/local/bin/ban.sh <ip>
 #       actionunban = /usr/local/bin/unban.sh <ip>
 
-# =============================================================================
-# APPARMOR (Arch + Debian only, not RHEL/Rocky)
-# =============================================================================
+#
+# AppArmor
+#
+# Arch + Debian only, not RHEL/Rocky
+
+# Enable AppArmor profile enforcement
 fail2ban_apparmor_enabled: false

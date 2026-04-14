@@ -7,6 +7,6 @@ MinProtocol = {{ pki_min_protocol }}
 {% if pki_max_protocol %}
 MaxProtocol = {{ pki_max_protocol }}
 {% endif %}
-CipherString = {{ pki_ciphersuites_tls12 }}{% if pki_disable_legacy | bool %}:@SECLEVEL=2{% endif %}
+CipherString = {{ pki_ciphersuites_tls12 }}{% if pki_disable_legacy_enabled | bool %}:@SECLEVEL=2{% endif %}
 
 Ciphersuites = {{ pki_ciphersuites_tls13 }}

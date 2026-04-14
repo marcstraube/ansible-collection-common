@@ -1,12 +1,8 @@
 ---
-# =============================================================================
-# Nano Configuration
-# =============================================================================
-
 - name: Nano | Deploy global configuration
   ansible.builtin.template:
     src: nanorc.j2
-    dest: '{{ __editors_nano_config_global }}'
+    dest: '{{ __editors_nano_config_file }}'
     owner: root
     group: root
     mode: '0644'

@@ -1,7 +1,6 @@
 ---
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
 
   vars:
@@ -79,6 +78,6 @@
         password_lock: true
 
   tasks:
-    - name: Include users role  # noqa: role-name[path]
+    - name: Converge | Include users role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

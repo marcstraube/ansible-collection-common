@@ -1,349 +1,355 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # ==========================================================================
-    # PACKAGE VERIFICATION
-    # ==========================================================================
-    - name: Set package names per OS family
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Set package names per OS family
       ansible.builtin.set_fact:
-        nano_package: 'nano'
-        vim_package: >-
+        __verify_nano_package: 'nano'
+        __verify_vim_package: >-
           {{ 'vim-enhanced' if ansible_facts['os_family'] == 'RedHat'
           else 'vim' }}
 
-    - name: Check nano package is installed
+    - name: Verify | Check nano package is installed
       ansible.builtin.package:
-        name: "{{ nano_package }}"
+        name: '{{ __verify_nano_package }}'
         state: present
       check_mode: true
-      register: nano_pkg_check
-      failed_when: nano_pkg_check.changed
+      register: __verify_nano_pkg
+      failed_when: __verify_nano_pkg.changed
 
-    - name: Check vim package is installed
+    - name: Verify | Check vim package is installed
       ansible.builtin.package:
-        name: "{{ vim_package }}"
+        name: '{{ __verify_vim_package }}'
         state: present
       check_mode: true
-      register: vim_pkg_check
-      failed_when: vim_pkg_check.changed
+      register: __verify_vim_pkg
+      failed_when: __verify_vim_pkg.changed
 
-    - name: Check neovim package is installed
+    - name: Verify | Check neovim package is installed
       ansible.builtin.package:
         name: neovim
         state: present
       check_mode: true
-      register: neovim_pkg_check
-      failed_when: neovim_pkg_check.changed
+      register: __verify_neovim_pkg
+      failed_when: __verify_neovim_pkg.changed
 
-    # ==========================================================================
-    # BINARY VERIFICATION
-    # ==========================================================================
-    - name: Check nano binary exists
+    #
+    # Binary Verification
+    #
+
+    - name: Verify | Check nano binary exists
       ansible.builtin.command: nano --version
-      register: nano_version
+      register: __verify_nano_version
       changed_when: false
 
-    - name: Verify nano version output
+    - name: Verify | Assert nano version output
       ansible.builtin.assert:
         that:
-          - "'GNU nano' in nano_version.stdout"
+          - "'GNU nano' in __verify_nano_version.stdout"
 
-    - name: Check vim binary exists
+    - name: Verify | Check vim binary exists
       ansible.builtin.command: vim --version
-      register: vim_version
+      register: __verify_vim_version
       changed_when: false
 
-    - name: Verify vim version output
+    - name: Verify | Assert vim version output
       ansible.builtin.assert:
         that:
-          - "'VIM' in vim_version.stdout or 'Vi IMproved' in vim_version.stdout"
+          - "'VIM' in __verify_vim_version.stdout or 'Vi IMproved' in __verify_vim_version.stdout"
 
-    - name: Check neovim binary exists
+    - name: Verify | Check neovim binary exists
       ansible.builtin.command: nvim --version
-      register: nvim_version
+      register: __verify_nvim_version
       changed_when: false
 
-    - name: Verify neovim version output
+    - name: Verify | Assert neovim version output
       ansible.builtin.assert:
         that:
-          - "'NVIM' in nvim_version.stdout"
+          - "'NVIM' in __verify_nvim_version.stdout"
 
-    # ==========================================================================
-    # CONFIGURATION FILES
-    # ==========================================================================
-    - name: Set config paths per OS family
+    #
+    # Configuration Files
+    #
+
+    - name: Verify | Set config paths per OS family
       ansible.builtin.set_fact:
-        nano_config: '/etc/nanorc'
-        vim_config: >-
+        __verify_nano_config: '/etc/nanorc'
+        __verify_vim_config: >-
           {{ '/etc/vim/vimrc' if ansible_facts['os_family'] == 'Debian'
           else '/etc/vimrc' }}
-        neovim_config: '/etc/xdg/nvim/sysinit.vim'
+        __verify_neovim_config: '/etc/xdg/nvim/sysinit.vim'
 
-    - name: Check nano config exists
+    - name: Verify | Check nano config exists
       ansible.builtin.stat:
-        path: "{{ nano_config }}"
-      register: nano_conf
+        path: '{{ __verify_nano_config }}'
+      register: __verify_nano_conf
 
-    - name: Verify nano config exists with correct permissions
+    - name: Verify | Assert nano config exists with correct permissions
       ansible.builtin.assert:
         that:
-          - nano_conf.stat.exists
-          - nano_conf.stat.mode == '0644'
-          - nano_conf.stat.pw_name == 'root'
+          - __verify_nano_conf.stat.exists
+          - __verify_nano_conf.stat.mode == '0644'
+          - __verify_nano_conf.stat.pw_name == 'root'
 
-    - name: Check vim config exists
+    - name: Verify | Check vim config exists
       ansible.builtin.stat:
-        path: "{{ vim_config }}"
-      register: vim_conf
+        path: '{{ __verify_vim_config }}'
+      register: __verify_vim_conf
 
-    - name: Verify vim config exists with correct permissions
+    - name: Verify | Assert vim config exists with correct permissions
       ansible.builtin.assert:
         that:
-          - vim_conf.stat.exists
-          - vim_conf.stat.mode == '0644'
-          - vim_conf.stat.pw_name == 'root'
+          - __verify_vim_conf.stat.exists
+          - __verify_vim_conf.stat.mode == '0644'
+          - __verify_vim_conf.stat.pw_name == 'root'
 
-    - name: Check neovim config directory exists
+    - name: Verify | Check neovim config directory exists
       ansible.builtin.stat:
         path: /etc/xdg/nvim
-      register: neovim_conf_dir
+      register: __verify_neovim_conf_dir
 
-    - name: Verify neovim config directory
+    - name: Verify | Assert neovim config directory
       ansible.builtin.assert:
         that:
-          - neovim_conf_dir.stat.exists
-          - neovim_conf_dir.stat.isdir
-          - neovim_conf_dir.stat.mode == '0755'
+          - __verify_neovim_conf_dir.stat.exists
+          - __verify_neovim_conf_dir.stat.isdir
+          - __verify_neovim_conf_dir.stat.mode == '0755'
 
-    - name: Check neovim config exists
+    - name: Verify | Check neovim config exists
       ansible.builtin.stat:
-        path: "{{ neovim_config }}"
-      register: neovim_conf
+        path: '{{ __verify_neovim_config }}'
+      register: __verify_neovim_conf
 
-    - name: Verify neovim config permissions
+    - name: Verify | Assert neovim config permissions
       ansible.builtin.assert:
         that:
-          - neovim_conf.stat.exists
-          - neovim_conf.stat.mode == '0644'
-          - neovim_conf.stat.pw_name == 'root'
+          - __verify_neovim_conf.stat.exists
+          - __verify_neovim_conf.stat.mode == '0644'
+          - __verify_neovim_conf.stat.pw_name == 'root'
 
-    # ==========================================================================
-    # CONFIGURATION CONTENT
-    # ==========================================================================
-    - name: Read nano config
+    #
+    # Configuration Content
+    #
+
+    - name: Verify | Read nano config
       ansible.builtin.slurp:
-        src: "{{ nano_config }}"
-      register: nano_content
+        src: '{{ __verify_nano_config }}'
+      register: __verify_nano_content
 
-    - name: Verify nano config content
+    - name: Verify | Assert nano config content
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in (nano_content.content | b64decode)"
-          - "'set autoindent' in (nano_content.content | b64decode)"
-          - "'set linenumbers' in (nano_content.content | b64decode)"
-          - "'set mouse' in (nano_content.content | b64decode)"
-          - "'set tabsize 4' in (nano_content.content | b64decode)"
-          - "'set tabstospaces' in (nano_content.content | b64decode)"
-          - "'set softwrap' in (nano_content.content | b64decode)"
-          - "'set constantshow' in (nano_content.content | b64decode)"
-          - "'set indicator' in (nano_content.content | b64decode)"
-          - "'set stateflags' in (nano_content.content | b64decode)"
-          - "'/usr/share/nano/*.nanorc' in (nano_content.content | b64decode)"
+          - "'Ansible managed' in (__verify_nano_content.content | b64decode)"
+          - "'set autoindent' in (__verify_nano_content.content | b64decode)"
+          - "'set linenumbers' in (__verify_nano_content.content | b64decode)"
+          - "'set mouse' in (__verify_nano_content.content | b64decode)"
+          - "'set tabsize 4' in (__verify_nano_content.content | b64decode)"
+          - "'set tabstospaces' in (__verify_nano_content.content | b64decode)"
+          - "'set softwrap' in (__verify_nano_content.content | b64decode)"
+          - "'set constantshow' in (__verify_nano_content.content | b64decode)"
+          - "'set indicator' in (__verify_nano_content.content | b64decode)"
+          - "'set stateflags' in (__verify_nano_content.content | b64decode)"
+          - "'/usr/share/nano/*.nanorc' in (__verify_nano_content.content | b64decode)"
 
-    - name: Verify nano config does not contain shell redirects
+    - name: Verify | Assert nano config does not contain shell redirects
       ansible.builtin.assert:
         that:
-          - "'2>/dev/null' not in (nano_content.content | b64decode)"
+          - "'2>/dev/null' not in (__verify_nano_content.content | b64decode)"
 
-    - name: Read vim config
+    - name: Verify | Read vim config
       ansible.builtin.slurp:
-        src: "{{ vim_config }}"
-      register: vim_content
+        src: '{{ __verify_vim_config }}'
+      register: __verify_vim_content
 
-    - name: Verify vim config content
+    - name: Verify | Assert vim config content
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in (vim_content.content | b64decode)"
-          - "'syntax on' in (vim_content.content | b64decode)"
-          - "'set number' in (vim_content.content | b64decode)"
-          - "'set expandtab' in (vim_content.content | b64decode)"
-          - "'set tabstop=4' in (vim_content.content | b64decode)"
-          - "'set shiftwidth=4' in (vim_content.content | b64decode)"
-          - "'set mouse=a' in (vim_content.content | b64decode)"
-          - "'set encoding=utf-8' in (vim_content.content | b64decode)"
-          - "'set clipboard=unnamedplus' in (vim_content.content | b64decode)"
-          - "'set hlsearch' in (vim_content.content | b64decode)"
-          - "'set showmatch' in (vim_content.content | b64decode)"
-          - "'set wildmenu' in (vim_content.content | b64decode)"
-          - "'set backspace=indent,eol,start' in (vim_content.content | b64decode)"
+          - "'Ansible managed' in (__verify_vim_content.content | b64decode)"
+          - "'syntax on' in (__verify_vim_content.content | b64decode)"
+          - "'set number' in (__verify_vim_content.content | b64decode)"
+          - "'set expandtab' in (__verify_vim_content.content | b64decode)"
+          - "'set tabstop=4' in (__verify_vim_content.content | b64decode)"
+          - "'set shiftwidth=4' in (__verify_vim_content.content | b64decode)"
+          - "'set mouse=a' in (__verify_vim_content.content | b64decode)"
+          - "'set encoding=utf-8' in (__verify_vim_content.content | b64decode)"
+          - "'set clipboard=unnamedplus' in (__verify_vim_content.content | b64decode)"
+          - "'set hlsearch' in (__verify_vim_content.content | b64decode)"
+          - "'set showmatch' in (__verify_vim_content.content | b64decode)"
+          - "'set wildmenu' in (__verify_vim_content.content | b64decode)"
+          - "'set backspace=indent,eol,start' in (__verify_vim_content.content | b64decode)"
 
-    - name: Read neovim config
+    - name: Verify | Read neovim config
       ansible.builtin.slurp:
-        src: "{{ neovim_config }}"
-      register: neovim_content
+        src: '{{ __verify_neovim_config }}'
+      register: __verify_neovim_content
 
-    - name: Verify neovim config content
+    - name: Verify | Assert neovim config content
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in (neovim_content.content | b64decode)"
-          - "'syntax on' in (neovim_content.content | b64decode)"
-          - "'set number' in (neovim_content.content | b64decode)"
-          - "'set relativenumber' in (neovim_content.content | b64decode)"
-          - "'set expandtab' in (neovim_content.content | b64decode)"
-          - "'set mouse=a' in (neovim_content.content | b64decode)"
-          - "'set termguicolors' in (neovim_content.content | b64decode)"
-          - "'set hlsearch' in (neovim_content.content | b64decode)"
-          - "'set signcolumn=yes' in (neovim_content.content | b64decode)"
-          - "'set cursorline' in (neovim_content.content | b64decode)"
-          - "'set updatetime=300' in (neovim_content.content | b64decode)"
+          - "'Ansible managed' in (__verify_neovim_content.content | b64decode)"
+          - "'syntax on' in (__verify_neovim_content.content | b64decode)"
+          - "'set number' in (__verify_neovim_content.content | b64decode)"
+          - "'set relativenumber' in (__verify_neovim_content.content | b64decode)"
+          - "'set expandtab' in (__verify_neovim_content.content | b64decode)"
+          - "'set mouse=a' in (__verify_neovim_content.content | b64decode)"
+          - "'set termguicolors' in (__verify_neovim_content.content | b64decode)"
+          - "'set hlsearch' in (__verify_neovim_content.content | b64decode)"
+          - "'set signcolumn=yes' in (__verify_neovim_content.content | b64decode)"
+          - "'set cursorline' in (__verify_neovim_content.content | b64decode)"
+          - "'set updatetime=300' in (__verify_neovim_content.content | b64decode)"
 
-    # ==========================================================================
-    # ENVIRONMENT CONFIGURATION
-    # ==========================================================================
-    - name: Check editor.sh profile script exists
+    #
+    # Environment Configuration
+    #
+
+    - name: Verify | Check editor.sh profile script exists
       ansible.builtin.stat:
         path: /etc/profile.d/editor.sh
-      register: editor_profile
+      register: __verify_editor_profile
 
-    - name: Verify editor.sh exists with correct permissions
+    - name: Verify | Assert editor.sh exists with correct permissions
       ansible.builtin.assert:
         that:
-          - editor_profile.stat.exists
-          - editor_profile.stat.mode == '0644'
-          - editor_profile.stat.pw_name == 'root'
+          - __verify_editor_profile.stat.exists
+          - __verify_editor_profile.stat.mode == '0644'
+          - __verify_editor_profile.stat.pw_name == 'root'
 
-    - name: Read editor.sh content
+    - name: Verify | Read editor.sh content
       ansible.builtin.slurp:
         src: /etc/profile.d/editor.sh
-      register: editor_content
+      register: __verify_editor_content
 
-    - name: Verify editor.sh content
+    - name: Verify | Assert editor.sh content
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in (editor_content.content | b64decode)"
-          - "'export EDITOR=vim' in (editor_content.content | b64decode)"
-          - "'export VISUAL=vim' in (editor_content.content | b64decode)"
+          - "'Ansible managed' in (__verify_editor_content.content | b64decode)"
+          - "'export EDITOR=vim' in (__verify_editor_content.content | b64decode)"
+          - "'export VISUAL=vim' in (__verify_editor_content.content | b64decode)"
 
-    # ==========================================================================
-    # PER-USER CONFIGURATION — managed user (testuser)
-    # ==========================================================================
-    - name: Check testuser vim config exists
+    #
+    # Per-User Configuration — Managed User (testuser)
+    #
+
+    - name: Verify | Check testuser vim config exists
       ansible.builtin.stat:
         path: /home/testuser/.vimrc
-      register: testuser_vimrc
+      register: __verify_testuser_vimrc
 
-    - name: Verify testuser vim config
+    - name: Verify | Assert testuser vim config
       ansible.builtin.assert:
         that:
-          - testuser_vimrc.stat.exists
-          - testuser_vimrc.stat.mode == '0644'
-          - testuser_vimrc.stat.pw_name == 'testuser'
+          - __verify_testuser_vimrc.stat.exists
+          - __verify_testuser_vimrc.stat.mode == '0644'
+          - __verify_testuser_vimrc.stat.pw_name == 'testuser'
 
-    - name: Read testuser vim config
+    - name: Verify | Read testuser vim config
       ansible.builtin.slurp:
         src: /home/testuser/.vimrc
-      register: testuser_vimrc_content
+      register: __verify_testuser_vimrc_content
 
-    - name: Verify testuser vim config has merged content
+    - name: Verify | Assert testuser vim config has merged content
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in testuser_vimrc_content.content | b64decode"
-          - "'set relativenumber' in testuser_vimrc_content.content | b64decode"
-          - "'set expandtab' in testuser_vimrc_content.content | b64decode"
-          - "'set mouse=a' in testuser_vimrc_content.content | b64decode"
+          - "'Ansible managed' in (__verify_testuser_vimrc_content.content | b64decode)"
+          - "'set relativenumber' in (__verify_testuser_vimrc_content.content | b64decode)"
+          - "'set expandtab' in (__verify_testuser_vimrc_content.content | b64decode)"
+          - "'set mouse=a' in (__verify_testuser_vimrc_content.content | b64decode)"
 
-    - name: Check testuser neovim config directory exists
+    - name: Verify | Check testuser neovim config directory exists
       ansible.builtin.stat:
         path: /home/testuser/.config/nvim
-      register: testuser_nvim_dir
+      register: __verify_testuser_nvim_dir
 
-    - name: Verify testuser neovim config directory
+    - name: Verify | Assert testuser neovim config directory
       ansible.builtin.assert:
         that:
-          - testuser_nvim_dir.stat.exists
-          - testuser_nvim_dir.stat.isdir
-          - testuser_nvim_dir.stat.mode == '0755'
+          - __verify_testuser_nvim_dir.stat.exists
+          - __verify_testuser_nvim_dir.stat.isdir
+          - __verify_testuser_nvim_dir.stat.mode == '0755'
 
-    - name: Check testuser neovim config exists
+    - name: Verify | Check testuser neovim config exists
       ansible.builtin.stat:
         path: /home/testuser/.config/nvim/init.vim
-      register: testuser_nvim_conf
+      register: __verify_testuser_nvim_conf
 
-    - name: Verify testuser neovim config
+    - name: Verify | Assert testuser neovim config
       ansible.builtin.assert:
         that:
-          - testuser_nvim_conf.stat.exists
-          - testuser_nvim_conf.stat.mode == '0644'
-          - testuser_nvim_conf.stat.pw_name == 'testuser'
+          - __verify_testuser_nvim_conf.stat.exists
+          - __verify_testuser_nvim_conf.stat.mode == '0644'
+          - __verify_testuser_nvim_conf.stat.pw_name == 'testuser'
 
-    - name: Read testuser neovim config
+    - name: Verify | Read testuser neovim config
       ansible.builtin.slurp:
         src: /home/testuser/.config/nvim/init.vim
-      register: testuser_nvim_content
+      register: __verify_testuser_nvim_content
 
-    - name: Verify testuser neovim config has merged content with override
+    - name: Verify | Assert testuser neovim config has merged content with override
       ansible.builtin.assert:
         that:
-          - "'colorscheme catppuccin' in testuser_nvim_content.content | b64decode"
-          - "'set number' in testuser_nvim_content.content | b64decode"
+          - "'colorscheme catppuccin' in (__verify_testuser_nvim_content.content | b64decode)"
+          - "'set number' in (__verify_testuser_nvim_content.content | b64decode)"
 
-    - name: Check testuser nano config exists
+    - name: Verify | Check testuser nano config exists
       ansible.builtin.stat:
         path: /home/testuser/.config/nano/nanorc
-      register: testuser_nanorc
+      register: __verify_testuser_nanorc
 
-    - name: Verify testuser nano config
+    - name: Verify | Assert testuser nano config
       ansible.builtin.assert:
         that:
-          - testuser_nanorc.stat.exists
-          - testuser_nanorc.stat.mode == '0644'
-          - testuser_nanorc.stat.pw_name == 'testuser'
+          - __verify_testuser_nanorc.stat.exists
+          - __verify_testuser_nanorc.stat.mode == '0644'
+          - __verify_testuser_nanorc.stat.pw_name == 'testuser'
 
-    - name: Read testuser nano config
+    - name: Verify | Read testuser nano config
       ansible.builtin.slurp:
         src: /home/testuser/.config/nano/nanorc
-      register: testuser_nano_content
+      register: __verify_testuser_nano_content
 
-    - name: Verify testuser nano config has merge with override (mouse disabled)
+    - name: Verify | Assert testuser nano config has merge with override (mouse disabled)
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in testuser_nano_content.content | b64decode"
-          - "'set autoindent' in testuser_nano_content.content | b64decode"
-          - "'set mouse' not in testuser_nano_content.content | b64decode"
+          - "'Ansible managed' in (__verify_testuser_nano_content.content | b64decode)"
+          - "'set autoindent' in (__verify_testuser_nano_content.content | b64decode)"
+          - "'set mouse' not in (__verify_testuser_nano_content.content | b64decode)"
 
-    # ==========================================================================
-    # PER-USER CONFIGURATION — disabled user (disableduser)
-    # ==========================================================================
-    - name: Check disableduser has no vim config
+    #
+    # Per-User Configuration — Disabled User (disableduser)
+    #
+
+    - name: Verify | Check disableduser has no vim config
       ansible.builtin.stat:
         path: /home/disableduser/.vimrc
-      register: disabled_vimrc
+      register: __verify_disabled_vimrc
 
-    - name: Verify disableduser has no per-user config
+    - name: Verify | Assert disableduser has no per-user config
       ansible.builtin.assert:
         that:
-          - not disabled_vimrc.stat.exists
+          - not __verify_disabled_vimrc.stat.exists
 
-    - name: Check disableduser has no neovim config
+    - name: Verify | Check disableduser has no neovim config
       ansible.builtin.stat:
         path: /home/disableduser/.config/nvim/init.vim
-      register: disabled_nvim
+      register: __verify_disabled_nvim
 
-    - name: Verify disableduser has no neovim config
+    - name: Verify | Assert disableduser has no neovim config
       ansible.builtin.assert:
         that:
-          - not disabled_nvim.stat.exists
+          - not __verify_disabled_nvim.stat.exists
 
-    - name: Check disableduser has no nano config
+    - name: Verify | Check disableduser has no nano config
       ansible.builtin.stat:
         path: /home/disableduser/.config/nano/nanorc
-      register: disabled_nano
+      register: __verify_disabled_nano
 
-    - name: Verify disableduser has no nano config
+    - name: Verify | Assert disableduser has no nano config
       ansible.builtin.assert:
         that:
-          - not disabled_nano.stat.exists
+          - not __verify_disabled_nano.stat.exists

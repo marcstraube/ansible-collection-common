@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Default Editor Environment
-# =============================================================================
-
 - name: Environment | Deploy default editor profile script
   ansible.builtin.template:
     src: editor.sh.j2

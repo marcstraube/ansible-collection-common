@@ -1,21 +1,17 @@
 ---
-# =============================================================================
-# Sysctl - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Build combined sysctl parameters
   ansible.builtin.set_fact:
     __sysctl_combined_parameters: >-
       {{
-        (sysctl_profile_security | default(true) | bool) |
+        (sysctl_profile_security_enabled | bool) |
         ternary(sysctl_security_parameters, {}) |
-        combine((sysctl_profile_network_performance | default(false) | bool) |
+        combine((sysctl_profile_network_performance_enabled | bool) |
         ternary(sysctl_network_performance_parameters, {})) |
-        combine((sysctl_profile_database | default(false) | bool) |
+        combine((sysctl_profile_database_enabled | bool) |
         ternary(sysctl_database_parameters, {})) |
-        combine((sysctl_profile_webserver | default(false) | bool) |
+        combine((sysctl_profile_webserver_enabled | bool) |
         ternary(sysctl_webserver_parameters, {})) |
-        combine((sysctl_profile_docker | default(false) | bool) |
+        combine((sysctl_profile_docker_enabled | bool) |
         ternary(sysctl_docker_parameters, {})) |
         combine(sysctl_parameters)
       }}
@@ -35,5 +31,5 @@
     owner: root
     group: root
     mode: '0644'
-  notify: Reload sysctl
+  notify: Apply sysctl settings
   when: __sysctl_combined_parameters | length > 0

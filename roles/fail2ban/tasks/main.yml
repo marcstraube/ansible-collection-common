@@ -4,38 +4,74 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [fail2ban]
+  tags:
+    - fail2ban
+
+- name: Main | Handle deprecated fail2ban_bantime_increment variable
+  ansible.builtin.set_fact:
+    fail2ban_bantime_increment_enabled: >-
+      {{ fail2ban_bantime_increment | default(fail2ban_bantime_increment_enabled) | bool }}
+  when: fail2ban_bantime_increment is defined
+  tags:
+    - fail2ban
+
+- name: Main | Handle deprecated fail2ban_bantime_overalljails variable
+  ansible.builtin.set_fact:
+    fail2ban_bantime_overalljails_enabled: >-
+      {{ fail2ban_bantime_overalljails | default(fail2ban_bantime_overalljails_enabled) | bool }}
+  when: fail2ban_bantime_overalljails is defined
+  tags:
+    - fail2ban
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [fail2ban, fail2ban:install]
+  when: fail2ban_enabled | bool
+  tags:
+    - fail2ban
+    - fail2ban:install
 
 - name: Main | Include BTRFS tasks
   ansible.builtin.include_tasks:
     file: btrfs.yml
     apply:
-      tags: [fail2ban, fail2ban:configure]
+      tags:
+        - fail2ban
+        - fail2ban:install
   when: fail2ban_enabled | bool
-  tags: [fail2ban, fail2ban:configure]
+  tags:
+    - fail2ban
+    - fail2ban:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
-  tags: [fail2ban, fail2ban:configure]
+  when: fail2ban_enabled | bool
+  tags:
+    - fail2ban
+    - fail2ban:configure
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
-  tags: [fail2ban, fail2ban:service]
+  when: fail2ban_enabled | bool
+  tags:
+    - fail2ban
+    - fail2ban:service
 
 - name: Main | Include AppArmor tasks
   ansible.builtin.include_tasks:
     file: apparmor.yml
     apply:
-      tags: [fail2ban, fail2ban:apparmor]
+      tags:
+        - fail2ban
+        - fail2ban:apparmor
   when:
-    - fail2ban_apparmor_enabled | default(false) | bool
+    - fail2ban_enabled | bool
+    - fail2ban_apparmor_enabled | bool
     - ansible_facts['os_family'] != 'RedHat'
-  tags: [fail2ban, fail2ban:apparmor]
+  tags:
+    - fail2ban
+    - fail2ban:apparmor

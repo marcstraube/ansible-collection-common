@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Logrotate - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Deploy main logrotate.conf
   ansible.builtin.template:
     src: logrotate.conf.j2

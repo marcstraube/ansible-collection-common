@@ -1,14 +1,10 @@
 ---
-# =============================================================================
-# DNF Automatic (RHEL/Fedora/Rocky)
-# =============================================================================
-
-- name: Install dnf-automatic
-  ansible.builtin.dnf:
-    name: dnf-automatic
+- name: Automatic | Install dnf-automatic
+  ansible.builtin.package:
+    name: 'dnf-automatic'
     state: present
 
-- name: Configure dnf-automatic
+- name: Automatic | Deploy dnf-automatic config
   ansible.builtin.template:
     src: 'redhat/dnf-automatic.conf.j2'
     dest: '/etc/dnf/automatic.conf'
@@ -16,18 +12,19 @@
     group: root
     mode: '0644'
 
-- name: Enable dnf-automatic timer
-  ansible.builtin.systemd:
+- name: Automatic | Enable dnf-automatic timer
+  ansible.builtin.systemd_service:
     name: "dnf-automatic{{ '-install' if dnf_automatic_apply_updates | bool else '-notifyonly' }}.timer"
     state: started
     enabled: true
 
-- name: Disable other dnf-automatic timers
-  ansible.builtin.systemd:
+- name: Automatic | Disable other dnf-automatic timers
+  ansible.builtin.systemd_service:
     name: '{{ item }}'
     state: stopped
     enabled: false
   loop:
     - dnf-automatic.timer
     - "dnf-automatic{{ '-notifyonly' if dnf_automatic_apply_updates | bool else '-install' }}.timer"
+  # Timer may not exist on the system
   failed_when: false

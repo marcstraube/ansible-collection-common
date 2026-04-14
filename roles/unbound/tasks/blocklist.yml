@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Unbound - Blocklist Tasks
-# =============================================================================
-
 - name: Blocklist | Deploy update script
   ansible.builtin.template:
     src: update-blocklist.sh.j2
@@ -15,29 +11,4 @@
   ansible.builtin.command:
     cmd: '/usr/local/bin/unbound-update-blocklist'
     creates: '/etc/unbound/conf.d/blocklist.conf'
-  notify: reload unbound
-
-- name: Blocklist | Deploy update systemd service
-  ansible.builtin.template:
-    src: 'unbound-blocklist.service.j2'
-    dest: '/etc/systemd/system/unbound-blocklist.service'
-    owner: root
-    group: root
-    mode: '0644'
-  notify: Reload unbound systemd units
-
-- name: Blocklist | Deploy update systemd timer
-  ansible.builtin.template:
-    src: 'unbound-blocklist.timer.j2'
-    dest: '/etc/systemd/system/unbound-blocklist.timer'
-    owner: root
-    group: root
-    mode: '0644'
-  notify: Reload unbound systemd units
-
-- name: Blocklist | Enable and start update timer
-  ansible.builtin.systemd:
-    name: unbound-blocklist.timer
-    enabled: true
-    state: started
-    daemon_reload: true
+  notify: Reload unbound

@@ -1,19 +1,16 @@
 ---
-# =============================================================================
-# External Repositories (RHEL/Fedora/Rocky/Alma)
-# =============================================================================
-
-# -----------------------------------------------------------------------------
+#
 # PowerTools / CRB (CodeReady Builder)
-# -----------------------------------------------------------------------------
-- name: Enable PowerTools/CRB repository
+#
+
+- name: Repos | Enable PowerTools/CRB repository
   when:
     - dnf_powertools_enabled | bool
     - ansible_facts['distribution_major_version'] | int >= 8
     - ansible_facts['distribution'] != 'Fedora'
   block:
     # Rocky/AlmaLinux: Enable via repo config file (idempotent, works with dnf4 + dnf5)
-    - name: Enable CRB repository (Rocky/Alma 9+)
+    - name: Repos | Enable CRB repository (Rocky/Alma 9+)
       vars:
         __crb_repo_file:
           Rocky: 'rocky.repo'
@@ -30,7 +27,7 @@
         - ansible_facts['distribution_major_version'] | int >= 9
       notify: 'dnf configuration changed'
 
-    - name: Enable PowerTools repository (Rocky/Alma 8)
+    - name: Repos | Enable PowerTools repository (Rocky/Alma 8)
       vars:
         __powertools_repo_file:
           Rocky: 'Rocky-PowerTools.repo'
@@ -48,7 +45,7 @@
       notify: 'dnf configuration changed'
 
     # RHEL: Enable via subscription-manager (idempotent)
-    - name: Enable CRB/PowerTools repository (RHEL)
+    - name: Repos | Enable CRB/PowerTools repository (RHEL)
       vars:
         __rhel_ver: "{{ ansible_facts['distribution_major_version'] }}"
         __rhel_arch: "{{ ansible_facts['architecture'] }}"
@@ -58,15 +55,15 @@
       when: ansible_facts['distribution'] == 'RedHat'
       notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # EPEL (Extra Packages for Enterprise Linux)
-# -----------------------------------------------------------------------------
+#
 
 # On fresh Rocky/RHEL installs the distribution GPG key is not yet imported into
 # the RPM keyring. The Ansible dnf module cannot handle the interactive GPG key
 # confirmation prompt and silently fails the transaction while reporting changed.
 # Import the key via rpm --import before installing epel-release.
-- name: Import distribution GPG key (Rocky/Alma)
+- name: Repos | Import distribution GPG key (Rocky/Alma)
   vars:
     __distro: "{{ ansible_facts['distribution'] }}"
     __distro_ver: "{{ ansible_facts['distribution_major_version'] }}"
@@ -77,53 +74,56 @@
     - dnf_epel_enabled | bool
     - ansible_facts['distribution'] in ['Rocky', 'AlmaLinux']
 
-- name: Install EPEL repository
-  ansible.builtin.dnf:
-    name: epel-release
+- name: Repos | Install EPEL repository
+  ansible.builtin.package:
+    name: 'epel-release'
     state: present
   when:
     - dnf_epel_enabled | bool
     - ansible_facts['distribution'] != 'Fedora'
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Remi Repository (PHP, MariaDB)
-# -----------------------------------------------------------------------------
-- name: Setup Remi repository
+#
+
+- name: Repos | Setup Remi repository
   when:
     - dnf_remi_enabled | bool
     - ansible_facts['distribution'] != 'Fedora'
   block:
-    - name: Install Remi repository
+    - name: Repos | Install Remi repository
       ansible.builtin.dnf:
         name: "https://rpms.remirepo.net/enterprise/remi-release-{{ ansible_facts['distribution_major_version'] }}.rpm"
         state: present
         disable_gpg_check: true
       notify: 'dnf configuration changed'
 
-    - name: Check current PHP module stream
+    - name: Repos | Check current PHP module stream
       ansible.builtin.command:
         cmd: dnf module list php --enabled
-      register: remi_php_current
+      register: __package_management_remi_php_current
       changed_when: false
+      # Module may not be available yet
       failed_when: false
       when:
         - dnf_remi_php_version | length > 0
         - ansible_facts['distribution_major_version'] | int < 10
 
-    - name: Enable Remi PHP module stream (dnf4, modularity removed in dnf5)
-      ansible.builtin.command:
+    - name: Repos | Enable Remi PHP module stream (dnf4, modularity removed in dnf5)
+      ansible.builtin.shell:
         cmd: "dnf module reset php -y && dnf module enable php:remi-{{ dnf_remi_php_version }} -y"
       changed_when: true
       when:
         - dnf_remi_php_version | length > 0
         - ansible_facts['distribution_major_version'] | int < 10
-        - "'remi-' + dnf_remi_php_version not in (remi_php_current.stdout | default(''))"
+        - "'remi-' + dnf_remi_php_version not in (__package_management_remi_php_current.stdout | default(''))"
 
-# -----------------------------------------------------------------------------
+#
 # RPM Fusion (Free)
-# -----------------------------------------------------------------------------
-- name: Install RPM Fusion Free repository
+#
+
+- name: Repos | Install RPM Fusion Free repository
   vars:
     __rpmfusion_distro: "{{ 'fedora' if ansible_facts['distribution'] == 'Fedora' else 'el' }}"
     __distro_ver: "{{ ansible_facts['distribution_major_version'] }}"
@@ -132,13 +132,14 @@
       https://mirrors.rpmfusion.org/free/{{ __rpmfusion_distro }}/rpmfusion-free-release-{{ __distro_ver }}.noarch.rpm
     state: present
     disable_gpg_check: true
-  when: dnf_rpmfusion_free | bool
+  when: dnf_rpmfusion_free_enabled | bool
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # RPM Fusion (Nonfree)
-# -----------------------------------------------------------------------------
-- name: Install RPM Fusion Nonfree repository
+#
+
+- name: Repos | Install RPM Fusion Nonfree repository
   vars:
     __rpmfusion_distro: "{{ 'fedora' if ansible_facts['distribution'] == 'Fedora' else 'el' }}"
     __distro_ver: "{{ ansible_facts['distribution_major_version'] }}"
@@ -149,13 +150,14 @@
       __distro_ver }}.noarch.rpm
     state: present
     disable_gpg_check: true
-  when: dnf_rpmfusion_nonfree | bool
+  when: dnf_rpmfusion_nonfree_enabled | bool
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
-# ELRepo (Kernel, Hardware drivers)
-# -----------------------------------------------------------------------------
-- name: Install ELRepo repository
+#
+# ELRepo (Kernel, Hardware Drivers)
+#
+
+- name: Repos | Install ELRepo repository
   vars:
     __distro_ver: "{{ ansible_facts['distribution_major_version'] }}"
   ansible.builtin.dnf:
@@ -168,18 +170,19 @@
     - ansible_facts['distribution'] != 'Fedora'
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Docker CE
-# -----------------------------------------------------------------------------
-- name: Setup Docker CE repository
-  when: dnf_docker_repo | bool
+#
+
+- name: Repos | Setup Docker CE repository
+  when: dnf_docker_repo_enabled | bool
   vars:
     __docker_distro: >-
       {{ 'fedora' if ansible_facts['distribution'] == 'Fedora'
          else 'rhel' if ansible_facts['distribution'] == 'RedHat'
          else 'centos' }}
   block:
-    - name: Add Docker CE repository
+    - name: Repos | Add Docker CE repository
       ansible.builtin.command:
         cmd: >-
           dnf config-manager --add-repo
@@ -188,10 +191,11 @@
         creates: '/etc/yum.repos.d/docker-ce.repo'
       notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # PostgreSQL PGDG
-# -----------------------------------------------------------------------------
-- name: Install PostgreSQL repository
+#
+
+- name: Repos | Install PostgreSQL repository
   vars:
     __distro_ver: "{{ ansible_facts['distribution_major_version'] }}"
   ansible.builtin.dnf:
@@ -201,17 +205,18 @@
     state: present
     disable_gpg_check: true
   when:
-    - dnf_postgresql_repo | bool
+    - dnf_postgresql_repo_enabled | bool
     - ansible_facts['distribution'] != 'Fedora'
   notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Grafana
-# -----------------------------------------------------------------------------
-- name: Setup Grafana repository
-  when: dnf_grafana_repo | bool
+#
+
+- name: Repos | Setup Grafana repository
+  when: dnf_grafana_repo_enabled | bool
   block:
-    - name: Add Grafana repository
+    - name: Repos | Add Grafana repository
       ansible.builtin.yum_repository:
         name: grafana
         description: Grafana OSS
@@ -221,13 +226,14 @@
         enabled: true
       notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
+#
 # Kubernetes
-# -----------------------------------------------------------------------------
-- name: Setup Kubernetes repository
-  when: dnf_kubernetes_repo | bool
+#
+
+- name: Repos | Setup Kubernetes repository
+  when: dnf_kubernetes_repo_enabled | bool
   block:
-    - name: Add Kubernetes repository
+    - name: Repos | Add Kubernetes repository
       ansible.builtin.yum_repository:
         name: kubernetes
         description: Kubernetes
@@ -238,30 +244,33 @@
         exclude: 'kubelet kubeadm kubectl cri-tools kubernetes-cni'
       notify: 'dnf configuration changed'
 
-# -----------------------------------------------------------------------------
-# COPR repositories
-# -----------------------------------------------------------------------------
-- name: Check enabled COPR repositories
+#
+# COPR Repositories
+#
+
+- name: Repos | Check enabled COPR repositories
   ansible.builtin.command:
     cmd: dnf copr list --enabled
-  register: copr_list
+  register: __package_management_copr_list
   changed_when: false
+  # COPR plugin may not be installed
   failed_when: false
   when: dnf_copr_repos | length > 0
 
-- name: Enable COPR repositories
+- name: Repos | Enable COPR repositories
   ansible.builtin.command:
     cmd: "dnf copr enable {{ item }} -y"
   loop: '{{ dnf_copr_repos }}'
   changed_when: true
   when:
     - dnf_copr_repos | length > 0
-    - item not in (copr_list.stdout | default(''))
+    - item not in (__package_management_copr_list.stdout | default(''))
 
-# -----------------------------------------------------------------------------
-# Custom repositories
-# -----------------------------------------------------------------------------
-- name: Add custom repositories
+#
+# Custom Repositories
+#
+
+- name: Repos | Add custom repositories
   ansible.builtin.yum_repository:
     name: '{{ item.name }}'
     description: '{{ item.description | default(item.name) }}'
@@ -275,5 +284,5 @@
   when: dnf_custom_repos | length > 0
   notify: 'dnf configuration changed'
 
-- name: Flush handlers to update dnf cache
+- name: Repos | Flush handlers to update dnf cache
   ansible.builtin.meta: flush_handlers

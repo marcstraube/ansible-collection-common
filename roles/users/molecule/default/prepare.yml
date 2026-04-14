@@ -4,30 +4,39 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - openssh
+      Debian:
+        - openssh-client
+      RedHat:
+        - openssh
+
   tasks:
-    # Install required packages for SSH key management
-    - name: Install openssh package (Arch)
+    - name: Prepare | Update package cache (Arch)
       community.general.pacman:
-        name: openssh
-        state: present
         update_cache: true
+        upgrade: true
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Install openssh package (Debian)
+    - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
-        name: openssh-client
-        state: present
         update_cache: true
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Install openssh package (RedHat)
+    - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
-        name: openssh
-        state: present
+        update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
+    - name: Prepare | Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
+        state: present
+
     # Create orphan user for exclusive mode test
-    - name: Create orphan user for exclusive mode test
+    - name: Prepare | Create orphan user for exclusive mode test
       ansible.builtin.user:
         name: 'orphanuser'
         uid: 3099

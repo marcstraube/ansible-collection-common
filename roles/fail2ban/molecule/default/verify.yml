@@ -1,14 +1,14 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # ==========================================================================
-    # PACKAGE VERIFICATION
-    # ==========================================================================
-    - name: Check Fail2ban package is installed
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Check Fail2ban package is installed
       ansible.builtin.package:
         name: fail2ban
         state: present
@@ -16,88 +16,90 @@
       register: pkg_check
       failed_when: pkg_check.changed
 
-    # ==========================================================================
-    # CONFIGURATION FILES
-    # ==========================================================================
-    - name: Check jail.local exists
+    #
+    # Configuration Files
+    #
+
+    - name: Verify | Check jail.local exists
       ansible.builtin.stat:
         path: /etc/fail2ban/jail.local
       register: jail_local
 
-    - name: Verify jail.local exists
+    - name: Verify | Assert jail.local exists
       ansible.builtin.assert:
         that:
           - jail_local.stat.exists
         fail_msg: 'jail.local does not exist'
 
-    - name: Check sshd jail exists
+    - name: Verify | Check sshd jail exists
       ansible.builtin.stat:
         path: /etc/fail2ban/jail.d/sshd.local
       register: sshd_jail
 
-    - name: Verify sshd jail exists
+    - name: Verify | Assert sshd jail exists
       ansible.builtin.assert:
         that:
           - sshd_jail.stat.exists
         fail_msg: 'sshd.local jail does not exist'
 
-    - name: Check recidive jail exists
+    - name: Verify | Check recidive jail exists
       ansible.builtin.stat:
         path: /etc/fail2ban/jail.d/recidive.local
       register: recidive_jail
 
-    - name: Verify recidive jail exists
+    - name: Verify | Assert recidive jail exists
       ansible.builtin.assert:
         that:
           - recidive_jail.stat.exists
         fail_msg: 'recidive.local jail does not exist'
 
-    - name: Check custom jail exists
+    - name: Verify | Check custom jail exists
       ansible.builtin.stat:
         path: /etc/fail2ban/jail.d/custom.local
       register: custom_jail
 
-    - name: Verify custom jail exists
+    - name: Verify | Assert custom jail exists
       ansible.builtin.assert:
         that:
           - custom_jail.stat.exists
         fail_msg: 'custom.local jail does not exist'
 
-    - name: Check custom filter exists
+    - name: Verify | Check custom filter exists
       ansible.builtin.stat:
         path: /etc/fail2ban/filter.d/test-filter.local
       register: custom_filter
 
-    - name: Verify custom filter exists
+    - name: Verify | Assert custom filter exists
       ansible.builtin.assert:
         that:
           - custom_filter.stat.exists
         fail_msg: 'test-filter.local does not exist'
 
-    - name: Check custom action exists
+    - name: Verify | Check custom action exists
       ansible.builtin.stat:
         path: /etc/fail2ban/action.d/test-action.local
       register: custom_action
 
-    - name: Verify custom action exists
+    - name: Verify | Assert custom action exists
       ansible.builtin.assert:
         that:
           - custom_action.stat.exists
         fail_msg: 'test-action.local does not exist'
 
-    # ==========================================================================
-    # CONFIGURATION CONTENT - jail.local
-    # ==========================================================================
-    - name: Read jail.local content
+    #
+    # Configuration Content - jail.local
+    #
+
+    - name: Verify | Read jail.local content
       ansible.builtin.slurp:
         src: /etc/fail2ban/jail.local
       register: jail_local_content
 
-    - name: Set jail.local decoded content
+    - name: Verify | Set jail.local decoded content
       ansible.builtin.set_fact:
         jail_local_text: "{{ jail_local_content.content | b64decode }}"
 
-    - name: Verify jail.local contains expected settings
+    - name: Verify | Assert jail.local contains expected settings
       ansible.builtin.assert:
         that:
           - "'Ansible managed' in jail_local_text"
@@ -114,19 +116,20 @@
           - "'usedns = warn' in jail_local_text"
         fail_msg: 'jail.local does not contain expected settings'
 
-    # ==========================================================================
-    # CONFIGURATION CONTENT - sshd.local
-    # ==========================================================================
-    - name: Read sshd.local content
+    #
+    # Configuration Content - sshd.local
+    #
+
+    - name: Verify | Read sshd.local content
       ansible.builtin.slurp:
         src: /etc/fail2ban/jail.d/sshd.local
       register: sshd_content
 
-    - name: Set sshd decoded content
+    - name: Verify | Set sshd decoded content
       ansible.builtin.set_fact:
         sshd_text: "{{ sshd_content.content | b64decode }}"
 
-    - name: Verify sshd jail contains expected settings
+    - name: Verify | Assert sshd jail contains expected settings
       ansible.builtin.assert:
         that:
           - "'Ansible managed' in sshd_text"
@@ -137,15 +140,16 @@
           - "'[sshd-ddos]' in sshd_text"
         fail_msg: 'sshd.local does not contain expected settings'
 
-    # ==========================================================================
-    # CONFIGURATION CONTENT - recidive.local
-    # ==========================================================================
-    - name: Read recidive.local content
+    #
+    # Configuration Content - recidive.local
+    #
+
+    - name: Verify | Read recidive.local content
       ansible.builtin.slurp:
         src: /etc/fail2ban/jail.d/recidive.local
       register: recidive_content
 
-    - name: Verify recidive jail contains expected settings
+    - name: Verify | Assert recidive jail contains expected settings
       ansible.builtin.assert:
         that:
           - "'Ansible managed' in (recidive_content.content | b64decode)"
@@ -153,109 +157,114 @@
           - "'bantime = 2w' in (recidive_content.content | b64decode)"
         fail_msg: 'recidive.local does not contain expected settings'
 
-    # ==========================================================================
-    # CONFIGURATION CONTENT - custom
-    # ==========================================================================
-    - name: Read custom filter content
+    #
+    # Configuration Content - Custom
+    #
+
+    - name: Verify | Read custom filter content
       ansible.builtin.slurp:
         src: /etc/fail2ban/filter.d/test-filter.local
       register: filter_content
 
-    - name: Verify custom filter contains expected regex
+    - name: Verify | Assert custom filter contains expected regex
       ansible.builtin.assert:
         that:
           - "'Test failed from <HOST>' in (filter_content.content | b64decode)"
         fail_msg: 'Custom filter does not contain expected regex'
 
-    - name: Read custom action content
+    - name: Verify | Read custom action content
       ansible.builtin.slurp:
         src: /etc/fail2ban/action.d/test-action.local
       register: action_content
 
-    - name: Verify custom action contains expected commands
+    - name: Verify | Assert custom action contains expected commands
       ansible.builtin.assert:
         that:
           - "'actionban = /bin/true' in (action_content.content | b64decode)"
         fail_msg: 'Custom action does not contain expected commands'
 
-    # ==========================================================================
-    # SERVICE VERIFICATION
-    # ==========================================================================
-    - name: Check Fail2ban service is enabled
-      ansible.builtin.systemd:
+    #
+    # Service Verification
+    #
+
+    - name: Verify | Check Fail2ban service is enabled
+      ansible.builtin.systemd_service:
         name: fail2ban
         enabled: true
       check_mode: true
       register: service_enabled
       failed_when: service_enabled.changed
 
-    - name: Check Fail2ban service is running
-      ansible.builtin.systemd:
+    - name: Verify | Check Fail2ban service is running
+      ansible.builtin.systemd_service:
         name: fail2ban
         state: started
       check_mode: true
       register: service_check
       failed_when: service_check.changed
 
-    # ==========================================================================
-    # FUNCTIONAL TESTS
-    # ==========================================================================
-    - name: Test fail2ban-client status
+    #
+    # Functional Tests
+    #
+
+    - name: Verify | Test fail2ban-client status
       ansible.builtin.command: fail2ban-client status
       register: f2b_status
       changed_when: false
       failed_when: f2b_status.rc != 0
 
-    - name: Verify fail2ban-client output
+    - name: Verify | Assert fail2ban-client output
       ansible.builtin.assert:
         that:
           - "'Number of jail' in f2b_status.stdout"
           - "'sshd' in f2b_status.stdout"
         fail_msg: 'fail2ban-client status output unexpected'
 
-    - name: Test fail2ban-client ping
+    - name: Verify | Test fail2ban-client ping
       ansible.builtin.command: fail2ban-client ping
       register: f2b_ping
       changed_when: false
       failed_when: f2b_ping.rc != 0
 
-    - name: Verify ping response
+    - name: Verify | Assert ping response
       ansible.builtin.assert:
         that:
           - "'pong' in f2b_ping.stdout.lower()"
         fail_msg: 'fail2ban-client ping did not return pong'
 
-    - name: Get sshd jail status
+    - name: Verify | Get sshd jail status
       ansible.builtin.command: fail2ban-client status sshd
       register: sshd_status
       changed_when: false
       failed_when: sshd_status.rc != 0
 
-    - name: Verify sshd jail is active
+    - name: Verify | Assert sshd jail is active
       ansible.builtin.assert:
         that:
           - "'Currently banned' in sshd_status.stdout"
           - "'Total banned' in sshd_status.stdout"
         fail_msg: 'sshd jail status output unexpected'
 
-    # ==========================================================================
-    # DATABASE VERIFICATION
-    # ==========================================================================
-    - name: Check fail2ban database exists
+    #
+    # Database Verification
+    #
+
+    - name: Verify | Check fail2ban database exists
       ansible.builtin.stat:
         path: /var/lib/fail2ban/fail2ban.sqlite3
       register: f2b_db
 
-    - name: Verify database exists
+    - name: Verify | Assert database exists
       ansible.builtin.assert:
         that:
           - f2b_db.stat.exists
         fail_msg: 'Fail2ban database does not exist'
 
-    # ==========================================================================
-    # FILE PERMISSIONS
-    # ==========================================================================
-    - name: Check jail.local permissions
+    #
+    # File Permissions
+    #
+
+    - name: Verify | Check jail.local permissions
       ansible.builtin.assert:
         that:
           - jail_local.stat.mode == '0644'

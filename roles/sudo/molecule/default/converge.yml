@@ -1,39 +1,15 @@
 ---
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
-
-  pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
-    # Create test users and groups for verification
-    - name: Create test group for sudo
-      ansible.builtin.group:
-        name: testgroup
-        state: present
-
-    - name: Create test user for sudo
-      ansible.builtin.user:
-        name: testuser
-        state: present
-        groups: testgroup
 
   vars:
     sudo_enabled: true
-    sudo_wheel_group: true
+    sudo_wheel_group_enabled: true
     sudo_wheel_requires_password: true
 
-    # Security settings
+    # Security Settings
+
     sudo_require_tty: false
     sudo_use_pty: true
     sudo_log_syslog: true
@@ -50,16 +26,19 @@
     sudo_always_set_home: true
     sudo_secure_path: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
-    # Mail settings
+    # Mail Settings
+
     sudo_mailto: 'root'
     sudo_mail_on:
       - 'badpass'
       - 'no_perms'
 
     # Editor
+
     sudo_editor: '/usr/bin/nvim:/usr/bin/vim:/usr/bin/vi'
 
     # Environment
+
     sudo_env_keep:
       - 'EDITOR'
       - 'VISUAL'
@@ -68,11 +47,13 @@
       - 'LC_*'
       - 'TERM'
 
-    # Extra defaults
+    # Extra Defaults
+
     sudo_extra_defaults:
       - 'umask=0022'
 
-    # Test user sudoers
+    # Test User sudoers
+
     sudo_users:
       - name: 'testuser'
         nopasswd: false
@@ -82,7 +63,8 @@
           - '/usr/bin/systemctl restart nginx'
           - '/usr/bin/systemctl status *'
 
-    # Test group sudoers
+    # Test Group sudoers
+
     sudo_groups:
       - name: 'testgroup'
         nopasswd: false
@@ -91,7 +73,8 @@
         commands:
           - '/usr/bin/systemctl *'
 
-    # Test custom sudoers files
+    # Test Custom sudoers Files
+
     sudo_sudoers_files:
       - name: 'backup'
         content: 'backup ALL=(root) NOPASSWD: /usr/bin/rsync'
@@ -103,12 +86,25 @@
           - '/usr/lib/nagios/plugins/*'
         nopasswd: true
 
-    # Test purge functionality
-    sudo_purge_sudoers_d: true
+    # Test Purge Functionality
+
+    sudo_purge_sudoers_d_enabled: true
     sudo_keep_sudoers_files:
       - 'README'
 
+  pre_tasks:
+    - name: Converge | Create test group
+      ansible.builtin.group:
+        name: testgroup
+        state: present
+
+    - name: Converge | Create test user
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        groups: testgroup
+
   tasks:
-    - name: Include sudo role  # noqa: role-name[path]
+    - name: Converge | Include sudo role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

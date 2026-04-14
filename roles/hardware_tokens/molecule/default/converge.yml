@@ -1,12 +1,9 @@
 ---
-# marcstraube.common.hardware_tokens/molecule/default/converge.yml
-
 - name: Converge
   hosts: all
   gather_facts: true
-  become: true
 
   tasks:
-    - name: Include hardware_tokens role  # noqa: role-name[path]
+    - name: Converge | Include hardware_tokens role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

@@ -1,11 +1,6 @@
 ---
-# =============================================================================
-# Molecule Converge Playbook for AIDE Role
-# =============================================================================
-
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
 
   vars:
@@ -23,46 +18,15 @@
     aide_email_enabled: false
 
   pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-      changed_when: false
-
-    - name: Install base-devel (Arch)
-      community.general.pacman:
-        name: base-devel
-        state: present
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update package cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Create aur_builder user for AUR packages (Arch)
-      ansible.builtin.user:
-        name: aur_builder
-        group: wheel
-        create_home: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Allow aur_builder passwordless sudo (Arch)
-      ansible.builtin.lineinfile:
-        path: /etc/sudoers.d/99-aur_builder
-        line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
-        create: true
-        mode: '0440'
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Create test directory for custom monitoring
+    - name: Converge | Create test directory for custom monitoring
       ansible.builtin.file:
         path: '/opt/test'
         state: directory
+        owner: root
+        group: root
         mode: '0755'
 
   tasks:
-    - name: Include aide role  # noqa: role-name[path]
+    - name: Converge | Include aide role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

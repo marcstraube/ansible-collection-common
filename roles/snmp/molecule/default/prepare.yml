@@ -1,0 +1,37 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    __prepare_packages:
+      Debian:
+        - systemd
+        - procps
+      RedHat:
+        - systemd
+        - procps-ng
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
+        state: present
+      when: ansible_facts['os_family'] in __prepare_packages

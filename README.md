@@ -4,6 +4,8 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Sponsor](https://img.shields.io/badge/sponsor-PayPal-blue.svg)](https://paypal.me/marcstraube)
 
+## Description
+
 Shared Ansible roles for multi-OS infrastructure management.
 37 roles covering base system, security, networking, package management,
 user management, editors, and more.
@@ -12,8 +14,8 @@ user management, editors, and more.
 
 - Arch Linux (rolling)
 - Debian Trixie (13)
-- Rocky Linux 9
-- Rocky Linux 10
+- EL 9 (Rocky, Alma, RHEL)
+- EL 10 (Rocky, Alma, RHEL)
 
 ## Requirements
 

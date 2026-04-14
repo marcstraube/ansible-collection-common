@@ -1,37 +1,15 @@
 ---
-# =============================================================================
-# Podman - Service Tasks
-# =============================================================================
-
-- name: Service | Enable podman socket
-  ansible.builtin.systemd:
+- name: Service | Manage podman socket
+  ansible.builtin.systemd_service:
     name: '{{ __podman_socket_service }}'
-    enabled: true
-    state: started
-  when: podman_socket_enabled | bool
+    enabled: "{{ podman_socket_enabled | bool }}"
+    state: "{{ podman_socket_enabled | bool | ternary('started', 'stopped') }}"
 
-- name: Service | Disable podman socket when not needed
-  ansible.builtin.systemd:
-    name: '{{ __podman_socket_service }}'
-    enabled: false
-    state: stopped
-  when: not (podman_socket_enabled | bool)
-  failed_when: false
-
-- name: Service | Enable podman auto-update timer
-  ansible.builtin.systemd:
-    name: 'podman-auto-update.timer'
-    enabled: true
-    state: started
-  when: podman_auto_update_enabled | bool
-
-- name: Service | Disable podman auto-update timer when not needed
-  ansible.builtin.systemd:
-    name: 'podman-auto-update.timer'
-    enabled: false
-    state: stopped
-  when: not (podman_auto_update_enabled | bool)
-  failed_when: false
+- name: Service | Manage podman auto-update timer
+  ansible.builtin.systemd_service:
+    name: '{{ __podman_auto_update_timer }}'
+    enabled: "{{ podman_auto_update_enabled | bool }}"
+    state: "{{ podman_auto_update_enabled | bool | ternary('started', 'stopped') }}"
 
 - name: Service | Deploy system prune timer
   ansible.builtin.template:
@@ -40,7 +18,6 @@
     owner: root
     group: root
     mode: '0644'
-  when: podman_prune_enabled | bool
   notify: 'reload podman systemd units'
 
 - name: Service | Deploy system prune service
@@ -50,31 +27,11 @@
     owner: root
     group: root
     mode: '0644'
-  when: podman_prune_enabled | bool
   notify: 'reload podman systemd units'
 
-- name: Service | Enable system prune timer
-  ansible.builtin.systemd:
+- name: Service | Manage system prune timer
+  ansible.builtin.systemd_service:
     name: 'podman-prune.timer'
-    enabled: true
-    state: started
+    enabled: "{{ podman_prune_enabled | bool }}"
+    state: "{{ podman_prune_enabled | bool | ternary('started', 'stopped') }}"
     daemon_reload: true
-  when: podman_prune_enabled | bool
-
-- name: Service | Disable system prune timer when not needed
-  ansible.builtin.systemd:
-    name: 'podman-prune.timer'
-    enabled: false
-    state: stopped
-  when: not (podman_prune_enabled | bool)
-  failed_when: false
-
-- name: Service | Remove prune units when disabled
-  ansible.builtin.file:
-    path: '{{ item }}'
-    state: absent
-  loop:
-    - '/etc/systemd/system/podman-prune.timer'
-    - '/etc/systemd/system/podman-prune.service'
-  when: not (podman_prune_enabled | bool)
-  notify: 'reload podman systemd units'

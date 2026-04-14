@@ -12,7 +12,8 @@ RedHat-family systems.
 
 ## Requirements
 
-- **Ansible**: >= 2.17
+- ansible-core >= 2.17
+- Collections: `community.general`, `kewlfft.aur`
 - The `python` role must run before this role to provide pipx.
 - On Arch Linux, the `package_management` role must run first to set up the
   AUR helper and `aur_builder` user (required for `molecule-plugins`).
@@ -21,46 +22,57 @@ RedHat-family systems.
 
 ## Supported Platforms
 
-| Platform | Notes |
-| -------------- | ----- |
-| Arch Linux | Native packages via pacman/AUR |
-| Debian Trixie | pipx-based installation |
-| Rocky Linux 9 | pipx with bootstrap hack |
-| Rocky Linux 10 | pipx (system) |
+| Platform                  | Notes                          |
+|---------------------------|--------------------------------|
+| Arch Linux                | Native packages via pacman/AUR |
+| Debian Trixie             | pipx-based installation        |
+| EL 9 (Rocky, Alma, RHEL)  | pipx with bootstrap hack       |
+| EL 10 (Rocky, Alma, RHEL) | pipx (system)                  |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
+### Role Control
+
+| Variable                | Default | Description             |
+|-------------------------|---------|-------------------------|
+| `ansible_tools_enabled` | `true`  | Enable the ansible role |
+
+### Components
+
 | Variable                         | Default    | Description                                        |
-| -------------------------------- | ---------- | -------------------------------------------------- |
-| `ansible_tools_enabled`          | `true`     | Enable/disable the entire role                     |
-| `ansible_tools_install_ansible`  | `true`     | Install Ansible                                    |
-| `ansible_tools_install_molecule` | `true`     | Install Molecule                                   |
+|----------------------------------|------------|----------------------------------------------------|
+| `ansible_tools_ansible_enabled`  | `true`     | Enable Ansible install                             |
+| `ansible_tools_molecule_enabled` | `true`     | Enable Molecule testing framework install          |
 | `ansible_tools_container_driver` | `'podman'` | Container driver (`'podman'`, `'docker'`, or `''`) |
-| `ansible_tools_install_lint`     | `true`     | Install ansible-lint and yamllint                  |
+| `ansible_tools_lint_enabled`     | `true`     | Enable linting tools install                       |
 | `ansible_tools_extra_plugins`    | `[]`       | Extra pipx-injected plugins (Debian/RedHat)        |
 
-## Installation Method per OS
+### Deprecated Variables (removed in v2.0.0)
 
-| OS                 | Ansible | Molecule + Lint  | Driver                 |
-| ------------------ | ------- | ---------------- | ---------------------- |
-| Arch Linux         | pacman  | pacman           | AUR (molecule-plugins) |
-| Debian Trixie      | apt     | pipx (system)    | pipx inject            |
-| Rocky 9            | dnf     | pipx (bootstrap) | pipx inject            |
-| Rocky 10+ / Fedora | dnf     | pipx (system)    | pipx inject            |
+| Old Variable                     | New Variable                     |
+|----------------------------------|----------------------------------|
+| `ansible_tools_install_ansible`  | `ansible_tools_ansible_enabled`  |
+| `ansible_tools_install_molecule` | `ansible_tools_molecule_enabled` |
+| `ansible_tools_install_lint`     | `ansible_tools_lint_enabled`     |
 
 ## Tags
 
 | Tag             | Scope          |
-| --------------- | -------------- |
+|-----------------|----------------|
 | `ansible-tools` | All role tasks |
 
 ## Example Playbook
 
 ```yaml
-- name: Include ansible tools role
+- name: Include ansible role
   ansible.builtin.include_role:
     name: marcstraube.common.ansible
-  tags: [base, ansible-tools]
+  tags:
+    - ansible-tools
   when: ansible_tools_enabled | default(true) | bool
 ```
 
@@ -71,7 +83,7 @@ cd roles/ansible
 molecule test
 ```
 
-Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9
+Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 ## License
 

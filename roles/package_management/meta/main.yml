@@ -1,43 +1,34 @@
 ---
-# =============================================================================
-# Package Management Role Metadata
-# =============================================================================
-
 galaxy_info:
-  author: 'Marc Straube'
-  description: 'Configure package managers and repositories for ArchLinux, Debian/Ubuntu, and RHEL/Fedora/Rocky'
-  license: 'MIT'
+  author: Marc Straube
+  description: Configure package managers and repositories for ArchLinux, Debian/Ubuntu, and RHEL/Fedora/Rocky
+  license: MIT
   min_ansible_version: '2.17'
 
   platforms:
-    - name: 'ArchLinux'
+    - name: ArchLinux
       versions:
-        - 'all'
-    - name: 'Debian'
+        - all
+    - name: Debian
       versions:
-        - 'trixie'
-    - name: 'EL'
+        - trixie
+    - name: EL
       versions:
-        - '9'
-        - '10'
+        - all
 
   galaxy_tags:
-    - 'archlinux'
-    - 'debian'
-    - 'ubuntu'
-    - 'rhel'
-    - 'fedora'
-    - 'rocky'
-    - 'pacman'
-    - 'apt'
-    - 'dnf'
-    - 'aur'
-    - 'epel'
-    - 'remi'
-    - 'packages'
+    - archlinux
+    - debian
+    - ubuntu
+    - rhel
+    - fedora
+    - rocky
+    - pacman
+    - apt
+    - dnf
+    - aur
+    - epel
+    - remi
+    - packages
 
 dependencies: []
-
-collections:
-  - 'community.general'
-  - 'kewlfft.aur'

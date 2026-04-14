@@ -1,29 +1,25 @@
 ---
-# =============================================================================
-# Font Package Installation
-# =============================================================================
-
-- name: Install | Install fontconfig dependency
+- name: Install | Fontconfig dependency
   ansible.builtin.package:
-    name: fontconfig
+    name: '{{ __fonts_fontconfig_package }}'
     state: present
 
 - name: Install | Build base font package list
   ansible.builtin.set_fact:
     __fonts_packages: >-
       {{
-        (fonts_dejavu | bool | ternary([__fonts_dejavu_package], [])) +
-        (fonts_liberation | bool | ternary([__fonts_liberation_package], [])) +
-        (fonts_noto | bool | ternary([__fonts_noto_package], [])) +
-        (fonts_noto_emoji | bool | ternary([__fonts_noto_emoji_package], [])) +
-        (fonts_noto_cjk | bool | ternary([__fonts_noto_cjk_package], []))
+        (fonts_dejavu_enabled | bool | ternary([__fonts_dejavu_package], [])) +
+        (fonts_liberation_enabled | bool | ternary([__fonts_liberation_package], [])) +
+        (fonts_noto_enabled | bool | ternary([__fonts_noto_package], [])) +
+        (fonts_noto_emoji_enabled | bool | ternary([__fonts_noto_emoji_package], [])) +
+        (fonts_noto_cjk_enabled | bool | ternary([__fonts_noto_cjk_package], []))
       }}
-  when: fonts_base | bool
+  when: fonts_base_enabled | bool
 
 - name: Install | Initialize empty package list
   ansible.builtin.set_fact:
     __fonts_packages: []
-  when: not (fonts_base | bool)
+  when: not (fonts_base_enabled | bool)
 
 - name: Install | Add coding fonts to package list
   ansible.builtin.set_fact:
@@ -32,7 +28,7 @@
         __fonts_packages +
         (fonts_coding_families | map('extract', __fonts_coding_packages) | select('string') | list)
       }}
-  when: fonts_coding | bool
+  when: fonts_coding_enabled | bool
 
 - name: Install | Add Nerd Fonts to package list
   ansible.builtin.set_fact:
@@ -41,7 +37,7 @@
         __fonts_packages +
         (fonts_nerd_families | map('extract', __fonts_nerd_packages) | select('string') | list)
       }}
-  when: fonts_nerd | bool
+  when: fonts_nerd_enabled | bool
 
 - name: Install | Add extra packages to list
   ansible.builtin.set_fact:
@@ -52,7 +48,7 @@
   ansible.builtin.set_fact:
     __fonts_packages: '{{ __fonts_packages | select("string") | reject("equalto", "") | list }}'
 
-- name: Install | Install font packages
+- name: Install | Font packages
   ansible.builtin.package:
     name: '{{ __fonts_packages }}'
     state: present

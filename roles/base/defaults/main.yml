@@ -1,21 +1,14 @@
 ---
-# =============================================================================
-# Base System Configuration
-# =============================================================================
-# Role: marcstraube.common.base
-# Description: Configure locale, timezone, hostname, and basic system settings
-# Supported: Archlinux, RedHat, Debian
-# =============================================================================
+#
+# Role Control
+#
 
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
-
+# Enable the base role
 base_enabled: true
 
-# =============================================================================
-# HOSTNAME
-# =============================================================================
+#
+# Hostname
+#
 
 # System hostname
 base_hostname: '{{ inventory_hostname }}'
@@ -35,9 +28,9 @@ base_icon_name: ''
 # Physical location description
 base_location: ''
 
-# =============================================================================
-# LOCALE
-# =============================================================================
+#
+# Locale
+#
 
 # System locale (LANG)
 base_locale: 'en_US.UTF-8'
@@ -61,9 +54,9 @@ base_locale_lc_telephone: ''
 base_locale_lc_measurement: ''
 base_locale_lc_identification: ''
 
-# =============================================================================
-# TIMEZONE
-# =============================================================================
+#
+# Timezone
+#
 
 # System timezone
 base_timezone: 'UTC'
@@ -77,9 +70,9 @@ base_ntp_servers: []
 # Fallback NTP servers
 base_ntp_fallback_servers: []
 
-# =============================================================================
-# KEYBOARD
-# =============================================================================
+#
+# Keyboard
+#
 
 # Console keymap
 base_keymap: 'de-latin1'
@@ -102,9 +95,9 @@ base_xkb_variant: 'nodeadkeys'
 # X11 keyboard options
 base_xkb_options: ''
 
-# =============================================================================
-# KERNEL
-# =============================================================================
+#
+# Kernel
+#
 
 # Kernel package to install
 base_kernel: 'linux'
@@ -117,9 +110,9 @@ base_kernel_extra_packages:
 # Options: 'intel-ucode', 'amd-ucode', 'auto', ''
 base_microcode: 'auto'
 
-# =============================================================================
-# BOOTLOADER
-# =============================================================================
+#
+# Bootloader
+#
 
 # Bootloader type: systemd-boot, grub, none
 base_bootloader: 'systemd-boot'
@@ -153,12 +146,15 @@ base_systemd_boot_console_mode: 'max'
 # systemd-boot editor: allow editing kernel parameters at boot (security risk)
 base_systemd_boot_editor: false
 
-# =============================================================================
-# BASIC PACKAGES
-# =============================================================================
+#
+# Packages
+#
 
 # Install dialog (TUI menus and input boxes)
-base_dialog: true
+base_dialog_enabled: true
+
+# DEPRECATED: Use base_dialog_enabled instead (removed in v2.0.0)
+# base_dialog: {{ base_dialog_enabled }}
 
 # Essential system packages (OS-specific defaults from vars/)
 base_packages: '{{ __base_default_packages | default([]) }}'
@@ -169,9 +165,9 @@ base_extra_packages: []
 # Packages to remove
 base_remove_packages: []
 
-# =============================================================================
-# SERVICES
-# =============================================================================
+#
+# Services
+#
 
 # Services to enable (timesyncd is managed by timezone tasks via base_ntp_enabled)
 base_services_enabled: []
@@ -179,9 +175,9 @@ base_services_enabled: []
 # Services to disable
 base_services_disabled: []
 
-# =============================================================================
-# SYSCTL
-# =============================================================================
+#
+# Sysctl
+#
 
 # Sysctl settings (dictionary)
 # Example:
@@ -190,9 +186,9 @@ base_services_disabled: []
 #     'net.ipv4.tcp_fastopen': 3
 base_sysctl: {}
 
-# =============================================================================
-# MKINITCPIO
-# =============================================================================
+#
+# Mkinitcpio
+#
 
 # Mkinitcpio modules
 base_mkinitcpio_modules: []
@@ -224,9 +220,9 @@ base_mkinitcpio_hooks: []
 # Mkinitcpio compression
 base_mkinitcpio_compression: 'zstd'
 
-# =============================================================================
-# SYSTEMD
-# =============================================================================
+#
+# Systemd
+#
 
 # Journald max disk usage
 base_journald_max_use: '500M'

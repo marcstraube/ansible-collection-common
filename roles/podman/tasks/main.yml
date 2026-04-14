@@ -1,45 +1,65 @@
 ---
-# =============================================================================
-# Podman - Main Tasks
-# =============================================================================
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    podman_docker_alias_enabled: >-
+      {{ podman_docker_alias | default(podman_docker_alias_enabled) | bool }}
+    podman_docker_socket_symlink_enabled: >-
+      {{ podman_docker_socket_symlink | default(podman_docker_socket_symlink_enabled) | bool }}
+  when:
+    - podman_enabled | bool
+    - podman_docker_alias is defined or podman_docker_socket_symlink is defined
 
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [podman]
+  tags:
+    - podman
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: podman_enabled | bool
-  tags: [podman, podman:install]
+  tags:
+    - podman
+    - podman:install
 
 - name: Main | Include BTRFS tasks
   ansible.builtin.include_tasks:
     file: btrfs.yml
     apply:
-      tags: [podman, podman:configure]
+      tags:
+        - podman
+        - podman:install
   when: podman_enabled | bool
-  tags: [podman, podman:configure]
+  tags:
+    - podman
+    - podman:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
   when: podman_enabled | bool
-  tags: [podman, podman:configure]
+  tags:
+    - podman
+    - podman:configure
 
 - name: Main | Import rootless tasks
   ansible.builtin.import_tasks: rootless.yml
   when:
     - podman_enabled | bool
     - podman_rootless_users | length > 0
-  tags: [podman, podman:rootless]
+  tags:
+    - podman
+    - podman:rootless
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
   when: podman_enabled | bool
-  tags: [podman, podman:service]
+  tags:
+    - podman
+    - podman:service

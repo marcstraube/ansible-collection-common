@@ -1,31 +1,30 @@
 ---
-# =============================================================================
-# Energy Management - Power Profiles Daemon / tuned-ppd
-# =============================================================================
 # PPD provides 3 profiles: power-saver, balanced, performance
 # Mutually exclusive with TLP — remove TLP first if present.
 # RHEL 10+ uses tuned + tuned-ppd instead of power-profiles-daemon.
 
-- name: PPD | Remove TLP if installed
+- name: PPD | Remove TLP packages if installed
   ansible.builtin.package:
     name: '{{ __energy_management_tlp_packages }}'
     state: absent
+  # TLP may not be installed
   failed_when: false
 
+# TLP service may not exist on the system
 - name: PPD | Stop and disable TLP service
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __energy_management_tlp_service }}'
     state: stopped
     enabled: false
   failed_when: false
 
-- name: PPD | Install power profiles packages
+- name: PPD | Install PPD packages
   ansible.builtin.package:
     name: '{{ __energy_management_ppd_packages }}'
     state: present
 
-- name: PPD | Enable and start service
-  ansible.builtin.systemd:
+- name: PPD | Enable and start PPD service
+  ansible.builtin.systemd_service:
     name: '{{ __energy_management_ppd_service }}'
     state: started
     enabled: true
@@ -35,5 +34,6 @@
   ansible.builtin.command:
     cmd: 'powerprofilesctl set {{ energy_management_ppd_default_profile }}'
   changed_when: false
+  # powerprofilesctl may not work in containers
   failed_when: false
   when: energy_management_ppd_default_profile | length > 0

@@ -1,23 +1,19 @@
 ---
-# =============================================================================
-# rkhunter Handlers
-# =============================================================================
-
 - name: Update rkhunter database
   ansible.builtin.command:
-    cmd: 'rkhunter --propupd'
+    cmd: rkhunter --propupd
   changed_when: true
-  listen: Update rkhunter database
+  when: rkhunter_enabled | bool
 
 - name: Reload rkhunter systemd units
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     daemon_reload: true
+  # Container-safety for molecule
   failed_when: false
-  listen: Reload rkhunter systemd units
+  when: rkhunter_enabled | bool
 
 - name: Restart rkhunter timer
-  ansible.builtin.systemd:
-    name: rkhunter-check.timer
+  ansible.builtin.systemd_service:
+    name: '{{ __rkhunter_timer_name }}'
     state: restarted
-  listen: Restart rkhunter timer
-  when: rkhunter_timer_enabled | default(true) | bool
+  when: rkhunter_timer_enabled | bool

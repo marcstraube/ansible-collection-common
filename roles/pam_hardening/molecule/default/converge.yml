@@ -1,23 +1,7 @@
 ---
-# =============================================================================
-# Molecule Converge Playbook for PAM Hardening Role
-# =============================================================================
-
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
-
-  pre_tasks:
-    - name: Update package cache (Arch)
-      community.general.pacman:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Update apt cache (Debian)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
 
   vars:
     pam_hardening_enabled: true
@@ -90,6 +74,6 @@
     pam_2fa_enabled: false
 
   tasks:
-    - name: Include pam_hardening role  # noqa: role-name[path]
+    - name: Converge | Include pam_hardening role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

@@ -1,37 +1,46 @@
 ---
-# =============================================================================
-# Lynis - Main Tasks
-# =============================================================================
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [lynis]
+  tags:
+    - lynis
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [lynis, lynis:install]
+  when: lynis_enabled | bool
+  tags:
+    - lynis
+    - lynis:install
 
 - name: Main | Include BTRFS tasks
   ansible.builtin.include_tasks:
     file: btrfs.yml
     apply:
-      tags: [lynis, lynis:configure]
-  when:
-    - lynis_enabled | bool
-    - lynis_btrfs_nocow | bool
-  tags: [lynis, lynis:configure]
+      tags:
+        - lynis
+        - lynis:install
+  when: lynis_enabled | bool
+  tags:
+    - lynis
+    - lynis:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
-  tags: [lynis, lynis:configure]
+  when: lynis_enabled | bool
+  tags:
+    - lynis
+    - lynis:configure
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
-  tags: [lynis, lynis:service]
+  when: lynis_enabled | bool
+  tags:
+    - lynis
+    - lynis:service

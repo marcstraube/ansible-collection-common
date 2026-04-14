@@ -1,13 +1,9 @@
 ---
-# =============================================================================
-# PAM Hardening — Configuration
-# =============================================================================
+#
+# Password Quality
+#
 
-# =============================================================================
-# PASSWORD QUALITY
-# =============================================================================
-
-- name: Deploy pwquality configuration
+- name: Configure | Deploy pwquality configuration
   ansible.builtin.template:
     src: 'pwquality.conf.j2'
     dest: '/etc/security/pwquality.conf'
@@ -17,7 +13,7 @@
   when: pam_pwquality_enabled | bool
 
 # Arch: pambase does NOT include pam_pwquality — add to system-auth password stack
-- name: Add pam_pwquality to password stack (Arch)
+- name: Configure | Add pam_pwquality to password stack (Arch)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/system-auth'
     regexp: '^password\s+(requisite|required)\s+pam_pwquality\.so'
@@ -28,7 +24,7 @@
     - ansible_facts['os_family'] == 'Archlinux'
     - pam_pwquality_enabled | bool
 
-- name: Remove pam_pwquality from password stack (Arch)
+- name: Configure | Remove pam_pwquality from password stack (Arch)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/system-auth'
     regexp: '^password\s+(requisite|required)\s+pam_pwquality\.so'
@@ -39,7 +35,7 @@
 
 # Debian: installing libpam-pwquality auto-registers a pam-auth-update profile.
 # Run pam-auth-update to ensure it is wired into common-password.
-- name: Ensure pwquality is active in PAM stack (Debian)
+- name: Configure | Ensure pwquality is active in PAM stack (Debian)
   ansible.builtin.command: pam-auth-update --package
   changed_when: false
   when:
@@ -49,11 +45,11 @@
 # RedHat: pwquality.conf is read automatically when pam_pwquality.so is in the
 # authselect profile — no additional stack changes needed.
 
-# =============================================================================
-# ACCOUNT LOCKOUT
-# =============================================================================
+#
+# Account Lockout
+#
 
-- name: Deploy faillock configuration
+- name: Configure | Deploy faillock configuration
   ansible.builtin.template:
     src: 'faillock.conf.j2'
     dest: '/etc/security/faillock.conf'
@@ -62,7 +58,7 @@
     mode: '0644'
   when: pam_faillock_enabled | bool
 
-- name: Ensure faillock directory exists
+- name: Configure | Ensure faillock directory exists
   ansible.builtin.file:
     path: '{{ pam_faillock_dir }}'
     state: directory
@@ -75,7 +71,7 @@
 # faillock.conf is read automatically — no PAM stack changes needed.
 
 # Debian: pam_faillock is NOT in the default stack. Add before/after pam_unix.
-- name: Add faillock preauth to common-auth (Debian)
+- name: Configure | Add faillock preauth to common-auth (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/common-auth'
     regexp: '^auth\s+required\s+pam_faillock\.so\s+preauth'
@@ -86,7 +82,7 @@
     - ansible_facts['os_family'] == 'Debian'
     - pam_faillock_enabled | bool
 
-- name: Add faillock authfail to common-auth (Debian)
+- name: Configure | Add faillock authfail to common-auth (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/common-auth'
     regexp: '^auth\s+\[default=die\]\s+pam_faillock\.so\s+authfail'
@@ -97,7 +93,7 @@
     - ansible_facts['os_family'] == 'Debian'
     - pam_faillock_enabled | bool
 
-- name: Add faillock to common-account (Debian)
+- name: Configure | Add faillock to common-account (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/common-account'
     regexp: '^account\s+required\s+pam_faillock\.so'
@@ -108,7 +104,7 @@
     - ansible_facts['os_family'] == 'Debian'
     - pam_faillock_enabled | bool
 
-- name: Remove faillock from common-auth (Debian)
+- name: Configure | Remove faillock from common-auth (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/common-auth'
     regexp: '{{ item }}'
@@ -120,7 +116,7 @@
     - ansible_facts['os_family'] == 'Debian'
     - not (pam_faillock_enabled | bool)
 
-- name: Remove faillock from common-account (Debian)
+- name: Configure | Remove faillock from common-account (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/common-account'
     regexp: '^account\s+required\s+pam_faillock\.so'
@@ -130,34 +126,35 @@
     - not (pam_faillock_enabled | bool)
 
 # RedHat: use authselect feature
-- name: Check authselect current features (RedHat)
+# failed_when: false — authselect returns non-zero when no profile is active
+- name: Configure | Check authselect current features (RedHat)
   ansible.builtin.command: authselect current --raw
-  register: __pam_authselect_current
+  register: __pam_hardening_authselect_current
   changed_when: false
   failed_when: false
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: Select authselect sssd profile if none active (RedHat)
+- name: Configure | Select authselect sssd profile if none active (RedHat)
   ansible.builtin.command: authselect select sssd --force
   changed_when: true
   when:
     - ansible_facts['os_family'] == 'RedHat'
-    - __pam_authselect_current.rc != 0
+    - __pam_hardening_authselect_current.rc != 0
 
-- name: Enable faillock via authselect (RedHat)
+- name: Configure | Enable faillock via authselect (RedHat)
   ansible.builtin.command: authselect enable-feature with-faillock
   changed_when: true
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - pam_faillock_enabled | bool
-    - "'with-faillock' not in (__pam_authselect_current.stdout | default(''))"
+    - "'with-faillock' not in (__pam_hardening_authselect_current.stdout | default(''))"
 
-# =============================================================================
-# PASSWORD HISTORY
-# =============================================================================
+#
+# Password History
+#
 
 # Arch: add pam_pwhistory to system-auth password stack
-- name: Add pam_pwhistory to password stack (Arch)
+- name: Configure | Add pam_pwhistory to password stack (Arch)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/system-auth'
     regexp: '^password\s+required\s+pam_pwhistory\.so'
@@ -167,7 +164,7 @@
   when: ansible_facts['os_family'] == 'Archlinux'
 
 # Debian: add remember= to pam_unix.so password line
-- name: Configure password history in pam_unix (Debian)
+- name: Configure | Password history in pam_unix (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/common-password'
     regexp: '^password\s+\[success=\d+\s+default=ignore\]\s+pam_unix\.so'
@@ -180,15 +177,15 @@
     - pam_password_remember | int > 0
 
 # RedHat: use authselect pwhistory feature + pwhistory.conf
-- name: Enable pwhistory via authselect (RedHat)
+- name: Configure | Enable pwhistory via authselect (RedHat)
   ansible.builtin.command: authselect enable-feature with-pwhistory
   changed_when: true
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - pam_password_remember | int > 0
-    - "'with-pwhistory' not in (__pam_authselect_current.stdout | default(''))"
+    - "'with-pwhistory' not in (__pam_hardening_authselect_current.stdout | default(''))"
 
-- name: Configure pwhistory remember value (RedHat)
+- name: Configure | pwhistory remember value (RedHat)
   ansible.builtin.lineinfile:
     path: '/etc/security/pwhistory.conf'
     regexp: '^remember\s*='
@@ -202,18 +199,18 @@
     - ansible_facts['os_family'] == 'RedHat'
     - pam_password_remember | int > 0
 
-# =============================================================================
-# PASSWORD HASHING & AGING (login.defs)
-# =============================================================================
+#
+# Password Hashing and Aging (login.defs)
+#
 
-- name: Configure password hashing algorithm in login.defs
+- name: Configure | Password hashing algorithm in login.defs
   ansible.builtin.lineinfile:
     path: '/etc/login.defs'
     regexp: '^ENCRYPT_METHOD\s+'
     line: 'ENCRYPT_METHOD {{ pam_password_hash | upper }}'
     state: present
 
-- name: Configure yescrypt cost factor in login.defs
+- name: Configure | yescrypt cost factor in login.defs
   ansible.builtin.lineinfile:
     path: '/etc/login.defs'
     regexp: '^YESCRYPT_COST_FACTOR\s+'
@@ -221,7 +218,7 @@
     insertafter: '^ENCRYPT_METHOD'
     state: "{{ 'present' if pam_password_hash == 'yescrypt' else 'absent' }}"
 
-- name: Configure SHA512 rounds in login.defs
+- name: Configure | SHA512 rounds in login.defs
   ansible.builtin.lineinfile:
     path: '/etc/login.defs'
     regexp: '^{{ item }}\s+'
@@ -232,7 +229,7 @@
     - SHA_CRYPT_MIN_ROUNDS
     - SHA_CRYPT_MAX_ROUNDS
 
-- name: Configure password aging in login.defs
+- name: Configure | Password aging in login.defs
   ansible.builtin.lineinfile:
     path: '/etc/login.defs'
     regexp: '^{{ item.key }}\s+'
@@ -245,11 +242,11 @@
     - { key: 'INACTIVE', value: '{{ pam_password_inactive }}' }
   when: pam_password_aging_enabled | bool
 
-# =============================================================================
-# SESSION LIMITS
-# =============================================================================
+#
+# Session Limits
+#
 
-- name: Ensure limits.d directory exists
+- name: Configure | Ensure limits.d directory exists
   ansible.builtin.file:
     path: '/etc/security/limits.d'
     state: directory
@@ -258,7 +255,7 @@
     mode: '0755'
   when: pam_limits_enabled | bool
 
-- name: Deploy limits configuration
+- name: Configure | Deploy limits configuration
   ansible.builtin.template:
     src: 'limits.conf.j2'
     dest: '/etc/security/limits.d/99-hardening.conf'
@@ -270,7 +267,7 @@
 # Arch: pam_limits.so already in pambase system-auth session stack — no changes needed.
 
 # Debian: pam_limits in login/su/sudo but NOT in common-session. Add it.
-- name: Add pam_limits to common-session (Debian)
+- name: Configure | Add pam_limits to common-session (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/common-session'
     regexp: '^session\s+required\s+pam_limits\.so'
@@ -282,11 +279,11 @@
 
 # RedHat: pam_limits.so is unconditionally included in authselect profiles.
 
-# =============================================================================
-# ACCESS CONTROL
-# =============================================================================
+#
+# Access Control
+#
 
-- name: Deploy access control configuration
+- name: Configure | Deploy access control configuration
   ansible.builtin.template:
     src: 'access.conf.j2'
     dest: '/etc/security/access.conf'
@@ -298,7 +295,7 @@
 # Arch: pam_access.so already in pambase system-login account stack — no changes needed.
 
 # Debian: pam_access not in default stack. Add to common-account.
-- name: Add pam_access to common-account (Debian)
+- name: Configure | Add pam_access to common-account (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/common-account'
     regexp: '^account\s+required\s+pam_access\.so'
@@ -308,7 +305,7 @@
     - ansible_facts['os_family'] == 'Debian'
     - pam_access_enabled | bool
 
-- name: Remove pam_access from common-account (Debian)
+- name: Configure | Remove pam_access from common-account (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/common-account'
     regexp: '^account\s+required\s+pam_access\.so'
@@ -318,20 +315,20 @@
     - not (pam_access_enabled | bool)
 
 # RedHat: use authselect feature
-- name: Enable pam_access via authselect (RedHat)
+- name: Configure | Enable pam_access via authselect (RedHat)
   ansible.builtin.command: authselect enable-feature with-pamaccess
   changed_when: true
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - pam_access_enabled | bool
-    - "'with-pamaccess' not in (__pam_authselect_current.stdout | default(''))"
+    - "'with-pamaccess' not in (__pam_hardening_authselect_current.stdout | default(''))"
 
-# =============================================================================
-# UMASK
-# =============================================================================
+#
+# Umask
+#
 
 # All platforms: configure UMASK in login.defs (read by pam_umask and login)
-- name: Configure umask in login.defs
+- name: Configure | Umask in login.defs
   ansible.builtin.lineinfile:
     path: '/etc/login.defs'
     regexp: '^UMASK\s+'
@@ -342,20 +339,20 @@
 # Debian: pam_umask.so already in common-session — reads UMASK from login.defs.
 # RedHat: pam_umask.so in authselect profile — reads UMASK from login.defs.
 
-- name: Configure usergroups in login.defs
+- name: Configure | Usergroups in login.defs
   ansible.builtin.lineinfile:
     path: '/etc/login.defs'
     regexp: '^USERGROUPS_ENAB\s+'
     line: 'USERGROUPS_ENAB {{ "yes" if pam_umask_usergroups else "no" }}'
     state: present
 
-# =============================================================================
-# NULL PASSWORDS
-# =============================================================================
+#
+# Null Passwords
+#
 
 # Arch: remove nullok from all pam_unix.so lines in system-auth
 # (auth line and password line both have nullok by default)
-- name: Disable null password authentication (Arch)
+- name: Configure | Disable null password authentication (Arch)
   ansible.builtin.replace:
     path: '/etc/pam.d/system-auth'
     regexp: '(pam_unix\.so.*?) nullok'
@@ -365,7 +362,7 @@
     - not (pam_permit_empty_passwords | bool)
 
 # Debian: remove nullok from pam_unix.so lines in common-auth and common-password
-- name: Disable null password authentication in common-auth (Debian)
+- name: Configure | Disable null password authentication in common-auth (Debian)
   ansible.builtin.replace:
     path: '/etc/pam.d/common-auth'
     regexp: '(pam_unix\.so.*?) nullok'
@@ -374,7 +371,7 @@
     - ansible_facts['os_family'] == 'Debian'
     - not (pam_permit_empty_passwords | bool)
 
-- name: Disable null password authentication in common-password (Debian)
+- name: Configure | Disable null password authentication in common-password (Debian)
   ansible.builtin.replace:
     path: '/etc/pam.d/common-password'
     regexp: '(pam_unix\.so.*?) nullok'
@@ -384,20 +381,20 @@
     - not (pam_permit_empty_passwords | bool)
 
 # RedHat: use authselect without-nullok feature
-- name: Disable null passwords via authselect (RedHat)
+- name: Configure | Disable null passwords via authselect (RedHat)
   ansible.builtin.command: authselect enable-feature without-nullok
   changed_when: true
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - not (pam_permit_empty_passwords | bool)
-    - "'without-nullok' not in (__pam_authselect_current.stdout | default(''))"
+    - "'without-nullok' not in (__pam_hardening_authselect_current.stdout | default(''))"
 
-# =============================================================================
-# LOGIN DELAY
-# =============================================================================
+#
+# Login Delay
+#
 
 # Arch: add pam_faildelay to system-login auth stack
-- name: Configure login delay (Arch)
+- name: Configure | Login delay (Arch)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/system-login'
     regexp: '^auth\s+optional\s+pam_faildelay\.so'
@@ -407,18 +404,17 @@
   when: ansible_facts['os_family'] == 'Archlinux'
 
 # Debian: pam_faildelay already in /etc/pam.d/login, update delay value
-- name: Configure login delay (Debian)
+- name: Configure | Login delay (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/login'
     regexp: '^auth\s+optional\s+pam_faildelay\.so'
     line: 'auth    optional                        pam_faildelay.so delay={{ pam_delay }}'
     insertbefore: '^auth\s+required'
     state: present
-  failed_when: false
   when: ansible_facts['os_family'] == 'Debian'
 
 # RedHat: FAIL_DELAY in login.defs is respected by login(1)
-- name: Configure login delay in login.defs (RedHat)
+- name: Configure | Login delay in login.defs (RedHat)
   ansible.builtin.lineinfile:
     path: '/etc/login.defs'
     regexp: '^FAIL_DELAY\s+'
@@ -426,11 +422,11 @@
     state: present
   when: ansible_facts['os_family'] == 'RedHat'
 
-# =============================================================================
-# SECURE TTY
-# =============================================================================
+#
+# Secure TTY
+#
 
-- name: Deploy securetty configuration
+- name: Configure | Deploy securetty configuration
   ansible.builtin.template:
     src: 'securetty.j2'
     dest: '/etc/securetty'
@@ -439,12 +435,12 @@
     mode: '0600'
   when: pam_securetty_enabled | bool
 
-# =============================================================================
-# TWO-FACTOR AUTHENTICATION
-# =============================================================================
+#
+# Two-Factor Authentication
+#
 
 # Arch: add to system-auth or service-specific PAM files
-- name: Configure 2FA for PAM services (Arch)
+- name: Configure | 2FA for PAM services (Arch)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/{{ item }}'
     regexp: '^auth\s+(required|sufficient)\s+pam_google_authenticator\.so'
@@ -459,7 +455,7 @@
     - pam_2fa_enabled | bool
 
 # Debian: add to service-specific PAM files
-- name: Configure 2FA for PAM services (Debian)
+- name: Configure | 2FA for PAM services (Debian)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/{{ item }}'
     regexp: '^auth\s+(required|sufficient)\s+pam_google_authenticator\.so'
@@ -474,7 +470,7 @@
     - pam_2fa_enabled | bool
 
 # RedHat: add to service-specific PAM files (authselect manages system-auth)
-- name: Configure 2FA for PAM services (RedHat)
+- name: Configure | 2FA for PAM services (RedHat)
   ansible.builtin.lineinfile:
     path: '/etc/pam.d/{{ item }}'
     regexp: '^auth\s+(required|sufficient)\s+pam_google_authenticator\.so'
@@ -488,7 +484,7 @@
     - ansible_facts['os_family'] == 'RedHat'
     - pam_2fa_enabled | bool
 
-- name: Deploy 2FA setup script
+- name: Configure | Deploy 2FA setup script
   ansible.builtin.template:
     src: '2fa-setup.sh.j2'
     dest: '/usr/local/bin/2fa-setup.sh'
@@ -497,7 +493,7 @@
     mode: '0755'
   when: pam_2fa_enabled | bool
 
-- name: Remove 2FA setup script when disabled
+- name: Configure | Remove 2FA setup script when disabled
   ansible.builtin.file:
     path: '/usr/local/bin/2fa-setup.sh'
     state: absent

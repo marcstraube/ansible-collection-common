@@ -1,15 +1,11 @@
 ---
-# =============================================================================
-# AMD GPU Driver Installation
-# =============================================================================
-
 - name: AMD | Build package list
   ansible.builtin.set_fact:
     __amd_packages: >-
       {{
-        (graphics_amd_mesa | bool | ternary([__graphics_amd_mesa], [])) +
-        (graphics_amd_vulkan | bool | ternary([__graphics_amd_vulkan], [])) +
-        (graphics_amd_32bit | bool | ternary(
+        (graphics_amd_mesa_enabled | bool | ternary([__graphics_amd_mesa], [])) +
+        (graphics_amd_vulkan_enabled | bool | ternary([__graphics_amd_vulkan], [])) +
+        (graphics_amd_32bit_enabled | bool | ternary(
           [__graphics_amd_mesa_32bit, __graphics_amd_vulkan_32bit],
           []
         ))

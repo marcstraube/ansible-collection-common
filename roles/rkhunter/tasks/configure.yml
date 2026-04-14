@@ -1,12 +1,8 @@
 ---
-# =============================================================================
-# rkhunter - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Deploy rkhunter configuration
   ansible.builtin.template:
-    src: 'rkhunter.conf.j2'
-    dest: '/etc/rkhunter.conf'
+    src: rkhunter.conf.j2
+    dest: '{{ __rkhunter_config_file }}'
     owner: root
     group: root
     mode: '0600'
@@ -14,32 +10,39 @@
 
 - name: Configure | Deploy rkhunter check script
   ansible.builtin.template:
-    src: 'rkhunter-check.sh.j2'
+    src: rkhunter-check.sh.j2
     dest: '/usr/local/bin/rkhunter-check.sh'
     owner: root
     group: root
     mode: '0755'
-  when: rkhunter_timer_enabled | default(true) | bool
+  when: rkhunter_timer_enabled | bool
+
+- name: Configure | Check if Debian defaults file exists
+  ansible.builtin.stat:
+    path: '/etc/default/rkhunter'
+  register: __rkhunter_debian_defaults
+  when: ansible_facts['os_family'] == 'Debian'
 
 - name: Configure | Disable Debian cron job
   ansible.builtin.lineinfile:
     path: '/etc/default/rkhunter'
     regexp: '^CRON_DAILY_RUN='
     line: 'CRON_DAILY_RUN=""'
-    create: false
-  when: ansible_facts['os_family'] == 'Debian'
-  failed_when: false
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - __rkhunter_debian_defaults.stat.exists | default(false)
 
 - name: Configure | Update rkhunter signatures
   ansible.builtin.command:
-    cmd: 'rkhunter --update'
+    cmd: rkhunter --update
   register: __rkhunter_update
   changed_when: "'Updated' in __rkhunter_update.stdout"
+  # rkhunter --update returns non-zero when no updates available or mirrors unreachable
   failed_when: false
-  when: rkhunter_update_on_install | default(true) | bool
+  when: rkhunter_update_on_install | bool
 
 - name: Configure | Initialize rkhunter property database
   ansible.builtin.command:
-    cmd: 'rkhunter --propupd'
+    cmd: rkhunter --propupd
     creates: '/var/lib/rkhunter/db/rkhunter.dat'
-  when: rkhunter_update_on_install | default(true) | bool
+  when: rkhunter_update_on_install | bool

@@ -1,37 +1,29 @@
 ---
-# =============================================================================
-# PKI Role Metadata
-# =============================================================================
-
 galaxy_info:
-  author: 'Marc Straube'
-  description: 'PKI certificate and key infrastructure management (CA, server/client certs, DH params)'
-  license: 'MIT'
+  author: Marc Straube
+  description: PKI certificate and key infrastructure management (CA, server/client certs, DH params)
+  license: MIT
   min_ansible_version: '2.17'
 
   platforms:
-    - name: 'ArchLinux'
+    - name: ArchLinux
       versions:
-        - 'all'
-    - name: 'Debian'
+        - all
+    - name: Debian
       versions:
-        - 'trixie'
-    - name: 'EL'
+        - trixie
+    - name: EL
       versions:
-        - '9'
-        - '10'
+        - all
 
   galaxy_tags:
-    - 'pki'
-    - 'openssl'
-    - 'ssl'
-    - 'tls'
-    - 'certificates'
-    - 'ca'
-    - 'security'
-    - 'crypto'
+    - pki
+    - openssl
+    - ssl
+    - tls
+    - certificates
+    - ca
+    - security
+    - crypto
 
 dependencies: []
-
-collections:
-  - 'community.crypto'

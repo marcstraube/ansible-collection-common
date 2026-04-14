@@ -3,27 +3,26 @@
 # AIDE Configuration - File Integrity Monitoring
 #
 
-# =============================================================================
-# DATABASE
-# =============================================================================
 {% if aide_database_format == 'gzip' %}
 
+# Database
 {{ __aide_database_directive }}=file:{{ aide_database }}.gz
 database_out=file:{{ aide_database_new }}.gz
 gzip_dbout=yes
 {% else %}
+
+# Database
 {{ __aide_database_directive }}=file:{{ aide_database }}
 database_out=file:{{ aide_database_new }}
 {% endif %}
-
-# =============================================================================
-# REPORT
-# =============================================================================
 {% if __aide_supports_log_level %}
 
+# Report
 log_level=warning
 report_level={{ aide_report_level }}
 {% else %}
+
+# Report
 verbose={{ aide_verbose }}
 {% endif %}
 
@@ -33,9 +32,7 @@ report_url=stdout
 report_url={{ url }}
 {% endfor %}
 
-# =============================================================================
-# RULE DEFINITIONS
-# =============================================================================
+# Rule definitions
 
 # Full integrity check with strong hashes (for critical security files)
 FIPSR = p+i+n+u+g+s+m+c+acl+xattrs+sha256
@@ -58,9 +55,7 @@ DATAONLY = p+n+u+g+s+acl+xattrs+sha256
 # Growing log files
 LOG = >
 
-# =============================================================================
-# EXCLUDED PATHS (must come before includes)
-# =============================================================================
+# Excluded paths (must come before includes)
 
 # Volatile system directories
 !/proc
@@ -86,14 +81,10 @@ LOG = >
 !{{ path }}
 {% endfor %}
 
-# =============================================================================
-# MONITORED PATHS
-# =============================================================================
-{% if aide_monitor_configs | bool %}
+# Monitored paths
+{% if aide_monitor_configs_enabled | bool %}
 
-# ---------------------------------------------------------------------------
 # /etc - Configuration files
-# ---------------------------------------------------------------------------
 
 # Base directory permissions
 /etc DIR
@@ -169,62 +160,48 @@ LOG = >
 !/etc/cups/subscriptions.conf
 !/etc/.*~
 {% endif %}
-{% if aide_monitor_binaries | bool %}
+{% if aide_monitor_binaries_enabled | bool %}
 
-# ---------------------------------------------------------------------------
 # System binaries
-# ---------------------------------------------------------------------------
 /usr/bin NORMAL
 /usr/sbin NORMAL
 /usr/local/bin NORMAL
 /usr/local/sbin NORMAL
 {% endif %}
-{% if aide_monitor_libraries | bool %}
+{% if aide_monitor_libraries_enabled | bool %}
 
-# ---------------------------------------------------------------------------
 # System libraries
-# ---------------------------------------------------------------------------
 /usr/lib NORMAL
 {% if ansible_facts['architecture'] == 'x86_64' %}
 /usr/lib64 NORMAL
 {% endif %}
 {% endif %}
-{% if aide_monitor_boot | bool %}
+{% if aide_monitor_boot_enabled | bool %}
 
-# ---------------------------------------------------------------------------
 # Boot files
-# ---------------------------------------------------------------------------
 /boot NORMAL
 {% endif %}
-{% if aide_monitor_logs | bool %}
+{% if aide_monitor_logs_enabled | bool %}
 
-# ---------------------------------------------------------------------------
 # Log files (growing file check)
-# ---------------------------------------------------------------------------
 /var/log/faillog FIPSR
 /var/log/lastlog FIPSR
 /var/spool/at FIPSR
 {% endif %}
-{% if aide_monitor_system_dirs | bool %}
+{% if aide_monitor_system_dirs_enabled | bool %}
 
-# ---------------------------------------------------------------------------
 # Additional system directories
-# ---------------------------------------------------------------------------
 /opt NORMAL
 /root NORMAL
 {% endif %}
-{% if aide_monitor_home_dirs | bool %}
+{% if aide_monitor_home_dirs_enabled | bool %}
 
-# ---------------------------------------------------------------------------
 # User home directories
-# ---------------------------------------------------------------------------
 /home NORMAL
 {% endif %}
 {% if aide_custom_rules | length > 0 %}
 
-# ---------------------------------------------------------------------------
 # Custom monitoring rules
-# ---------------------------------------------------------------------------
 {% for rule in aide_custom_rules %}
 {{ rule.path }} {{ rule.rule }}
 {% endfor %}

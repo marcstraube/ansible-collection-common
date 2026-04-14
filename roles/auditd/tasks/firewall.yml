@@ -1,13 +1,16 @@
 ---
-# =============================================================================
-# Auditd - Firewall Tasks
-# =============================================================================
+# failed_when: false — firewalld may not be installed on the system
+- name: Firewall | Check if firewalld is running
+  ansible.builtin.systemd_service:
+    name: firewalld
+  register: __auditd_firewalld_status
+  failed_when: false
 
-- name: Firewall | Allow audit remote logging port
+- name: Firewall | Manage auditd remote logging firewall rule
   ansible.posix.firewalld:
     port: '{{ auditd_remote_port }}/tcp'
     zone: '{{ auditd_firewalld_zone }}'
     permanent: true
     immediate: true
-    state: enabled
-  when: auditd_remote_server is defined and auditd_remote_server | length > 0
+    state: "{{ auditd_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+  when: __auditd_firewalld_status.status.ActiveState | default('') == 'active'

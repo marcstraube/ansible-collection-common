@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Podman - Installation Tasks
-# =============================================================================
-
 - name: Install | Podman packages
   ansible.builtin.package:
     name: '{{ __podman_packages }}'
@@ -34,15 +30,14 @@
     - podman_podlet_enabled | bool
     - __podman_podlet_package | length > 0
 
-- name: Install | Podman Desktop
-  kewlfft.aur.aur:
-    name: '{{ __podman_desktop_package }}'
-    state: present
+- name: Install | Podman Desktop (AUR)
   become: true
   become_user: aur_builder
+  kewlfft.aur.aur:
+    name: '{{ __podman_aur_packages.desktop }}'
+    state: present
   when:
     - podman_desktop_enabled | bool
-    - __podman_desktop_package | length > 0
     - ansible_facts['os_family'] == 'Archlinux'
 
 - name: Install | Ensure config directories exist

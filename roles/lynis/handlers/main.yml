@@ -1,15 +1,13 @@
 ---
-# =============================================================================
-# Lynis Handlers
-# =============================================================================
-
-- name: Reload systemd daemon (lynis)
-  ansible.builtin.systemd:
+- name: Reload lynis systemd units
+  ansible.builtin.systemd_service:
     daemon_reload: true
+  # Container-safety for molecule
   failed_when: false
+  when: lynis_enabled | bool
 
 - name: Restart lynis timer
-  ansible.builtin.systemd:
-    name: lynis-audit.timer
+  ansible.builtin.systemd_service:
+    name: '{{ __lynis_timer_name }}'
     state: restarted
   when: lynis_timer_enabled | bool

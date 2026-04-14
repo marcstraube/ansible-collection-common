@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# APT Tasks - Package Manager Configuration (Debian/Ubuntu)
-# =============================================================================
-
-- name: Configure APT
+- name: APT | Deploy apt.conf
   ansible.builtin.template:
     src: 'debian/apt.conf.j2'
     dest: '/etc/apt/apt.conf.d/99-ansible-managed'
@@ -12,7 +8,7 @@
     mode: '0644'
   notify: 'apt configuration changed'
 
-- name: Configure APT periodic updates
+- name: APT | Deploy periodic update config
   ansible.builtin.template:
     src: 'debian/apt-periodic.conf.j2'
     dest: '/etc/apt/apt.conf.d/10periodic'
@@ -21,13 +17,13 @@
     mode: '0644'
   when: apt_periodic_enabled | bool
 
-- name: Disable APT periodic updates
+- name: APT | Disable periodic updates
   ansible.builtin.file:
     path: '/etc/apt/apt.conf.d/10periodic'
     state: absent
   when: not (apt_periodic_enabled | bool)
 
-- name: Configure APT preferences (pinning)
+- name: APT | Deploy preferences (pinning)
   ansible.builtin.template:
     src: 'debian/apt-preferences.j2'
     dest: '/etc/apt/preferences.d/99-ansible-managed'
@@ -36,13 +32,11 @@
     mode: '0644'
   when: apt_preferences | length > 0
 
-- name: Install apt-transport-https
-  ansible.builtin.apt:
+- name: APT | Install transport dependencies
+  ansible.builtin.package:
     name:
       - apt-transport-https
       - ca-certificates
       - gnupg
       - curl
     state: present
-    update_cache: true
-    cache_valid_time: 3600

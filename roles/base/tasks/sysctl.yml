@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# Sysctl Configuration Tasks
-# =============================================================================
-
-- name: Configure sysctl settings
+- name: Sysctl | Configure sysctl settings
   ansible.posix.sysctl:
     name: '{{ item.key }}'
     value: '{{ item.value }}'

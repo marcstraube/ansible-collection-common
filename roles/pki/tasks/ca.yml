@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Certificate Authority Tasks
-# =============================================================================
-
 - name: CA | Ensure CA directory structure exists
   ansible.builtin.file:
     path: '{{ pki_ca_dir }}/{{ item }}'

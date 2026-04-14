@@ -1,10 +1,8 @@
 ---
-# =============================================================================
-# WireGuard - Debian/Ubuntu Variables
-# =============================================================================
-
 __wireguard_packages:
   - 'wireguard'
   - 'wireguard-tools'
 
 __wireguard_kernel_module: 'wireguard'
+
+__wireguard_service_name: 'wg-quick@{{ wireguard_interface }}'

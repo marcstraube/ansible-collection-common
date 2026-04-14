@@ -4,7 +4,6 @@
 {% for ks in gnupg_keyservers %}
 keyserver {{ ks }}
 {% endfor %}
-
 {% if gnupg_dirmngr_use_tor %}
 
 # Tor
@@ -19,7 +18,6 @@ resolver-timeout {{ gnupg_dirmngr_resolver_timeout }}
 # IPv6
 disable-ipv6
 {% endif %}
-
 {% if gnupg_dirmngr_honor_http_proxy %}
 
 # Proxy

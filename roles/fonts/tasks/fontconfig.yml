@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Fontconfig Configuration
-# =============================================================================
-
 - name: Fontconfig | Deploy custom fontconfig
   ansible.builtin.template:
     src: 'local.conf.j2'

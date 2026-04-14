@@ -4,7 +4,7 @@
 {% for key, value in hardening_kernel_settings.items() %}
 {{ key }} = {{ value }}
 {% endfor %}
-{% if hardening_kernel_perf_event_paranoid | bool %}
+{% if hardening_kernel_perf_event_paranoid_enabled | bool %}
 
 # Restrict perf events (3 on Arch/Debian, 2 on RedHat — value 3 is not upstream)
 {% if ansible_facts['os_family'] in ['Archlinux', 'Debian'] %}

@@ -10,4 +10,7 @@ __python_pipx_packages:
 
 __python_bootstrap_pipx: false
 
+__python_aur_packages:
+  extra: '{{ python_extra_packages | default([]) }}'
+
 __python_venv_command: 'python3 -m venv'

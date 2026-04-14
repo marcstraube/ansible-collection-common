@@ -1,9 +1,18 @@
 ---
-# =============================================================================
-# Hardware Tokens Handlers
-# =============================================================================
-
-- name: Hardware tokens reload udev
-  ansible.builtin.shell:
-    cmd: 'udevadm control --reload-rules && udevadm trigger'
+# udevadm may not be available in containers
+- name: Reload hardware token udev rules
+  ansible.builtin.command:
+    cmd: 'udevadm control --reload-rules'
   changed_when: false
+  failed_when: false
+  listen: Hardware tokens reload udev
+  when: hardware_tokens_enabled | bool
+
+# udevadm may not be available in containers
+- name: Trigger hardware token udev events
+  ansible.builtin.command:
+    cmd: 'udevadm trigger'
+  changed_when: false
+  failed_when: false
+  listen: Hardware tokens reload udev
+  when: hardware_tokens_enabled | bool

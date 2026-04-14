@@ -1,14 +1,9 @@
 ---
-# marcstraube.common.wireguard/molecule/default/converge.yml
-# serial:1 avoids SSH drops from host memory pressure with 3 VMs
-
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
-  serial: 1
 
   tasks:
-    - name: Include wireguard role  # noqa: role-name[path]
+    - name: Converge | Include wireguard role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

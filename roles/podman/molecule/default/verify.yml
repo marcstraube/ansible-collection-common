@@ -1,24 +1,25 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # ==========================================================================
-    # PACKAGE VERIFICATION
-    # ==========================================================================
-    - name: Load OS-specific variables
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Load OS-specific variables
       ansible.builtin.include_vars: '{{ item }}'
       with_first_found:
         - files:
             - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
             - '{{ ansible_facts["distribution"] }}.yml'
             - '{{ ansible_facts["os_family"] }}.yml'
           paths:
             - '{{ playbook_dir }}/../../vars'
 
-    - name: Check podman packages are installed
+    - name: Verify | Check podman packages are installed
       ansible.builtin.package:
         name: '{{ __podman_packages }}'
         state: present
@@ -26,7 +27,7 @@
       register: __pkg_check
       failed_when: __pkg_check.changed
 
-    - name: Check additional tools are installed
+    - name: Verify | Check additional tools are installed
       ansible.builtin.package:
         name:
           - 'buildah'
@@ -36,10 +37,11 @@
       register: __tools_check
       failed_when: __tools_check.changed
 
-    # ==========================================================================
-    # CONFIGURATION FILES - EXISTENCE AND PERMISSIONS
-    # ==========================================================================
-    - name: Check configuration files exist
+    #
+    # Configuration Files - Existence and Permissions
+    #
+
+    - name: Verify | Check configuration files exist
       ansible.builtin.stat:
         path: '{{ item }}'
       register: __config_files
@@ -49,7 +51,7 @@
         - '/etc/containers/containers.conf'
         - '/etc/profile.d/podman-docker.sh'
 
-    - name: Verify configuration files exist with correct permissions
+    - name: Verify | Assert configuration files exist with correct permissions
       ansible.builtin.assert:
         that:
           - item.stat.exists
@@ -61,7 +63,7 @@
       loop_control:
         label: '{{ item.item }}'
 
-    - name: Check config directories exist
+    - name: Verify | Check config directories exist
       ansible.builtin.stat:
         path: '{{ item }}'
       register: __config_dirs
@@ -69,7 +71,7 @@
         - '/etc/containers'
         - '/etc/containers/registries.conf.d'
 
-    - name: Verify config directories exist
+    - name: Verify | Assert config directories exist
       ansible.builtin.assert:
         that:
           - item.stat.exists
@@ -80,19 +82,20 @@
       loop_control:
         label: '{{ item.item }}'
 
-    # ==========================================================================
-    # REGISTRIES.CONF CONTENT (V2 FORMAT)
-    # ==========================================================================
-    - name: Read registries.conf
+    #
+    # registries.conf Content (V2 Format)
+    #
+
+    - name: Verify | Read registries.conf
       ansible.builtin.slurp:
         src: '/etc/containers/registries.conf'
       register: __registries_content
 
-    - name: Set registries content fact
+    - name: Verify | Set registries content fact
       ansible.builtin.set_fact:
         __registries_decoded: "{{ __registries_content.content | b64decode }}"
 
-    - name: Verify registries V2 format
+    - name: Verify | Assert registries V2 format
       ansible.builtin.assert:
         that:
           - "'unqualified-search-registries' in __registries_decoded"
@@ -102,7 +105,7 @@
           - "'Ansible managed' in __registries_decoded"
         fail_msg: 'Registries not properly configured in V2 format'
 
-    - name: Verify no deprecated V1 format
+    - name: Verify | Assert no deprecated V1 format
       ansible.builtin.assert:
         that:
           - "'[registries.search]' not in __registries_decoded"
@@ -110,19 +113,20 @@
           - "'[registries.block]' not in __registries_decoded"
         fail_msg: 'Registries still uses deprecated V1 format'
 
-    # ==========================================================================
-    # STORAGE.CONF CONTENT
-    # ==========================================================================
-    - name: Read storage.conf
+    #
+    # storage.conf Content
+    #
+
+    - name: Verify | Read storage.conf
       ansible.builtin.slurp:
         src: '/etc/containers/storage.conf'
       register: __storage_content
 
-    - name: Set storage content fact
+    - name: Verify | Set storage content fact
       ansible.builtin.set_fact:
         __storage_decoded: "{{ __storage_content.content | b64decode }}"
 
-    - name: Verify storage configuration
+    - name: Verify | Assert storage configuration
       ansible.builtin.assert:
         that:
           - "'driver = \"overlay\"' in __storage_decoded"
@@ -132,19 +136,20 @@
           - "'Ansible managed' in __storage_decoded"
         fail_msg: 'Storage not properly configured'
 
-    # ==========================================================================
-    # CONTAINERS.CONF CONTENT
-    # ==========================================================================
-    - name: Read containers.conf
+    #
+    # containers.conf Content
+    #
+
+    - name: Verify | Read containers.conf
       ansible.builtin.slurp:
         src: '/etc/containers/containers.conf'
       register: __containers_content
 
-    - name: Set containers content fact
+    - name: Verify | Set containers content fact
       ansible.builtin.set_fact:
         __containers_decoded: "{{ __containers_content.content | b64decode }}"
 
-    - name: Verify containers configuration
+    - name: Verify | Assert containers configuration
       ansible.builtin.assert:
         that:
           - "'firewall_driver = \"firewalld\"' in __containers_decoded"
@@ -158,21 +163,22 @@
           - "'Ansible managed' in __containers_decoded"
         fail_msg: 'Containers configuration does not contain expected settings'
 
-    - name: Verify no duplicate runtime in containers section
+    - name: Verify | Assert no duplicate runtime in containers section
       ansible.builtin.assert:
         that:
           - "'default_runtime' not in __containers_decoded"
         fail_msg: 'containers.conf contains deprecated default_runtime directive'
 
-    # ==========================================================================
-    # DOCKER ALIAS
-    # ==========================================================================
-    - name: Read docker alias script
+    #
+    # Docker Alias
+    #
+
+    - name: Verify | Read Docker alias script
       ansible.builtin.slurp:
         src: '/etc/profile.d/podman-docker.sh'
       register: __alias_content
 
-    - name: Verify docker alias content
+    - name: Verify | Assert Docker alias content
       ansible.builtin.assert:
         that:
           - "'alias docker=podman' in __alias_content.content | b64decode"
@@ -180,78 +186,80 @@
           - "'Ansible managed' in __alias_content.content | b64decode"
         fail_msg: 'Docker alias script does not contain expected aliases'
 
-    # ==========================================================================
-    # SYSTEMD PRUNE UNITS
-    # ==========================================================================
-    - name: Check prune timer exists
+    #
+    # Systemd Prune Units
+    #
+
+    - name: Verify | Check prune timer exists
       ansible.builtin.stat:
         path: '/etc/systemd/system/podman-prune.timer'
       register: __prune_timer
 
-    - name: Verify prune timer exists
+    - name: Verify | Assert prune timer exists
       ansible.builtin.assert:
         that:
           - __prune_timer.stat.exists
           - __prune_timer.stat.mode == '0644'
         fail_msg: 'Prune timer does not exist'
 
-    - name: Read prune timer
+    - name: Verify | Read prune timer
       ansible.builtin.slurp:
         src: '/etc/systemd/system/podman-prune.timer'
       register: __prune_timer_content
 
-    - name: Verify prune timer content
+    - name: Verify | Assert prune timer content
       ansible.builtin.assert:
         that:
           - "'OnCalendar=weekly' in __prune_timer_content.content | b64decode"
           - "'Ansible managed' in __prune_timer_content.content | b64decode"
         fail_msg: 'Prune timer content incorrect'
 
-    - name: Check prune service exists
+    - name: Verify | Check prune service exists
       ansible.builtin.stat:
         path: '/etc/systemd/system/podman-prune.service'
       register: __prune_service
 
-    - name: Verify prune service exists
+    - name: Verify | Assert prune service exists
       ansible.builtin.assert:
         that:
           - __prune_service.stat.exists
         fail_msg: 'Prune service does not exist'
 
-    - name: Read prune service
+    - name: Verify | Read prune service
       ansible.builtin.slurp:
         src: '/etc/systemd/system/podman-prune.service'
       register: __prune_service_content
 
-    - name: Verify prune service content
+    - name: Verify | Assert prune service content
       ansible.builtin.assert:
         that:
           - "'podman system prune -af --volumes' in __prune_service_content.content | b64decode"
           - "'Ansible managed' in __prune_service_content.content | b64decode"
         fail_msg: 'Prune service content incorrect'
 
-    # ==========================================================================
-    # FUNCTIONAL TESTS
-    # ==========================================================================
-    - name: Test podman version command
+    #
+    # Functional Tests
+    #
+
+    - name: Verify | Test podman version command
       ansible.builtin.command: podman --version
       register: __podman_version
       changed_when: false
       failed_when: __podman_version.rc != 0
 
-    - name: Verify podman version output
+    - name: Verify | Assert podman version output
       ansible.builtin.assert:
         that:
           - "'podman version' in __podman_version.stdout"
         fail_msg: 'Podman version output unexpected'
 
-    - name: Test podman info command
+    - name: Verify | Test podman info command
       ansible.builtin.command: podman info
       register: __podman_info
       changed_when: false
       failed_when: __podman_info.rc != 0
 
-    - name: Verify podman info output
+    - name: Verify | Assert podman info output
       ansible.builtin.assert:
         that:
           - "'version:' in __podman_info.stdout"
@@ -259,25 +267,25 @@
           - "'store:' in __podman_info.stdout"
         fail_msg: 'Podman info output missing expected sections'
 
-    - name: Test buildah version command
+    - name: Verify | Test buildah version command
       ansible.builtin.command: buildah --version
       register: __buildah_version
       changed_when: false
       failed_when: __buildah_version.rc != 0
 
-    - name: Verify buildah is functional
+    - name: Verify | Assert buildah is functional
       ansible.builtin.assert:
         that:
           - "'buildah version' in __buildah_version.stdout"
         fail_msg: 'Buildah is not functional'
 
-    - name: Test skopeo version command
+    - name: Verify | Test skopeo version command
       ansible.builtin.command: skopeo --version
       register: __skopeo_version
       changed_when: false
       failed_when: __skopeo_version.rc != 0
 
-    - name: Verify skopeo is functional
+    - name: Verify | Assert skopeo is functional
       ansible.builtin.assert:
         that:
           - "'skopeo version' in __skopeo_version.stdout"

@@ -1,30 +1,34 @@
 ---
-# =============================================================================
-# Logrotate - Main Tasks
-# =============================================================================
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [logrotate]
+  tags:
+    - logrotate
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: logrotate_enabled | bool
-  tags: [logrotate, logrotate:install]
+  tags:
+    - logrotate
+    - logrotate:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
   when: logrotate_enabled | bool
-  tags: [logrotate, logrotate:configure]
+  tags:
+    - logrotate
+    - logrotate:configure
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
   when: logrotate_enabled | bool
-  tags: [logrotate, logrotate:service]
+  tags:
+    - logrotate
+    - logrotate:service

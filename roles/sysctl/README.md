@@ -6,15 +6,16 @@ Configure kernel parameters via sysctl with preset profiles for common use cases
 
 Deploys a managed sysctl configuration file to `/etc/sysctl.d/` with support for:
 
-- **Security profile** — CIS benchmark network hardening (IP forwarding, source routing,
+- **Security profile** -- CIS benchmark network hardening (IP forwarding, source routing,
   ICMP redirects, SYN cookies, reverse path filtering)
-- **Network performance profile** — socket buffers, TCP tuning, connection backlog, TCP Fast Open
-- **Database profile** — shared memory, swappiness, dirty page settings, semaphores
-- **Web server profile** — connection handling, port range, file descriptors
-- **Docker/container profile** — IP forwarding, bridge filtering, inotify limits
-- **Custom parameters** — arbitrary key-value pairs
+- **Network performance profile** -- socket buffers, TCP tuning, connection backlog, TCP Fast Open
+- **Database profile** -- shared memory, swappiness, dirty page settings, semaphores
+- **Web server profile** -- connection handling, port range, file descriptors
+- **Docker/container profile** -- IP forwarding, bridge filtering, inotify limits
+- **Custom parameters** -- arbitrary key-value pairs
 
-Profiles are composable — enable multiple profiles and they merge together. Custom parameters override profile values.
+Profiles are composable -- enable multiple profiles and they merge together. Custom parameters
+override profile values.
 
 ### Relationship to hardening role
 
@@ -31,57 +32,77 @@ This role manages **network-level** sysctl and performance tuning in
 
 ## Supported Platforms
 
-- Arch Linux
-- Debian Trixie
-- Rocky Linux 9 / 10
+| Platform                  | Notes |
+|---------------------------|-------|
+| Arch Linux                |       |
+| Debian Trixie             |       |
+| EL 9 (Rocky, Alma, RHEL)  |       |
+| EL 10 (Rocky, Alma, RHEL) |       |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
-### Service Control
+### Role Control
 
-| Variable         | Default | Description             |
-| ---------------- | ------- | ----------------------- |
-| `sysctl_enabled` | `true`  | Enable/disable the role |
+| Variable         | Default | Description            |
+|------------------|---------|------------------------|
+| `sysctl_enabled` | `true`  | Enable the sysctl role |
 
 ### Profile Toggles
 
-| Variable                             | Default | Description                                  |
-| ------------------------------------ | ------- | -------------------------------------------- |
-| `sysctl_profile_security`            | `true`  | CIS network security hardening               |
-| `sysctl_profile_network_performance` | `false` | High-traffic network tuning                  |
-| `sysctl_profile_database`            | `false` | Database server tuning (PostgreSQL, MariaDB) |
-| `sysctl_profile_webserver`           | `false` | Web server tuning (nginx, Apache)            |
-| `sysctl_profile_docker`              | `false` | Docker/container host settings               |
+| Variable                                     | Default | Description                                  |
+|----------------------------------------------|---------|----------------------------------------------|
+| `sysctl_profile_security_enabled`            | `true`  | CIS network security hardening               |
+| `sysctl_profile_network_performance_enabled` | `false` | High-traffic network tuning                  |
+| `sysctl_profile_database_enabled`            | `false` | Database server tuning (PostgreSQL, MariaDB) |
+| `sysctl_profile_webserver_enabled`           | `false` | Web server tuning (nginx, Apache)            |
+| `sysctl_profile_docker_enabled`              | `false` | Docker/container host settings               |
 
 ### Custom Parameters
 
 | Variable            | Default | Description                                |
-| ------------------- | ------- | ------------------------------------------ |
+|---------------------|---------|--------------------------------------------|
 | `sysctl_parameters` | `{}`    | Custom key-value pairs (override profiles) |
 
-### Configuration Options
+### Configuration
 
 | Variable                   | Default                         | Description                     |
-| -------------------------- | ------------------------------- | ------------------------------- |
+|----------------------------|---------------------------------|---------------------------------|
 | `sysctl_config_file`       | `/etc/sysctl.d/90-ansible.conf` | Destination config file         |
 | `sysctl_apply_immediately` | `true`                          | Apply parameters without reboot |
 
 ### Profile Parameter Variables
 
-Each profile has a corresponding variable with its parameter set. These can be overridden in inventory:
+Each profile has a corresponding variable with its parameter set. These can be overridden
+in inventory:
 
-- `sysctl_security_parameters` — security profile defaults
-- `sysctl_network_performance_parameters` — network performance defaults
-- `sysctl_database_parameters` — database profile defaults
-- `sysctl_webserver_parameters` — web server profile defaults
-- `sysctl_docker_parameters` — Docker profile defaults
+- `sysctl_security_parameters` -- security profile defaults
+- `sysctl_network_performance_parameters` -- network performance defaults
+- `sysctl_database_parameters` -- database profile defaults
+- `sysctl_webserver_parameters` -- web server profile defaults
+- `sysctl_docker_parameters` -- Docker profile defaults
 
 See `defaults/main.yml` for the full parameter sets.
+
+### Deprecated Variables
+
+The following variables are deprecated and will be removed in v2.0.0:
+
+| Old Variable                         | New Variable                                 |
+|--------------------------------------|----------------------------------------------|
+| `sysctl_profile_security`            | `sysctl_profile_security_enabled`            |
+| `sysctl_profile_network_performance` | `sysctl_profile_network_performance_enabled` |
+| `sysctl_profile_database`            | `sysctl_profile_database_enabled`            |
+| `sysctl_profile_webserver`           | `sysctl_profile_webserver_enabled`           |
+| `sysctl_profile_docker`              | `sysctl_profile_docker_enabled`              |
 
 ## Tags
 
 | Tag                | Scope                    |
-| ------------------ | ------------------------ |
+|--------------------|--------------------------|
 | `sysctl`           | All role tasks           |
 | `sysctl:install`   | Package installation     |
 | `sysctl:configure` | Configuration deployment |
@@ -89,16 +110,11 @@ See `defaults/main.yml` for the full parameter sets.
 ## Example Playbook
 
 ```yaml
-- name: Configure sysctl
-  hosts: all
-  become: true
-  roles:
-    - role: marcstraube.common.sysctl
-      vars:
-        sysctl_profile_security: true
-        sysctl_profile_network_performance: true
-        sysctl_parameters:
-          vm.swappiness: 10
+- name: Include sysctl role
+  ansible.builtin.include_role:
+    name: marcstraube.common.sysctl
+  tags: [sysctl]
+  when: sysctl_enabled | default(true) | bool
 ```
 
 ## Testing

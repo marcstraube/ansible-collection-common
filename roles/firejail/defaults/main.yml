@@ -1,57 +1,54 @@
 ---
-# =============================================================================
-# Firejail Configuration
-# =============================================================================
-# Role: marcstraube.common.firejail
-# Description: Configure Firejail application sandboxing via firecfg
-# =============================================================================
+#
+# Role Control
+#
 
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
-
+# Enable the firejail role
 firejail_enabled: true
 
-# =============================================================================
-# APPLICATION EXCLUSIONS
-# =============================================================================
+#
+# Application Exclusions
+#
 
 # Applications to exclude from Firejail sandboxing
 # These are commented out in /etc/firejail/firecfg.config so firecfg skips them
 firejail_exclude:
-  - 'keepassxc'                   # Password manager needs full access
-  - 'patch'                       # Breaks fakeroot/makepkg (AUR builds)
-  - 'steam'                       # Gaming platform - complex requirements
+  - 'keepassxc'
+  - 'patch'
+  - 'steam'
 
-# =============================================================================
-# GLOBAL SETTINGS
-# =============================================================================
+#
+# Global Settings
+#
 
 # Global Firejail settings (/etc/firejail/firejail.config)
 firejail_config:
-  browser-disable-u2f: 'no'      # Allow U2F/FIDO2 hardware keys
-  browser-allow-drm: 'yes'       # Allow DRM (Netflix etc.)
+  browser-disable-u2f: 'no'
+  browser-allow-drm: 'yes'
   restricted-network: 'no'
 
-# AppArmor confinement for all sandboxed applications
+# Enable AppArmor confinement for all sandboxed applications
 # Requires AppArmor enabled and firejail-default profile loaded
-firejail_apparmor: false
+firejail_apparmor_enabled: false
+
+# DEPRECATED: Use firejail_apparmor_enabled instead (removed in v2.0.0)
+# firejail_apparmor: {{ firejail_apparmor_enabled }}
 
 # Global profile overrides (/etc/firejail/globals.local)
 # List of directives applied to ALL sandboxed applications
 firejail_globals: []
-# firejail_globals:
+# Example:
 #   - 'blacklist ${HOME}/.ssh'
 #   - 'blacklist ${HOME}/.gnupg'
 
-# =============================================================================
-# CUSTOM PROFILES
-# =============================================================================
+#
+# Custom Profiles
+#
 
 # Per-application profile overrides (/etc/firejail/<app>.local)
 # Dict of app name -> list of profile directives
 firejail_profiles: {}
-# firejail_profiles:
+# Example:
 #   firefox:
 #     - 'whitelist ${HOME}/.mozilla'
 #     - 'blacklist ${HOME}/.ssh'
@@ -61,9 +58,12 @@ firejail_profiles: {}
 #     - 'whitelist ${HOME}/.config/chromium'
 #     - 'private-tmp'
 
-# =============================================================================
-# PACMAN HOOK (Arch Linux only)
-# =============================================================================
+#
+# Pacman Hook (Arch Linux Only)
+#
 
-# Install pacman hook to re-run firecfg after package installs/upgrades
-firejail_pacman_hook: true
+# Enable pacman hook to re-run firecfg after package installs/upgrades
+firejail_pacman_hook_enabled: true
+
+# DEPRECATED: Use firejail_pacman_hook_enabled instead (removed in v2.0.0)
+# firejail_pacman_hook: {{ firejail_pacman_hook_enabled }}

@@ -1,17 +1,13 @@
 ---
-# =============================================================================
-# Locale Configuration Tasks
-# =============================================================================
-
-- name: Install locale source data (RedHat)
+- name: Locale | Install locale source data (RedHat)
   ansible.builtin.package:
-    name:
-      - glibc-locale-source
-      - glibc-langpack-en
+    name: '{{ __base_locale_packages }}'
     state: present
-  when: ansible_facts['os_family'] == 'RedHat'
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __base_locale_packages is defined
 
-- name: Configure locale.gen
+- name: Locale | Configure locale.gen
   ansible.builtin.lineinfile:
     path: '/etc/locale.gen'
     regexp: '^#?{{ item | regex_escape }}'
@@ -21,7 +17,7 @@
   notify: 'generate locales'
   when: ansible_facts['os_family'] in ['Archlinux', 'Debian']
 
-- name: Configure locale.conf
+- name: Locale | Configure locale.conf
   ansible.builtin.template:
     src: 'locale.conf.j2'
     dest: '/etc/locale.conf'
@@ -30,5 +26,5 @@
     mode: '0644'
   notify: 'generate locales'
 
-- name: Flush handlers to generate locales
+- name: Locale | Flush handlers to generate locales
   ansible.builtin.meta: flush_handlers

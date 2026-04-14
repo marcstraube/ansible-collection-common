@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# Firewalld - Installation Tasks
-# =============================================================================
-
-- name: Install | Firewalld packages
+- name: Install | Packages
   ansible.builtin.package:
     name: '{{ __firewalld_packages }}'
     state: present

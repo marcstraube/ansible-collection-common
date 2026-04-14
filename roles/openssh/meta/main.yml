@@ -1,28 +1,27 @@
 ---
 galaxy_info:
-  author: 'Marc Straube'
-  description: 'Install and configure OpenSSH server and client with security hardening'
-  license: 'MIT'
+  author: Marc Straube
+  description: Install and configure OpenSSH server and client with security hardening
+  license: MIT
   min_ansible_version: '2.17'
 
   platforms:
-    - name: 'ArchLinux'
+    - name: ArchLinux
       versions:
-        - 'all'
-    - name: 'Debian'
+        - all
+    - name: Debian
       versions:
-        - 'trixie'
-    - name: 'EL'
+        - trixie
+    - name: EL
       versions:
-        - '9'
-        - '10'
+        - all
 
   galaxy_tags:
-    - 'ssh'
-    - 'openssh'
-    - 'security'
-    - 'hardening'
-    - 'server'
-    - 'authentication'
+    - ssh
+    - openssh
+    - security
+    - hardening
+    - server
+    - authentication
 
 dependencies: []

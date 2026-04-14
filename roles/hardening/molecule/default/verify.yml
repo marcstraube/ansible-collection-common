@@ -1,15 +1,13 @@
 ---
-# marcstraube.common.hardening/molecule/default/verify.yml
-
 - name: Verify
   hosts: all
   gather_facts: true
-  become: true
 
   tasks:
-    # =========================================================================
-    # SYSCTL HARDENING
-    # =========================================================================
+    #
+    # sysctl Hardening
+    #
+
     - name: Verify | Check hardening sysctl config exists
       ansible.builtin.stat:
         path: /etc/sysctl.d/99-hardening.conf
@@ -73,9 +71,10 @@
         fail_msg: 'perf_event_paranoid should be 2 on RedHat'
       when: ansible_facts['os_family'] == 'RedHat'
 
-    # -------------------------------------------------------------------------
+    #
     # Runtime sysctl verification
-    # -------------------------------------------------------------------------
+    #
+
     - name: Verify | Check kernel.kptr_restrict at runtime
       ansible.builtin.command:
         cmd: sysctl -n kernel.kptr_restrict
@@ -150,9 +149,10 @@
         fail_msg: 'kernel.yama.ptrace_scope not set to 1'
       when: ptrace_scope.rc == 0
 
-    # =========================================================================
-    # KERNEL MODULE BLACKLISTING
-    # =========================================================================
+    #
+    # Kernel Module Blacklisting
+    #
+
     - name: Verify | Check modprobe blacklist config exists
       ansible.builtin.stat:
         path: /etc/modprobe.d/hardening-blacklist.conf
@@ -207,9 +207,10 @@
           - "'install firewire-core /bin/false' in modprobe_decoded"
         fail_msg: 'Modprobe blacklist missing extra modules (firewire-core)'
 
-    # =========================================================================
-    # FILESYSTEM MOUNT HARDENING
-    # =========================================================================
+    #
+    # Filesystem Mount Hardening
+    #
+
     - name: Verify | Check /tmp mount options
       ansible.builtin.command:
         cmd: findmnt -n -o OPTIONS /tmp
@@ -252,9 +253,10 @@
           - "'noexec' in vartmp_mount.stdout"
         fail_msg: '/var/tmp missing hardened mount options (should inherit from /tmp bind mount)'
 
-    # =========================================================================
-    # FSTAB PERSISTENCE
-    # =========================================================================
+    #
+    # fstab Persistence
+    #
+
     - name: Verify | Read fstab
       ansible.builtin.slurp:
         src: /etc/fstab

@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Energy Management - Backlight
-# =============================================================================
 # Installs brightnessctl and deploys udev rules so video group
 # members can adjust backlight without root.
 

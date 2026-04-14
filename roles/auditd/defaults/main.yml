@@ -1,20 +1,17 @@
 ---
-# =============================================================================
-# Auditd Configuration - System Auditing for Compliance
-# =============================================================================
-# Role: marcstraube.common.auditd
-# Description: Configure auditd for system auditing and compliance
-# =============================================================================
+#
+# Role Control
+#
 
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
-
+# Enable the auditd role
 auditd_enabled: true
 
-# =============================================================================
-# AUDITD CONFIGURATION
-# =============================================================================
+# Enable and start the auditd service
+auditd_service_enabled: true
+
+#
+# Auditd Configuration
+#
 
 # Log file location
 auditd_log_file: '/var/log/audit/audit.log'
@@ -65,29 +62,18 @@ auditd_disk_error_action: 'suspend'
 # Use libwrap (tcp_wrappers) - only effective if auditd compiled with --with-libwrap
 auditd_use_libwrap: true
 
-# TCP listen port for remote logging receiver (unset = disabled)
-# auditd_tcp_listen_port: 60
-
 # TCP listen queue
 auditd_tcp_listen_queue: 5
 
 # TCP max connections per address
 auditd_tcp_max_per_addr: 1
 
-# TCP client ports range (unset = disabled)
-# auditd_tcp_client_ports: '1024-65535'
-
 # TCP client max idle (seconds, 0 = disabled)
 auditd_tcp_client_max_idle: 0
 
-# Automatic state report interval (audit >= 4.0.3 only)
-# Time string with optional suffix: m=minutes, h=hours, d=days, M=months
-# 0 = disabled. Reports written to /run/audit/auditd.state
-# auditd_report_interval: 0
-
-# =============================================================================
-# AUDIT RULES
-# =============================================================================
+#
+# Audit Rules
+#
 
 # Enable audit rules
 auditd_rules_enabled: true
@@ -105,68 +91,89 @@ auditd_failure_mode: 1
 # CIS 4.1.17: Prevents runtime rule manipulation
 auditd_rules_immutable: true
 
-# =============================================================================
-# COMPLIANCE PRESETS
-# =============================================================================
+#
+# Compliance Presets
+#
 
 # Enable PCI-DSS rules (PCI-DSS 10.2 compliance)
-auditd_pci_dss: true
+auditd_pci_dss_enabled: true
 
 # Enable HIPAA rules (HIPAA §164.312 compliance)
-auditd_hipaa: true
+auditd_hipaa_enabled: true
 
 # Enable NIST 800-53 rules
-auditd_nist: true
+auditd_nist_enabled: true
 
 # Enable STIG rules
-auditd_stig: true
+auditd_stig_enabled: true
 
-# =============================================================================
-# SYSTEM CALL RULES
-# =============================================================================
+# DEPRECATED: Use auditd_*_enabled instead (removed in v2.0.0)
+# auditd_pci_dss: {{ auditd_pci_dss_enabled }}
+# auditd_hipaa: {{ auditd_hipaa_enabled }}
+# auditd_nist: {{ auditd_nist_enabled }}
+# auditd_stig: {{ auditd_stig_enabled }}
+
+#
+# System Call Rules
+#
 
 # Monitor time changes
-auditd_time_change: true
+auditd_time_change_enabled: true
 
 # Monitor user/group changes
-auditd_identity_change: true
+auditd_identity_change_enabled: true
 
 # Monitor network configuration changes
-auditd_network_change: true
+auditd_network_change_enabled: true
 
 # Monitor system locale changes
-auditd_system_locale: true
+auditd_system_locale_enabled: true
 
 # Monitor SELinux/AppArmor changes
-auditd_mac_policy: true
+auditd_mac_policy_enabled: true
 
 # Monitor login/logout events
-auditd_logins: true
+auditd_logins_enabled: true
 
 # Monitor session initiation
-auditd_session: true
+auditd_session_enabled: true
 
 # Monitor permission changes (chmod, chown, etc.)
-auditd_perm_mod: true
+auditd_perm_mod_enabled: true
 
 # Monitor unsuccessful file access
-auditd_access: true
+auditd_access_enabled: true
 
 # Monitor file deletions
-auditd_delete: true
+auditd_delete_enabled: true
 
 # Monitor sudoers changes
-auditd_scope: true
+auditd_scope_enabled: true
 
 # Monitor sudo usage
-auditd_actions: true
+auditd_actions_enabled: true
 
 # Monitor kernel modules
-auditd_modules: true
+auditd_modules_enabled: true
 
-# =============================================================================
-# FILE WATCHES
-# =============================================================================
+# DEPRECATED: Use auditd_<rule>_enabled instead (removed in v2.0.0)
+# auditd_time_change: {{ auditd_time_change_enabled }}
+# auditd_identity_change: {{ auditd_identity_change_enabled }}
+# auditd_network_change: {{ auditd_network_change_enabled }}
+# auditd_system_locale: {{ auditd_system_locale_enabled }}
+# auditd_mac_policy: {{ auditd_mac_policy_enabled }}
+# auditd_logins: {{ auditd_logins_enabled }}
+# auditd_session: {{ auditd_session_enabled }}
+# auditd_perm_mod: {{ auditd_perm_mod_enabled }}
+# auditd_access: {{ auditd_access_enabled }}
+# auditd_delete: {{ auditd_delete_enabled }}
+# auditd_scope: {{ auditd_scope_enabled }}
+# auditd_actions: {{ auditd_actions_enabled }}
+# auditd_modules: {{ auditd_modules_enabled }}
+
+#
+# File Watches
+#
 
 # Additional file watches (paths already covered by compliance sections above
 # should NOT be repeated here — augenrules rejects duplicate rules)
@@ -188,21 +195,15 @@ auditd_watches:
 #     key: 'modprobe_changes'
 auditd_custom_watches: []
 
-# =============================================================================
-# BTRFS SUPPORT
-# =============================================================================
-
-# Create BTRFS subvolume for audit log directory with NoCOW attribute
-# Only applies when audit log directory is on a BTRFS filesystem
-# Subvolume is only created if the directory is empty (fresh install)
-auditd_btrfs_subvolume: true
-
-# =============================================================================
-# REMOTE LOGGING (audisp-remote)
-# =============================================================================
+#
+# Remote Logging (audisp-remote)
+#
 
 # Enable remote logging (send logs to remote server)
-auditd_remote_logging: false
+auditd_remote_logging_enabled: false
+
+# DEPRECATED: Use auditd_remote_logging_enabled instead (removed in v2.0.0)
+# auditd_remote_logging: {{ auditd_remote_logging_enabled }}
 
 # Remote server (hostname or IP)
 auditd_remote_server: ''
@@ -257,9 +258,9 @@ auditd_remote_krb5_principal: ''
 auditd_remote_krb5_client_name: 'auditd'
 auditd_remote_krb5_key_file: '/etc/audit/audisp-remote.key'
 
-# =============================================================================
-# FIREWALL
-# =============================================================================
+#
+# Firewall
+#
 
 # Enable firewalld rule for audit remote logging (port 60/tcp)
 auditd_firewalld_enabled: false
@@ -267,9 +268,9 @@ auditd_firewalld_enabled: false
 # Firewalld zone for audit remote logging
 auditd_firewalld_zone: 'public'
 
-# =============================================================================
-# EMAIL ALERTS
-# =============================================================================
+#
+# Email Alerts
+#
 
 # Enable email alert warnings
 auditd_email_enabled: true
@@ -280,12 +281,15 @@ auditd_email_enabled: true
 # Note: audit 4.x rejects non-RFC addresses like 'root@localhost'
 auditd_email_address: 'root'
 
-# =============================================================================
-# PLUGINS
-# =============================================================================
+#
+# Plugins
+#
 
 # Enable syslog plugin
-auditd_plugin_syslog: true
+auditd_plugin_syslog_enabled: true
+
+# DEPRECATED: Use auditd_plugin_syslog_enabled instead (removed in v2.0.0)
+# auditd_plugin_syslog: {{ auditd_plugin_syslog_enabled }}
 
 # Syslog facility: LOG_LOCAL0-LOG_LOCAL7, LOG_AUTH, LOG_AUTHPRIV, LOG_DAEMON, LOG_SYSLOG, LOG_USER
 auditd_syslog_facility: 'LOG_LOCAL6'

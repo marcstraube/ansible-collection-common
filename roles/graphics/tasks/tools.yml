@@ -1,16 +1,12 @@
 ---
-# =============================================================================
-# Graphics Tools Installation
-# =============================================================================
-
 - name: Tools | Build package list
   ansible.builtin.set_fact:
     __tools_packages: >-
       {{
-        (graphics_vulkan_tools | bool | ternary([__graphics_vulkan_icd_loader, __graphics_vulkan_tools], [])) +
-        (graphics_vaapi_tools | bool | ternary([__graphics_vaapi_tools], [])) +
-        (graphics_vdpau_tools | bool | ternary([__graphics_vdpau_tools], [])) +
-        (graphics_mesa_utils | bool | ternary([__graphics_mesa_utils], []))
+        (graphics_vulkan_tools_enabled | bool | ternary([__graphics_vulkan_icd_loader, __graphics_vulkan_tools], [])) +
+        (graphics_vaapi_tools_enabled | bool | ternary([__graphics_vaapi_tools], [])) +
+        (graphics_vdpau_tools_enabled | bool | ternary([__graphics_vdpau_tools], [])) +
+        (graphics_mesa_utils_enabled | bool | ternary([__graphics_mesa_utils], []))
       }}
 
 - name: Tools | Filter empty package names

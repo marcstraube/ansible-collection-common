@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# NODE.JS - VERIFICATION
-# =============================================================================
-
 - name: Verify | Check Node.js version
   ansible.builtin.command: node --version
   register: __nodejs_version_check

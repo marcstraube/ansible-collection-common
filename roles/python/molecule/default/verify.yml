@@ -1,32 +1,34 @@
 ---
 - name: Verify
   hosts: all
-  become: true
+  gather_facts: true
 
   tasks:
-    # =========================================================================
-    # Python version check
-    # =========================================================================
-    - name: Check Python version
+    #
+    # Python Version Check
+    #
+
+    - name: Verify | Check Python version
       ansible.builtin.command: python3 --version
       register: python3_version
       changed_when: false
 
-    - name: Debug Python version
+    - name: Verify | Debug Python version
       ansible.builtin.debug:
         var: python3_version.stdout
 
-    - name: Verify Python 3 is installed
+    - name: Verify | Assert Python 3 is installed
       ansible.builtin.assert:
         that:
           - python3_version.rc == 0
           - "'Python 3.' in python3_version.stdout"
         fail_msg: 'Python 3 is not installed or not working'
 
-    # =========================================================================
-    # Rocky 9 — additional python3.12 check
-    # =========================================================================
-    - name: Check python3.12 version (Rocky 9)
+    #
+    # Rocky 9 — Additional python3.12 Check
+    #
+
+    - name: Verify | Check python3.12 version (Rocky 9)
       ansible.builtin.command: python3.12 --version
       register: python312_version
       changed_when: false
@@ -34,7 +36,7 @@
         - ansible_facts['distribution'] == 'Rocky'
         - ansible_facts['distribution_major_version'] == '9'
 
-    - name: Verify python3.12 is installed (Rocky 9)
+    - name: Verify | Assert python3.12 is installed (Rocky 9)
       ansible.builtin.assert:
         that:
           - python312_version.rc == 0
@@ -44,16 +46,17 @@
         - ansible_facts['distribution'] == 'Rocky'
         - ansible_facts['distribution_major_version'] == '9'
 
-    # =========================================================================
-    # pip check
-    # =========================================================================
-    - name: Check pip version
+    #
+    # pip Check
+    #
+
+    - name: Verify | Check pip version
       ansible.builtin.command: pip3 --version
       register: pip3_version
       changed_when: false
       failed_when: false
 
-    - name: Check pip3.12 version (Rocky 9 fallback)
+    - name: Verify | Check pip3.12 version (Rocky 9 fallback)
       ansible.builtin.command: pip3.12 --version
       register: pip312_version
       changed_when: false
@@ -62,22 +65,23 @@
         - ansible_facts['distribution'] == 'Rocky'
         - ansible_facts['distribution_major_version'] == '9'
 
-    - name: Set pip check result
+    - name: Verify | Set pip check result
       ansible.builtin.set_fact:
         pip_available: >-
           {{ (pip3_version.rc | default(1) == 0) or
              (pip312_version.rc | default(1) == 0) }}
 
-    - name: Verify pip is installed
+    - name: Verify | Assert pip is installed
       ansible.builtin.assert:
         that:
           - pip_available | bool
         fail_msg: 'pip is not installed'
 
-    # =========================================================================
-    # pipx check
-    # =========================================================================
-    - name: Check system pipx version (Arch/Debian/Rocky 10+)
+    #
+    # pipx Check
+    #
+
+    - name: Verify | Check system pipx version (Arch/Debian/Rocky 10+)
       ansible.builtin.command: pipx --version
       register: system_pipx_version
       changed_when: false
@@ -85,7 +89,7 @@
       when: not (ansible_facts['distribution'] == 'Rocky' and
                  ansible_facts['distribution_major_version'] == '9')
 
-    - name: Verify system pipx is installed (Arch/Debian/Rocky 10+)
+    - name: Verify | Assert system pipx is installed (Arch/Debian/Rocky 10+)
       ansible.builtin.assert:
         that:
           - system_pipx_version.rc == 0
@@ -93,7 +97,7 @@
       when: not (ansible_facts['distribution'] == 'Rocky' and
                  ansible_facts['distribution_major_version'] == '9')
 
-    - name: Check bootstrap pipx version (Rocky 9)
+    - name: Verify | Check bootstrap pipx version (Rocky 9)
       ansible.builtin.command: /opt/pipx-bootstrap/bin/pipx --version
       register: bootstrap_pipx_version
       changed_when: false
@@ -101,14 +105,14 @@
         - ansible_facts['distribution'] == 'Rocky'
         - ansible_facts['distribution_major_version'] == '9'
 
-    - name: Debug bootstrap pipx version (Rocky 9)
+    - name: Verify | Debug bootstrap pipx version (Rocky 9)
       ansible.builtin.debug:
         var: bootstrap_pipx_version.stdout
       when:
         - ansible_facts['distribution'] == 'Rocky'
         - ansible_facts['distribution_major_version'] == '9'
 
-    - name: Verify bootstrap pipx is installed (Rocky 9)
+    - name: Verify | Assert bootstrap pipx is installed (Rocky 9)
       ansible.builtin.assert:
         that:
           - bootstrap_pipx_version.rc == 0

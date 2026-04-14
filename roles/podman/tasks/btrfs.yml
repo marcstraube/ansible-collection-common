@@ -1,30 +1,26 @@
 ---
-# =============================================================================
-# Podman BTRFS Tasks — Subvolume + NoCOW for container storage directory
-# =============================================================================
+# Subvolume + NoCOW for container storage directory
 
 - name: BTRFS | Check if storage parent filesystem is BTRFS
   ansible.builtin.command:
     cmd: stat -f -c %T {{ podman_storage_root | dirname }}
   register: __podman_fstype
   changed_when: false
+  # stat may fail if directory does not exist yet
   failed_when: false
-  when: podman_btrfs_enabled | bool
 
 - name: BTRFS | Set BTRFS detection fact
   ansible.builtin.set_fact:
     __podman_is_btrfs: "{{ (__podman_fstype.stdout | default('')) == 'btrfs' }}"
-  when: podman_btrfs_enabled | bool
 
 - name: BTRFS | Check if storage directory is already a BTRFS subvolume
   ansible.builtin.command:
     cmd: btrfs subvolume show {{ podman_storage_root }}
   register: __podman_subvol_check
   changed_when: false
+  # Directory may not be a subvolume yet
   failed_when: false
-  when:
-    - podman_btrfs_enabled | bool
-    - __podman_is_btrfs | bool
+  when: __podman_is_btrfs | bool
 
 - name: BTRFS | Check if storage directory exists and has content
   ansible.builtin.find:
@@ -32,13 +28,11 @@
     file_type: any
   register: __podman_dir_contents
   when:
-    - podman_btrfs_enabled | bool
     - __podman_is_btrfs | bool
     - __podman_subvol_check.rc != 0
 
 - name: BTRFS | Create subvolume for container storage
   when:
-    - podman_btrfs_enabled | bool
     - __podman_is_btrfs | bool
     - __podman_subvol_check.rc != 0
     - __podman_dir_contents.matched == 0
@@ -61,12 +55,21 @@
         mode: '0700'
         state: directory
 
+- name: BTRFS | Check NoCOW attribute on storage directory
+  ansible.builtin.command:
+    cmd: lsattr -d {{ podman_storage_root }}
+  register: __podman_lsattr
+  changed_when: false
+  # lsattr may fail on non-ext/btrfs filesystems
+  failed_when: false
+  when: __podman_is_btrfs | bool
+
 - name: BTRFS | Set NoCOW attribute on storage directory
   ansible.builtin.command:
     cmd: chattr +C {{ podman_storage_root }}
-  register: __podman_chattr
-  changed_when: __podman_chattr.rc == 0
+  changed_when: true
+  # chattr may fail in containers without filesystem support
   failed_when: false
   when:
-    - podman_btrfs_enabled | bool
     - __podman_is_btrfs | bool
+    - "'C' not in (__podman_lsattr.stdout | default(''))"

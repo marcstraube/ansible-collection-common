@@ -1,9 +1,8 @@
 ---
-# =============================================================================
-# Arch Linux-specific variables for graphics
-# =============================================================================
+#
+# Intel
+#
 
-# Intel packages
 __graphics_intel_mesa: 'mesa'
 __graphics_intel_mesa_32bit: 'lib32-mesa'
 __graphics_intel_vulkan: 'vulkan-intel'
@@ -11,13 +10,20 @@ __graphics_intel_vulkan_32bit: 'lib32-vulkan-intel'
 __graphics_intel_vaapi_modern: 'intel-media-driver'
 __graphics_intel_vaapi_legacy: 'libva-intel-driver'
 
-# AMD packages
+#
+# AMD
+#
+
 __graphics_amd_mesa: 'mesa'
 __graphics_amd_mesa_32bit: 'lib32-mesa'
 __graphics_amd_vulkan: 'vulkan-radeon'
 __graphics_amd_vulkan_32bit: 'lib32-vulkan-radeon'
 
-# NVIDIA packages (nvidia-open is the only official driver since Dec 2025)
+#
+# NVIDIA
+#
+# nvidia-open is the only official driver since Dec 2025
+
 __graphics_nvidia_open: 'nvidia-open'
 __graphics_nvidia_proprietary: 'nvidia-open'
 __graphics_nvidia_utils: 'nvidia-utils'
@@ -32,13 +38,21 @@ __graphics_nvidia_legacy_packages:
   '390xx': 'nvidia-390xx-dkms'
 __graphics_nvidia_legacy_aur: true
 
-# Common packages
+#
+# Common Tools
+#
+
 __graphics_vulkan_icd_loader: 'vulkan-icd-loader'
 __graphics_vulkan_tools: 'vulkan-tools'
 __graphics_vaapi_tools: 'libva-utils'
 __graphics_vdpau_tools: 'vdpauinfo'
 __graphics_mesa_utils: 'mesa-utils'
 
-# Hybrid graphics
+#
+# Hybrid Graphics
+#
+
 __graphics_hybrid_prime_run: 'nvidia-prime'
 __graphics_hybrid_switcheroo: ''
+__graphics_hybrid_switcheroo_service: ''
+__graphics_nvidia_persistenced_service: 'nvidia-persistenced.service'

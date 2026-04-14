@@ -1,14 +1,22 @@
 ---
-# marcstraube.networkmanager/defaults/main.yml
+#
+# Role Control
+#
 
-# =============================================================================
-# NetworkManager Daemon Configuration
-# =============================================================================
+# Enable the networkmanager role
+networkmanager_enabled: true
+
+# Enable and start the networkmanager service
+networkmanager_service_enabled: true
+
+#
+# Daemon Configuration
+#
 # Deployed to /etc/NetworkManager/conf.d/00-ansible.conf
 # Only non-empty values are written — empty strings/lists are omitted,
 # leaving the distro default in place.
 
-# --- [main] section ---------------------------------------------------------
+# [main]
 
 # DNS processing backend.
 # Values: default, systemd-resolved, dnsmasq, none
@@ -49,7 +57,7 @@ networkmanager_plugins: []
 # Automatically migrate ifcfg-rh profiles to keyfile format (RHEL/Rocky).
 networkmanager_migrate_ifcfg_rh: false
 
-# --- [logging] section ------------------------------------------------------
+# [logging]
 
 # Log verbosity level.
 # Values: OFF, ERR, WARN, INFO, DEBUG, TRACE
@@ -66,7 +74,7 @@ networkmanager_log_backend: ''
 # Send audit records to auditd.
 networkmanager_log_audit: false
 
-# --- [connectivity] section --------------------------------------------------
+# [connectivity]
 
 # URL for connectivity probe. Empty disables connectivity checking.
 networkmanager_connectivity_uri: ''
@@ -80,7 +88,7 @@ networkmanager_connectivity_timeout: 20
 # Expected response body content from the connectivity URI.
 networkmanager_connectivity_response: ''
 
-# --- [connection] section (global defaults for all connections) --------------
+# [connection] (global defaults)
 
 # WiFi power saving mode.
 # Values: ignore, disable, enable
@@ -98,7 +106,7 @@ networkmanager_connection_llmnr: ''
 # Values: default, ignore, magic, unicast, multicast, broadcast, arp, any, ...
 networkmanager_ethernet_wake_on_lan: ''
 
-# --- [device] section -------------------------------------------------------
+# [device]
 
 # Randomize MAC address during WiFi scanning.
 networkmanager_wifi_scan_rand_mac: true
@@ -107,27 +115,30 @@ networkmanager_wifi_scan_rand_mac: true
 # Values: wpa_supplicant, iwd
 networkmanager_wifi_backend: ''
 
-# --- [ifupdown] section (Debian-only) ---------------------------------------
+# [ifupdown] (Debian-only)
 
 # Whether NetworkManager manages devices defined in /etc/network/interfaces.
 networkmanager_ifupdown_managed: false
 
-# =============================================================================
-# NetworkManager Installation
-# =============================================================================
+#
+# Installation
+#
 
 # Install NetworkManager applet (nm-applet + nm-connection-editor).
 # Package names are OS-specific (see vars/).
-networkmanager_install_applet: false
+networkmanager_applet_enabled: false
+
+# DEPRECATED: Use networkmanager_applet_enabled instead (removed in v2.0.0)
+# networkmanager_install_applet: {{ networkmanager_applet_enabled }}
 
 # VPN plugin packages to install.
 # Use OS-native package names (e.g. networkmanager-openvpn on Arch,
 # NetworkManager-openvpn on Rocky, network-manager-openvpn on Debian).
 networkmanager_vpn_plugins: []
 
-# =============================================================================
-# NetworkManager Connections
-# =============================================================================
+#
+# Connections
+#
 # Connection profiles managed via community.general.nmcli.
 # Example:
 #   ethernet:
@@ -148,9 +159,21 @@ networkmanager_connections:
   wireguard: {}
   vpn: {}
 
-# =============================================================================
+#
+# Dispatcher Features
+#
+
+# Timezone
+
+# Deploy a dispatcher script that sets the system timezone
+# based on IP address using ipapi.co.
+networkmanager_timezone_enabled: false
+
+# DEPRECATED: Use networkmanager_timezone_enabled instead (removed in v2.0.0)
+# networkmanager_configure_timezone: {{ networkmanager_timezone_enabled }}
+
 # VPN Auto-Connect
-# =============================================================================
+
 # Activate a WireGuard connection on non-home networks via dispatcher script.
 # Set enabled: true and configure connection + home_connections to use.
 networkmanager_vpn_autoconnect:
@@ -158,9 +181,8 @@ networkmanager_vpn_autoconnect:
   connection: ''           # NM WireGuard connection name to activate
   home_connections: []     # Connection names where VPN is NOT needed
 
-# =============================================================================
-# SMB Shares (auto-mount via dispatcher scripts)
-# =============================================================================
+# SMB Shares
+
 # Per-user mount support: each share defines users with individual NAS credentials.
 # Mount points are created in each user's home directory.
 # Example:
@@ -184,9 +206,7 @@ networkmanager_smb_shares: []
 # Directory for per-user SMB credentials files (relative to user home).
 networkmanager_smb_credentials_dir: ".config/samba"
 
-# =============================================================================
-# SSHFS Shares (auto-mount via dispatcher scripts)
-# =============================================================================
+# SSHFS Shares
 # Example:
 #   - name: "My Remote Server"
 #     src: "user@host:/remote/path"
@@ -196,9 +216,9 @@ networkmanager_smb_credentials_dir: ".config/samba"
 #       - "My Office Connection"
 networkmanager_sshfs_shares: []
 
-# =============================================================================
-# Global DNS Configuration
-# =============================================================================
+#
+# Global DNS
+#
 # Applied to connections that don't have their own DNS config.
 
 # Global IPv4 DNS servers.
@@ -222,34 +242,33 @@ networkmanager_global_dns6_options: []
 # Apply global DNS to connections that don't have their own DNS config.
 networkmanager_apply_global_dns: true
 
-# =============================================================================
+#
 # DHCP Hostname Sending
-# =============================================================================
+#
 # Global defaults — whether to send hostname to DHCP server.
 # Deployed via /etc/NetworkManager/conf.d/00-ansible.conf [connection] section.
 # Per-connection overrides are set in networkmanager_connections.
 networkmanager_dhcp_send_hostname_ipv4: true
 networkmanager_dhcp_send_hostname_ipv6: true
 
-# =============================================================================
-# Timezone Configuration
-# =============================================================================
-# Install a dispatcher script that sets the system timezone
-# based on IP address using ipapi.co.
-networkmanager_configure_timezone: false
+#
+# Polkit
+#
 
-# =============================================================================
-# Polkit Rule
-# =============================================================================
 # Deploy a polkit rule allowing the specified group to manage NetworkManager
 # without authentication. Useful for desktops where UWSM or other session
 # managers may prevent proper polkit session tracking.
-networkmanager_polkit: false
+networkmanager_polkit_enabled: false
+
+# DEPRECATED: Use networkmanager_polkit_enabled instead (removed in v2.0.0)
+# networkmanager_polkit: {{ networkmanager_polkit_enabled }}
+
+# Group allowed to manage NetworkManager without authentication
 networkmanager_polkit_group: 'wheel'
 
-# =============================================================================
+#
 # Unmanaged Devices
-# =============================================================================
+#
 # Devices that NetworkManager should ignore (deployed via [keyfile] section).
 # Example:
 #   - mac: "00:22:68:1c:59:b1"

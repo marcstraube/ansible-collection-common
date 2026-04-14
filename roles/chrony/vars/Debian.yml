@@ -6,3 +6,6 @@ __chrony_config_file: '/etc/chrony/chrony.conf'
 __chrony_user: '_chrony'
 __chrony_group: '_chrony'
 __chrony_apparmor_profile: '/usr/sbin/chronyd'
+__chrony_conflicting_services:
+  - 'ntpsec.service'
+  - 'systemd-timesyncd.service'

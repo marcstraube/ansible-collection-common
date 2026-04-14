@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# Auditd Rules Tasks
-# =============================================================================
-
-- name: Generate audit rules
+- name: Rules | Generate audit rules
   ansible.builtin.template:
     src: 'audit.rules.j2'
     dest: '/etc/audit/rules.d/audit.rules'

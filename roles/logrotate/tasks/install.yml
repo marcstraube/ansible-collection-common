@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Logrotate - Installation Tasks
-# =============================================================================
-
 - name: Install | Logrotate packages
   ansible.builtin.package:
     name: '{{ __logrotate_packages }}'

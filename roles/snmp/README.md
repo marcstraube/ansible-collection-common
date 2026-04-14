@@ -15,14 +15,16 @@ firewalld integration, and AppArmor profile enforcement.
 
 ## Supported Platforms
 
-| Platform    | Version | Package                      | net-snmp Version |
-| ----------- | ------- | ---------------------------- | ---------------- |
-| Arch Linux  | rolling | `net-snmp`                   | 5.9.5            |
-| Debian      | Trixie  | `snmpd`, `snmp`              | 5.9.4            |
-| Rocky Linux | 9       | `net-snmp`, `net-snmp-utils` | 5.9.1            |
-| Rocky Linux | 10      | `net-snmp`, `net-snmp-utils` | 5.9.4            |
+| Platform                  | Notes |
+|---------------------------|-------|
+| Arch Linux                |       |
+| Debian Trixie             |       |
+| EL 9 (Rocky, Alma, RHEL)  |       |
+| EL 10 (Rocky, Alma, RHEL) |       |
 
-All packages are in base repositories (no EPEL dependency).
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
@@ -31,8 +33,9 @@ See [`defaults/main.yml`](defaults/main.yml) for all variables with descriptions
 ### Key Variables
 
 | Variable                 | Default               | Description                           |
-| ------------------------ | --------------------- | ------------------------------------- |
-| `snmp_enabled`           | `false`               | Enable/disable snmpd service          |
+|--------------------------|-----------------------|---------------------------------------|
+| `snmp_enabled`           | `true`                | Enable the snmp role                  |
+| `snmp_service_enabled`   | `true`                | Enable and start the snmp service     |
 | `snmp_listen_addresses`  | `['127.0.0.1']`       | Addresses snmpd listens on (UDP 161)  |
 | `snmp_sys_contact`       | `'admin@example.com'` | sysContact OID value                  |
 | `snmp_sys_location`      | `'Server Room'`       | sysLocation OID value                 |
@@ -107,7 +110,7 @@ snmp_load_thresholds:
 ## Tags
 
 | Tag              | Scope                                    |
-| ---------------- | ---------------------------------------- |
+|------------------|------------------------------------------|
 | `snmp`           | All tasks                                |
 | `snmp:install`   | Package installation                     |
 | `snmp:configure` | Configuration and SNMPv3 user management |

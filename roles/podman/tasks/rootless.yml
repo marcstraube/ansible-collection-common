@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Podman - Rootless Configuration Tasks
-# =============================================================================
-
 - name: Rootless | Configure subuid for users
   ansible.builtin.lineinfile:
     path: '/etc/subuid'
@@ -60,6 +56,7 @@
     path: '~{{ item.username }}/.config/containers'
     state: directory
     owner: '{{ item.username }}'
+    group: '{{ item.username }}'
     mode: '0755'
   loop: '{{ podman_rootless_users }}'
   loop_control:

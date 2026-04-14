@@ -1,18 +1,21 @@
 ---
-# =============================================================================
-# WireGuard - Handlers
-# =============================================================================
+- name: Reload WireGuard systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  # Container-safety for molecule
+  failed_when: false
+  when: wireguard_enabled | bool
 
-- name: Restart wireguard
-  ansible.builtin.systemd:
-    name: 'wg-quick@{{ wireguard_interface }}'
+- name: Restart WireGuard
+  ansible.builtin.systemd_service:
+    name: '{{ __wireguard_service_name }}'
     state: restarted
-  listen: 'restart wireguard'
+  when: wireguard_service_enabled | bool
 
-- name: Reload wireguard
+- name: Reload WireGuard
   ansible.builtin.command:
     cmd: 'wg syncconf {{ wireguard_interface }} <(wg-quick strip {{ wireguard_interface }})'
   args:
     executable: /bin/bash
   changed_when: true
-  listen: 'reload wireguard'
+  when: wireguard_service_enabled | bool

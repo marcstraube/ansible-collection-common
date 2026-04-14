@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# SSH Keys Tasks
-# =============================================================================
-
-- name: Add SSH authorized keys
+- name: SSH Keys | Add SSH authorized keys
   ansible.posix.authorized_key:
     user: '{{ item.name }}'
     key: "{{ item.ssh_keys | join('\n') }}"
@@ -20,7 +16,7 @@
     - item.state | default('present') == 'present'
     - item.ssh_keys | length > 0
 
-- name: Set authorized_keys file permissions
+- name: SSH Keys | Set authorized_keys file permissions
   ansible.builtin.file:
     path: >-
       {{ item.home | default(users_default_home_base + "/" + item.name) }}/{{

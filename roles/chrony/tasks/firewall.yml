@@ -1,12 +1,15 @@
 ---
-# =============================================================================
-# Chrony - Firewall Tasks
-# =============================================================================
+- name: Firewall | Check if firewalld is running
+  ansible.builtin.systemd_service:
+    name: firewalld
+  register: __chrony_firewalld_status
+  failed_when: false
 
-- name: Firewall | Allow NTP service
+- name: Firewall | Manage chrony firewall rule
   ansible.posix.firewalld:
     service: ntp
     zone: '{{ chrony_firewalld_zone }}'
     permanent: true
     immediate: true
-    state: enabled
+    state: "{{ chrony_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+  when: __chrony_firewalld_status.status.ActiveState | default('') == 'active'

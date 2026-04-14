@@ -3,7 +3,7 @@
 # Remote Logging Plugin Configuration
 #
 
-active = {{ 'yes' if auditd_remote_logging else 'no' }}
+active = {{ 'yes' if auditd_remote_logging_enabled else 'no' }}
 direction = out
 path = {{ __auditd_remote_binary }}
 type = always

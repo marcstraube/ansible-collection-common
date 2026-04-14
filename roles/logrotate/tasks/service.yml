@@ -1,13 +1,9 @@
 ---
-# =============================================================================
-# Logrotate - Service (Timer) Tasks
-# =============================================================================
-
-- name: Service | Enable logrotate timer
-  ansible.builtin.systemd:
+- name: Service | Manage logrotate timer
+  ansible.builtin.systemd_service:
     name: '{{ __logrotate_timer_name }}'
-    enabled: true
-    state: started
+    enabled: "{{ logrotate_timer_enabled | bool }}"
+    state: "{{ logrotate_timer_enabled | bool | ternary('started', 'stopped') }}"
 
 - name: Service | Create timer override directory
   ansible.builtin.file:
@@ -18,7 +14,7 @@
     mode: '0755'
   when: logrotate_timer_oncalendar | length > 0
 
-- name: Service | Override logrotate timer schedule
+- name: Service | Deploy timer schedule override
   ansible.builtin.copy:
     dest: '/etc/systemd/system/logrotate.timer.d/override.conf'
     content: |
@@ -30,12 +26,16 @@
     owner: root
     group: root
     mode: '0644'
-  notify: 'restart logrotate timer'
+  notify:
+    - Reload logrotate systemd units
+    - Restart logrotate timer
   when: logrotate_timer_oncalendar | length > 0
 
 - name: Service | Remove timer override when not configured
   ansible.builtin.file:
     path: '/etc/systemd/system/logrotate.timer.d/override.conf'
     state: absent
-  notify: 'restart logrotate timer'
+  notify:
+    - Reload logrotate systemd units
+    - Restart logrotate timer
   when: logrotate_timer_oncalendar | length == 0

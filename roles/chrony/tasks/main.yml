@@ -1,58 +1,75 @@
 ---
-# =============================================================================
-# Chrony - Main Tasks
-# =============================================================================
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [chrony]
+  tags:
+    - chrony
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [chrony, chrony:install]
+  when: chrony_enabled | bool
+  tags:
+    - chrony
+    - chrony:install
 
 - name: Main | Include BTRFS tasks
   ansible.builtin.include_tasks:
     file: btrfs.yml
     apply:
-      tags: [chrony, chrony:configure]
-  when:
-    - chrony_enabled | bool
-    - chrony_btrfs_nocow | bool
-  tags: [chrony, chrony:configure]
+      tags:
+        - chrony
+        - chrony:install
+  when: chrony_enabled | bool
+  tags:
+    - chrony
+    - chrony:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
-  tags: [chrony, chrony:configure]
+  when: chrony_enabled | bool
+  tags:
+    - chrony
+    - chrony:configure
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  when: chrony_enabled | bool
+  tags:
+    - chrony
+    - chrony:service
 
 - name: Main | Include firewall tasks
   ansible.builtin.include_tasks:
     file: firewall.yml
     apply:
-      tags: [chrony, chrony:firewall]
+      tags:
+        - chrony
+        - chrony:firewall
   when:
     - chrony_enabled | bool
     - chrony_firewalld_enabled | bool
-  tags: [chrony, chrony:firewall]
+  tags:
+    - chrony
+    - chrony:firewall
 
 - name: Main | Include AppArmor tasks
   ansible.builtin.include_tasks:
     file: apparmor.yml
     apply:
-      tags: [chrony, chrony:apparmor]
+      tags:
+        - chrony
+        - chrony:apparmor
   when:
     - chrony_enabled | bool
     - chrony_apparmor_enabled | bool
     - ansible_facts['os_family'] != 'RedHat'
-  tags: [chrony, chrony:apparmor]
-
-- name: Main | Import service tasks
-  ansible.builtin.import_tasks: service.yml
-  tags: [chrony, chrony:service]
+  tags:
+    - chrony
+    - chrony:apparmor

@@ -1,11 +1,19 @@
 ---
-# =============================================================================
-# Avahi Handlers
-# =============================================================================
+- name: Reload avahi systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  # Container-safety for molecule
+  failed_when: false
+  when: avahi_enabled | bool
 
 - name: Restart avahi
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __avahi_service_name }}'
     state: restarted
-  become: true
-  when: avahi_enabled | bool
+  when: avahi_service_enabled | bool
+
+- name: Reload avahi
+  ansible.builtin.systemd_service:
+    name: '{{ __avahi_service_name }}'
+    state: reloaded
+  when: avahi_service_enabled | bool

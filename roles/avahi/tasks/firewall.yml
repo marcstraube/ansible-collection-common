@@ -1,12 +1,16 @@
 ---
-# =============================================================================
-# Avahi - Firewall Tasks
-# =============================================================================
+- name: Firewall | Check if firewalld is running
+  ansible.builtin.systemd_service:
+    name: firewalld
+  register: __avahi_firewalld_status
+  # Service may not be installed
+  failed_when: false
 
-- name: Firewall | Allow mDNS service
+- name: Firewall | Manage avahi firewall rule
   ansible.posix.firewalld:
     service: mdns
     zone: '{{ avahi_firewalld_zone }}'
     permanent: true
     immediate: true
-    state: enabled
+    state: "{{ avahi_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+  when: __avahi_firewalld_status.status.ActiveState | default('') == 'active'

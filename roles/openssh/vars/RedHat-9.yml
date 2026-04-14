@@ -1,12 +1,12 @@
 ---
-# Rocky Linux 9 overrides (OpenSSH 8.7p1)
+# EL 9 overrides (OpenSSH 8.7p1)
 # Overrides RedHat.yml — must include all OS-specific vars
 
 __openssh_packages:
   - 'openssh-server'
   - 'openssh-clients'
 
-__openssh_server_service: 'sshd.service'
+__openssh_service_name: 'sshd.service'
 __openssh_server_config_dir: '/etc/ssh'
 __openssh_server_config_file: '/etc/ssh/sshd_config'
 __openssh_server_config_d_dir: '/etc/ssh/sshd_config.d'
@@ -26,7 +26,7 @@ __openssh_askpass_package: 'openssh-askpass'
 
 __openssh_agent_service: 'ssh-agent.service'
 
-# OpenSSH 8.7p1 on Rocky 9 — oldest supported version
+# OpenSSH 8.7p1 on EL 9 — oldest supported version
 # RequiredRSASize (9.1+), PerSourcePenalties (9.8+),
 # ChannelTimeout (9.7+), UnusedConnectionTimeout (9.2+) not available
 __openssh_print_lastlog_supported: true

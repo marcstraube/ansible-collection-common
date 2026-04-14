@@ -1,10 +1,21 @@
 ---
-# =============================================================================
-# Unbound - Service Tasks
-# =============================================================================
-
-- name: Service | Enable and start unbound
-  ansible.builtin.systemd:
+- name: Service | Manage unbound service
+  ansible.builtin.systemd_service:
     name: '{{ __unbound_service_name }}'
-    enabled: true
-    state: started
+    enabled: "{{ unbound_service_enabled | bool }}"
+    state: "{{ unbound_service_enabled | bool | ternary('started', 'stopped') }}"
+    daemon_reload: true
+
+- name: Service | Manage root hints update timer
+  ansible.builtin.systemd_service:
+    name: unbound-root-hints.timer
+    enabled: "{{ unbound_root_hints_update_enabled | bool }}"
+    state: "{{ unbound_root_hints_update_enabled | bool | ternary('started', 'stopped') }}"
+    daemon_reload: true
+
+- name: Service | Manage blocklist update timer
+  ansible.builtin.systemd_service:
+    name: unbound-blocklist.timer
+    enabled: "{{ unbound_blocklist_enabled | bool }}"
+    state: "{{ unbound_blocklist_enabled | bool | ternary('started', 'stopped') }}"
+    daemon_reload: true

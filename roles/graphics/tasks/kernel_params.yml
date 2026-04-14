@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Kernel Parameter Configuration (modprobe.d)
-# =============================================================================
-
 - name: Kernel Params | Deploy i915 modprobe config
   ansible.builtin.template:
     src: modprobe-i915.conf.j2
@@ -12,7 +8,7 @@
     mode: '0644'
   when:
     - __graphics_install_intel | bool
-    - (graphics_intel_kernel_params | length > 0) or (graphics_intel_guc_huc | bool)
+    - (graphics_intel_kernel_params | length > 0) or (graphics_intel_guc_huc_enabled | bool)
 
 - name: Kernel Params | Remove i915 modprobe config when not needed
   ansible.builtin.file:
@@ -20,7 +16,7 @@
     state: absent
   when: >-
     not (__graphics_install_intel | bool) or
-    (graphics_intel_kernel_params | length == 0 and not (graphics_intel_guc_huc | bool))
+    (graphics_intel_kernel_params | length == 0 and not (graphics_intel_guc_huc_enabled | bool))
 
 - name: Kernel Params | Deploy nvidia modprobe config
   ansible.builtin.template:

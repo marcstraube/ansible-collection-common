@@ -1,21 +1,17 @@
 ---
-# =============================================================================
-# Firewalld - Dynamic Firewall Manager
-# =============================================================================
-# Role: marcstraube.common.firewalld
-# Description: Configure firewalld zones, services, ports, and rich rules
-# =============================================================================
+#
+# Role Control
+#
 
-# =============================================================================
-# SERVICE CONTROL
-# =============================================================================
-
-# Enable/disable firewalld service
+# Enable the firewalld role
 firewalld_enabled: true
 
-# =============================================================================
-# FIREWALLD.CONF — GLOBAL DAEMON SETTINGS
-# =============================================================================
+# Enable and start the firewalld service
+firewalld_service_enabled: true
+
+#
+# firewalld.conf — Global Daemon Settings
+#
 
 # Default zone for interfaces not explicitly assigned
 # Built-in zones: drop, block, public, external, dmz, work, home, internal, trusted
@@ -74,9 +70,9 @@ firewalld_nftables_counters: false
 # Only available in firewalld 2.x+ (ignored on Rocky 9)
 firewalld_nftables_table_owner: true
 
-# =============================================================================
-# ZONE MANAGEMENT
-# =============================================================================
+#
+# Zone Management
+#
 
 # Create or modify zones
 # Requires firewalld reload after creation before zones can be used
@@ -87,9 +83,9 @@ firewalld_zones: []
 #   - name: 'internal'
 #     target: 'ACCEPT'
 
-# =============================================================================
-# SERVICES
-# =============================================================================
+#
+# Services
+#
 
 # Services to enable in default zone
 firewalld_services:
@@ -118,9 +114,9 @@ firewalld_services_disabled: []
 # are removed from their respective zones
 firewalld_purge_services: false
 
-# =============================================================================
-# PORTS
-# =============================================================================
+#
+# Ports
+#
 
 # Ports to open in default zone (format: port/protocol)
 firewalld_ports: []
@@ -139,9 +135,9 @@ firewalld_zone_ports: []
 #     ports:
 #       - '3306/tcp'
 
-# =============================================================================
-# RICH RULES
-# =============================================================================
+#
+# Rich Rules
+#
 
 # Rich rules for complex firewall logic
 firewalld_rich_rules: []
@@ -150,9 +146,9 @@ firewalld_rich_rules: []
 #     rule: 'rule family="ipv4" source address="192.168.1.0/24" service name="ssh" accept'
 #   - rule: 'rule family="ipv4" source address="10.0.0.0/8" port port="3306" protocol="tcp" accept'
 
-# =============================================================================
-# SOURCE-BASED ROUTING
-# =============================================================================
+#
+# Source-Based Routing
+#
 
 # Assign source networks to zones
 firewalld_sources: []
@@ -162,9 +158,9 @@ firewalld_sources: []
 #   - zone: 'internal'
 #     source: '10.0.0.0/8'
 
-# =============================================================================
-# INTERFACE ASSIGNMENT
-# =============================================================================
+#
+# Interface Assignment
+#
 
 # Assign interfaces to zones
 firewalld_interfaces: []
@@ -174,9 +170,9 @@ firewalld_interfaces: []
 #   - zone: 'public'
 #     interface: 'eth0'
 
-# =============================================================================
-# PORT FORWARDING
-# =============================================================================
+#
+# Port Forwarding
+#
 
 # Port forwarding rules
 firewalld_forwards: []
@@ -188,9 +184,9 @@ firewalld_forwards: []
 #     to_port: '8443'
 #     to_addr: '192.168.1.10'
 
-# =============================================================================
-# MASQUERADING (NAT)
-# =============================================================================
+#
+# Masquerading (NAT)
+#
 
 # Enable masquerading (NAT) per zone
 firewalld_masquerade: []
@@ -198,9 +194,9 @@ firewalld_masquerade: []
 #   - zone: 'public'
 #     enabled: true
 
-# =============================================================================
-# ICMP BLOCKING
-# =============================================================================
+#
+# ICMP Blocking
+#
 
 # ICMP types to block per zone
 firewalld_icmp_blocks: []
@@ -210,9 +206,9 @@ firewalld_icmp_blocks: []
 #       - 'echo-request'
 #       - 'timestamp-request'
 
-# =============================================================================
-# DIRECT RULES (low-level nftables/iptables)
-# =============================================================================
+#
+# Direct Rules (low-level nftables/iptables)
+#
 
 # Direct rules for advanced use cases
 # NOTE: Direct rules are deprecated in firewalld 2.x — prefer rich rules or policies
@@ -224,9 +220,9 @@ firewalld_direct_rules: []
 #     priority: 0
 #     rule: '-p tcp --dport 9999 -j ACCEPT'
 
-# =============================================================================
-# CUSTOM SERVICES
-# =============================================================================
+#
+# Custom Services
+#
 
 # Define custom firewalld service XML files
 firewalld_custom_services: []

@@ -1,13 +1,12 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # PACKAGE INSTALLATION VERIFICATION
-    # =========================================================================
+    #
+    # Package Installation Verification
+    #
 
     - name: Verify | Check htop package installed
       ansible.builtin.package:
@@ -97,9 +96,9 @@
       register: _utils_sl_pkg
       failed_when: _utils_sl_pkg.changed
 
-    # =========================================================================
-    # BINARY AVAILABILITY IN PATH
-    # =========================================================================
+    #
+    # Binary Availability in PATH
+    #
 
     - name: Verify | Check htop binary exists
       ansible.builtin.command:
@@ -183,9 +182,9 @@
       changed_when: false
       failed_when: _utils_sl_bin.rc != 0
 
-    # =========================================================================
-    # FUNCTIONALITY TESTS
-    # =========================================================================
+    #
+    # Functionality Tests
+    #
 
     - name: Verify | Check htop version
       ansible.builtin.command:
@@ -194,7 +193,7 @@
       changed_when: false
       failed_when: _utils_htop_version.rc != 0
 
-    - name: Verify | Verify htop version output
+    - name: Verify | Assert htop version output
       ansible.builtin.assert:
         that:
           - "'htop' in _utils_htop_version.stdout"
@@ -207,7 +206,7 @@
       changed_when: false
       failed_when: _utils_tmux_version.rc != 0
 
-    - name: Verify | Verify tmux version output
+    - name: Verify | Assert tmux version output
       ansible.builtin.assert:
         that:
           - "'tmux' in _utils_tmux_version.stdout"
@@ -220,7 +219,7 @@
       changed_when: false
       failed_when: _utils_rsync_version.rc != 0
 
-    - name: Verify | Verify rsync version output
+    - name: Verify | Assert rsync version output
       ansible.builtin.assert:
         that:
           - "'rsync' in _utils_rsync_version.stdout"
@@ -235,7 +234,7 @@
       changed_when: false
       failed_when: _utils_cowsay_test.rc != 0
 
-    - name: Verify | Verify cowsay output contains expected text
+    - name: Verify | Assert cowsay output contains expected text
       ansible.builtin.assert:
         that:
           - "'Test' in _utils_cowsay_test.stdout"
@@ -248,7 +247,7 @@
       changed_when: false
       failed_when: _utils_figlet_test.rc != 0
 
-    - name: Verify | Verify figlet output is not empty
+    - name: Verify | Assert figlet output is not empty
       ansible.builtin.assert:
         that:
           - _utils_figlet_test.stdout | length > 0
@@ -261,7 +260,7 @@
       changed_when: false
       failed_when: _utils_rg_version.rc != 0
 
-    - name: Verify | Verify rg version output
+    - name: Verify | Assert rg version output
       ansible.builtin.assert:
         that:
           - "'ripgrep' in _utils_rg_version.stdout"
@@ -274,15 +273,15 @@
       changed_when: false
       failed_when: _utils_fd_version.rc != 0
 
-    - name: Verify | Verify fd version output
+    - name: Verify | Assert fd version output
       ansible.builtin.assert:
         that:
           - "'fd' in _utils_fd_version.stdout"
         fail_msg: fd version output unexpected
 
-    # =========================================================================
-    # DISABLED PACKAGES VERIFICATION
-    # =========================================================================
+    #
+    # Disabled Packages Verification
+    #
 
     - name: Verify | Check screen is not installed
       ansible.builtin.command:

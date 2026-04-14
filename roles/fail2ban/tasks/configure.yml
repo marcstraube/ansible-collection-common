@@ -1,8 +1,5 @@
 ---
-# =============================================================================
-# Configuration directories
-# =============================================================================
-- name: Create jail.d directory
+- name: Configure | Create jail.d directory
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}'
     state: directory
@@ -10,10 +7,11 @@
     group: root
     mode: '0755'
 
-# =============================================================================
-# Main configuration
-# =============================================================================
-- name: Deploy jail.local
+#
+# Main Configuration
+#
+
+- name: Configure | Deploy jail.local
   ansible.builtin.template:
     src: 'jail.local.j2'
     dest: '{{ __fail2ban_config_dir }}/jail.local'
@@ -22,7 +20,7 @@
     mode: '0644'
   notify: Restart fail2ban
 
-- name: Ensure logtarget file exists
+- name: Configure | Ensure logtarget file exists
   ansible.builtin.copy:
     content: ''
     dest: '{{ fail2ban_logtarget }}'
@@ -32,10 +30,11 @@
     force: false
   when: fail2ban_logtarget is not search('SYSLOG|SYSTEMD|STDOUT|STDERR')
 
-# =============================================================================
-# SSH jail
-# =============================================================================
-- name: Deploy SSH jail
+#
+# SSH Jail
+#
+
+- name: Configure | Deploy SSH jail
   ansible.builtin.template:
     src: 'jail.d/sshd.local.j2'
     dest: '{{ __fail2ban_jail_d_dir }}/sshd.local'
@@ -44,10 +43,11 @@
     mode: '0644'
   notify: Reload fail2ban
 
-# =============================================================================
-# Mail server jails
-# =============================================================================
-- name: Deploy mail server jails
+#
+# Mail Server Jails
+#
+
+- name: Configure | Deploy mail server jails
   ansible.builtin.template:
     src: 'jail.d/mail.local.j2'
     dest: '{{ __fail2ban_jail_d_dir }}/mail.local'
@@ -55,45 +55,47 @@
     group: root
     mode: '0644'
   when: >-
-    fail2ban_postfix_enabled or fail2ban_dovecot_enabled or
-    fail2ban_postfix_sasl_enabled or fail2ban_postfix_rbl_enabled or
-    fail2ban_sogo_enabled or fail2ban_roundcube_enabled
+    fail2ban_postfix_enabled | bool or fail2ban_dovecot_enabled | bool or
+    fail2ban_postfix_sasl_enabled | bool or fail2ban_postfix_rbl_enabled | bool or
+    fail2ban_sogo_enabled | bool or fail2ban_roundcube_enabled | bool
   notify: Reload fail2ban
 
-- name: Remove mail jail if disabled
+- name: Configure | Remove mail jail if disabled
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/mail.local'
     state: absent
   when: >-
-    not (fail2ban_postfix_enabled or fail2ban_dovecot_enabled or
-    fail2ban_postfix_sasl_enabled or fail2ban_postfix_rbl_enabled or
-    fail2ban_sogo_enabled or fail2ban_roundcube_enabled)
+    not (fail2ban_postfix_enabled | bool or fail2ban_dovecot_enabled | bool or
+    fail2ban_postfix_sasl_enabled | bool or fail2ban_postfix_rbl_enabled | bool or
+    fail2ban_sogo_enabled | bool or fail2ban_roundcube_enabled | bool)
   notify: Reload fail2ban
 
-# =============================================================================
-# Recidive jail
-# =============================================================================
-- name: Deploy recidive jail
+#
+# Recidive Jail
+#
+
+- name: Configure | Deploy recidive jail
   ansible.builtin.template:
     src: 'jail.d/recidive.local.j2'
     dest: '{{ __fail2ban_jail_d_dir }}/recidive.local'
     owner: root
     group: root
     mode: '0644'
-  when: fail2ban_recidive_enabled
+  when: fail2ban_recidive_enabled | bool
   notify: Reload fail2ban
 
-- name: Remove recidive jail if disabled
+- name: Configure | Remove recidive jail if disabled
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/recidive.local'
     state: absent
-  when: not fail2ban_recidive_enabled
+  when: not (fail2ban_recidive_enabled | bool)
   notify: Reload fail2ban
 
-# =============================================================================
-# Apache jails
-# =============================================================================
-- name: Deploy Apache jails
+#
+# Apache Jails
+#
+
+- name: Configure | Deploy Apache jails
   ansible.builtin.template:
     src: 'jail.d/apache.local.j2'
     dest: '{{ __fail2ban_jail_d_dir }}/apache.local'
@@ -101,29 +103,30 @@
     group: root
     mode: '0644'
   when: >-
-    fail2ban_apache_auth_enabled or fail2ban_apache_badbots_enabled or
-    fail2ban_apache_noscript_enabled or fail2ban_apache_overflows_enabled or
-    fail2ban_apache_nohome_enabled or fail2ban_apache_botsearch_enabled or
-    fail2ban_apache_fakegooglebot_enabled or fail2ban_apache_modsecurity_enabled or
-    fail2ban_apache_shellshock_enabled
+    fail2ban_apache_auth_enabled | bool or fail2ban_apache_badbots_enabled | bool or
+    fail2ban_apache_noscript_enabled | bool or fail2ban_apache_overflows_enabled | bool or
+    fail2ban_apache_nohome_enabled | bool or fail2ban_apache_botsearch_enabled | bool or
+    fail2ban_apache_fakegooglebot_enabled | bool or fail2ban_apache_modsecurity_enabled | bool or
+    fail2ban_apache_shellshock_enabled | bool
   notify: Reload fail2ban
 
-- name: Remove Apache jails if disabled
+- name: Configure | Remove Apache jails if disabled
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/apache.local'
     state: absent
   when: >-
-    not (fail2ban_apache_auth_enabled or fail2ban_apache_badbots_enabled or
-    fail2ban_apache_noscript_enabled or fail2ban_apache_overflows_enabled or
-    fail2ban_apache_nohome_enabled or fail2ban_apache_botsearch_enabled or
-    fail2ban_apache_fakegooglebot_enabled or fail2ban_apache_modsecurity_enabled or
-    fail2ban_apache_shellshock_enabled)
+    not (fail2ban_apache_auth_enabled | bool or fail2ban_apache_badbots_enabled | bool or
+    fail2ban_apache_noscript_enabled | bool or fail2ban_apache_overflows_enabled | bool or
+    fail2ban_apache_nohome_enabled | bool or fail2ban_apache_botsearch_enabled | bool or
+    fail2ban_apache_fakegooglebot_enabled | bool or fail2ban_apache_modsecurity_enabled | bool or
+    fail2ban_apache_shellshock_enabled | bool)
   notify: Reload fail2ban
 
-# =============================================================================
-# Nginx jails
-# =============================================================================
-- name: Deploy Nginx jails
+#
+# Nginx Jails
+#
+
+- name: Configure | Deploy Nginx jails
   ansible.builtin.template:
     src: 'jail.d/nginx.local.j2'
     dest: '{{ __fail2ban_jail_d_dir }}/nginx.local'
@@ -131,65 +134,68 @@
     group: root
     mode: '0644'
   when: >-
-    fail2ban_nginx_http_auth_enabled or fail2ban_nginx_limit_req_enabled or
-    fail2ban_nginx_botsearch_enabled or fail2ban_nginx_forbidden_enabled or
-    fail2ban_nginx_bad_request_enabled
+    fail2ban_nginx_http_auth_enabled | bool or fail2ban_nginx_limit_req_enabled | bool or
+    fail2ban_nginx_botsearch_enabled | bool or fail2ban_nginx_forbidden_enabled | bool or
+    fail2ban_nginx_bad_request_enabled | bool
   notify: Reload fail2ban
 
-- name: Remove Nginx jails if disabled
+- name: Configure | Remove Nginx jails if disabled
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/nginx.local'
     state: absent
   when: >-
-    not (fail2ban_nginx_http_auth_enabled or fail2ban_nginx_limit_req_enabled or
-    fail2ban_nginx_botsearch_enabled or fail2ban_nginx_forbidden_enabled or
-    fail2ban_nginx_bad_request_enabled)
+    not (fail2ban_nginx_http_auth_enabled | bool or fail2ban_nginx_limit_req_enabled | bool or
+    fail2ban_nginx_botsearch_enabled | bool or fail2ban_nginx_forbidden_enabled | bool or
+    fail2ban_nginx_bad_request_enabled | bool)
   notify: Reload fail2ban
 
-# =============================================================================
-# Database jails
-# =============================================================================
-- name: Deploy database jails
+#
+# Database Jails
+#
+
+- name: Configure | Deploy database jails
   ansible.builtin.template:
     src: 'jail.d/database.local.j2'
     dest: '{{ __fail2ban_jail_d_dir }}/database.local'
     owner: root
     group: root
     mode: '0644'
-  when: fail2ban_mysqld_enabled or fail2ban_postgresql_enabled
+  when: (fail2ban_mysqld_enabled | bool) or (fail2ban_postgresql_enabled | bool)
   notify: Reload fail2ban
 
-- name: Remove database jails if disabled
+- name: Configure | Remove database jails if disabled
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/database.local'
     state: absent
-  when: not (fail2ban_mysqld_enabled or fail2ban_postgresql_enabled)
+  when: not ((fail2ban_mysqld_enabled | bool) or (fail2ban_postgresql_enabled | bool))
   notify: Reload fail2ban
 
-# =============================================================================
-# Grafana jail
-# =============================================================================
-- name: Deploy Grafana jail
+#
+# Grafana Jail
+#
+
+- name: Configure | Deploy Grafana jail
   ansible.builtin.template:
     src: 'jail.d/grafana.local.j2'
     dest: '{{ __fail2ban_jail_d_dir }}/grafana.local'
     owner: root
     group: root
     mode: '0644'
-  when: fail2ban_grafana_enabled
+  when: fail2ban_grafana_enabled | bool
   notify: Reload fail2ban
 
-- name: Remove Grafana jail if disabled
+- name: Configure | Remove Grafana jail if disabled
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/grafana.local'
     state: absent
-  when: not fail2ban_grafana_enabled
+  when: not (fail2ban_grafana_enabled | bool)
   notify: Reload fail2ban
 
-# =============================================================================
-# Custom jails, filters, and actions
-# =============================================================================
-- name: Deploy custom jails
+#
+# Custom Jails, Filters, and Actions
+#
+
+- name: Configure | Deploy custom jails
   ansible.builtin.template:
     src: 'jail.d/custom.local.j2'
     dest: '{{ __fail2ban_jail_d_dir }}/custom.local'
@@ -199,14 +205,14 @@
   when: fail2ban_custom_jails | length > 0
   notify: Reload fail2ban
 
-- name: Remove custom jails if empty
+- name: Configure | Remove custom jails if empty
   ansible.builtin.file:
     path: '{{ __fail2ban_jail_d_dir }}/custom.local'
     state: absent
   when: fail2ban_custom_jails | length == 0
   notify: Reload fail2ban
 
-- name: Deploy custom filters
+- name: Configure | Deploy custom filters
   ansible.builtin.copy:
     content: '{{ item.definition }}'
     dest: '{{ __fail2ban_filter_d_dir }}/{{ item.name }}.local'
@@ -216,10 +222,10 @@
   loop: '{{ fail2ban_custom_filters }}'
   notify: Reload fail2ban
 
-- name: Deploy custom actions
+- name: Configure | Deploy custom actions
   ansible.builtin.copy:
     content: '{{ item.definition }}'
-    dest: '/etc/fail2ban/action.d/{{ item.name }}.local'
+    dest: '{{ __fail2ban_action_d_dir }}/{{ item.name }}.local'
     owner: root
     group: root
     mode: '0644'

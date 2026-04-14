@@ -1,7 +1,5 @@
 ---
-# =============================================================================
-# Debian-specific variables for fonts
-# =============================================================================
+__fonts_fontconfig_package: 'fontconfig'
 
 __fonts_dejavu_package: 'fonts-dejavu'
 __fonts_liberation_package: 'fonts-liberation2'

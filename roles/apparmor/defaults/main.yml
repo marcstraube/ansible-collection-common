@@ -1,21 +1,17 @@
 ---
-# =============================================================================
-# AppArmor Configuration - Mandatory Access Control
-# =============================================================================
-# Role: marcstraube.common.apparmor
-# Description: Configure AppArmor for enhanced security (Arch Linux, Debian)
-# Note: Not for RHEL/Rocky — those use SELinux
-# =============================================================================
+#
+# Role Control
+#
 
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
-
+# Enable the apparmor role
 apparmor_enabled: true
 
-# =============================================================================
-# BOOT CONFIGURATION
-# =============================================================================
+# Enable and start the apparmor service
+apparmor_service_enabled: true
+
+#
+# Boot Configuration
+#
 
 # Enable AppArmor at boot via GRUB kernel parameters
 apparmor_boot_enabled: true
@@ -23,9 +19,9 @@ apparmor_boot_enabled: true
 # Security filesystem path (used to detect kernel support)
 apparmor_securityfs: '/sys/kernel/security'
 
-# =============================================================================
-# PROFILE MANAGEMENT
-# =============================================================================
+#
+# Profile Management
+#
 
 # Profiles to put in enforce mode (list of binary paths)
 apparmor_enforce_profiles:
@@ -38,9 +34,9 @@ apparmor_complain_profiles: []
 # Profiles to disable
 apparmor_disable_profiles: []
 
-# =============================================================================
-# CUSTOM PROFILES
-# =============================================================================
+#
+# Custom Profiles
+#
 
 # Custom profile definitions (deployed to /etc/apparmor.d/)
 # Use AppArmor ABI 4.0 syntax (include instead of #include)
@@ -58,9 +54,9 @@ apparmor_disable_profiles: []
 #         }
 apparmor_custom_profiles: []
 
-# =============================================================================
-# PROFILE TUNABLES
-# =============================================================================
+#
+# Profile Tunables
+#
 
 # Custom tunables deployed to /etc/apparmor.d/tunables/custom
 # These override default AppArmor path variables used in profiles.
@@ -70,15 +66,21 @@ apparmor_custom_profiles: []
 #     HOMEDIRS: '/home'
 apparmor_tunables: {}
 
-# =============================================================================
-# UTILITIES
-# =============================================================================
+#
+# Utilities
+#
 
 # Install apparmor-utils (aa-status, aa-enforce, etc.)
 apparmor_utils_enabled: true
 
 # Install apparmor-profiles-extra (broader profile coverage)
-apparmor_extra_profiles: true
+apparmor_extra_profiles_enabled: true
+
+# DEPRECATED: Use apparmor_extra_profiles_enabled instead (removed in v2.0.0)
+# apparmor_extra_profiles: {{ apparmor_extra_profiles_enabled }}
 
 # Install apparmor-notify (desktop denial notifications)
-apparmor_notify_package: true
+apparmor_notify_enabled: true
+
+# DEPRECATED: Use apparmor_notify_enabled instead (removed in v2.0.0)
+# apparmor_notify_package: {{ apparmor_notify_enabled }}

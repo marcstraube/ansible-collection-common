@@ -1,46 +1,60 @@
 ---
-# =============================================================================
-# Sysctl - Kernel Parameter Tuning
-# =============================================================================
+#
+# Role Control
+#
 
-# -----------------------------------------------------------------------------
-# SERVICE CONTROL
-# -----------------------------------------------------------------------------
+# Enable the sysctl role
 sysctl_enabled: true
 
-# -----------------------------------------------------------------------------
-# CUSTOM PARAMETERS
+#
+# Custom Parameters
+#
 # Key-value pairs applied to sysctl.conf
-# -----------------------------------------------------------------------------
+
+# Custom sysctl key-value pairs (override profiles)
 sysctl_parameters: {}
-# Example:
-#   net.ipv4.ip_forward: 1
-#   vm.swappiness: 10
 
-# -----------------------------------------------------------------------------
-# PRESET PROFILES
+#
+# Preset Profiles
+#
 # Enable predefined parameter sets for common use cases
-# -----------------------------------------------------------------------------
 
-# Security hardening profile (CIS benchmark recommended)
-sysctl_profile_security: true
+# Enable security hardening profile (CIS benchmark recommended)
+sysctl_profile_security_enabled: true
 
-# Network performance profile (high-traffic servers)
-sysctl_profile_network_performance: false
+# DEPRECATED: Use sysctl_profile_security_enabled instead (removed in v2.0.0)
+# sysctl_profile_security: {{ sysctl_profile_security_enabled }}
 
-# Database server profile (PostgreSQL, MariaDB)
-sysctl_profile_database: false
+# Enable network performance profile (high-traffic servers)
+sysctl_profile_network_performance_enabled: false
 
-# Web server profile (nginx, Apache)
-sysctl_profile_webserver: false
+# DEPRECATED: Use sysctl_profile_network_performance_enabled instead (removed in v2.0.0)
+# sysctl_profile_network_performance: {{ sysctl_profile_network_performance_enabled }}
 
-# Docker/container host profile
-sysctl_profile_docker: false
+# Enable database server profile (PostgreSQL, MariaDB)
+sysctl_profile_database_enabled: false
 
-# -----------------------------------------------------------------------------
-# SECURITY PROFILE PARAMETERS
-# Applied when sysctl_profile_security: true
-# -----------------------------------------------------------------------------
+# DEPRECATED: Use sysctl_profile_database_enabled instead (removed in v2.0.0)
+# sysctl_profile_database: {{ sysctl_profile_database_enabled }}
+
+# Enable web server profile (nginx, Apache)
+sysctl_profile_webserver_enabled: false
+
+# DEPRECATED: Use sysctl_profile_webserver_enabled instead (removed in v2.0.0)
+# sysctl_profile_webserver: {{ sysctl_profile_webserver_enabled }}
+
+# Enable Docker/container host profile
+sysctl_profile_docker_enabled: false
+
+# DEPRECATED: Use sysctl_profile_docker_enabled instead (removed in v2.0.0)
+# sysctl_profile_docker: {{ sysctl_profile_docker_enabled }}
+
+#
+# Security Profile Parameters
+#
+# Applied when sysctl_profile_security_enabled is true
+
+# Security-focused sysctl parameters
 sysctl_security_parameters:
   # Disable IP forwarding
   net.ipv4.ip_forward: 0
@@ -78,10 +92,12 @@ sysctl_security_parameters:
   net.ipv6.conf.all.accept_ra: 0
   net.ipv6.conf.default.accept_ra: 0
 
-# -----------------------------------------------------------------------------
-# NETWORK PERFORMANCE PROFILE PARAMETERS
-# Applied when sysctl_profile_network_performance: true
-# -----------------------------------------------------------------------------
+#
+# Network Performance Profile Parameters
+#
+# Applied when sysctl_profile_network_performance_enabled is true
+
+# Network performance tuning parameters
 sysctl_network_performance_parameters:
   # Increase socket buffer sizes
   net.core.rmem_max: 16777216
@@ -111,10 +127,12 @@ sysctl_network_performance_parameters:
   # Increase local port range
   net.ipv4.ip_local_port_range: '1024 65535'
 
-# -----------------------------------------------------------------------------
-# DATABASE PROFILE PARAMETERS
-# Applied when sysctl_profile_database: true
-# -----------------------------------------------------------------------------
+#
+# Database Profile Parameters
+#
+# Applied when sysctl_profile_database_enabled is true
+
+# Database-optimized sysctl parameters
 sysctl_database_parameters:
   # Reduce swappiness for databases
   vm.swappiness: 10
@@ -137,10 +155,12 @@ sysctl_database_parameters:
   # Increase semaphore limits
   kernel.sem: '250 32000 100 128'
 
-# -----------------------------------------------------------------------------
-# WEB SERVER PROFILE PARAMETERS
-# Applied when sysctl_profile_webserver: true
-# -----------------------------------------------------------------------------
+#
+# Web Server Profile Parameters
+#
+# Applied when sysctl_profile_webserver_enabled is true
+
+# Web server sysctl parameters
 sysctl_webserver_parameters:
   # Connection handling
   net.core.somaxconn: 65535
@@ -156,10 +176,12 @@ sysctl_webserver_parameters:
   # File descriptors
   fs.file-max: 2097152
 
-# -----------------------------------------------------------------------------
-# DOCKER PROFILE PARAMETERS
-# Applied when sysctl_profile_docker: true
-# -----------------------------------------------------------------------------
+#
+# Docker Profile Parameters
+#
+# Applied when sysctl_profile_docker_enabled is true
+
+# Docker/container runtime sysctl parameters
 sysctl_docker_parameters:
   # Enable IP forwarding for containers
   net.ipv4.ip_forward: 1
@@ -173,9 +195,10 @@ sysctl_docker_parameters:
   fs.inotify.max_user_watches: 524288
   fs.inotify.max_user_instances: 512
 
-# -----------------------------------------------------------------------------
-# CONFIGURATION OPTIONS
-# -----------------------------------------------------------------------------
+#
+# Configuration
+#
+
 # File to write sysctl parameters
 sysctl_config_file: '/etc/sysctl.d/90-ansible.conf'
 

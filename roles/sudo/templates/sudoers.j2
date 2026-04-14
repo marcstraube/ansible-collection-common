@@ -101,7 +101,7 @@ Defaults    {{ extra_default }}
 
 # Root can run anything
 root    ALL=(ALL:ALL) ALL
-{% if sudo_wheel_group | bool %}
+{% if sudo_wheel_group_enabled | bool %}
 
 # Allow members of {{ __sudo_group }} group to execute any command
 {% if sudo_wheel_requires_password %}

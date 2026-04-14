@@ -1,7 +1,5 @@
 ---
-# =============================================================================
-# ArchLinux-specific variables for fonts
-# =============================================================================
+__fonts_fontconfig_package: 'fontconfig'
 
 __fonts_dejavu_package: 'ttf-dejavu'
 __fonts_liberation_package: 'ttf-liberation'

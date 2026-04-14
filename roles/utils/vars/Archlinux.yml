@@ -1,33 +1,47 @@
 ---
-# =============================================================================
-# Arch Linux package names for utils
-# =============================================================================
+#
+# System Monitors
+#
 
-# System monitors
 __utils_monitor_htop: 'htop'
 __utils_monitor_btop: 'btop'
 __utils_monitor_bottom: 'bottom'
 __utils_monitor_atop: 'atop'
 
-# Terminal multiplexers
+#
+# Terminal Multiplexers
+#
+
 __utils_mux_tmux: 'tmux'
 __utils_mux_zellij: 'zellij'
 __utils_mux_screen: 'screen'
 
-# File transfer
+#
+# File Transfer
+#
+
 __utils_transfer_rsync: 'rsync'
 
-# Search tools
+#
+# Search Tools
+#
+
 __utils_search_ripgrep: 'ripgrep'
 __utils_search_fd: 'fd'
 
-# System info (fetch tools)
+#
+# System Info (Fetch Tools)
+#
+
 __utils_fetch_fastfetch: 'fastfetch'
 __utils_fetch_hyfetch: 'hyfetch'
 __utils_fetch_archey4: ''
 __utils_fetch_cpufetch: 'cpufetch'
 
-# Fun tools - official repos
+#
+# Fun Tools
+#
+
 __utils_fun_cowsay: 'cowsay'
 __utils_fun_fortune: 'fortune-mod'
 __utils_fun_lolcat: 'lolcat'
@@ -46,12 +60,24 @@ __utils_fun_pokemon_colorscripts: ''
 __utils_fun_pokemonsay: ''
 __utils_fun_hollywood: ''
 
-# Fun tools - AUR packages
-__utils_fun_cbonsai_aur: 'cbonsai'
-__utils_fun_no_more_secrets_aur: 'no-more-secrets'
-__utils_fun_tty_clock_aur: 'tty-clock'
-__utils_fun_pipes_aur: 'bash-pipes'
-__utils_fetch_archey4_aur: 'archey4'
-__utils_fun_pokemon_colorscripts_aur: 'pokemon-colorscripts-git'
-__utils_fun_pokemonsay_aur: 'pokemonsay-git'
-__utils_fun_hollywood_aur: 'hollywood'
+#
+# AUR Packages
+#
+
+__utils_aur_packages:
+  cbonsai:
+    - cbonsai
+  no_more_secrets:
+    - no-more-secrets
+  tty_clock:
+    - tty-clock
+  pipes:
+    - bash-pipes
+  archey4:
+    - archey4
+  pokemon_colorscripts:
+    - pokemon-colorscripts-git
+  pokemonsay:
+    - pokemonsay-git
+  hollywood:
+    - hollywood

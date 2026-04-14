@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Unbound - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Set number of threads
   ansible.builtin.set_fact:
     __unbound_threads: >-
@@ -13,7 +9,7 @@
   ansible.builtin.command:
     cmd: 'unbound-control-setup'
     creates: '/etc/unbound/unbound_control.key'
-  when: unbound_remote_control | bool
+  when: unbound_remote_control_enabled | bool
 
 - name: Configure | Deploy main configuration
   ansible.builtin.template:
@@ -23,7 +19,7 @@
     group: '{{ __unbound_group }}'
     mode: '0640'
     validate: 'unbound-checkconf %s'
-  notify: restart unbound
+  notify: Restart unbound
 
 - name: Configure | Remove package-provided conf.d files
   ansible.builtin.file:
@@ -33,7 +29,7 @@
     - example.com.conf
     - remote-control.conf
     - unbound-local-root.conf
-  notify: restart unbound
+  notify: Restart unbound
 
 - name: Configure | Remove legacy conf.d filenames
   ansible.builtin.file:
@@ -42,7 +38,7 @@
   loop:
     - local-zones.conf
     - forward-zones.conf
-  notify: restart unbound
+  notify: Restart unbound
 
 - name: Configure | Deploy local zones
   ansible.builtin.template:
@@ -51,14 +47,14 @@
     owner: root
     group: '{{ __unbound_group }}'
     mode: '0640'
-  notify: reload unbound
+  notify: Reload unbound
   when: unbound_local_zones | length > 0 or unbound_local_data | length > 0 or unbound_local_data_ptr | length > 0
 
 - name: Configure | Remove local zones config when not needed
   ansible.builtin.file:
     path: '/etc/unbound/conf.d/10-local-zones.conf'
     state: absent
-  notify: reload unbound
+  notify: Reload unbound
   when:
     - unbound_local_zones | length == 0
     - unbound_local_data | length == 0
@@ -71,14 +67,14 @@
     owner: root
     group: '{{ __unbound_group }}'
     mode: '0640'
-  notify: reload unbound
+  notify: Reload unbound
   when: unbound_forward_zones | length > 0
 
 - name: Configure | Remove forward zones config when not needed
   ansible.builtin.file:
     path: '/etc/unbound/conf.d/90-forward-zones.conf'
     state: absent
-  notify: reload unbound
+  notify: Reload unbound
   when: unbound_forward_zones | length == 0
 
 - name: Configure | Initialize DNSSEC root key

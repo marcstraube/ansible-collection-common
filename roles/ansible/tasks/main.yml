@@ -1,20 +1,53 @@
 ---
-# =============================================================================
-# Ansible Tools Main Tasks
-# =============================================================================
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [ansible-tools]
+  tags:
+    - ansible-tools
+
+#
+# Deprecated Variable Handling
+#
+
+- name: Main | Handle deprecated ansible_tools_install_ansible
+  ansible.builtin.set_fact:
+    ansible_tools_ansible_enabled: >-
+      {{ ansible_tools_install_ansible | default(ansible_tools_ansible_enabled) | bool }}
+  when:
+    - ansible_tools_enabled | bool
+    - ansible_tools_install_ansible is defined
+  tags:
+    - ansible-tools
+
+- name: Main | Handle deprecated ansible_tools_install_molecule
+  ansible.builtin.set_fact:
+    ansible_tools_molecule_enabled: >-
+      {{ ansible_tools_install_molecule | default(ansible_tools_molecule_enabled) | bool }}
+  when:
+    - ansible_tools_enabled | bool
+    - ansible_tools_install_molecule is defined
+  tags:
+    - ansible-tools
+
+- name: Main | Handle deprecated ansible_tools_install_lint
+  ansible.builtin.set_fact:
+    ansible_tools_lint_enabled: >-
+      {{ ansible_tools_install_lint | default(ansible_tools_lint_enabled) | bool }}
+  when:
+    - ansible_tools_enabled | bool
+    - ansible_tools_install_lint is defined
+  tags:
+    - ansible-tools
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: ansible_tools_enabled | bool
-  tags: [ansible-tools]
+  tags:
+    - ansible-tools

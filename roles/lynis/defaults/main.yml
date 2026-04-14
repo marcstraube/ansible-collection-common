@@ -1,23 +1,17 @@
 ---
-# =============================================================================
-# Lynis Configuration - Security Auditing
-# =============================================================================
-# Role: marcstraube.common.lynis
-# Description: Install and configure Lynis for automated security auditing
-# =============================================================================
-
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
+#
+# Role Control
+#
 
 # Enable the lynis role
 lynis_enabled: true
 
-# =============================================================================
-# INSTALLATION
-# =============================================================================
+#
+# Installation
+#
 
 # Installation method: 'package' (OS package manager) or 'git' (upstream repo)
+# EL 10 requires 'git' — lynis is not available in EPEL 10
 lynis_install_method: 'package'
 
 # Git repository URL (only used when lynis_install_method: 'git')
@@ -29,9 +23,9 @@ lynis_install_dir: '/usr/local/lynis'
 # Git version/branch/tag to checkout
 lynis_version: 'master'
 
-# =============================================================================
-# PROFILE CONFIGURATION (custom.prf)
-# =============================================================================
+#
+# Profile Configuration
+#
 
 # Machine role: 'personal', 'workstation', or 'server'
 # Affects which tests are run and scoring weights
@@ -68,9 +62,9 @@ lynis_skip_tests: []
 # Empty list = use default plugin set from default.prf
 lynis_plugins: []
 
-# =============================================================================
-# COMPLIANCE
-# =============================================================================
+#
+# Compliance
+#
 
 # Enable compliance standard annotations in reports
 lynis_compliance_enabled: false
@@ -78,9 +72,9 @@ lynis_compliance_enabled: false
 # Compliance standards to check (pci-dss, hipaa, iso27001, cis)
 lynis_compliance_standards: []
 
-# =============================================================================
-# REPORTING
-# =============================================================================
+#
+# Reporting
+#
 
 # Log file location (lynis runtime log)
 lynis_log_file: '/var/log/lynis.log'
@@ -106,19 +100,19 @@ lynis_email_report: ''
 # Upload results to Lynis Enterprise (requires license)
 lynis_upload_results: false
 
-# =============================================================================
-# CUSTOM TESTS
-# =============================================================================
-
-# Directory for custom test plugins
-lynis_custom_tests_dir: '/etc/lynis/custom'
+#
+# Custom Tests
+#
 
 # Deploy and enable custom tests directory
 lynis_custom_tests_enabled: false
 
-# =============================================================================
-# SCHEDULED AUDITS (systemd timer)
-# =============================================================================
+# Directory for custom test plugins
+lynis_custom_tests_dir: '/etc/lynis/custom'
+
+#
+# Scheduled Audits
+#
 
 # Enable systemd timer for scheduled audits
 lynis_timer_enabled: true
@@ -128,10 +122,3 @@ lynis_timer_oncalendar: 'daily'
 
 # Randomized delay to avoid load spikes on multiple hosts
 lynis_timer_randomized_delay: '1h'
-
-# =============================================================================
-# BTRFS
-# =============================================================================
-
-# Set NoCOW attribute on report directory (prevents CoW overhead on BTRFS)
-lynis_btrfs_nocow: true

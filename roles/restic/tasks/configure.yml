@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Restic - Configuration Tasks
-# =============================================================================
-
 - name: Configure | Create configuration directory
   ansible.builtin.file:
     path: '{{ restic_config_dir }}'

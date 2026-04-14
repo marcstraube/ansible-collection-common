@@ -1,33 +1,7 @@
 ---
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
-
-  pre_tasks:
-    - name: Full system update (Arch)
-      community.general.pacman:
-        update_cache: true
-        upgrade: true
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Install systemd (Debian)
-      ansible.builtin.apt:
-        name:
-          - systemd
-          - procps
-        state: present
-        update_cache: true
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Install systemd (RedHat)
-      ansible.builtin.dnf:
-        name:
-          - systemd
-          - procps-ng
-        state: present
-        update_cache: true
-      when: ansible_facts['os_family'] == 'RedHat'
 
   vars:
     snmp_enabled: true
@@ -86,6 +60,6 @@
     snmp_agentx_enabled: true
 
   tasks:
-    - name: Include snmp role  # noqa: role-name[path]
+    - name: Converge | Include snmp role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

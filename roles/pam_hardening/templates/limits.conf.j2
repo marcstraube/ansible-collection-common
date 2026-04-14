@@ -12,6 +12,8 @@
 *               soft    nproc           {{ pam_limits_nproc }}
 *               hard    core            {{ pam_limits_core }}
 {% if pam_limits_custom | length > 0 %}
+
+# Custom limits
 {% for limit in pam_limits_custom %}
 {{ "%-16s" | format(limit.domain) }}{{ limit.type }}    {{ "%-16s" | format(limit.item) }}{{ limit.value }}
 {% endfor %}

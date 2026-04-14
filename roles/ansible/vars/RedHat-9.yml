@@ -1,12 +1,6 @@
 ---
-# =============================================================================
-# Rocky 9 specific variables (python3.12 + bootstrap pipx)
-# =============================================================================
-
 __ansible_tools_ansible_packages:
   - 'ansible-core'
-
-__ansible_tools_epel_required: true
 
 __ansible_tools_molecule_pipx_package: 'molecule'
 

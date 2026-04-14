@@ -1,18 +1,14 @@
 ---
-# =============================================================================
-# Logrotate - Log Rotation Management
-# =============================================================================
+#
+# Role Control
+#
 
-# -----------------------------------------------------------------------------
-# SERVICE CONTROL
-# -----------------------------------------------------------------------------
-
-# Enable/disable the logrotate role
+# Enable the logrotate role
 logrotate_enabled: true
 
-# -----------------------------------------------------------------------------
-# GLOBAL CONFIGURATION (/etc/logrotate.conf)
-# -----------------------------------------------------------------------------
+#
+# Global Configuration (/etc/logrotate.conf)
+#
 
 # Rotation frequency: daily, weekly, monthly, yearly
 logrotate_frequency: 'weekly'
@@ -50,7 +46,6 @@ logrotate_sharedscripts: true
 
 # Run logrotate as specific user/group (su directive)
 # Required when log directories are not owned by root
-# Example: logrotate_su: 'root adm'
 logrotate_su: ''
 
 # Move rotated files to this directory (empty = same directory)
@@ -72,40 +67,19 @@ logrotate_maxsize: ''
 # Size-based rotation instead of time-based (empty = use frequency)
 logrotate_size: ''
 
-# -----------------------------------------------------------------------------
-# CUSTOM LOG CONFIGURATIONS
-# List of custom log rotation rules deployed to /etc/logrotate.d/
-# -----------------------------------------------------------------------------
-logrotate_configs: []
-# Example:
-#   - name: 'myapp'
-#     path: '/var/log/myapp/*.log'
-#     options:
-#       frequency: 'daily'
-#       rotate: 7
-#       compress: true
-#       delaycompress: true
-#       missingok: true
-#       notifempty: true
-#       create: '0640 myapp myapp'
-#       sharedscripts: true
-#       su: 'root adm'
-#       olddir: '/var/log/myapp/old'
-#       copytruncate: false
-#       dateext: true
-#       dateformat: '-%Y%m%d'
-#       maxage: 90
-#       minsize: '1M'
-#       maxsize: '100M'
-#       size: ''
-#     postrotate: |
-#       systemctl reload myapp > /dev/null 2>&1 || true
-#     prerotate: ''
+#
+# Custom Log Configurations
+#
 
-# -----------------------------------------------------------------------------
-# TIMER CONFIGURATION (systemd)
-# -----------------------------------------------------------------------------
+# List of custom log rotation rules deployed to /etc/logrotate.d/
+logrotate_configs: []
+
+#
+# Timer Configuration (systemd)
+#
+
+# Enable and start the logrotate timer
+logrotate_timer_enabled: true
 
 # Override systemd timer schedule (empty = distro default, usually daily)
-# Example: '*-*-* 02:00:00' for 2 AM daily
 logrotate_timer_oncalendar: ''

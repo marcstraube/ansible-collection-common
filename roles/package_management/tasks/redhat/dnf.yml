@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# DNF Tasks - Package Manager Configuration (RHEL/Fedora/Rocky)
-# =============================================================================
-
-- name: Configure DNF
+- name: DNF | Deploy dnf.conf
   ansible.builtin.template:
     src: 'redhat/dnf.conf.j2'
     dest: '/etc/dnf/dnf.conf'
@@ -13,23 +9,22 @@
     backup: true
   notify: 'dnf configuration changed'
 
-- name: Install DNF plugins (dnf4)
-  ansible.builtin.dnf:
-    name:
-      - dnf-plugins-core
+- name: DNF | Install plugins (dnf4)
+  ansible.builtin.package:
+    name: 'dnf-plugins-core'
     state: present
   when: ansible_facts['distribution_major_version'] | int < 10
 
-- name: Install fastest mirror plugin (EL8 only)
-  ansible.builtin.dnf:
-    name: dnf-plugin-fastestmirror
+- name: DNF | Install fastest mirror plugin (EL8 only)
+  ansible.builtin.package:
+    name: 'dnf-plugin-fastestmirror'
     state: "{{ 'present' if dnf_fastestmirror | bool else 'absent' }}"
   when:
     - ansible_facts['distribution'] != 'Fedora'
     - ansible_facts['distribution_major_version'] | int < 9
 
-- name: Configure DNF cache cleaning timer
-  ansible.builtin.systemd:
+- name: DNF | Manage makecache timer
+  ansible.builtin.systemd_service:
     name: 'dnf-makecache.timer'
-    state: "{{ 'started' if dnf_makecache_timer | bool else 'stopped' }}"
-    enabled: "{{ dnf_makecache_timer | bool }}"
+    enabled: "{{ dnf_makecache_timer_enabled | bool }}"
+    state: "{{ dnf_makecache_timer_enabled | bool | ternary('started', 'stopped') }}"

@@ -14,8 +14,10 @@ Multi-OS support: Arch Linux (primary), Debian Trixie, Rocky Linux 9/10.
 - **Tag propagation:** Always `apply: tags:` when using `include_tasks` inside blocks
 - **Variables:** `<role>_<setting>`, internal: `__<role>_<setting>` (double underscore)
 - **Booleans:** `<role>_enabled | default(true/false) | bool`
+- **Role Control:** `<role>_enabled` + `<role>_service_enabled` in `# Role Control` section (first in defaults)
 - **Templates:** `{{ ansible_managed | comment }}` header
-- **Comments:** English only — no German in code/config files
+- **Comments:** English only
+- **Full conventions:** See `docs/role-template.md` (authoritative reference)
 
 ### YAML Quoting Rules for Facts
 
@@ -47,7 +49,8 @@ roles/<role_name>/
 ├── vars/
 │   ├── Archlinux.yml       # OS-specific package names, paths, services
 │   ├── Debian.yml
-│   └── RedHat.yml          # Always latest (Rocky 10), overrides for older
+│   ├── RedHat.yml          # Always latest EL (EL 10), os_family fallback
+│   └── RedHat-9.yml        # EL 9 overrides (all EL9: Rocky, Alma, RHEL)
 └── molecule/default/       # Tests
     ├── molecule.yml
     ├── converge.yml
@@ -63,11 +66,36 @@ roles/<role_name>/
 
 ### Task Patterns
 
-- `main.yml` loads OS-specific vars with `include_vars` + `with_first_found`
-- Use `include_tasks` (not `import_tasks`) for conditional OS dispatch
-- `import_tasks` only for unconditional static includes in main.yml
+- `main.yml` loads OS-specific vars with `include_vars` + `with_first_found` (4-level lookup)
+- `import_tasks` for phase files — `when: <role>_enabled | bool` **required** on every import
+- `include_tasks` for dynamic dispatch — `<role>_enabled | bool` + feature toggle
+- `include_vars` has no `when` — loading variables is harmless
 - Always add `apply: tags:` when using `include_tasks` inside a block
 - Use `ansible.builtin.` FQCN for all modules
+- Service management: ternary manage pattern (one task, enabled/disabled)
+- Firewall management: ternary manage pattern + firewalld status check
+- AppArmor management: availability check before profile enforcement
+
+### Task Naming
+
+Prefix = capitalized **filename** (not role name): `Filename | Description`
+
+- Standard: `main.yml` → `Main`, `install.yml` → `Install`,
+  `configure.yml` → `Configure`, `service.yml` → `Service`,
+  `firewall.yml` → `Firewall`
+- Special (acronyms/brands keep their casing): `btrfs.yml` → `BTRFS`,
+  `apparmor.yml` → `AppArmor`, `ca.yml` → `CA`, `amd.yml` → `AMD`,
+  `nvidia.yml` → `NVIDIA`, etc.
+- Multi-word: capitalize each word (`user_config.yml` → `User Config`)
+- No redundant verb: strip if description starts with same word as prefix
+  (`Install packages` → `Install | Packages`)
+- Different verb stays: `Load module` in install.yml →
+  `Install | Load module`
+- First word after `|` capitalized for normal English words;
+  tool/package names keep their own casing
+  (`Install | pipx`, not `Install | Pipx`)
+- Block names follow same rule; handler names do NOT use this pattern
+- Reference: `wireguard` role tasks
 
 ### Templates
 

@@ -1,11 +1,7 @@
 ---
-# =============================================================================
-# rkhunter - Installation Tasks
-# =============================================================================
-
-- name: Install | Install rkhunter package
+- name: Install | rkhunter packages
   ansible.builtin.package:
-    name: '{{ __rkhunter_package }}'
+    name: '{{ __rkhunter_packages }}'
     state: present
 
 - name: Install | Ensure rkhunter directories exist

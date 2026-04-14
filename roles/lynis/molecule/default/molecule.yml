@@ -45,6 +45,7 @@ platforms:
 provisioner:
   name: ansible
   playbooks:
+    prepare: prepare.yml
     converge: converge.yml
     verify: verify.yml
   inventory:
@@ -57,7 +58,6 @@ provisioner:
         ansible_python_interpreter: /usr/bin/python3
       lynis-rocky-10:
         ansible_python_interpreter: /usr/bin/python3
-        lynis_install_method: git
   config_options:
     defaults:
       allow_broken_conditionals: true

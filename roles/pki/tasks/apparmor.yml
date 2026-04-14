@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# PKI AppArmor Tasks (OCSP Responder)
-# =============================================================================
-
 - name: AppArmor | Check if AppArmor is active
   ansible.builtin.stat:
     path: /sys/kernel/security/apparmor
@@ -16,13 +12,14 @@
     group: root
     mode: '0644'
   when: __pki_apparmor_active.stat.exists
-  notify: Restart OCSP responder
+  notify: Restart PKI OCSP responder
 
 - name: AppArmor | Get current profile status
   ansible.builtin.command:
     cmd: aa-status --json
   register: __pki_aa_status
   changed_when: false
+  # aa-status may fail if AppArmor has no loaded profiles
   failed_when: false
   when: __pki_apparmor_active.stat.exists
 

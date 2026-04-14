@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# AIDE Handlers
-# =============================================================================
-
 - name: Reinitialize AIDE database
   ansible.builtin.command:
     cmd: '{{ __aide_init_command }}'
@@ -10,6 +6,7 @@
   changed_when: aide_reinit.rc == 0
   async: 3600
   poll: 10
+  when: aide_enabled | bool
   listen: Reinitialize AIDE database
 
 - name: Move new database to production after reinit
@@ -18,19 +15,20 @@
       mv {{ aide_database_new }}{{ '.gz' if aide_database_format == 'gzip' else '' }}
       {{ aide_database }}{{ '.gz' if aide_database_format == 'gzip' else '' }}
     removes: '{{ aide_database_new }}{{ ".gz" if aide_database_format == "gzip" else "" }}'
-  when: aide_reinit is changed
+  when:
+    - aide_enabled | bool
+    - aide_reinit is changed
   changed_when: true
   listen: Reinitialize AIDE database
 
-- name: Reload aide systemd units
-  ansible.builtin.systemd:
+- name: Reload AIDE systemd units
+  ansible.builtin.systemd_service:
     daemon_reload: true
   failed_when: false
-  listen: Reload aide systemd units
+  when: aide_enabled | bool
 
 - name: Restart AIDE timer
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: aide-check.timer
     state: restarted
-  listen: Restart AIDE timer
   when: aide_timer_enabled | bool

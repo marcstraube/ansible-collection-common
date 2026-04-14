@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Lynis - Service Tasks (systemd timer)
-# =============================================================================
-
 - name: Service | Deploy systemd service unit
   ansible.builtin.template:
     src: lynis-audit.service.j2
@@ -10,10 +6,7 @@
     owner: root
     group: root
     mode: '0644'
-  when:
-    - lynis_enabled | bool
-    - lynis_timer_enabled | bool
-  notify: Reload systemd daemon (lynis)
+  notify: Reload lynis systemd units
 
 - name: Service | Deploy systemd timer unit
   ansible.builtin.template:
@@ -22,29 +15,13 @@
     owner: root
     group: root
     mode: '0644'
-  when:
-    - lynis_enabled | bool
-    - lynis_timer_enabled | bool
   notify:
-    - Reload systemd daemon (lynis)
+    - Reload lynis systemd units
     - Restart lynis timer
 
-- name: Service | Enable and start lynis timer
-  ansible.builtin.systemd:
-    name: lynis-audit.timer
-    enabled: true
-    state: started
+- name: Service | Manage lynis timer
+  ansible.builtin.systemd_service:
+    name: '{{ __lynis_timer_name }}'
+    enabled: "{{ lynis_timer_enabled | bool }}"
+    state: "{{ lynis_timer_enabled | bool | ternary('started', 'stopped') }}"
     daemon_reload: true
-  when:
-    - lynis_enabled | bool
-    - lynis_timer_enabled | bool
-
-- name: Service | Disable and stop lynis timer
-  ansible.builtin.systemd:
-    name: lynis-audit.timer
-    enabled: false
-    state: stopped
-  when:
-    - lynis_enabled | bool
-    - not (lynis_timer_enabled | bool)
-  failed_when: false

@@ -1,7 +1,6 @@
 ---
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
 
   vars:
@@ -23,6 +22,6 @@
           keep_within: '14d'
 
   tasks:
-    - name: Include restic role  # noqa: role-name[path]
+    - name: Converge | Include restic role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

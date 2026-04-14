@@ -1,21 +1,17 @@
 ---
-# =============================================================================
-# Intel GPU Driver Installation
-# =============================================================================
-
 - name: Intel | Build package list
   ansible.builtin.set_fact:
     __intel_packages: >-
       {{
-        (graphics_intel_mesa | bool | ternary([__graphics_intel_mesa], [])) +
-        (graphics_intel_vulkan | bool | ternary([__graphics_intel_vulkan], [])) +
-        (graphics_intel_vaapi | bool | ternary(
+        (graphics_intel_mesa_enabled | bool | ternary([__graphics_intel_mesa], [])) +
+        (graphics_intel_vulkan_enabled | bool | ternary([__graphics_intel_vulkan], [])) +
+        (graphics_intel_vaapi_enabled | bool | ternary(
           [__graphics_intel_vaapi_modern
            if graphics_intel_vaapi_driver == 'intel-media-driver'
            else __graphics_intel_vaapi_legacy],
           []
         )) +
-        (graphics_intel_32bit | bool | ternary(
+        (graphics_intel_32bit_enabled | bool | ternary(
           [__graphics_intel_mesa_32bit, __graphics_intel_vulkan_32bit],
           []
         ))

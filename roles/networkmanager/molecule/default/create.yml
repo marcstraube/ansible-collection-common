@@ -1,6 +1,4 @@
 ---
-# marcstraube.networkmanager/molecule/default/create.yml
-
 - name: Create Vagrant instances
   hosts: localhost
   gather_facts: false
@@ -33,7 +31,7 @@
       ansible.builtin.copy:
         src: "{{ molecule_scenario_directory }}/Vagrantfile"
         dest: "{{ molecule_ephemeral_directory }}/Vagrantfile"
-        mode: "0644"
+        mode: '0644'
 
     - name: Check if VMs already exist
       ansible.builtin.command:

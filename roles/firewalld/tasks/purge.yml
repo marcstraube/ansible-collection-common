@@ -1,14 +1,10 @@
 ---
-# =============================================================================
-# Firewalld - Purge Unconfigured Services
-# =============================================================================
 # Removes services from managed zones that are not in the desired state.
 # Desired state = firewalld_services + firewalld_zone_services.
-# =============================================================================
 
-# -----------------------------------------------------------------------------
+#
 # Build desired services map: zone -> [services]
-# -----------------------------------------------------------------------------
+#
 
 - name: Purge | Initialize desired services from default zone
   ansible.builtin.set_fact:
@@ -27,9 +23,9 @@
   loop_control:
     label: "{{ item.zone }}"
 
-# -----------------------------------------------------------------------------
+#
 # Query active services and compute excess
-# -----------------------------------------------------------------------------
+#
 
 - name: Purge | Query active services per managed zone
   ansible.builtin.command:
@@ -54,9 +50,9 @@
       {%- endfor -%}
       {{ ns.items }}
 
-# -----------------------------------------------------------------------------
+#
 # Remove excess services
-# -----------------------------------------------------------------------------
+#
 
 - name: Purge | Remove unconfigured services
   ansible.posix.firewalld:

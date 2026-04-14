@@ -1,198 +1,203 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # ==========================================================================
-    # PACKAGE VERIFICATION
-    # ==========================================================================
-    - name: Check logrotate package is installed
+    #
+    # Load OS-Specific Variables
+    #
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Check logrotate package is installed
       ansible.builtin.package:
         name: logrotate
         state: present
       check_mode: true
-      register: pkg_check
-      failed_when: pkg_check.changed
+      register: __logrotate_pkg_check
+      failed_when: __logrotate_pkg_check.changed
 
-    # ==========================================================================
-    # CONFIGURATION FILES - MAIN
-    # ==========================================================================
-    - name: Check main logrotate.conf exists
+    #
+    # Configuration Files - Main
+    #
+
+    - name: Verify | Check main logrotate.conf exists
       ansible.builtin.stat:
-        path: /etc/logrotate.conf
-      register: main_config
+        path: '{{ __logrotate_config_file }}'
+      register: __logrotate_main_config
 
-    - name: Verify main config exists with correct permissions
+    - name: Verify | Assert main config exists with correct permissions
       ansible.builtin.assert:
         that:
-          - main_config.stat.exists
-          - main_config.stat.mode == '0644'
-          - main_config.stat.pw_name == 'root'
-          - main_config.stat.gr_name == 'root'
+          - __logrotate_main_config.stat.exists
+          - __logrotate_main_config.stat.mode == '0644'
+          - __logrotate_main_config.stat.pw_name == 'root'
+          - __logrotate_main_config.stat.gr_name == 'root'
         fail_msg: 'Main logrotate.conf does not exist or has incorrect permissions'
 
-    - name: Check logrotate.d directory exists
+    - name: Verify | Check logrotate.d directory exists
       ansible.builtin.stat:
-        path: /etc/logrotate.d
-      register: config_dir
+        path: '{{ __logrotate_config_dir }}'
+      register: __logrotate_config_dir_stat
 
-    - name: Verify logrotate.d directory exists with correct permissions
+    - name: Verify | Assert logrotate.d directory exists with correct permissions
       ansible.builtin.assert:
         that:
-          - config_dir.stat.exists
-          - config_dir.stat.isdir
-          - config_dir.stat.mode == '0755'
+          - __logrotate_config_dir_stat.stat.exists
+          - __logrotate_config_dir_stat.stat.isdir
+          - __logrotate_config_dir_stat.stat.mode == '0755'
         fail_msg: '/etc/logrotate.d does not exist or has incorrect permissions'
 
-    # ==========================================================================
-    # CONFIGURATION CONTENT - MAIN
-    # ==========================================================================
-    - name: Read main logrotate.conf
+    #
+    # Configuration Content - Main
+    #
+
+    - name: Verify | Read main logrotate.conf
       ansible.builtin.slurp:
-        src: /etc/logrotate.conf
-      register: main_content
+        src: '{{ __logrotate_config_file }}'
+      register: __logrotate_main_content
 
-    - name: Set main config content fact
+    - name: Verify | Set main config content fact
       ansible.builtin.set_fact:
-        main_conf: "{{ main_content.content | b64decode }}"
+        __logrotate_main_conf: "{{ __logrotate_main_content.content | b64decode }}"
 
-    - name: Verify main config contains ansible_managed header
+    - name: Verify | Assert main config contains ansible_managed header
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in main_conf"
+          - "'Ansible managed' in __logrotate_main_conf"
         fail_msg: 'Main logrotate.conf missing ansible_managed header'
 
-    - name: Verify main config contains global settings
+    - name: Verify | Assert main config contains global settings
       ansible.builtin.assert:
         that:
-          - "'daily' in main_conf"
-          - "'rotate 7' in main_conf"
-          - "'compress' in main_conf"
-          - "'delaycompress' in main_conf"
-          - "'notifempty' in main_conf"
-          - "'missingok' in main_conf"
-          - "'nomail' in main_conf"
-          - "'sharedscripts' in main_conf"
-          - "'su root adm' in main_conf"
-          - "'include /etc/logrotate.d' in main_conf"
+          - "'daily' in __logrotate_main_conf"
+          - "'rotate 7' in __logrotate_main_conf"
+          - "'compress' in __logrotate_main_conf"
+          - "'delaycompress' in __logrotate_main_conf"
+          - "'notifempty' in __logrotate_main_conf"
+          - "'missingok' in __logrotate_main_conf"
+          - "'nomail' in __logrotate_main_conf"
+          - "'sharedscripts' in __logrotate_main_conf"
+          - "'su root adm' in __logrotate_main_conf"
+          - "'include /etc/logrotate.d' in __logrotate_main_conf"
         fail_msg: 'Main logrotate.conf does not contain expected global settings'
 
-    - name: Verify Arch tabooext in main config
+    - name: Verify | Assert Arch tabooext in main config
       ansible.builtin.assert:
         that:
-          - "'tabooext + .pacorig .pacnew .pacsave' in main_conf"
+          - "'tabooext + .pacorig .pacnew .pacsave' in __logrotate_main_conf"
         fail_msg: 'Main logrotate.conf missing Arch tabooext'
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Verify no tabooext on non-Arch
+    - name: Verify | Assert no tabooext on non-Arch
       ansible.builtin.assert:
         that:
-          - "'tabooext' not in main_conf"
+          - "'tabooext' not in __logrotate_main_conf"
         fail_msg: 'Main logrotate.conf should not have tabooext on non-Arch'
       when: ansible_facts['os_family'] != 'Archlinux'
 
-    # ==========================================================================
-    # CONFIGURATION FILES - CUSTOM DROP-IN
-    # ==========================================================================
-    - name: Check custom testapp config exists
-      ansible.builtin.stat:
-        path: /etc/logrotate.d/testapp
-      register: custom_config
+    #
+    # Configuration Files - Custom Drop-In
+    #
 
-    - name: Verify custom config exists with correct permissions
+    - name: Verify | Check custom testapp config exists
+      ansible.builtin.stat:
+        path: '{{ __logrotate_config_dir }}/testapp'
+      register: __logrotate_custom_config
+
+    - name: Verify | Assert custom config exists with correct permissions
       ansible.builtin.assert:
         that:
-          - custom_config.stat.exists
-          - custom_config.stat.mode == '0644'
-          - custom_config.stat.pw_name == 'root'
-          - custom_config.stat.gr_name == 'root'
+          - __logrotate_custom_config.stat.exists
+          - __logrotate_custom_config.stat.mode == '0644'
+          - __logrotate_custom_config.stat.pw_name == 'root'
+          - __logrotate_custom_config.stat.gr_name == 'root'
         fail_msg: '/etc/logrotate.d/testapp does not exist or has incorrect permissions'
 
-    # ==========================================================================
-    # CONFIGURATION CONTENT - CUSTOM DROP-IN
-    # ==========================================================================
-    - name: Read custom testapp config
+    #
+    # Configuration Content - Custom Drop-In
+    #
+
+    - name: Verify | Read custom testapp config
       ansible.builtin.slurp:
-        src: /etc/logrotate.d/testapp
-      register: custom_content
+        src: '{{ __logrotate_config_dir }}/testapp'
+      register: __logrotate_custom_content
 
-    - name: Set custom config content fact
+    - name: Verify | Set custom config content fact
       ansible.builtin.set_fact:
-        custom_conf: "{{ custom_content.content | b64decode }}"
+        __logrotate_custom_conf: "{{ __logrotate_custom_content.content | b64decode }}"
 
-    - name: Verify custom config contains ansible_managed header
+    - name: Verify | Assert custom config contains ansible_managed header
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in custom_conf"
+          - "'Ansible managed' in __logrotate_custom_conf"
         fail_msg: 'Custom config missing ansible_managed header'
 
-    - name: Verify custom config contains expected settings
+    - name: Verify | Assert custom config contains expected settings
       ansible.builtin.assert:
         that:
-          - "'/var/log/testapp/*.log' in custom_conf"
-          - "'rotate 14' in custom_conf"
-          - "'daily' in custom_conf"
-          - "'compress' in custom_conf"
-          - "'delaycompress' in custom_conf"
-          - "'missingok' in custom_conf"
-          - "'notifempty' in custom_conf"
-          - "'create 0640 root root' in custom_conf"
-          - "'sharedscripts' in custom_conf"
-          - "'su root adm' in custom_conf"
-          - "'maxage 90' in custom_conf"
+          - "'/var/log/testapp/*.log' in __logrotate_custom_conf"
+          - "'rotate 14' in __logrotate_custom_conf"
+          - "'daily' in __logrotate_custom_conf"
+          - "'compress' in __logrotate_custom_conf"
+          - "'delaycompress' in __logrotate_custom_conf"
+          - "'missingok' in __logrotate_custom_conf"
+          - "'notifempty' in __logrotate_custom_conf"
+          - "'create 0640 root root' in __logrotate_custom_conf"
+          - "'sharedscripts' in __logrotate_custom_conf"
+          - "'su root adm' in __logrotate_custom_conf"
+          - "'maxage 90' in __logrotate_custom_conf"
         fail_msg: 'Custom logrotate config content is incorrect'
 
-    - name: Verify custom config contains postrotate script
+    - name: Verify | Assert custom config contains postrotate script
       ansible.builtin.assert:
         that:
-          - "'postrotate' in custom_conf"
-          - "'endscript' in custom_conf"
+          - "'postrotate' in __logrotate_custom_conf"
+          - "'endscript' in __logrotate_custom_conf"
         fail_msg: 'Custom config does not contain postrotate script'
 
-    # ==========================================================================
-    # CONFIGURATION VALIDATION
-    # ==========================================================================
-    - name: Test logrotate syntax validation (debug mode)
-      ansible.builtin.command: logrotate -d /etc/logrotate.conf
-      register: logrotate_debug
-      changed_when: false
-      failed_when: logrotate_debug.rc != 0
+    #
+    # Configuration Validation
+    #
 
-    - name: Verify logrotate debug output contains expected files
+    - name: Verify | Test logrotate syntax validation (debug mode)
+      ansible.builtin.command: logrotate -d /etc/logrotate.conf
+      register: __logrotate_debug
+      changed_when: false
+      failed_when: __logrotate_debug.rc != 0
+
+    - name: Verify | Assert logrotate debug output contains expected files
       ansible.builtin.assert:
         that:
-          - "'/var/log/testapp/*.log' in logrotate_debug.stderr"
+          - "'/var/log/testapp/*.log' in __logrotate_debug.stderr"
         fail_msg: 'Logrotate debug mode did not include custom testapp config'
 
-    # ==========================================================================
-    # SERVICE VERIFICATION
-    # ==========================================================================
-    - name: Check logrotate timer is enabled
-      ansible.builtin.systemd:
-        name: logrotate.timer
-        enabled: true
-      check_mode: true
-      register: timer_enabled
-      failed_when: timer_enabled.changed
+    #
+    # Service Verification
+    #
 
-    - name: Check logrotate timer is running
-      ansible.builtin.systemd:
-        name: logrotate.timer
-        state: started
-      check_mode: true
-      register: timer_running
-      failed_when: timer_running.changed
+    - name: Verify | Check logrotate timer is enabled and running
+      ansible.builtin.systemd_service:
+        name: '{{ __logrotate_timer_name }}'
+      register: __logrotate_timer_check
 
-    - name: Get logrotate timer status
-      ansible.builtin.command: systemctl status logrotate.timer
-      register: timer_status
-      changed_when: false
-      failed_when: false
-
-    - name: Verify timer is active
+    - name: Verify | Assert logrotate timer is active and enabled
       ansible.builtin.assert:
         that:
-          - "'active' in timer_status.stdout"
-        fail_msg: 'Logrotate timer is not active'
+          - __logrotate_timer_check.status.ActiveState == 'active'
+          - __logrotate_timer_check.status.UnitFileState == 'enabled'
+        fail_msg: 'Logrotate timer is not active or enabled'

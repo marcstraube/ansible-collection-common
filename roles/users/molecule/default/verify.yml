@@ -1,13 +1,13 @@
 ---
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # GROUPS VERIFICATION
-    # =========================================================================
+    #
+    # Groups Verification
+    #
+
     - name: Verify | Check developers group exists
       ansible.builtin.getent:
         database: group
@@ -41,9 +41,10 @@
           - testgroup.ansible_facts.getent_group.testgroup[1] == '2100'
         fail_msg: 'testgroup has incorrect GID'
 
-    # =========================================================================
-    # USER CREATION VERIFICATION
-    # =========================================================================
+    #
+    # User Creation Verification
+    #
+
     - name: Verify | Check basicuser exists
       ansible.builtin.getent:
         database: passwd
@@ -126,9 +127,10 @@
       register: lockeduser
       failed_when: lockeduser.ansible_facts.getent_passwd.lockeduser is not defined
 
-    # =========================================================================
-    # HOME DIRECTORY VERIFICATION
-    # =========================================================================
+    #
+    # Home Directory Verification
+    #
+
     - name: Verify | Check basicuser home directory exists
       ansible.builtin.stat:
         path: /home/basicuser
@@ -167,9 +169,10 @@
       register: service_home
       failed_when: service_home.stat.exists
 
-    # =========================================================================
-    # SSH DIRECTORY VERIFICATION
-    # =========================================================================
+    #
+    # SSH Directory Verification
+    #
+
     - name: Verify | Check basicuser .ssh directory exists
       ansible.builtin.stat:
         path: /home/basicuser/.ssh
@@ -190,9 +193,10 @@
       register: sshuser_ssh
       failed_when: not sshuser_ssh.stat.exists
 
-    # =========================================================================
-    # SSH KEYS VERIFICATION
-    # =========================================================================
+    #
+    # SSH Keys Verification
+    #
+
     - name: Verify | Check sshuser authorized_keys exists
       ansible.builtin.stat:
         path: /home/sshuser/.ssh/authorized_keys
@@ -231,9 +235,10 @@
           - key_count.stdout | int == 2
         fail_msg: 'authorized_keys should have exactly 2 keys (exclusive mode)'
 
-    # =========================================================================
-    # GENERATED SSH KEY VERIFICATION
-    # =========================================================================
+    #
+    # Generated SSH Key Verification
+    #
+
     - name: Verify | Check genuser has SSH key directory
       ansible.builtin.stat:
         path: /home/genuser/.ssh
@@ -265,16 +270,17 @@
           - genuser_pubkey.stat.mode == '0644'
         fail_msg: 'generated public key has incorrect permissions'
 
-    - name: Verify | Verify SSH key type
+    - name: Verify | Assert SSH key type
       ansible.builtin.command:
         cmd: ssh-keygen -l -f /home/genuser/.ssh/id_ed25519.pub
       register: key_type
       changed_when: false
       failed_when: "'ED25519' not in key_type.stdout"
 
-    # =========================================================================
-    # PRIMARY GROUP VERIFICATION
-    # =========================================================================
+    #
+    # Primary Group Verification
+    #
+
     - name: Verify | Check basicuser primary group
       ansible.builtin.command:
         cmd: id -gn basicuser
@@ -289,9 +295,10 @@
       changed_when: false
       failed_when: devuser_primary.stdout != 'devuser'
 
-    # =========================================================================
-    # PASSWORD VERIFICATION
-    # =========================================================================
+    #
+    # Password Verification
+    #
+
     - name: Verify | Check lockeduser password status
       ansible.builtin.command:
         cmd: passwd -S lockeduser
@@ -306,9 +313,10 @@
         fail_msg: 'lockeduser should have locked password'
       when: locked_status.rc == 0
 
-    # =========================================================================
-    # EXCLUSIVE MODE VERIFICATION
-    # =========================================================================
+    #
+    # Exclusive Mode Verification
+    #
+
     - name: Verify | Check orphanuser was removed by exclusive mode
       ansible.builtin.getent:
         database: passwd
@@ -322,9 +330,10 @@
           - orphanuser_check.ansible_facts.getent_passwd.orphanuser is not defined
         fail_msg: 'orphanuser should have been removed by exclusive mode'
 
-    # =========================================================================
-    # FUNCTIONAL TESTS
-    # =========================================================================
+    #
+    # Functional Tests
+    #
+
     - name: Verify | Test user can be switched to
       ansible.builtin.command:
         cmd: su - basicuser -c 'whoami'
@@ -356,9 +365,10 @@
           - "'lockeduser' in all_users.stdout"
         fail_msg: 'Not all test users found in passwd'
 
-    # =========================================================================
-    # PROFILE IMAGES VERIFICATION
-    # =========================================================================
+    #
+    # Profile Images Verification
+    #
+
     - name: Verify | Check AccountsService icons directory exists
       ansible.builtin.stat:
         path: /var/lib/AccountsService/icons

@@ -1,64 +1,51 @@
 # Ansible Role: marcstraube.common.aide
 
-Configure AIDE (Advanced Intrusion Detection Environment) for file integrity monitoring.
-
 ## Description
 
-This role installs and configures AIDE to monitor file system integrity across
-multiple Linux distributions. It handles version differences between AIDE 0.16
-(Rocky 9) and 0.18+ (Arch Linux, Debian, Rocky 10) automatically through
-OS-specific variable files.
+This role installs and configures AIDE (Advanced Intrusion Detection Environment)
+for file integrity monitoring across multiple Linux distributions. It handles
+version differences between AIDE 0.16 (EL 9) and 0.18+ (Arch Linux, Debian,
+EL 10) automatically through OS-specific variable files.
 
 ## Requirements
 
-- **Ansible**: >= 2.15
+- **Ansible**: >= 2.17
 - **Collections**:
   - `kewlfft.aur` (Arch Linux only, for AUR package installation)
 
 ## Supported Platforms
 
-| Platform             | AIDE Version | Package Source | Notes                          |
-| -------------------- | ------------ | -------------- | ------------------------------ |
-| Arch Linux           | 0.18.x       | AUR            | Requires `aur_builder` user    |
-| Debian 12 (Bookworm) | 0.18.x       | apt            | Uses `aideinit`, `_aide` user  |
-| Rocky 9 / RHEL 9     | 0.16         | AppStream      | Legacy `database` directive    |
-| Rocky 10 / RHEL 10   | 0.18.x       | AppStream      | Modern `database_in` directive |
+| Platform                  | Notes                        |
+|---------------------------|------------------------------|
+| Arch Linux                | AUR, requires `aur_builder`  |
+| Debian Trixie             | Uses `_aide` user            |
+| EL 9 (Rocky, Alma, RHEL)  | AIDE 0.16, legacy directives |
+| EL 10 (Rocky, Alma, RHEL) | AIDE 0.18+                   |
 
-### Version Differences
-
-AIDE 0.16 (Rocky 9) and 0.18+ (everything else) differ in configuration directives:
-
-| Feature                 | AIDE 0.16         | AIDE 0.18+                   |
-| ----------------------- | ----------------- | ---------------------------- |
-| Database read directive | `database`        | `database_in`                |
-| Log level control       | `verbose` (0-255) | `log_level` + `report_level` |
-
-The role handles this automatically via `vars/Rocky-9.yml` (0.16 overrides) and
-`vars/RedHat.yml` (0.18 defaults for all other RHEL-family distros).
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
 ### Role Control
 
-| Variable               | Default | Description                                     |
-| ---------------------- | ------- | ----------------------------------------------- |
-| `aide_enabled`         | `true`  | Enable/disable the entire role                  |
-| `aide_btrfs_subvolume` | `true`  | Create BTRFS subvolume + NoCOW for database dir |
+| Variable       | Default | Description          |
+|----------------|---------|----------------------|
+| `aide_enabled` | `true`  | Enable the aide role |
 
-### Database Configuration
+### AIDE Configuration
 
-| Variable               | Default                     | Description                      |
-| ---------------------- | --------------------------- | -------------------------------- |
-| `aide_database`        | `/var/lib/aide/aide.db`     | Database file path               |
-| `aide_database_new`    | `/var/lib/aide/aide.db.new` | New database path (for updates)  |
-| `aide_database_format` | `gzip`                      | Output format: `plain`, `gzip`   |
-| `aide_init_db`         | `true`                      | Initialize database on first run |
-| `aide_force_init`      | `false`                     | Force database re-initialization |
+| Variable               | Default                     | Description                     |
+|------------------------|-----------------------------|---------------------------------|
+| `aide_database`        | `/var/lib/aide/aide.db`     | Database file path              |
+| `aide_database_new`    | `/var/lib/aide/aide.db.new` | New database path (for updates) |
+| `aide_database_format` | `gzip`                      | Output format: `plain`, `gzip`  |
 
 ### Reporting
 
 | Variable                     | Default                         | Description                         |
-| ---------------------------- | ------------------------------- | ----------------------------------- |
+|------------------------------|---------------------------------|-------------------------------------|
 | `aide_report_level`          | `changed_attributes`            | Report level for AIDE 0.18+         |
 | `aide_verbose`               | `5`                             | Verbose level for AIDE 0.16 (0-255) |
 | `aide_report_url`            | `file:///var/log/aide/aide.log` | Primary report URL                  |
@@ -69,7 +56,7 @@ The role handles this automatically via `vars/Rocky-9.yml` (0.16 overrides) and
 ### Monitoring Rules
 
 | Variable                   | Default | Description                                       |
-| -------------------------- | ------- | ------------------------------------------------- |
+|----------------------------|---------|---------------------------------------------------|
 | `aide_monitor_binaries`    | `true`  | Monitor `/usr/bin`, `/usr/sbin`, `/usr/local/bin` |
 | `aide_monitor_libraries`   | `true`  | Monitor `/usr/lib`, `/usr/lib64`                  |
 | `aide_monitor_boot`        | `true`  | Monitor `/boot`                                   |
@@ -81,14 +68,14 @@ The role handles this automatically via `vars/Rocky-9.yml` (0.16 overrides) and
 ### Custom Rules
 
 | Variable             | Default | Description                                                 |
-| -------------------- | ------- | ----------------------------------------------------------- |
+|----------------------|---------|-------------------------------------------------------------|
 | `aide_custom_rules`  | `[]`    | Custom directories to monitor (list of `path`/`rule` dicts) |
 | `aide_exclude_paths` | `[]`    | Additional paths to exclude from monitoring                 |
 
 ### Scheduled Checks
 
 | Variable                      | Default | Description                                |
-| ----------------------------- | ------- | ------------------------------------------ |
+|-------------------------------|---------|--------------------------------------------|
 | `aide_timer_enabled`          | `true`  | Enable systemd timer for scheduled checks  |
 | `aide_timer_oncalendar`       | `daily` | Timer schedule (systemd OnCalendar format) |
 | `aide_timer_randomized_delay` | `1h`    | Randomized delay to avoid load spikes      |
@@ -96,18 +83,25 @@ The role handles this automatically via `vars/Rocky-9.yml` (0.16 overrides) and
 ### Email Notifications
 
 | Variable                    | Default                              | Description                         |
-| --------------------------- | ------------------------------------ | ----------------------------------- |
+|-----------------------------|--------------------------------------|-------------------------------------|
 | `aide_email_enabled`        | `false`                              | Enable email notifications          |
 | `aide_email_to`             | `root@localhost`                     | Email recipient                     |
 | `aide_email_subject`        | `[AIDE] File Integrity Check Report` | Email subject                       |
 | `aide_email_on_change_only` | `true`                               | Only send email if changes detected |
 
+### Initialization
+
+| Variable          | Default | Description                      |
+|-------------------|---------|----------------------------------|
+| `aide_init_db`    | `true`  | Initialize database on first run |
+| `aide_force_init` | `false` | Force database re-initialization |
+
 ## Tags
 
 | Tag              | Scope                         |
-| ---------------- | ----------------------------- |
+|------------------|-------------------------------|
 | `aide`           | All role tasks                |
-| `aide:install`   | Package installation          |
+| `aide:install`   | Package installation + BTRFS  |
 | `aide:configure` | Configuration file deployment |
 | `aide:database`  | Database initialization       |
 | `aide:schedule`  | Systemd timer setup           |
@@ -115,19 +109,31 @@ The role handles this automatically via `vars/Rocky-9.yml` (0.16 overrides) and
 ## Example Playbook
 
 ```yaml
-- name: Configure AIDE
-  hosts: all
-  become: true
-  roles:
-    - role: marcstraube.common.aide
-      vars:
-        aide_timer_oncalendar: '*-*-* 04:00:00'
-        aide_monitor_home_dirs: true
-        aide_custom_rules:
-          - path: '/opt/myapp'
-            rule: 'R+sha512'
-        aide_exclude_paths:
-          - '/var/lib/docker'
+- name: Include aide role
+  ansible.builtin.include_role:
+    name: marcstraube.common.aide
+  tags:
+    - aide
+  when: aide_enabled | default(true) | bool
+```
+
+### Custom Monitoring
+
+```yaml
+- name: Include aide role
+  ansible.builtin.include_role:
+    name: marcstraube.common.aide
+  vars:
+    aide_timer_oncalendar: '*-*-* 04:00:00'
+    aide_monitor_home_dirs: true
+    aide_custom_rules:
+      - path: '/opt/myapp'
+        rule: 'R+sha512'
+    aide_exclude_paths:
+      - '/var/lib/docker'
+  tags:
+    - aide
+  when: aide_enabled | default(true) | bool
 ```
 
 ## Testing
@@ -137,7 +143,19 @@ cd roles/aide
 molecule test
 ```
 
-Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9
+Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+## Notes
+
+AIDE 0.16 (EL 9) and 0.18+ (everything else) differ in configuration directives:
+
+| Feature                 | AIDE 0.16         | AIDE 0.18+                   |
+|-------------------------|-------------------|------------------------------|
+| Database read directive | `database`        | `database_in`                |
+| Log level control       | `verbose` (0-255) | `log_level` + `report_level` |
+
+The role handles this automatically via `vars/RedHat-9.yml` (0.16 overrides) and
+`vars/RedHat.yml` (0.18 defaults for all other RHEL-family distros).
 
 ## License
 

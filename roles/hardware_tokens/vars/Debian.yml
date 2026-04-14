@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Debian-specific variables for hardware tokens
-# =============================================================================
-
 # CCID smart card driver
 __hardware_tokens_ccid_package: 'libccid'
 
@@ -40,11 +36,11 @@ __hardware_tokens_pam_u2f_package: 'libpam-u2f'
 # Services
 __hardware_tokens_pcscd_service: 'pcscd.socket'
 
-# Udev rules path
-__hardware_tokens_udev_rules_path: '/etc/udev/rules.d'
+# Udev rules directory
+__hardware_tokens_udev_rules_dir: '/etc/udev/rules.d'
 
-# PAM system auth config
-__hardware_tokens_pam_system_auth: '/etc/pam.d/common-auth'
+# PAM system auth config file
+__hardware_tokens_pam_auth_config_file: '/etc/pam.d/common-auth'
 
 # Required groups
 __hardware_tokens_groups:

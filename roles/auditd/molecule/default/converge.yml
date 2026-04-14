@@ -1,12 +1,9 @@
 ---
-# marcstraube.common.auditd/molecule/default/converge.yml
-
 - name: Converge
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    - name: Include auditd role  # noqa: role-name[path]
+    - name: Converge | Include auditd role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

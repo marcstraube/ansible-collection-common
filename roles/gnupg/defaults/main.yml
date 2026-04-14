@@ -1,30 +1,30 @@
 ---
-# =============================================================================
-# GnuPG Configuration
-# =============================================================================
-# Role: marcstraube.common.gnupg
-# Description: Configure GnuPG for encryption and signing
-# =============================================================================
+#
+# Role Control
+#
 
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
-
+# Enable the gnupg role
 gnupg_enabled: true
 
-# =============================================================================
-# PACKAGES
-# =============================================================================
+#
+# Packages
+#
 
-# Install GUI tools (seahorse, etc.)
-gnupg_install_gui: false
+# Enable GUI tools install (seahorse, etc.)
+gnupg_gui_enabled: false
 
-# Install additional CLI tools (hopenpgp-tools, paperkey)
-gnupg_install_tools: true
+# DEPRECATED: Use gnupg_gui_enabled instead (removed in v2.0.0)
+# gnupg_install_gui: {{ gnupg_gui_enabled }}
 
-# =============================================================================
-# GPG CONFIGURATION (gpg.conf)
-# =============================================================================
+# Enable additional CLI tools install (hopenpgp-tools, paperkey)
+gnupg_tools_enabled: true
+
+# DEPRECATED: Use gnupg_tools_enabled instead (removed in v2.0.0)
+# gnupg_install_tools: {{ gnupg_tools_enabled }}
+
+#
+# GPG Configuration (gpg.conf)
+#
 
 # Default key for signing (empty = no default)
 gnupg_default_key: ''
@@ -74,10 +74,11 @@ gnupg_keyserver: 'hkps://keys.openpgp.org'
 # Options: local, cert, pka, dane, wkd, ldap, keyserver, nodefault, clear
 gnupg_auto_key_locate: 'local,wkd'
 
-# =============================================================================
-# GPG AGENT (gpg-agent.conf)
-# =============================================================================
+#
+# GPG Agent (gpg-agent.conf)
+#
 
+# Deploy gpg-agent configuration
 gnupg_agent_enabled: true
 
 # Cache TTL in seconds
@@ -88,8 +89,11 @@ gnupg_agent_max_cache_ttl: 7200             # Maximum: 2 hours
 gnupg_agent_default_cache_ttl_ssh: 1800     # Default: 30 minutes
 gnupg_agent_max_cache_ttl_ssh: 7200         # Maximum: 2 hours
 
-# SSH support via GPG agent
-gnupg_agent_enable_ssh: false
+# Enable SSH support via GPG agent
+gnupg_agent_ssh_enabled: false
+
+# DEPRECATED: Use gnupg_agent_ssh_enabled instead (removed in v2.0.0)
+# gnupg_agent_enable_ssh: {{ gnupg_agent_ssh_enabled }}
 
 # Pinentry program (auto-detected from OS default if empty)
 # Options: pinentry-curses, pinentry-tty, pinentry-gtk-2, pinentry-qt, pinentry-gnome3
@@ -113,10 +117,11 @@ gnupg_agent_no_allow_external_cache: false
 # Disable scdaemon (smartcard support)
 gnupg_agent_disable_scdaemon: false
 
-# =============================================================================
-# SCDAEMON (scdaemon.conf — smartcard daemon)
-# =============================================================================
+#
+# Scdaemon (scdaemon.conf — smartcard daemon)
+#
 
+# Deploy scdaemon configuration
 gnupg_scdaemon_enabled: true
 
 # Disable integrated CCID driver (use PC/SC only)
@@ -154,10 +159,11 @@ gnupg_scdaemon_debug_level: ''
 # Log file path (empty = no file logging)
 gnupg_scdaemon_log_file: ''
 
-# =============================================================================
-# DIRMNGR (dirmngr.conf — keyserver daemon)
-# =============================================================================
+#
+# Dirmngr (dirmngr.conf — keyserver daemon)
+#
 
+# Deploy dirmngr configuration
 gnupg_dirmngr_enabled: true
 
 # Keyservers list
@@ -183,9 +189,9 @@ gnupg_dirmngr_http_proxy: ''
 # Enable OCSP support
 gnupg_dirmngr_allow_ocsp: false
 
-# =============================================================================
-# KEY MANAGEMENT
-# =============================================================================
+#
+# Key Management
+#
 
 # Public keys to import (from files or keyservers)
 gnupg_import_keys: []
@@ -199,9 +205,9 @@ gnupg_trust_keys: []
 # gnupg_trust_keys:
 #   - '1234567890ABCDEF1234567890ABCDEF12345678'
 
-# =============================================================================
-# USER CONFIGURATION
-# =============================================================================
+#
+# User Configuration
+#
 
 # Users for whom to configure GnuPG
 #
@@ -217,5 +223,6 @@ gnupg_users: []
 #     default_key: '0x1234567890ABCDEF'
 #     agent_ssh: true
 
-# Default mode when user entry has no 'mode' key
+# Default config mode when user entry has no 'mode' key
+# Options: managed, initial, disabled
 gnupg_user_config_mode: 'managed'

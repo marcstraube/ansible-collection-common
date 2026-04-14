@@ -1,0 +1,45 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Install base-devel (Arch)
+      ansible.builtin.package:
+        name: base-devel
+        state: present
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Create aur_builder user for AUR packages (Arch)
+      ansible.builtin.user:
+        name: aur_builder
+        group: wheel
+        create_home: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Allow aur_builder passwordless sudo (Arch)
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/99-aur_builder
+        line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+        create: true
+        owner: root
+        group: root
+        mode: '0440'
+      when: ansible_facts['os_family'] == 'Archlinux'

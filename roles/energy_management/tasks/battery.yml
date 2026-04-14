@@ -1,7 +1,4 @@
 ---
-# =============================================================================
-# Energy Management - Battery Threshold
-# =============================================================================
 # Sets charge start/stop thresholds via sysfs (modern) or tp_smapi (legacy).
 # tp_smapi is needed for older ThinkPads (T530 and earlier).
 # tp_smapi is only available on Arch Linux and Debian.
@@ -11,44 +8,57 @@
     name: '{{ __energy_management_tp_smapi_packages }}'
     state: present
   when:
-    - energy_management_battery_tp_smapi | bool
+    - energy_management_battery_tp_smapi_enabled | bool
     - __energy_management_tp_smapi_packages | length > 0
 
+# Kernel module may not be available in containers or non-ThinkPad hardware
 - name: Battery | Load tp_smapi module
   community.general.modprobe:
     name: 'tp_smapi'
     state: present
-  when: energy_management_battery_tp_smapi | bool
+  when: energy_management_battery_tp_smapi_enabled | bool
   failed_when: false
 
+# Sysfs paths only exist on systems with supported battery hardware
 - name: Battery | Set start threshold (sysfs)
   ansible.builtin.copy:
     content: '{{ energy_management_battery_start_threshold }}'
     dest: '{{ __energy_management_battery_sysfs_path }}/{{ __energy_management_battery_start_file }}'
+    owner: root
+    group: root
     mode: '0644'
-  when: not (energy_management_battery_tp_smapi | bool)
+  when: not (energy_management_battery_tp_smapi_enabled | bool)
   failed_when: false
 
+# Sysfs paths only exist on systems with supported battery hardware
 - name: Battery | Set stop threshold (sysfs)
   ansible.builtin.copy:
     content: '{{ energy_management_battery_stop_threshold }}'
     dest: '{{ __energy_management_battery_sysfs_path }}/{{ __energy_management_battery_stop_file }}'
+    owner: root
+    group: root
     mode: '0644'
-  when: not (energy_management_battery_tp_smapi | bool)
+  when: not (energy_management_battery_tp_smapi_enabled | bool)
   failed_when: false
 
+# tp_smapi proc paths only exist on older ThinkPads with module loaded
 - name: Battery | Set start threshold (tp_smapi)
   ansible.builtin.copy:
     content: '{{ energy_management_battery_start_threshold }}'
     dest: '{{ __energy_management_tp_smapi_start_file }}'
+    owner: root
+    group: root
     mode: '0644'
-  when: energy_management_battery_tp_smapi | bool
+  when: energy_management_battery_tp_smapi_enabled | bool
   failed_when: false
 
+# tp_smapi proc paths only exist on older ThinkPads with module loaded
 - name: Battery | Set stop threshold (tp_smapi)
   ansible.builtin.copy:
     content: '{{ energy_management_battery_stop_threshold }}'
     dest: '{{ __energy_management_tp_smapi_stop_file }}'
+    owner: root
+    group: root
     mode: '0644'
-  when: energy_management_battery_tp_smapi | bool
+  when: energy_management_battery_tp_smapi_enabled | bool
   failed_when: false

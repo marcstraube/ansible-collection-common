@@ -1,16 +1,14 @@
 ---
-# =============================================================================
-# Per-User Editor Configuration
-# =============================================================================
 # Loops over editors_users entries.
 # Respects mode: managed | initial | disabled
-# =============================================================================
 
 - name: Users | Deploy per-user editor config
   ansible.builtin.include_tasks:
     file: user_config.yml
     apply:
-      tags: [editors, editors:users]
+      tags:
+        - editors
+        - editors:users
   loop: '{{ editors_users }}'
   loop_control:
     loop_var: __editors_user

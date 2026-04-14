@@ -1,20 +1,14 @@
 ---
-# =============================================================================
-# Package Management - Multi-OS Support
-# =============================================================================
-# Role: marcstraube.common.package_management
-# Supports: ArchLinux, Debian/Ubuntu, RHEL/Fedora/Rocky
-# =============================================================================
+#
+# Role Control
+#
 
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
-
+# Enable the package_management role
 package_management_enabled: true
 
-# =============================================================================
-# PACMAN - GENERAL OPTIONS
-# =============================================================================
+#
+# Pacman - General Options
+#
 
 # Hold packages (won't be removed accidentally)
 pacman_hold_packages:
@@ -34,9 +28,9 @@ pacman_no_extract:
 # Files to never upgrade (supports globs)
 pacman_no_upgrade: []
 
-# =============================================================================
-# PACMAN - DOWNLOAD OPTIONS
-# =============================================================================
+#
+# Pacman - Download Options
+#
 
 # Number of parallel downloads (1-10, 0 = disable)
 pacman_parallel_downloads: 5
@@ -58,9 +52,9 @@ pacman_disable_sandbox_syscalls: false
 #   '/usr/bin/aria2c --allow-overwrite=true --continue=true -o %o %u'
 pacman_xfer_command: ''
 
-# =============================================================================
-# PACMAN - MISC OPTIONS
-# =============================================================================
+#
+# Pacman - Misc Options
+#
 
 # Enable color output
 pacman_color: true
@@ -80,9 +74,9 @@ pacman_check_space: true
 # Easter egg: animated pacman
 pacman_ilovecandy: true
 
-# =============================================================================
-# PACMAN - SIGNATURE LEVELS
-# =============================================================================
+#
+# Pacman - Signature Levels
+#
 
 # Global signature level
 # Options: Required, Optional, Never, TrustedOnly, TrustAll
@@ -95,18 +89,27 @@ pacman_local_file_sig_level: 'Optional'
 # Remote file signature level (empty = inherit from SigLevel)
 pacman_remote_file_sig_level: ''
 
-# =============================================================================
-# PACMAN - REPOSITORIES
-# =============================================================================
+#
+# Pacman - Repositories
+#
 
 # Enable testing repositories
-pacman_testing_repos: false
+pacman_testing_repos_enabled: false
 
 # Enable multilib (32-bit support)
-pacman_multilib: false
+pacman_multilib_enabled: false
 
 # Enable multilib-testing
-pacman_multilib_testing: false
+pacman_multilib_testing_enabled: false
+
+# DEPRECATED: Use pacman_testing_repos_enabled instead (removed in v2.0.0)
+# pacman_testing_repos: {{ pacman_testing_repos_enabled }}
+
+# DEPRECATED: Use pacman_multilib_enabled instead (removed in v2.0.0)
+# pacman_multilib: {{ pacman_multilib_enabled }}
+
+# DEPRECATED: Use pacman_multilib_testing_enabled instead (removed in v2.0.0)
+# pacman_multilib_testing: {{ pacman_multilib_testing_enabled }}
 
 # Custom repositories
 # Example:
@@ -120,9 +123,9 @@ pacman_multilib_testing: false
 #       keyserver: 'keyserver.ubuntu.com'  # optional
 pacman_custom_repositories: []
 
-# =============================================================================
-# PACMAN - HOOKS
-# =============================================================================
+#
+# Pacman - Hooks
+#
 
 # Hook directory
 pacman_hook_dir: '/etc/pacman.d/hooks'
@@ -130,9 +133,9 @@ pacman_hook_dir: '/etc/pacman.d/hooks'
 # Install custom hooks (list of hook files from files/ directory)
 pacman_custom_hooks: []
 
-# =============================================================================
-# REFLECTOR - MIRROR MANAGEMENT
-# =============================================================================
+#
+# Reflector - Mirror Management
+#
 
 # Enable Reflector for automatic mirror management
 reflector_enabled: true
@@ -150,20 +153,21 @@ reflector:
 # Enable Reflector timer for periodic updates
 reflector_timer_enabled: true
 
-# =============================================================================
-# MAKEPKG - PACKAGER INFO
-# =============================================================================
+#
+# Makepkg - Packager Info
+#
 
 # Packager name and email (for built packages)
-# Example: 'John Doe <john@doe.com>'
+# Example: 'John Doe <john@example.com>'
 makepkg_packager: ''
 
 # GPG key for signing packages (key ID)
 makepkg_gpg_key: ''
 
-# =============================================================================
-# MAKEPKG - PER-USER CONFIG
-# =============================================================================
+#
+# Makepkg - Per-User Config
+#
+
 # Per-user ~/.makepkg.conf deployment that overrides system /etc/makepkg.conf.
 #
 # Mode controls deployment behavior:
@@ -191,9 +195,9 @@ makepkg_users: []
 # Default mode when user entry has no 'mode' key
 makepkg_user_config_mode: 'managed'
 
-# =============================================================================
-# MAKEPKG - COMPILER FLAGS
-# =============================================================================
+#
+# Makepkg - Compiler Flags
+#
 
 # C preprocessor flags
 makepkg_cppflags: ''
@@ -227,21 +231,30 @@ makepkg_debug_cxxflags: ''
 # Debug Rust flags
 makepkg_debug_rustflags: '-C debuginfo=2'
 
-# =============================================================================
-# MAKEPKG - BUILD ENVIRONMENT
-# =============================================================================
+#
+# Makepkg - Build Environment
+#
 
 # Use distcc for distributed compilation
-makepkg_distcc: false
+makepkg_distcc_enabled: false
 
 # Distcc hosts (if distcc enabled)
 makepkg_distcc_hosts: ''
 
 # Use ccache for compilation caching
-makepkg_ccache: false
+makepkg_ccache_enabled: false
 
 # Use sccache for Rust compilation caching
-makepkg_sccache: false
+makepkg_sccache_enabled: false
+
+# DEPRECATED: Use makepkg_distcc_enabled instead (removed in v2.0.0)
+# makepkg_distcc: {{ makepkg_distcc_enabled }}
+
+# DEPRECATED: Use makepkg_ccache_enabled instead (removed in v2.0.0)
+# makepkg_ccache: {{ makepkg_ccache_enabled }}
+
+# DEPRECATED: Use makepkg_sccache_enabled instead (removed in v2.0.0)
+# makepkg_sccache: {{ makepkg_sccache_enabled }}
 
 # Run check() function in PKGBUILDs
 makepkg_check: true
@@ -256,9 +269,9 @@ makepkg_sign: false
 # Example: '/tmp/makepkg'
 makepkg_builddir: ''
 
-# =============================================================================
-# MAKEPKG - PACKAGE OPTIONS
-# =============================================================================
+#
+# Makepkg - Package Options
+#
 
 # Strip symbols from binaries
 makepkg_strip: true
@@ -290,9 +303,9 @@ makepkg_lto: true
 # Automatic dependency detection
 makepkg_autodeps: false
 
-# =============================================================================
-# MAKEPKG - INTEGRITY & OUTPUT
-# =============================================================================
+#
+# Makepkg - Integrity & Output
+#
 
 # Integrity check algorithms
 makepkg_integrity_check:
@@ -304,9 +317,9 @@ makepkg_pkg_ext: '.pkg.tar.zst'
 # Source package extension
 makepkg_src_ext: '.src.tar.gz'
 
-# =============================================================================
-# MAKEPKG - OUTPUT DIRECTORIES (optional)
-# =============================================================================
+#
+# Makepkg - Output Directories (Optional)
+#
 
 # Package destination (empty = build directory)
 makepkg_pkgdest: ''
@@ -320,9 +333,9 @@ makepkg_srcpkgdest: ''
 # Log destination
 makepkg_logdest: ''
 
-# =============================================================================
-# MAKEPKG - COMPRESSION
-# =============================================================================
+#
+# Makepkg - Compression
+#
 
 # Zstd compression level (1-19, or 'ultra -20' for max)
 makepkg_zstd_level: '--ultra -20'
@@ -333,9 +346,9 @@ makepkg_zstd_threads: 0
 # XZ threads (0 = auto)
 makepkg_xz_threads: 0
 
-# =============================================================================
-# AUR HELPER
-# =============================================================================
+#
+# AUR Helper
+#
 
 # AUR helper to install: paru, yay, or empty to skip
 aur_helper: 'paru'
@@ -346,9 +359,9 @@ aur_builder_user: 'aur_builder'
 # AUR builder home directory
 aur_builder_home: '/var/cache/aur_builder'
 
-# =============================================================================
-# PARU CONFIGURATION
-# =============================================================================
+#
+# Paru Configuration
+#
 
 # Shared clone directory for AUR package sources
 # Both aur_builder and regular users share this directory to avoid
@@ -423,9 +436,9 @@ paru_completion_interval: 7
 paru_shared_users: []
 # Example: ['johndoe']
 
-# =============================================================================
-# PARU - [bin] SECTION
-# =============================================================================
+#
+# Paru - [bin] Section
+#
 
 # Extra flags passed to makepkg
 paru_mflags: ''
@@ -439,12 +452,15 @@ paru_sudo: ''
 # File manager for reviewing PKGBUILDs (empty = default)
 paru_file_manager: ''
 
-# =============================================================================
-# PACKAGE CACHE CLEANUP
-# =============================================================================
+#
+# Package Cache Cleanup
+#
 
 # Enable paccache timer for automatic cleanup
-paccache_enabled: true
+paccache_timer_enabled: true
+
+# DEPRECATED: Use paccache_timer_enabled instead (removed in v2.0.0)
+# paccache_enabled: {{ paccache_timer_enabled }}
 
 # Paccache arguments
 # -r: remove, -k: keep versions, -u: uninstalled only
@@ -454,26 +470,31 @@ paccache_enabled: true
 #   '-ruk0' = remove all uninstalled packages
 paccache_args: '-rk2'
 
-# =============================================================================
-# ADDITIONAL PACKAGES
-# =============================================================================
+#
+# Additional Packages
+#
 
 # Install rebuild-detector for AUR dependency tracking
-pacman_install_rebuild_detector: true
+pacman_rebuild_detector_enabled: true
 
 # Install pkgfile for command-not-found
-pacman_install_pkgfile: true
+pacman_pkgfile_enabled: true
 
 # Install informant for Arch news (blocks upgrades until news is read)
-pacman_install_informant: false
+pacman_informant_enabled: false
 
-# #############################################################################
-#                           DEBIAN / UBUNTU
-# #############################################################################
+# DEPRECATED: Use pacman_rebuild_detector_enabled instead (removed in v2.0.0)
+# pacman_install_rebuild_detector: {{ pacman_rebuild_detector_enabled }}
 
-# =============================================================================
-# APT - GENERAL OPTIONS
-# =============================================================================
+# DEPRECATED: Use pacman_pkgfile_enabled instead (removed in v2.0.0)
+# pacman_install_pkgfile: {{ pacman_pkgfile_enabled }}
+
+# DEPRECATED: Use pacman_informant_enabled instead (removed in v2.0.0)
+# pacman_install_informant: {{ pacman_informant_enabled }}
+
+#
+# APT - General Options
+#
 
 # Enable periodic updates (background downloads)
 apt_periodic_enabled: true
@@ -513,9 +534,9 @@ apt_languages: 'none'
 #       priority: 1000
 apt_preferences: []
 
-# =============================================================================
-# APT - EXTERNAL REPOSITORIES
-# =============================================================================
+#
+# APT - External Repositories
+#
 
 # Enable Debian Backports (Debian only)
 apt_backports_enabled: false
@@ -525,20 +546,35 @@ apt_backports_enabled: false
 apt_ppas: []
 
 # Docker CE repository
-apt_docker_repo: false
+apt_docker_repo_enabled: false
 
 # PostgreSQL PGDG repository
-apt_postgresql_repo: false
+apt_postgresql_repo_enabled: false
 
 # PHP Sury repository (deb.sury.org for Debian, PPA for Ubuntu)
-apt_php_sury_repo: false
+apt_php_sury_repo_enabled: false
 
 # Grafana repository
-apt_grafana_repo: false
+apt_grafana_repo_enabled: false
 
 # Kubernetes repository
-apt_kubernetes_repo: false
+apt_kubernetes_repo_enabled: false
 apt_kubernetes_version: '1.29'
+
+# DEPRECATED: Use apt_docker_repo_enabled instead (removed in v2.0.0)
+# apt_docker_repo: {{ apt_docker_repo_enabled }}
+
+# DEPRECATED: Use apt_postgresql_repo_enabled instead (removed in v2.0.0)
+# apt_postgresql_repo: {{ apt_postgresql_repo_enabled }}
+
+# DEPRECATED: Use apt_php_sury_repo_enabled instead (removed in v2.0.0)
+# apt_php_sury_repo: {{ apt_php_sury_repo_enabled }}
+
+# DEPRECATED: Use apt_grafana_repo_enabled instead (removed in v2.0.0)
+# apt_grafana_repo: {{ apt_grafana_repo_enabled }}
+
+# DEPRECATED: Use apt_kubernetes_repo_enabled instead (removed in v2.0.0)
+# apt_kubernetes_repo: {{ apt_kubernetes_repo_enabled }}
 
 # Custom repositories
 # Example:
@@ -548,12 +584,15 @@ apt_kubernetes_version: '1.29'
 #       gpg_key: 'https://repo.example.com/gpg.key'  # optional
 apt_custom_repos: []
 
-# =============================================================================
-# APT - UNATTENDED UPGRADES
-# =============================================================================
+#
+# APT - Unattended Upgrades
+#
 
 # Enable unattended-upgrades
-apt_unattended_upgrades: false
+apt_unattended_upgrades_enabled: false
+
+# DEPRECATED: Use apt_unattended_upgrades_enabled instead (removed in v2.0.0)
+# apt_unattended_upgrades: {{ apt_unattended_upgrades_enabled }}
 
 # Origins to auto-upgrade (default: security only)
 apt_unattended_origins:
@@ -574,32 +613,40 @@ apt_unattended_mail_on_error: true
 # Remove unused dependencies
 apt_unattended_autoremove: true
 
-# =============================================================================
-# APT - ADDITIONAL TOOLS
-# =============================================================================
+#
+# APT - Additional Tools
+#
 
 # Install apt-file (command-not-found functionality)
-apt_install_apt_file: true
+apt_apt_file_enabled: true
 
 # Install needrestart (check for required restarts)
-apt_install_needrestart: true
+apt_needrestart_enabled: true
 
 # Needrestart mode: 'a' = auto, 'i' = interactive, 'l' = list only
 apt_needrestart_mode: 'a'
 
 # Install debsums (package integrity checking)
-apt_install_debsums: false
+apt_debsums_enabled: false
 
 # Install debian-goodies (checkrestart, etc.)
-apt_install_debian_goodies: true
+apt_debian_goodies_enabled: true
 
-# #############################################################################
-#                        RHEL / FEDORA / ROCKY
-# #############################################################################
+# DEPRECATED: Use apt_apt_file_enabled instead (removed in v2.0.0)
+# apt_install_apt_file: {{ apt_apt_file_enabled }}
 
-# =============================================================================
-# DNF - GENERAL OPTIONS
-# =============================================================================
+# DEPRECATED: Use apt_needrestart_enabled instead (removed in v2.0.0)
+# apt_install_needrestart: {{ apt_needrestart_enabled }}
+
+# DEPRECATED: Use apt_debsums_enabled instead (removed in v2.0.0)
+# apt_install_debsums: {{ apt_debsums_enabled }}
+
+# DEPRECATED: Use apt_debian_goodies_enabled instead (removed in v2.0.0)
+# apt_install_debian_goodies: {{ apt_debian_goodies_enabled }}
+
+#
+# DNF - General Options
+#
 
 # Enable fastest mirror plugin
 dnf_fastestmirror: true
@@ -611,7 +658,10 @@ dnf_max_parallel_downloads: 10
 dnf_keepcache: false
 
 # Enable makecache timer
-dnf_makecache_timer: true
+dnf_makecache_timer_enabled: true
+
+# DEPRECATED: Use dnf_makecache_timer_enabled instead (removed in v2.0.0)
+# dnf_makecache_timer: {{ dnf_makecache_timer_enabled }}
 
 # Default answer for yes/no questions
 dnf_defaultyes: true
@@ -632,9 +682,9 @@ dnf_skip_if_unavailable: false
 # Example: http://proxy.example.com:3128
 dnf_proxy: ''
 
-# =============================================================================
-# DNF - EXTERNAL REPOSITORIES
-# =============================================================================
+#
+# DNF - External Repositories
+#
 
 # Enable PowerTools/CRB (CodeReady Builder)
 dnf_powertools_enabled: false
@@ -648,26 +698,44 @@ dnf_remi_enabled: false
 dnf_remi_php_version: ''
 
 # Enable RPM Fusion Free
-dnf_rpmfusion_free: false
+dnf_rpmfusion_free_enabled: false
 
 # Enable RPM Fusion Nonfree
-dnf_rpmfusion_nonfree: false
+dnf_rpmfusion_nonfree_enabled: false
 
 # Enable ELRepo (kernels, hardware drivers)
 dnf_elrepo_enabled: false
 
 # Docker CE repository
-dnf_docker_repo: false
+dnf_docker_repo_enabled: false
 
 # PostgreSQL PGDG repository
-dnf_postgresql_repo: false
+dnf_postgresql_repo_enabled: false
 
 # Grafana repository
-dnf_grafana_repo: false
+dnf_grafana_repo_enabled: false
 
 # Kubernetes repository
-dnf_kubernetes_repo: false
+dnf_kubernetes_repo_enabled: false
 dnf_kubernetes_version: '1.29'
+
+# DEPRECATED: Use dnf_rpmfusion_free_enabled instead (removed in v2.0.0)
+# dnf_rpmfusion_free: {{ dnf_rpmfusion_free_enabled }}
+
+# DEPRECATED: Use dnf_rpmfusion_nonfree_enabled instead (removed in v2.0.0)
+# dnf_rpmfusion_nonfree: {{ dnf_rpmfusion_nonfree_enabled }}
+
+# DEPRECATED: Use dnf_docker_repo_enabled instead (removed in v2.0.0)
+# dnf_docker_repo: {{ dnf_docker_repo_enabled }}
+
+# DEPRECATED: Use dnf_postgresql_repo_enabled instead (removed in v2.0.0)
+# dnf_postgresql_repo: {{ dnf_postgresql_repo_enabled }}
+
+# DEPRECATED: Use dnf_grafana_repo_enabled instead (removed in v2.0.0)
+# dnf_grafana_repo: {{ dnf_grafana_repo_enabled }}
+
+# DEPRECATED: Use dnf_kubernetes_repo_enabled instead (removed in v2.0.0)
+# dnf_kubernetes_repo: {{ dnf_kubernetes_repo_enabled }}
 
 # COPR repositories to enable
 # Example: ['kwizart/fedy', 'atim/lazygit']
@@ -683,9 +751,9 @@ dnf_copr_repos: []
 #       gpgcheck: true
 dnf_custom_repos: []
 
-# =============================================================================
-# DNF - AUTOMATIC UPDATES
-# =============================================================================
+#
+# DNF - Automatic Updates
+#
 
 # Enable dnf-automatic
 dnf_automatic_enabled: false
@@ -704,21 +772,33 @@ dnf_automatic_email_host: 'localhost'
 # Emit via: email, stdio, motd
 dnf_automatic_emit_via: 'stdio'
 
-# =============================================================================
-# DNF - ADDITIONAL TOOLS
-# =============================================================================
+#
+# DNF - Additional Tools
+#
 
 # Install dnf-utils
-dnf_install_utils: true
+dnf_utils_enabled: true
 
 # Install yum-utils (needs-restarting)
-dnf_install_needs_restarting: true
+dnf_needs_restarting_enabled: true
 
 # Install rpm-build and rpmdevtools
-dnf_install_rpmbuild: false
+dnf_rpmbuild_enabled: false
 
 # Install mock for chroot building
-dnf_install_mock: false
+dnf_mock_enabled: false
+
+# DEPRECATED: Use dnf_utils_enabled instead (removed in v2.0.0)
+# dnf_install_utils: {{ dnf_utils_enabled }}
+
+# DEPRECATED: Use dnf_needs_restarting_enabled instead (removed in v2.0.0)
+# dnf_install_needs_restarting: {{ dnf_needs_restarting_enabled }}
+
+# DEPRECATED: Use dnf_rpmbuild_enabled instead (removed in v2.0.0)
+# dnf_install_rpmbuild: {{ dnf_rpmbuild_enabled }}
+
+# DEPRECATED: Use dnf_mock_enabled instead (removed in v2.0.0)
+# dnf_install_mock: {{ dnf_mock_enabled }}
 
 # Users to add to mock group
 dnf_mock_users: []

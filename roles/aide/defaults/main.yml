@@ -1,25 +1,14 @@
 ---
-# =============================================================================
-# AIDE Configuration - File Integrity Monitoring
-# =============================================================================
-# Role: marcstraube.common.aide
-# Description: Configure AIDE for file integrity monitoring
-# =============================================================================
+#
+# Role Control
+#
 
-# =============================================================================
-# ROLE CONTROL
-# =============================================================================
-
+# Enable the aide role
 aide_enabled: true
 
-# Create BTRFS subvolume for AIDE database directory with NoCOW attribute
-# Only applies when database directory is on a BTRFS filesystem
-# Subvolume is only created if the directory is empty (fresh install)
-aide_btrfs_subvolume: true
-
-# =============================================================================
-# AIDE CONFIGURATION
-# =============================================================================
+#
+# AIDE Configuration
+#
 
 # Database location
 aide_database: '/var/lib/aide/aide.db'
@@ -40,34 +29,43 @@ aide_report_url: 'file:///var/log/aide/aide.log'
 # Additional report URLs
 aide_report_urls: []
 
-# =============================================================================
-# MONITORING RULES
-# =============================================================================
+#
+# Monitoring Rules
+#
 
 # Monitor system binaries
-aide_monitor_binaries: true
+aide_monitor_binaries_enabled: true
 
 # Monitor system libraries
-aide_monitor_libraries: true
+aide_monitor_libraries_enabled: true
 
 # Monitor boot files
-aide_monitor_boot: true
+aide_monitor_boot_enabled: true
 
 # Monitor configuration files
-aide_monitor_configs: true
+aide_monitor_configs_enabled: true
 
 # Monitor system directories
-aide_monitor_system_dirs: true
+aide_monitor_system_dirs_enabled: true
 
 # Monitor user home directories (detect compromised accounts)
-aide_monitor_home_dirs: true
+aide_monitor_home_dirs_enabled: true
 
 # Monitor log files
-aide_monitor_logs: false
+aide_monitor_logs_enabled: false
 
-# =============================================================================
-# CUSTOM RULES
-# =============================================================================
+# DEPRECATED: Use aide_monitor_*_enabled instead (removed in v2.0.0)
+# aide_monitor_binaries: {{ aide_monitor_binaries_enabled }}
+# aide_monitor_libraries: {{ aide_monitor_libraries_enabled }}
+# aide_monitor_boot: {{ aide_monitor_boot_enabled }}
+# aide_monitor_configs: {{ aide_monitor_configs_enabled }}
+# aide_monitor_system_dirs: {{ aide_monitor_system_dirs_enabled }}
+# aide_monitor_home_dirs: {{ aide_monitor_home_dirs_enabled }}
+# aide_monitor_logs: {{ aide_monitor_logs_enabled }}
+
+#
+# Custom Rules
+#
 
 # Custom directories to monitor
 # Example:
@@ -82,9 +80,9 @@ aide_custom_rules: []
 # (system dirs like /proc, /sys, /dev, /run, /tmp are always excluded)
 aide_exclude_paths: []
 
-# =============================================================================
-# SCHEDULED CHECKS (systemd timer)
-# =============================================================================
+#
+# Scheduled Checks (systemd timer)
+#
 
 # Enable systemd timer for scheduled checks
 aide_timer_enabled: true
@@ -95,9 +93,9 @@ aide_timer_oncalendar: 'daily'
 # Randomized delay for timer (to avoid system load spikes)
 aide_timer_randomized_delay: '1h'
 
-# =============================================================================
-# EMAIL NOTIFICATIONS
-# =============================================================================
+#
+# Email Notifications
+#
 
 # Enable email notifications (requires mail command and working MTA)
 aide_email_enabled: false
@@ -111,19 +109,25 @@ aide_email_subject: '[AIDE] File Integrity Check Report'
 # Only send email if changes detected
 aide_email_on_change_only: true
 
-# =============================================================================
-# INITIALIZATION
-# =============================================================================
+#
+# Initialization
+#
 
 # Initialize database on first run
-aide_init_db: true
+aide_init_db_enabled: true
+
+# DEPRECATED: Use aide_init_db_enabled instead (removed in v2.0.0)
+# aide_init_db: {{ aide_init_db_enabled }}
 
 # Force database re-initialization
-aide_force_init: false
+aide_force_init_enabled: false
 
-# =============================================================================
-# LOGGING
-# =============================================================================
+# DEPRECATED: Use aide_force_init_enabled instead (removed in v2.0.0)
+# aide_force_init: {{ aide_force_init_enabled }}
+
+#
+# Logging
+#
 
 # Log directory for AIDE reports
 aide_log_dir: '/var/log/aide'
@@ -131,9 +135,9 @@ aide_log_dir: '/var/log/aide'
 # Report retention in days
 aide_report_retention_days: 90
 
-# =============================================================================
-# ADVANCED
-# =============================================================================
+#
+# Advanced
+#
 
 # Verbose level for AIDE 0.16 (verbose directive, 0-255)
 aide_verbose: 5

@@ -1,8 +1,4 @@
 ---
-# =============================================================================
-# Avahi - AppArmor Tasks
-# =============================================================================
-
 - name: AppArmor | Check if AppArmor is active
   ansible.builtin.stat:
     path: /sys/kernel/security/apparmor
@@ -13,6 +9,7 @@
     cmd: aa-status --json
   register: __avahi_aa_status
   changed_when: false
+  # aa-status may fail if AppArmor has no loaded profiles
   failed_when: false
   when: __avahi_apparmor_active.stat.exists
 

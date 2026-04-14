@@ -19,46 +19,52 @@ directly or via the `logrotate_configs` list variable.
 
 ## Supported Platforms
 
-- Arch Linux
-- Debian Trixie
-- Rocky Linux 9 (logrotate 3.18)
-- Rocky Linux 10 (logrotate 3.22)
+| Platform                   | Notes |
+|----------------------------|-------|
+| Arch Linux                 |       |
+| Debian Trixie              |       |
+| EL 9 (Rocky, Alma, RHEL)   |       |
+| EL 10 (Rocky, Alma, RHEL)  |       |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
-### Service Control
+### Role Control
 
-| Variable            | Default | Description             |
-| ------------------- | ------- | ----------------------- |
-| `logrotate_enabled` | `true`  | Enable/disable the role |
+| Variable            | Default | Description               |
+|---------------------|---------|---------------------------|
+| `logrotate_enabled` | `true`  | Enable the logrotate role |
 
 ### Global Configuration
 
-| Variable                  | Default      | Description                                                     |
-| ------------------------- | ------------ | --------------------------------------------------------------- |
-| `logrotate_frequency`     | `weekly`     | Rotation interval: daily, weekly, monthly, yearly               |
-| `logrotate_rotate`        | `4`          | Number of rotated files to keep                                 |
-| `logrotate_create`        | `true`       | Create new empty log files after rotation                       |
-| `logrotate_dateext`       | `true`       | Use date suffix instead of numeric                              |
-| `logrotate_dateformat`    | `-%Y%m%d`    | Date format for rotated files                                   |
-| `logrotate_compress`      | `true`       | Compress rotated files                                          |
-| `logrotate_delaycompress` | `true`       | Delay compression one cycle                                     |
-| `logrotate_notifempty`    | `true`       | Skip empty log files                                            |
-| `logrotate_nomail`        | `true`       | Do not mail rotated logs                                        |
-| `logrotate_missingok`     | `true`       | Missing logs are not an error                                   |
-| `logrotate_sharedscripts` | `true`       | Run scripts once per rotation                                   |
-| `logrotate_su`            | `''`         | Run as user/group (e.g. `root adm`)                             |
-| `logrotate_olddir`        | `''`         | Move rotated files to directory                                 |
-| `logrotate_tabooext`      | OS-dependent | Additional taboo extensions (Arch: `.pacorig .pacnew .pacsave`) |
-| `logrotate_maxage`        | `''`         | Remove rotated files older than N days                          |
-| `logrotate_minsize`       | `''`         | Minimum size before rotation                                    |
-| `logrotate_maxsize`       | `''`         | Maximum size triggering rotation                                |
-| `logrotate_size`          | `''`         | Size-based rotation (replaces frequency)                        |
+| Variable                  | Default      | Description                                        |
+|---------------------------|--------------|----------------------------------------------------|
+| `logrotate_frequency`     | `weekly`     | Rotation interval: daily, weekly, monthly, yearly  |
+| `logrotate_rotate`        | `4`          | Number of rotated files to keep                    |
+| `logrotate_create`        | `true`       | Create new empty log files after rotation          |
+| `logrotate_dateext`       | `true`       | Use date suffix instead of numeric                 |
+| `logrotate_dateformat`    | `-%Y%m%d`    | Date format for rotated files                      |
+| `logrotate_compress`      | `true`       | Compress rotated files                             |
+| `logrotate_delaycompress` | `true`       | Delay compression one cycle                        |
+| `logrotate_notifempty`    | `true`       | Skip empty log files                               |
+| `logrotate_nomail`        | `true`       | Do not mail rotated logs                           |
+| `logrotate_missingok`     | `true`       | Missing logs are not an error                      |
+| `logrotate_sharedscripts` | `true`       | Run scripts once per rotation                      |
+| `logrotate_su`            | `''`         | Run as user/group (e.g. `root adm`)                |
+| `logrotate_olddir`        | `''`         | Move rotated files to directory                    |
+| `logrotate_tabooext`      | OS-dependent | Additional taboo extensions (Arch: pacman backups) |
+| `logrotate_maxage`        | `''`         | Remove rotated files older than N days             |
+| `logrotate_minsize`       | `''`         | Minimum size before rotation                       |
+| `logrotate_maxsize`       | `''`         | Maximum size triggering rotation                   |
+| `logrotate_size`          | `''`         | Size-based rotation (replaces frequency)           |
 
 ### Custom Configurations
 
 | Variable            | Default | Description                    |
-| ------------------- | ------- | ------------------------------ |
+|---------------------|---------|--------------------------------|
 | `logrotate_configs` | `[]`    | List of custom drop-in configs |
 
 Each item in `logrotate_configs`:
@@ -92,13 +98,14 @@ logrotate_configs:
 ### Timer Configuration
 
 | Variable                     | Default | Description                                     |
-| ---------------------------- | ------- | ----------------------------------------------- |
+|------------------------------|---------|-------------------------------------------------|
+| `logrotate_timer_enabled`    | `true`  | Enable and start the logrotate timer            |
 | `logrotate_timer_oncalendar` | `''`    | Override timer schedule (e.g. `*-*-* 02:00:00`) |
 
 ## Tags
 
 | Tag                   | Scope                    |
-| --------------------- | ------------------------ |
+|-----------------------|--------------------------|
 | `logrotate`           | All role tasks           |
 | `logrotate:install`   | Package installation     |
 | `logrotate:configure` | Configuration deployment |
@@ -128,7 +135,7 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 ## Notes
 
-- Rocky 9 ships logrotate 3.18 — some newer directives (e.g. `ignoreduplicates` from
+- Rocky 9 ships logrotate 3.18 -- some newer directives (e.g. `ignoreduplicates` from
   3.21) are not available. The role only uses directives supported across all platforms.
 - Arch Linux adds `.pacorig`, `.pacnew`, `.pacsave` to tabooext automatically via OS vars.
 - journald log management is handled by the `marcstraube.common.base` role, not here.

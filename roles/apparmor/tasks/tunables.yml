@@ -1,9 +1,5 @@
 ---
-# =============================================================================
-# AppArmor Tunables Tasks
-# =============================================================================
-
-- name: Deploy custom AppArmor tunables
+- name: Tunables | Deploy custom AppArmor tunables
   ansible.builtin.template:
     src: tunables_custom.j2
     dest: /etc/apparmor.d/tunables/custom
@@ -13,7 +9,7 @@
   notify: Reload AppArmor
   when: apparmor_tunables | length > 0
 
-- name: Remove custom tunables when none configured
+- name: Tunables | Remove custom tunables when none configured
   ansible.builtin.file:
     path: /etc/apparmor.d/tunables/custom
     state: absent

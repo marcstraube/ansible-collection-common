@@ -1,85 +1,186 @@
 ---
-# =============================================================================
-# Package Management - Multi-OS Support
-# =============================================================================
-# Supports: ArchLinux, Debian/Ubuntu, RHEL/Fedora/Rocky
-# =============================================================================
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    "{{ item.new }}": "{{ lookup('vars', item.old) | bool }}"
+  when:
+    - package_management_enabled | bool
+    - lookup('vars', item.old, default='__undefined__') != '__undefined__'
+  loop: "{{ __package_management_deprecated_vars }}"
+  loop_control:
+    label: "{{ item.old }} -> {{ item.new }}"
+  vars:
+    __package_management_deprecated_vars:
+      - old: pacman_testing_repos
+        new: pacman_testing_repos_enabled
+      - old: pacman_multilib
+        new: pacman_multilib_enabled
+      - old: pacman_multilib_testing
+        new: pacman_multilib_testing_enabled
+      - old: pacman_install_rebuild_detector
+        new: pacman_rebuild_detector_enabled
+      - old: pacman_install_pkgfile
+        new: pacman_pkgfile_enabled
+      - old: pacman_install_informant
+        new: pacman_informant_enabled
+      - old: apt_docker_repo
+        new: apt_docker_repo_enabled
+      - old: apt_postgresql_repo
+        new: apt_postgresql_repo_enabled
+      - old: apt_php_sury_repo
+        new: apt_php_sury_repo_enabled
+      - old: apt_grafana_repo
+        new: apt_grafana_repo_enabled
+      - old: apt_kubernetes_repo
+        new: apt_kubernetes_repo_enabled
+      - old: apt_unattended_upgrades
+        new: apt_unattended_upgrades_enabled
+      - old: apt_install_apt_file
+        new: apt_apt_file_enabled
+      - old: apt_install_needrestart
+        new: apt_needrestart_enabled
+      - old: apt_install_debsums
+        new: apt_debsums_enabled
+      - old: apt_install_debian_goodies
+        new: apt_debian_goodies_enabled
+      - old: dnf_makecache_timer
+        new: dnf_makecache_timer_enabled
+      - old: dnf_rpmfusion_free
+        new: dnf_rpmfusion_free_enabled
+      - old: dnf_rpmfusion_nonfree
+        new: dnf_rpmfusion_nonfree_enabled
+      - old: dnf_docker_repo
+        new: dnf_docker_repo_enabled
+      - old: dnf_postgresql_repo
+        new: dnf_postgresql_repo_enabled
+      - old: dnf_grafana_repo
+        new: dnf_grafana_repo_enabled
+      - old: dnf_kubernetes_repo
+        new: dnf_kubernetes_repo_enabled
+      - old: dnf_install_utils
+        new: dnf_utils_enabled
+      - old: dnf_install_needs_restarting
+        new: dnf_needs_restarting_enabled
+      - old: dnf_install_rpmbuild
+        new: dnf_rpmbuild_enabled
+      - old: dnf_install_mock
+        new: dnf_mock_enabled
+      - old: makepkg_distcc
+        new: makepkg_distcc_enabled
+      - old: makepkg_ccache
+        new: makepkg_ccache_enabled
+      - old: makepkg_sccache
+        new: makepkg_sccache_enabled
+      - old: paccache_enabled
+        new: paccache_timer_enabled
+  tags:
+    - package-management
 
-- name: Main | Include ArchLinux tasks
+- name: Main | Include Archlinux tasks
   when:
     - package_management_enabled | bool
     - ansible_facts['os_family'] == 'Archlinux'
-  tags: [package-management]
+  tags:
+    - package-management
   block:
-    - name: Import Reflector tasks
+    - name: Main | Import Reflector tasks
       ansible.builtin.import_tasks: archlinux/reflector.yml
       when: reflector_enabled | bool
-      tags: [package-management:repos]
+      tags:
+        - package-management
+        - package-management:repos
 
-    - name: Import Pacman tasks
+    - name: Main | Import Pacman tasks
       ansible.builtin.import_tasks: archlinux/pacman.yml
-      tags: [package-management:configure]
+      tags:
+        - package-management
+        - package-management:configure
 
-    - name: Import Makepkg tasks
+    - name: Main | Import Makepkg tasks
       ansible.builtin.import_tasks: archlinux/makepkg.yml
-      tags: [package-management:configure]
+      tags:
+        - package-management
+        - package-management:configure
 
-    - name: Import AUR tasks
+    - name: Main | Import AUR tasks
       ansible.builtin.import_tasks: archlinux/aur.yml
       when: aur_helper | length > 0
-      tags: [package-management:install]
+      tags:
+        - package-management
+        - package-management:install
 
-    - name: Import Paru configuration
+    - name: Main | Import Paru tasks
       ansible.builtin.import_tasks: archlinux/paru.yml
       when: aur_helper == 'paru'
-      tags: [package-management:configure]
+      tags:
+        - package-management
+        - package-management:configure
 
-    - name: Import additional tools tasks
+    - name: Main | Import Tools tasks
       ansible.builtin.import_tasks: archlinux/tools.yml
-      tags: [package-management:tools]
+      tags:
+        - package-management
+        - package-management:tools
 
 - name: Main | Include Debian tasks
   when:
     - package_management_enabled | bool
     - ansible_facts['os_family'] == 'Debian'
-  tags: [package-management]
+  tags:
+    - package-management
   block:
-    - name: Import APT configuration tasks
+    - name: Main | Import APT tasks
       ansible.builtin.import_tasks: debian/apt.yml
-      tags: [package-management:configure]
+      tags:
+        - package-management
+        - package-management:configure
 
-    - name: Import external repositories tasks
+    - name: Main | Import Repos tasks
       ansible.builtin.import_tasks: debian/repos.yml
-      tags: [package-management:repos]
+      tags:
+        - package-management
+        - package-management:repos
 
-    - name: Import unattended-upgrades tasks
+    - name: Main | Import unattended-upgrades tasks
       ansible.builtin.import_tasks: debian/unattended.yml
-      when: apt_unattended_upgrades | bool
-      tags: [package-management:configure]
+      when: apt_unattended_upgrades_enabled | bool
+      tags:
+        - package-management
+        - package-management:configure
 
-    - name: Import additional tools tasks
+    - name: Main | Import Tools tasks
       ansible.builtin.import_tasks: debian/tools.yml
-      tags: [package-management:tools]
+      tags:
+        - package-management
+        - package-management:tools
 
 - name: Main | Include RedHat tasks
   when:
     - package_management_enabled | bool
     - ansible_facts['os_family'] == 'RedHat'
-  tags: [package-management]
+  tags:
+    - package-management
   block:
-    - name: Import DNF configuration tasks
+    - name: Main | Import DNF tasks
       ansible.builtin.import_tasks: redhat/dnf.yml
-      tags: [package-management:configure]
+      tags:
+        - package-management
+        - package-management:configure
 
-    - name: Import external repositories tasks
+    - name: Main | Import Repos tasks
       ansible.builtin.import_tasks: redhat/repos.yml
-      tags: [package-management:repos]
+      tags:
+        - package-management
+        - package-management:repos
 
-    - name: Import dnf-automatic tasks
+    - name: Main | Import dnf-automatic tasks
       ansible.builtin.import_tasks: redhat/automatic.yml
       when: dnf_automatic_enabled | bool
-      tags: [package-management:configure]
+      tags:
+        - package-management
+        - package-management:configure
 
-    - name: Import additional tools tasks
+    - name: Main | Import Tools tasks
       ansible.builtin.import_tasks: redhat/tools.yml
-      tags: [package-management:tools]
+      tags:
+        - package-management
+        - package-management:tools

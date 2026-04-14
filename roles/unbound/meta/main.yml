@@ -1,12 +1,8 @@
 ---
-# =============================================================================
-# Unbound - Role Metadata
-# =============================================================================
-
 galaxy_info:
-  author: 'Marc Straube'
-  description: 'Configure Unbound DNS resolver with DNSSEC, DNS-over-TLS, and blocklists'
-  license: 'MIT'
+  author: Marc Straube
+  description: Configure Unbound DNS resolver with DNSSEC, DNS-over-TLS, and blocklists
+  license: MIT
   min_ansible_version: '2.17'
 
   platforms:

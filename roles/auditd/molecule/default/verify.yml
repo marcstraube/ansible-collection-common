@@ -1,15 +1,13 @@
 ---
-# marcstraube.common.auditd/molecule/default/verify.yml
-
 - name: Verify
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
-    # =========================================================================
-    # PACKAGE INSTALLATION
-    # =========================================================================
+    #
+    # Package Installation
+    #
+
     - name: Verify | Check audit package installed (Arch)
       ansible.builtin.package:
         name: audit
@@ -37,40 +35,42 @@
       failed_when: audit_pkg.changed
       when: ansible_facts['os_family'] == 'RedHat'
 
-    # =========================================================================
-    # BINARY VERIFICATION
-    # =========================================================================
-    - name: Verify | Check auditd binary exists
+    #
+    # Binary Verification
+    #
+
+    - name: Verify | Check auditd binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v auditd
       register: auditd_binary
       changed_when: false
       failed_when: auditd_binary.rc != 0
 
-    - name: Verify | Check auditctl binary exists
+    - name: Verify | Check auditctl binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v auditctl
       register: auditctl_binary
       changed_when: false
       failed_when: auditctl_binary.rc != 0
 
-    - name: Verify | Check ausearch binary exists
+    - name: Verify | Check ausearch binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v ausearch
       register: ausearch_binary
       changed_when: false
       failed_when: ausearch_binary.rc != 0
 
-    - name: Verify | Check aureport binary exists
+    - name: Verify | Check aureport binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v aureport
       register: aureport_binary
       changed_when: false
       failed_when: aureport_binary.rc != 0
 
-    # =========================================================================
-    # CONFIGURATION FILES
-    # =========================================================================
+    #
+    # Configuration Files
+    #
+
     - name: Verify | Check auditd.conf exists
       ansible.builtin.stat:
         path: /etc/audit/auditd.conf
@@ -98,9 +98,10 @@
           - "'max_log_file = 8' in (auditd_conf_content.content | b64decode)"
         fail_msg: 'auditd.conf missing expected settings'
 
-    # =========================================================================
-    # AUDIT RULES
-    # =========================================================================
+    #
+    # Audit Rules
+    #
+
     - name: Verify | Check audit rules file exists
       ansible.builtin.stat:
         path: /etc/audit/rules.d/audit.rules
@@ -138,29 +139,31 @@
           - "'sshd_config' in (audit_rules_content.content | b64decode)"
         fail_msg: 'custom sshd_config watch not found'
 
-    # =========================================================================
-    # SERVICE VERIFICATION
-    # =========================================================================
+    #
+    # Service Verification
+    #
+
     - name: Verify | Check auditd service exists
       ansible.builtin.stat:
         path: /usr/lib/systemd/system/auditd.service
       register: auditd_service_file
 
     - name: Verify | Check auditd service is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: auditd.service
       register: auditd_service
       failed_when: auditd_service.status.UnitFileState != 'enabled'
 
     - name: Verify | Check auditd service is running
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: auditd.service
       register: auditd_status
       failed_when: auditd_status.status.ActiveState != 'active'
 
-    # =========================================================================
-    # LOG DIRECTORY
-    # =========================================================================
+    #
+    # Log Directory
+    #
+
     - name: Verify | Check audit log directory exists
       ansible.builtin.stat:
         path: /var/log/audit
@@ -180,9 +183,10 @@
       register: audit_log
       failed_when: not audit_log.stat.exists
 
-    # =========================================================================
-    # FUNCTIONAL TESTS (kernel audit subsystem available in VM)
-    # =========================================================================
+    #
+    # Functional Tests (kernel audit subsystem available in VM)
+    #
+
     - name: Verify | Test auditctl status
       ansible.builtin.command:
         cmd: auditctl -s
@@ -223,9 +227,10 @@
       changed_when: false
       failed_when: aureport_test.rc != 0
 
-    # =========================================================================
-    # PLUGIN VERIFICATION
-    # =========================================================================
+    #
+    # Plugin Verification
+    #
+
     - name: Verify | Check syslog plugin config exists
       ansible.builtin.stat:
         path: /etc/audit/plugins.d/syslog.conf

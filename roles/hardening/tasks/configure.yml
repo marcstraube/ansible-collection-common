@@ -1,13 +1,9 @@
 ---
-# =============================================================================
-# Kernel Hardening — sysctl configuration
-# =============================================================================
-
-- name: Kernel | Deploy hardening sysctl settings
+- name: Configure | Deploy hardening sysctl settings
   ansible.builtin.template:
     src: sysctl-hardening.conf.j2
     dest: '/etc/sysctl.d/99-hardening.conf'
     owner: root
     group: root
     mode: '0644'
-  notify: Hardening apply sysctl
+  notify: Apply sysctl hardening
