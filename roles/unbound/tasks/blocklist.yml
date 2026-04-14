@@ -12,21 +12,3 @@
     cmd: '/usr/local/bin/unbound-update-blocklist'
     creates: '/etc/unbound/conf.d/blocklist.conf'
   notify: Reload unbound
-
-- name: Blocklist | Deploy update systemd service
-  ansible.builtin.template:
-    src: 'unbound-blocklist.service.j2'
-    dest: '/etc/systemd/system/unbound-blocklist.service'
-    owner: root
-    group: root
-    mode: '0644'
-  notify: Reload unbound systemd units
-
-- name: Blocklist | Deploy update systemd timer
-  ansible.builtin.template:
-    src: 'unbound-blocklist.timer.j2'
-    dest: '/etc/systemd/system/unbound-blocklist.timer'
-    owner: root
-    group: root
-    mode: '0644'
-  notify: Reload unbound systemd units
