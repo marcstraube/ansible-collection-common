@@ -59,9 +59,6 @@
     dest: '{{ item.item.home | default(users_default_home_base ~ "/" ~ item.item.name) }}/.face'
     state: link
     force: true
-    owner: '{{ item.item.name }}'
-    group: '{{ item.item.group | default(item.item.name) }}'
-    mode: '0644'
   loop: '{{ __users_profile_images_stat.results }}'
   loop_control:
     label: '{{ item.item.name }}'
