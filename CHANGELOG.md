@@ -2,6 +2,19 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [1.0.1](https://github.com/marcstraube/ansible-collection-common/compare/v1.0.0...v1.0.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* Use generic updater for galaxy.yml version bump ([#6](https://github.com/marcstraube/ansible-collection-common/issues/6)) ([e829f20](https://github.com/marcstraube/ansible-collection-common/commit/e829f20a3c8362c55a83bab726039f02f1c0e724))
+* Use markdownlint-cli2 ignores for CHANGELOG.md ([#5](https://github.com/marcstraube/ansible-collection-common/issues/5)) ([1cb1c54](https://github.com/marcstraube/ansible-collection-common/commit/1cb1c548a783ee80db656c7677b8fd89758f2818))
+
+
+### Code Refactoring
+
+* Standardize all 37 roles to unified coding conventions ([#2](https://github.com/marcstraube/ansible-collection-common/issues/2)) ([6d28947](https://github.com/marcstraube/ansible-collection-common/commit/6d28947b4874b0387bd2cc2ce31cc45cf076022c))
+
 ## [1.0.0] - 2026-04-10
 
 ### Summary
