@@ -16,13 +16,7 @@
         {"type": "test", "section": "Tests", "hidden": true},
         {"type": "ci", "section": "CI", "hidden": true}
       ],
-      "extra-files": [
-        {
-          "type": "yaml",
-          "path": "galaxy.yml",
-          "jsonpath": "$.version"
-        }
-      ]
+      "extra-files": ["galaxy.yml"]
     }
   }
 }
