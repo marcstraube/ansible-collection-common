@@ -14,7 +14,7 @@ galaxy_info:
         - trixie
     - name: EL
       versions:
-        - 9
+        - all
 
   galaxy_tags:
     - rkhunter

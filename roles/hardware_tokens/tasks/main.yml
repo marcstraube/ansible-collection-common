@@ -29,7 +29,10 @@
     hardware_tokens_opensc_enabled: >-
       {{ hardware_tokens_opensc | default(hardware_tokens_opensc_enabled) | bool }}
     hardware_tokens_pcscd_socket_enabled: >-
-      {{ hardware_tokens_pcscd | default(hardware_tokens_pcscd_enabled | default(hardware_tokens_pcscd_socket_enabled)) | bool }}
+      {{ hardware_tokens_pcscd
+         | default(hardware_tokens_pcscd_enabled
+           | default(hardware_tokens_pcscd_socket_enabled))
+         | bool }}
     hardware_tokens_pam_u2f_enabled: >-
       {{ hardware_tokens_pam_u2f | default(hardware_tokens_pam_u2f_enabled) | bool }}
     hardware_tokens_pam_u2f_pin_enabled: >-
