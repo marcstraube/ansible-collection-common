@@ -4,12 +4,93 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [utils, utils:vars]
+  tags:
+    - utils
+
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    "{{ item.new }}": "{{ lookup('vars', item.old) | bool }}"
+  when:
+    - utils_enabled | bool
+    - lookup('vars', item.old, default='__undefined__') != '__undefined__'
+  loop: "{{ __utils_deprecated_vars }}"
+  loop_control:
+    label: "{{ item.old }} -> {{ item.new }}"
+  vars:
+    __utils_deprecated_vars:
+      - old: utils_monitor_htop
+        new: utils_monitor_htop_enabled
+      - old: utils_monitor_btop
+        new: utils_monitor_btop_enabled
+      - old: utils_monitor_bottom
+        new: utils_monitor_bottom_enabled
+      - old: utils_monitor_atop
+        new: utils_monitor_atop_enabled
+      - old: utils_mux_tmux
+        new: utils_mux_tmux_enabled
+      - old: utils_mux_zellij
+        new: utils_mux_zellij_enabled
+      - old: utils_mux_screen
+        new: utils_mux_screen_enabled
+      - old: utils_transfer_rsync
+        new: utils_transfer_rsync_enabled
+      - old: utils_search_ripgrep
+        new: utils_search_ripgrep_enabled
+      - old: utils_search_fd
+        new: utils_search_fd_enabled
+      - old: utils_fetch_fastfetch
+        new: utils_fetch_fastfetch_enabled
+      - old: utils_fetch_hyfetch
+        new: utils_fetch_hyfetch_enabled
+      - old: utils_fetch_archey4
+        new: utils_fetch_archey4_enabled
+      - old: utils_fetch_cpufetch
+        new: utils_fetch_cpufetch_enabled
+      - old: utils_fun_cowsay
+        new: utils_fun_cowsay_enabled
+      - old: utils_fun_fortune
+        new: utils_fun_fortune_enabled
+      - old: utils_fun_lolcat
+        new: utils_fun_lolcat_enabled
+      - old: utils_fun_ponysay
+        new: utils_fun_ponysay_enabled
+      - old: utils_fun_figlet
+        new: utils_fun_figlet_enabled
+      - old: utils_fun_toilet
+        new: utils_fun_toilet_enabled
+      - old: utils_fun_sl
+        new: utils_fun_sl_enabled
+      - old: utils_fun_cmatrix
+        new: utils_fun_cmatrix_enabled
+      - old: utils_fun_cbonsai
+        new: utils_fun_cbonsai_enabled
+      - old: utils_fun_asciiquarium
+        new: utils_fun_asciiquarium_enabled
+      - old: utils_fun_nyancat
+        new: utils_fun_nyancat_enabled
+      - old: utils_fun_no_more_secrets
+        new: utils_fun_no_more_secrets_enabled
+      - old: utils_fun_tty_clock
+        new: utils_fun_tty_clock_enabled
+      - old: utils_fun_pipes
+        new: utils_fun_pipes_enabled
+      - old: utils_fun_pokemon_colorscripts
+        new: utils_fun_pokemon_colorscripts_enabled
+      - old: utils_fun_pokemonsay
+        new: utils_fun_pokemonsay_enabled
+      - old: utils_fun_hollywood
+        new: utils_fun_hollywood_enabled
+  tags:
+    - utils
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [utils, utils:install]
+  when: utils_enabled | bool
+  tags:
+    - utils
+    - utils:install

@@ -33,16 +33,17 @@
     mode: '0644'
 
 - name: Systemd | Enable services
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ item }}'
     enabled: true
     state: started
   loop: '{{ base_services_enabled }}'
 
 - name: Systemd | Disable services
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ item }}'
     enabled: false
     state: stopped
   loop: '{{ base_services_disabled }}'
+  # Service may not be installed on the system
   failed_when: false

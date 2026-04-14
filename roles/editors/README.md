@@ -16,45 +16,53 @@ out of scope — users should manage their own editor configs via dotfiles.
 
 ## Requirements
 
-- **Ansible**: >= 2.17
+- ansible-core >= 2.17
+- No additional collections required
 
 ## Supported Platforms
 
-| Platform           | Notes                                  |
-| ------------------ | -------------------------------------- |
-| Arch Linux         | Rolling release                        |
-| Debian Trixie (13) |                                        |
-| Rocky Linux 9      | Neovim via GitHub binary (not in EPEL) |
-| Rocky Linux 10     | Neovim via GitHub binary (not in EPEL) |
+| Platform                  | Notes                                  |
+|---------------------------|----------------------------------------|
+| Arch Linux                |                                        |
+| Debian Trixie             |                                        |
+| EL 9 (Rocky, Alma, RHEL)  | Neovim via GitHub binary (not in EPEL) |
+| EL 10 (Rocky, Alma, RHEL) | Neovim via GitHub binary (not in EPEL) |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
-### Control
+### Role Control
 
-| Variable          | Default  | Description                               |
-| ----------------- | -------- | ----------------------------------------- |
-| `editors_enabled` | `true`   | Master toggle for the role                |
-| `editors_nano`    | `true`   | Install nano                              |
-| `editors_vim`     | `true`   | Install vim                               |
-| `editors_neovim`  | `true`   | Install neovim                            |
-| `editors_default` | `'nvim'` | Default editor for EDITOR/VISUAL env vars |
+| Variable          | Default | Description             |
+|-------------------|---------|-------------------------|
+| `editors_enabled` | `true`  | Enable the editors role |
+
+### Editors
+
+| Variable                 | Default  | Description                               |
+|--------------------------|----------|-------------------------------------------|
+| `editors_nano_enabled`   | `true`   | Enable nano editor                        |
+| `editors_vim_enabled`    | `true`   | Enable vim editor                         |
+| `editors_neovim_enabled` | `true`   | Enable neovim editor                      |
+| `editors_default`        | `'nvim'` | Default editor for EDITOR/VISUAL env vars |
 
 ### Configuration Management
 
-| Variable                       | Default | Description                 |
-| ------------------------------ | ------- | --------------------------- |
-| `editors_nano_config_manage`   | `true`  | Deploy global nano config   |
-| `editors_vim_config_manage`    | `true`  | Deploy global vim config    |
-| `editors_neovim_config_manage` | `true`  | Deploy global neovim config |
-
-Set to `false` to install the editor without touching its global config file.
+| Variable                        | Default | Description                            |
+|---------------------------------|---------|----------------------------------------|
+| `editors_nano_config_enabled`   | `true`  | Enable global nano config deployment   |
+| `editors_vim_config_enabled`    | `true`  | Enable global vim config deployment    |
+| `editors_neovim_config_enabled` | `true`  | Enable global neovim config deployment |
 
 ### Neovim Binary Install (RedHat only)
 
-| Variable                        | Default     | Description                         |
-| ------------------------------- | ----------- | ----------------------------------- |
-| `editors_neovim_binary_install` | `false`     | Install neovim from GitHub releases |
-| `editors_neovim_version`        | `'v0.10.4'` | Neovim release version to install   |
+| Variable                        | Default     | Description                              |
+|---------------------------------|-------------|------------------------------------------|
+| `editors_neovim_binary_enabled` | `false`     | Enable neovim binary install from GitHub |
+| `editors_neovim_version`        | `'v0.10.4'` | Neovim release version to install        |
 
 ### Editor Configuration
 
@@ -65,17 +73,39 @@ the full list of options:
 - `editors_vim_config` — vim settings (syntax, numbers, search, visual, etc.)
 - `editors_neovim_config` — neovim settings (same as vim plus termguicolors, signcolumn, etc.)
 
+### Per-User Configuration
+
+| Variable                    | Default     | Description                                |
+|-----------------------------|-------------|--------------------------------------------|
+| `editors_users`             | `[]`        | Per-user editor config entries             |
+| `editors_user_config_mode`  | `'managed'` | Default mode when user entry has no 'mode' |
+| `editors_user_config_merge` | `true`      | Default config_merge behavior              |
+
+### Deprecated Variables
+
+The following variables are deprecated and will be removed in v2.0.0:
+
+| Old Variable                    | New Variable                    |
+|---------------------------------|---------------------------------|
+| `editors_nano`                  | `editors_nano_enabled`          |
+| `editors_vim`                   | `editors_vim_enabled`           |
+| `editors_neovim`                | `editors_neovim_enabled`        |
+| `editors_nano_config_manage`    | `editors_nano_config_enabled`   |
+| `editors_vim_config_manage`     | `editors_vim_config_enabled`    |
+| `editors_neovim_config_manage`  | `editors_neovim_config_enabled` |
+| `editors_neovim_binary_install` | `editors_neovim_binary_enabled` |
+
 ## Tags
 
 | Tag                   | Scope                           |
-| --------------------- | ------------------------------- |
+|-----------------------|---------------------------------|
 | `editors`             | All tasks                       |
-| `editors:vars`        | OS variable loading             |
 | `editors:install`     | Package installation            |
 | `editors:environment` | EDITOR/VISUAL environment setup |
 | `editors:nano`        | Nano configuration              |
 | `editors:vim`         | Vim configuration               |
 | `editors:neovim`      | Neovim configuration            |
+| `editors:users`       | Per-user config deployment      |
 
 ## Example Playbook
 
@@ -83,21 +113,9 @@ the full list of options:
 - name: Include editors role
   ansible.builtin.include_role:
     name: marcstraube.common.editors
-  tags: [base, editors]
+  tags:
+    - editors
   when: editors_enabled | default(true) | bool
-```
-
-## Example Inventory
-
-```yaml
-# Install editors but skip global vim config (user has own dotfiles)
-editors_enabled: true
-editors_vim_config_manage: false
-editors_default: 'nvim'
-
-# Rocky Linux: install neovim from binary release
-editors_neovim_binary_install: true
-editors_neovim_version: 'v0.10.4'
 ```
 
 ## Testing
@@ -108,6 +126,21 @@ molecule test
 ```
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+## Notes
+
+Example inventory configuration:
+
+```yaml
+# Install editors but skip global vim config (user has own dotfiles)
+editors_enabled: true
+editors_vim_config_enabled: false
+editors_default: 'nvim'
+
+# Rocky Linux: install neovim from binary release
+editors_neovim_binary_enabled: true
+editors_neovim_version: 'v0.10.4'
+```
 
 ## License
 

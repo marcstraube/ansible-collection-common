@@ -3,6 +3,7 @@
 # Role Control
 #
 
+# Enable the users role
 users_enabled: true
 
 #

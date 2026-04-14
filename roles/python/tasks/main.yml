@@ -4,13 +4,16 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [python]
+  tags:
+    - python
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  when: python_enabled | default(true) | bool
-  tags: [python]
+  when: python_enabled | bool
+  tags:
+    - python

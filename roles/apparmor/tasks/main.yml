@@ -4,28 +4,48 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
       skip: true
-  tags: [apparmor]
+  tags:
+    - apparmor
 
-- name: Main | Include install tasks
-  ansible.builtin.include_tasks:
-    file: install.yml
-    apply:
-      tags: [apparmor, apparmor:install]
-  when: apparmor_enabled | bool
-  tags: [apparmor, apparmor:install]
+- name: Main | Handle deprecated apparmor_extra_profiles variable
+  ansible.builtin.set_fact:
+    apparmor_extra_profiles_enabled: >-
+      {{ apparmor_extra_profiles | default(apparmor_extra_profiles_enabled) | bool }}
+  when:
+    - apparmor_enabled | bool
+    - apparmor_extra_profiles is defined
+  tags:
+    - apparmor
 
-- name: Main | Include kernel tasks
-  ansible.builtin.include_tasks:
-    file: kernel.yml
-    apply:
-      tags: [apparmor, apparmor:kernel]
+- name: Main | Handle deprecated apparmor_notify_package variable
+  ansible.builtin.set_fact:
+    apparmor_notify_enabled: >-
+      {{ apparmor_notify_package | default(apparmor_notify_enabled) | bool }}
+  when:
+    - apparmor_enabled | bool
+    - apparmor_notify_package is defined
+  tags:
+    - apparmor
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
   when: apparmor_enabled | bool
-  tags: [apparmor, apparmor:kernel]
+  tags:
+    - apparmor
+    - apparmor:install
+
+- name: Main | Import kernel tasks
+  ansible.builtin.import_tasks: kernel.yml
+  when: apparmor_enabled | bool
+  tags:
+    - apparmor
+    - apparmor:kernel
 
 # Profile, tunables, and service management require AppArmor to be active
 # in the kernel. On first run (before reboot) these are skipped gracefully.
@@ -34,28 +54,40 @@
   ansible.builtin.include_tasks:
     file: tunables.yml
     apply:
-      tags: [apparmor, apparmor:tunables]
+      tags:
+        - apparmor
+        - apparmor:tunables
   when:
     - apparmor_enabled | bool
     - apparmor_kernel_active | default(false)
-  tags: [apparmor, apparmor:tunables]
+  tags:
+    - apparmor
+    - apparmor:tunables
 
-- name: Main | Include profile tasks
+- name: Main | Include profiles tasks
   ansible.builtin.include_tasks:
     file: profiles.yml
     apply:
-      tags: [apparmor, apparmor:profiles]
+      tags:
+        - apparmor
+        - apparmor:profiles
   when:
     - apparmor_enabled | bool
     - apparmor_kernel_active | default(false)
-  tags: [apparmor, apparmor:profiles]
+  tags:
+    - apparmor
+    - apparmor:profiles
 
 - name: Main | Include service tasks
   ansible.builtin.include_tasks:
     file: service.yml
     apply:
-      tags: [apparmor, apparmor:service]
+      tags:
+        - apparmor
+        - apparmor:service
   when:
     - apparmor_enabled | bool
     - apparmor_kernel_active | default(false)
-  tags: [apparmor, apparmor:service]
+  tags:
+    - apparmor
+    - apparmor:service

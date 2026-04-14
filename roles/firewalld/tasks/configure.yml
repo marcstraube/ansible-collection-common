@@ -1,7 +1,7 @@
 ---
 # Ensure firewalld is running for configuration
 - name: Configure | Start firewalld for configuration
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __firewalld_service_name }}'
     state: started
 

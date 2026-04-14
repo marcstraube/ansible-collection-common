@@ -1,4 +1,5 @@
 ---
+# lspci may not be installed in containers or minimal images
 - name: Detect | Get GPU controllers from lspci  # noqa: risky-shell-pipe
   ansible.builtin.shell:
     cmd: "lspci -nn | grep -iE '(VGA|3D|Display) controller'"

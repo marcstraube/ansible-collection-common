@@ -20,7 +20,7 @@
   loop: '{{ restic_jobs }}'
   loop_control:
     label: '{{ item.name }}'
-  notify: 'reload restic systemd units'
+  notify: Reload restic systemd units
 
 - name: Jobs | Create systemd timer units
   ansible.builtin.template:
@@ -32,4 +32,4 @@
   loop: '{{ restic_jobs }}'
   loop_control:
     label: '{{ item.name }}'
-  notify: 'reload restic systemd units'
+  notify: Reload restic systemd units

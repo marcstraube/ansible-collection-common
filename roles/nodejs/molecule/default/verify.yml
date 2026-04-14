@@ -90,7 +90,7 @@
       when: ansible_facts['os_family'] == 'RedHat'
 
     #
-    # Version Check (should provide version 22+)
+    # Version Check (should provide version 24+)
     #
 
     - name: Verify | Assert Node.js major version

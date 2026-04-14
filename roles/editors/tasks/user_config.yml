@@ -2,7 +2,7 @@
 # Called once per user from users.yml loop.
 # Variable: __editors_user (the current editors_users entry)
 
-- name: User Config | Get user info for {{ __editors_user.username }}
+- name: User Config | Get user info
   ansible.builtin.getent:
     database: passwd
     key: '{{ __editors_user.username }}'
@@ -43,7 +43,7 @@
 # Nano
 #
 
-- name: User Config | Ensure nano config directory for {{ __editors_user.username }}
+- name: User Config | Ensure nano config directory
   ansible.builtin.file:
     path: '{{ __editors_user_home }}/.config/nano'
     state: directory
@@ -51,10 +51,10 @@
     group: '{{ __editors_user_group }}'
     mode: '0755'
   when:
-    - editors_nano | bool
+    - editors_nano_enabled | bool
     - __editors_user.nano_config is defined
 
-- name: User Config | Deploy nano config for {{ __editors_user.username }}
+- name: User Config | Deploy nano config
   ansible.builtin.template:
     src: nanorc.j2
     dest: '{{ __editors_user_home }}/.config/nano/nanorc'
@@ -64,14 +64,14 @@
   vars:
     editors_nano_config: '{{ __editors_user_nano_config }}'
   when:
-    - editors_nano | bool
+    - editors_nano_enabled | bool
     - __editors_user.nano_config is defined
 
 #
 # Vim
 #
 
-- name: User Config | Deploy vim config for {{ __editors_user.username }}
+- name: User Config | Deploy vim config
   ansible.builtin.template:
     src: vimrc.j2
     dest: '{{ __editors_user_home }}/.vimrc'
@@ -81,14 +81,14 @@
   vars:
     editors_vim_config: '{{ __editors_user_vim_config }}'
   when:
-    - editors_vim | bool
+    - editors_vim_enabled | bool
     - __editors_user.vim_config is defined
 
 #
 # Neovim
 #
 
-- name: User Config | Ensure neovim config directory for {{ __editors_user.username }}
+- name: User Config | Ensure neovim config directory
   ansible.builtin.file:
     path: '{{ __editors_user_home }}/.config/nvim'
     state: directory
@@ -96,10 +96,10 @@
     group: '{{ __editors_user_group }}'
     mode: '0755'
   when:
-    - editors_neovim | bool
+    - editors_neovim_enabled | bool
     - __editors_user.neovim_config is defined
 
-- name: User Config | Deploy neovim config for {{ __editors_user.username }}
+- name: User Config | Deploy neovim config
   ansible.builtin.template:
     src: init.vim.j2
     dest: '{{ __editors_user_home }}/.config/nvim/init.vim'
@@ -109,5 +109,5 @@
   vars:
     editors_neovim_config: '{{ __editors_user_neovim_config }}'
   when:
-    - editors_neovim | bool
+    - editors_neovim_enabled | bool
     - __editors_user.neovim_config is defined

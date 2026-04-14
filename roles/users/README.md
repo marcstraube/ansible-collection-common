@@ -21,29 +21,35 @@ Manage system users, groups, SSH authorized keys, and profile images.
 
 ## Supported Platforms
 
-- Arch Linux
-- Debian Trixie
-- Rocky Linux 9
-- Rocky Linux 10
+| Platform                  | Notes |
+|---------------------------|-------|
+| Arch Linux                |       |
+| Debian Trixie             |       |
+| EL 9 (Rocky, Alma, RHEL)  |       |
+| EL 10 (Rocky, Alma, RHEL) |       |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
-### Control
+### Role Control
 
-| Variable        | Default | Description                    |
-| --------------- | ------- | ------------------------------ |
-| `users_enabled` | `true`  | Enable/disable the entire role |
+| Variable        | Default | Description           |
+|-----------------|---------|-----------------------|
+| `users_enabled` | `true`  | Enable the users role |
 
 ### Groups
 
 | Variable       | Default | Description                                         |
-| -------------- | ------- | --------------------------------------------------- |
+|----------------|---------|-----------------------------------------------------|
 | `users_groups` | `[]`    | List of groups to create (name, gid, system, state) |
 
 ### Users
 
 | Variable                        | Default     | Description                                            |
-| ------------------------------- | ----------- | ------------------------------------------------------ |
+|---------------------------------|-------------|--------------------------------------------------------|
 | `users_list`                    | `[]`        | List of users to manage (see defaults for full schema) |
 | `users_default_shell`           | `/bin/bash` | Default shell for new users                            |
 | `users_default_home_base`       | `/home`     | Default home base directory                            |
@@ -58,7 +64,7 @@ Manage system users, groups, SSH authorized keys, and profile images.
 ### SSH Key Management
 
 | Variable                         | Default           | Description                       |
-| -------------------------------- | ----------------- | --------------------------------- |
+|----------------------------------|-------------------|-----------------------------------|
 | `users_ssh_authorized_keys_dir`  | `.ssh`            | SSH authorized_keys directory     |
 | `users_ssh_authorized_keys_file` | `authorized_keys` | Authorized keys filename          |
 | `users_ssh_dir_mode`             | `0700`            | SSH directory permissions         |
@@ -68,7 +74,7 @@ Manage system users, groups, SSH authorized keys, and profile images.
 ### Password Policy
 
 | Variable                         | Default   | Description                                             |
-| -------------------------------- | --------- | ------------------------------------------------------- |
+|----------------------------------|-----------|---------------------------------------------------------|
 | `users_password_hash_algo`       | `sha512`  | Hash algorithm (`sha512`, `sha256`)                     |
 | `users_password_salt`            | vault ref | Fixed salt for idempotent hashing                       |
 | `users_generate_random_password` | `false`   | Generate random password for users without one          |
@@ -78,20 +84,20 @@ Manage system users, groups, SSH authorized keys, and profile images.
 ### Home Directory
 
 | Variable          | Default | Description                |
-| ----------------- | ------- | -------------------------- |
+|-------------------|---------|----------------------------|
 | `users_home_mode` | `0700`  | Home directory permissions |
 
 ### User Removal
 
 | Variable             | Default | Description                                |
-| -------------------- | ------- | ------------------------------------------ |
+|----------------------|---------|--------------------------------------------|
 | `users_remove_home`  | `false` | Remove home directory when user is removed |
 | `users_force_remove` | `false` | Force removal even if user is logged in    |
 
 ### Profile Images
 
 | Variable                            | Default                          | Description                     |
-| ----------------------------------- | -------------------------------- | ------------------------------- |
+|-------------------------------------|----------------------------------|---------------------------------|
 | `users_profile_images_enabled`      | `false`                          | Enable profile image deployment |
 | `users_profile_images_dir`          | `/var/lib/AccountsService/icons` | Profile images directory        |
 | `users_profile_images_face_symlink` | `false`                          | Create `~/.face` symlink        |
@@ -99,11 +105,11 @@ Manage system users, groups, SSH authorized keys, and profile images.
 ### Exclusive Mode
 
 | Variable          | Default                        | Description                             |
-| ----------------- | ------------------------------ | --------------------------------------- |
+|-------------------|--------------------------------|-----------------------------------------|
 | `users_exclusive` | `false`                        | Remove users not in `users_list`        |
 | `users_keep`      | `[root, nobody, ansible_user]` | Users to never remove in exclusive mode |
 
-## User Schema
+### User Schema
 
 Each entry in `users_list` supports:
 
@@ -141,7 +147,7 @@ Each entry in `users_list` supports:
 ## Tags
 
 | Tag                    | Scope                    |
-| ---------------------- | ------------------------ |
+|------------------------|--------------------------|
 | `users`                | All role tasks           |
 | `users:groups`         | Group management         |
 | `users:users`          | User creation/removal    |
@@ -151,24 +157,11 @@ Each entry in `users_list` supports:
 ## Example Playbook
 
 ```yaml
-- hosts: all
-  roles:
-    - role: marcstraube.common.users
-      vars:
-        users_groups:
-          - name: 'developers'
-            gid: 2000
-        users_list:
-          - name: root
-            password: "{{ vault_users.root }}"
-          - name: 'johndoe'
-            comment: 'John Doe'
-            default: true
-            groups: ['wheel', 'developers']
-            shell: '/bin/zsh'
-            password: "{{ vault_users.johndoe }}"
-            ssh_keys:
-              - 'ssh-ed25519 AAAA...'
+- name: Include users role
+  ansible.builtin.include_role:
+    name: marcstraube.common.users
+  tags: [users]
+  when: users_enabled | default(true) | bool
 ```
 
 ## Testing

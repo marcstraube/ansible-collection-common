@@ -1,4 +1,4 @@
 ---
-# modprobe config path is identical across Arch Linux, Debian, and Rocky Linux.
+# modprobe config directory is identical across Arch Linux, Debian, and Rocky Linux.
 
-__hardening_modprobe_path: '/etc/modprobe.d'
+__hardening_modprobe_config_dir: '/etc/modprobe.d'

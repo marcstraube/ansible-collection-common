@@ -2,14 +2,16 @@
 # TLP provides granular power management for laptops.
 # Mutually exclusive with PPD — remove PPD first if present.
 
-- name: TLP | Remove power profiles packages if installed
+- name: TLP | Remove PPD packages if installed
   ansible.builtin.package:
     name: '{{ __energy_management_ppd_packages }}'
     state: absent
+  # PPD may not be installed
   failed_when: false
 
+# PPD service may not exist on the system
 - name: TLP | Stop and disable PPD service
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __energy_management_ppd_service }}'
     state: stopped
     enabled: false
@@ -30,13 +32,13 @@
   notify: 'restart tlp'
 
 - name: TLP | Mask conflicting services
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ item }}'
     masked: true
   loop: '{{ __energy_management_tlp_mask_services }}'
 
-- name: TLP | Enable and start TLP
-  ansible.builtin.systemd:
+- name: TLP | Enable and start TLP service
+  ansible.builtin.systemd_service:
     name: '{{ __energy_management_tlp_service }}'
     state: started
     enabled: true

@@ -1,7 +1,7 @@
 ---
-__pam_packages:
+__pam_hardening_packages:
   - pam
 
-__pam_pwquality_package: 'libpwquality'
+__pam_hardening_pwquality_package: 'libpwquality'
 
-__pam_google_authenticator_package: 'libpam-google-authenticator'
+__pam_hardening_google_authenticator_package: 'libpam-google-authenticator'

@@ -1,5 +1,5 @@
 ---
-- name: Install NVM User | Get home directory  # noqa: name[template]
+- name: Install NVM User | Get home directory
   ansible.builtin.getent:
     database: passwd
     key: '{{ __nodejs_nvm_user }}'
@@ -16,11 +16,12 @@
     line: 'source /usr/share/nvm/init-nvm.sh'
     create: true
     owner: '{{ __nodejs_nvm_user }}'
+    group: '{{ __nodejs_nvm_user }}'
     mode: '0644'
   when: ansible_facts['os_family'] == 'Archlinux'
 
 # On non-Arch, download and install nvm via install script
-- name: Install NVM User | Install nvm via script (non-Archlinux)
+- name: Install NVM User | nvm via script (non-Archlinux)
   when: ansible_facts['os_family'] != 'Archlinux'
   block:
     - name: Install NVM User | Download nvm install script
@@ -36,9 +37,10 @@
         dest: '{{ __nodejs_nvm_user_home }}/.nvm_install.sh'
         mode: '0700'
         owner: '{{ __nodejs_nvm_user }}'
+        group: '{{ __nodejs_nvm_user }}'
       register: __nodejs_nvm_script
 
-    - name: Install NVM User | Install nvm
+    - name: Install NVM User | Run nvm install script
       ansible.builtin.command:
         cmd: bash {{ __nodejs_nvm_user_home }}/.nvm_install.sh
         creates: '{{ __nodejs_nvm_user_home }}/.nvm/nvm.sh'
@@ -56,7 +58,7 @@
       {{ (ansible_facts['os_family'] == 'Archlinux')
          | ternary('/usr/share/nvm', __nodejs_nvm_user_home + '/.nvm') }}
 
-- name: Install NVM User | Install Node.js via nvm
+- name: Install NVM User | Node.js via nvm
   ansible.builtin.shell:
     cmd: |
       set -o pipefail

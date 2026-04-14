@@ -1,15 +1,16 @@
 ---
 # RHEL 10+ replaced power-profiles-daemon with tuned + tuned-ppd.
 # tuned-ppd implements the same D-Bus API, so DE integration is unchanged.
-# For RHEL 9 / Rocky 9, see Rocky-9.yml override.
+# For EL 9, see RedHat-9.yml override.
 
 # Logind
-__energy_management_logind_conf_dir: '/etc/systemd/logind.conf.d'
-__energy_management_logind_conf_file: 'energy.conf'
+__energy_management_logind_service: 'systemd-logind.service'
+__energy_management_logind_config_dir: '/etc/systemd/logind.conf.d'
+__energy_management_logind_config_file: 'energy.conf'
 
 # Sleep
-__energy_management_sleep_conf_dir: '/etc/systemd/sleep.conf.d'
-__energy_management_sleep_conf_file: 'energy.conf'
+__energy_management_sleep_config_dir: '/etc/systemd/sleep.conf.d'
+__energy_management_sleep_config_file: 'energy.conf'
 
 # Power Profiles Daemon (tuned-ppd on RHEL 10+)
 __energy_management_ppd_packages:

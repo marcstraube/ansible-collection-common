@@ -1,23 +1,22 @@
 ---
 - name: Tools | Install rebuild-detector
-  community.general.pacman:
+  ansible.builtin.package:
     name: 'rebuild-detector'
     state: present
-  when: pacman_install_rebuild_detector | bool
+  when: pacman_rebuild_detector_enabled | bool
 
 - name: Tools | Install pkgfile
-  community.general.pacman:
+  ansible.builtin.package:
     name: 'pkgfile'
     state: present
-  when: pacman_install_pkgfile | bool
+  when: pacman_pkgfile_enabled | bool
   notify: 'pkgfile installed'
 
-- name: Tools | Enable pkgfile update timer
-  ansible.builtin.systemd:
+- name: Tools | Manage pkgfile update timer
+  ansible.builtin.systemd_service:
     name: 'pkgfile-update.timer'
-    state: started
-    enabled: true
-  when: pacman_install_pkgfile | bool
+    enabled: "{{ pacman_pkgfile_enabled | bool }}"
+    state: "{{ pacman_pkgfile_enabled | bool | ternary('started', 'stopped') }}"
 
 - name: Tools | Install informant
   become: true
@@ -27,5 +26,5 @@
     use: '{{ aur_helper }}'
     state: present
   when:
-    - pacman_install_informant | bool
+    - pacman_informant_enabled | bool
     - aur_helper | length > 0

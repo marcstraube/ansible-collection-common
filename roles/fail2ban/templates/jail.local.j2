@@ -10,14 +10,14 @@ ignoreself = {{ fail2ban_ignoreself | lower }}
 bantime = {{ fail2ban_bantime }}
 findtime = {{ fail2ban_findtime }}
 maxretry = {{ fail2ban_maxretry }}
-{% if fail2ban_bantime_increment %}
+{% if fail2ban_bantime_increment_enabled | bool %}
 
 # Progressive ban escalation
 bantime.increment = true
 bantime.factor = {{ fail2ban_bantime_factor }}
 bantime.formula = {{ fail2ban_bantime_formula }}
 bantime.maxtime = {{ fail2ban_bantime_maxtime }}
-bantime.overalljails = {{ fail2ban_bantime_overalljails | lower }}
+bantime.overalljails = {{ fail2ban_bantime_overalljails_enabled | lower }}
 {% endif %}
 
 # Ban action

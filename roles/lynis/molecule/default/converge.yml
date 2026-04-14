@@ -3,6 +3,14 @@
   hosts: all
   gather_facts: true
 
+  pre_tasks:
+    - name: Converge | Set git install method for EL 10
+      ansible.builtin.set_fact:
+        lynis_install_method: 'git'
+      when:
+        - ansible_facts['os_family'] == 'RedHat'
+        - ansible_facts['distribution_major_version'] == '10'
+
   vars:
     lynis_enabled: true
     lynis_timer_enabled: true
@@ -13,7 +21,6 @@
       - 'iso27001'
     lynis_skip_tests:
       - 'BOOT-5122'
-    lynis_btrfs_nocow: true
 
   tasks:
     - name: Converge | Include lynis role  # noqa: role-name[path]

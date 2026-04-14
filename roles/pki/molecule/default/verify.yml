@@ -227,26 +227,26 @@
 
     - name: Verify | Check client certificate exists
       ansible.builtin.stat:
-        path: /etc/ssl/certs/testclient.crt
+        path: /etc/ssl/certs/johndoe.crt
       register: _pki_client_cert
       failed_when: not _pki_client_cert.stat.exists
 
     - name: Verify | Check client private key exists
       ansible.builtin.stat:
-        path: /etc/ssl/private/testclient.key
+        path: /etc/ssl/private/johndoe.key
       register: _pki_client_key
       failed_when: not _pki_client_key.stat.exists
 
     - name: Verify | Assert client certificate subject
       ansible.builtin.command:
-        cmd: openssl x509 -in /etc/ssl/certs/testclient.crt -noout -subject -email
+        cmd: openssl x509 -in /etc/ssl/certs/johndoe.crt -noout -subject -email
       register: _pki_client_subject
       changed_when: false
-      failed_when: "'testclient@example.com' not in _pki_client_subject.stdout"
+      failed_when: "'john@example.com' not in _pki_client_subject.stdout"
 
     - name: Verify | Assert client cert is signed by intermediate CA
       ansible.builtin.command:
-        cmd: openssl verify -CAfile /etc/ssl/intermediate/certs/ca-chain.crt /etc/ssl/certs/testclient.crt
+        cmd: openssl verify -CAfile /etc/ssl/intermediate/certs/ca-chain.crt /etc/ssl/certs/johndoe.crt
       register: _pki_client_verify
       changed_when: false
       failed_when: "'OK' not in _pki_client_verify.stdout"
@@ -377,7 +377,7 @@
       failed_when: _pki_ocsp_header.rc != 0
 
     - name: Verify | Check OCSP service is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: pki-ocsp.service
       register: _pki_ocsp_enabled
 
@@ -404,7 +404,7 @@
         fail_msg: 'Certificate check script is not executable'
 
     - name: Verify | Check cert check timer is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: pki-cert-check.timer
       register: _pki_check_timer_enabled
 

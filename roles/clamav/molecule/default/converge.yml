@@ -5,8 +5,8 @@
 
   vars:
     # Disable postfix/rspamd integration for testing
-    clamav_postfix_integration: false
-    clamav_rspamd_integration: false
+    clamav_postfix_integration_enabled: false
+    clamav_rspamd_integration_enabled: false
     # Disable freshclam for faster testing (no DB download)
     clamav_freshclam_enabled: false
     # Disable daemon (no DB = daemon can't start)

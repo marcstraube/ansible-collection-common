@@ -3,7 +3,7 @@ __openssh_packages:
   - 'openssh-server'
   - 'openssh-client'
 
-__openssh_server_service: 'ssh.service'
+__openssh_service_name: 'ssh.service'
 __openssh_server_config_dir: '/etc/ssh'
 __openssh_server_config_file: '/etc/ssh/sshd_config'
 __openssh_server_config_d_dir: '/etc/ssh/sshd_config.d'

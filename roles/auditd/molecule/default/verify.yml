@@ -39,28 +39,28 @@
     # Binary Verification
     #
 
-    - name: Verify | Check auditd binary exists
+    - name: Verify | Check auditd binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v auditd
       register: auditd_binary
       changed_when: false
       failed_when: auditd_binary.rc != 0
 
-    - name: Verify | Check auditctl binary exists
+    - name: Verify | Check auditctl binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v auditctl
       register: auditctl_binary
       changed_when: false
       failed_when: auditctl_binary.rc != 0
 
-    - name: Verify | Check ausearch binary exists
+    - name: Verify | Check ausearch binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v ausearch
       register: ausearch_binary
       changed_when: false
       failed_when: ausearch_binary.rc != 0
 
-    - name: Verify | Check aureport binary exists
+    - name: Verify | Check aureport binary exists  # noqa: command-instead-of-shell
       ansible.builtin.shell:
         cmd: command -v aureport
       register: aureport_binary
@@ -149,13 +149,13 @@
       register: auditd_service_file
 
     - name: Verify | Check auditd service is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: auditd.service
       register: auditd_service
       failed_when: auditd_service.status.UnitFileState != 'enabled'
 
     - name: Verify | Check auditd service is running
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: auditd.service
       register: auditd_status
       failed_when: auditd_status.status.ActiveState != 'active'

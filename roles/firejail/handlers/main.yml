@@ -1,12 +1,14 @@
 ---
-- name: Firecfg clean
+- name: Clean firecfg symlinks
   ansible.builtin.command:
     cmd: firecfg --clean
   listen: apply firecfg
   changed_when: true
+  when: firejail_enabled | bool
 
-- name: Firecfg apply
+- name: Apply firecfg symlinks
   ansible.builtin.command:
     cmd: firecfg
   listen: apply firecfg
   changed_when: true
+  when: firejail_enabled | bool

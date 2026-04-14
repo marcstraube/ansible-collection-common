@@ -1,10 +1,13 @@
 ---
 #
-# Service Control
+# Role Control
 #
 
-# Enable or disable chrony service
+# Enable the chrony role
 chrony_enabled: true
+
+# Enable and start the chrony service
+chrony_service_enabled: true
 
 #
 # NTP Servers
@@ -13,13 +16,13 @@ chrony_enabled: true
 # NTP servers to use for synchronization
 # Each entry has 'server' and optional 'options' (default: 'iburst')
 chrony_ntp_servers:
-  - server: 'de.pool.ntp.org'
-    options: 'iburst'
   - server: '0.pool.ntp.org'
     options: 'iburst'
   - server: '1.pool.ntp.org'
     options: 'iburst'
   - server: '2.pool.ntp.org'
+    options: 'iburst'
+  - server: '3.pool.ntp.org'
     options: 'iburst'
 
 # NTP pools (alternative to individual servers)
@@ -172,14 +175,6 @@ chrony_firewalld_zone: 'public'
 
 # Enable AppArmor profile enforcement (Debian/Arch only, not RHEL/Rocky)
 chrony_apparmor_enabled: false
-
-#
-# BTRFS
-#
-
-# Enable BTRFS NoCOW optimization for log directory
-# Auto-detected: only applies on BTRFS filesystems with empty log dirs
-chrony_btrfs_nocow: true
 
 #
 # Extra Configuration

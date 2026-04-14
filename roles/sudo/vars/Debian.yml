@@ -1,3 +1,5 @@
 ---
-__sudo_package: 'sudo'
+__sudo_packages:
+  - 'sudo'
+
 __sudo_group: 'sudo'

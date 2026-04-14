@@ -12,4 +12,8 @@ __base_default_packages:
   - 'unzip'
   - 'zip'
 
+__base_locale_packages:
+  - 'glibc-locale-source'
+  - 'glibc-langpack-en'
+
 __base_dialog_package: 'dialog'

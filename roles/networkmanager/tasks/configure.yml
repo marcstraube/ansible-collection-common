@@ -5,7 +5,7 @@
     dest: /etc/NetworkManager/conf.d/00-ansible.conf
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
   notify: Restart NetworkManager
 
 - name: Configure | Remove legacy dhcp-send-hostname config (migrated to 00-ansible.conf)

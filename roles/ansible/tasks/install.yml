@@ -3,32 +3,24 @@
 # Common (all OS families)
 #
 
-- name: Install | Enable EPEL repository (RedHat)
-  ansible.builtin.dnf:
-    name: 'epel-release'
-    state: present
-  when:
-    - ansible_facts['os_family'] == 'RedHat'
-    - __ansible_tools_epel_required | default(false) | bool
-
 - name: Install | Ansible packages
   ansible.builtin.package:
     name: '{{ __ansible_tools_ansible_packages }}'
     state: present
-  when: ansible_tools_install_ansible | bool
+  when: ansible_tools_ansible_enabled | bool
 
 #
 # Archlinux — Molecule, drivers, lint via pacman/AUR
 #
 
-- name: Install | Archlinux installation
+- name: Install | Archlinux tools
   when: ansible_facts['os_family'] == 'Archlinux'
   block:
     - name: Install | Molecule package (Arch)
-      community.general.pacman:
+      ansible.builtin.package:
         name: '{{ __ansible_tools_molecule_packages }}'
         state: present
-      when: ansible_tools_install_molecule | bool
+      when: ansible_tools_molecule_enabled | bool
 
     - name: Install | molecule-plugins from AUR (Arch)
       become: true
@@ -39,7 +31,7 @@
         extra_args: '--nocheck'
         state: present
       when:
-        - ansible_tools_install_molecule | bool
+        - ansible_tools_molecule_enabled | bool
         - ansible_tools_container_driver in ['podman', 'docker']
 
     - name: Install | Podman Python bindings from AUR (Arch)
@@ -50,28 +42,28 @@
         use: 'makepkg'
         state: present
       when:
-        - ansible_tools_install_molecule | bool
+        - ansible_tools_molecule_enabled | bool
         - ansible_tools_container_driver == 'podman'
 
     - name: Install | Docker Python bindings (Arch)
-      community.general.pacman:
+      ansible.builtin.package:
         name: '{{ __ansible_tools_docker_packages }}'
         state: present
       when:
-        - ansible_tools_install_molecule | bool
+        - ansible_tools_molecule_enabled | bool
         - ansible_tools_container_driver == 'docker'
 
     - name: Install | Lint packages (Arch)
-      community.general.pacman:
+      ansible.builtin.package:
         name: '{{ __ansible_tools_lint_packages }}'
         state: present
-      when: ansible_tools_install_lint | bool
+      when: ansible_tools_lint_enabled | bool
 
 #
 # Debian — Molecule, drivers, lint via pipx
 #
 
-- name: Install | Debian installation
+- name: Install | Debian tools
   when: ansible_facts['os_family'] == 'Debian'
   block:
     - name: Install | Molecule via pipx (Debian)
@@ -79,7 +71,7 @@
         name: '{{ __ansible_tools_molecule_pipx_package }}'
         state: present
         executable: '{{ __ansible_tools_pipx_cmd }}'
-      when: ansible_tools_install_molecule | bool
+      when: ansible_tools_molecule_enabled | bool
 
     - name: Install | Inject container driver plugin via pipx (Debian)
       community.general.pipx:
@@ -94,7 +86,7 @@
           | ternary(__ansible_tools_podman_pipx_inject,
           __ansible_tools_docker_pipx_inject) }}
       when:
-        - ansible_tools_install_molecule | bool
+        - ansible_tools_molecule_enabled | bool
         - ansible_tools_container_driver in ['podman', 'docker']
 
     - name: Install | Inject extra plugins via pipx (Debian)
@@ -104,7 +96,7 @@
         state: inject
         executable: '{{ __ansible_tools_pipx_cmd }}'
       when:
-        - ansible_tools_install_molecule | bool
+        - ansible_tools_molecule_enabled | bool
         - ansible_tools_extra_plugins | length > 0
 
     - name: Install | ansible-lint via pipx (Debian)
@@ -112,20 +104,20 @@
         name: 'ansible-lint'
         state: present
         executable: '{{ __ansible_tools_pipx_cmd }}'
-      when: ansible_tools_install_lint | bool
+      when: ansible_tools_lint_enabled | bool
 
     - name: Install | yamllint via pipx (Debian)
       community.general.pipx:
         name: 'yamllint'
         state: present
         executable: '{{ __ansible_tools_pipx_cmd }}'
-      when: ansible_tools_install_lint | bool
+      when: ansible_tools_lint_enabled | bool
 
 #
 # RedHat — Molecule, drivers, lint via pipx
 #
 
-- name: Install | RedHat installation
+- name: Install | RedHat tools
   when: ansible_facts['os_family'] == 'RedHat'
   block:
     - name: Install | Molecule via pipx (RedHat)
@@ -133,7 +125,7 @@
         name: '{{ __ansible_tools_molecule_pipx_package }}'
         state: present
         executable: '{{ __ansible_tools_pipx_cmd }}'
-      when: ansible_tools_install_molecule | bool
+      when: ansible_tools_molecule_enabled | bool
 
     - name: Install | Inject container driver plugin via pipx (RedHat)
       community.general.pipx:
@@ -148,7 +140,7 @@
           | ternary(__ansible_tools_podman_pipx_inject,
           __ansible_tools_docker_pipx_inject) }}
       when:
-        - ansible_tools_install_molecule | bool
+        - ansible_tools_molecule_enabled | bool
         - ansible_tools_container_driver in ['podman', 'docker']
 
     - name: Install | Inject extra plugins via pipx (RedHat)
@@ -158,7 +150,7 @@
         state: inject
         executable: '{{ __ansible_tools_pipx_cmd }}'
       when:
-        - ansible_tools_install_molecule | bool
+        - ansible_tools_molecule_enabled | bool
         - ansible_tools_extra_plugins | length > 0
 
     - name: Install | ansible-lint via pipx (RedHat)
@@ -166,11 +158,11 @@
         name: 'ansible-lint'
         state: present
         executable: '{{ __ansible_tools_pipx_cmd }}'
-      when: ansible_tools_install_lint | bool
+      when: ansible_tools_lint_enabled | bool
 
     - name: Install | yamllint via pipx (RedHat)
       community.general.pipx:
         name: 'yamllint'
         state: present
         executable: '{{ __ansible_tools_pipx_cmd }}'
-      when: ansible_tools_install_lint | bool
+      when: ansible_tools_lint_enabled | bool

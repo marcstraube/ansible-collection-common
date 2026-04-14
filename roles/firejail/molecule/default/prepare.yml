@@ -5,13 +5,13 @@
   gather_facts: true
 
   tasks:
-    - name: Prepare | Full system upgrade (Arch)
+    - name: Prepare | Update package cache (Arch)
       community.general.pacman:
         update_cache: true
         upgrade: true
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Prepare | Update apt package cache (Debian)
+    - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
         update_cache: true
       when: ansible_facts['os_family'] == 'Debian'
@@ -22,7 +22,7 @@
         state: present
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Prepare | Update dnf package cache (RedHat)
+    - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'

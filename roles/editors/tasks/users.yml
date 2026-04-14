@@ -6,7 +6,9 @@
   ansible.builtin.include_tasks:
     file: user_config.yml
     apply:
-      tags: [editors, editors:users]
+      tags:
+        - editors
+        - editors:users
   loop: '{{ editors_users }}'
   loop_control:
     loop_var: __editors_user

@@ -2,5 +2,7 @@
 - name: Rebuild font cache
   ansible.builtin.command:
     cmd: 'fc-cache -f'
-  changed_when: true
-  when: fonts_rebuild_cache | bool
+  changed_when: false
+  when:
+    - fonts_enabled | bool
+    - fonts_rebuild_cache_enabled | bool

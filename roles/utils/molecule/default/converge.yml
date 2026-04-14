@@ -4,28 +4,30 @@
   gather_facts: true
 
   vars:
+    utils_enabled: true
+
     # Monitors
-    utils_monitor_htop: true
-    utils_monitor_btop: true
+    utils_monitor_htop_enabled: true
+    utils_monitor_btop_enabled: true
 
     # Multiplexers
-    utils_mux_tmux: true
-    utils_mux_screen: false
+    utils_mux_tmux_enabled: true
+    utils_mux_screen_enabled: false
 
     # File transfer
-    utils_transfer_rsync: true
+    utils_transfer_rsync_enabled: true
 
     # Search tools
-    utils_search_ripgrep: true
-    utils_search_fd: true
+    utils_search_ripgrep_enabled: true
+    utils_search_fd_enabled: true
 
     # System info
-    utils_fetch_fastfetch: true
+    utils_fetch_fastfetch_enabled: true
 
     # Fun tools (available on all platforms)
-    utils_fun_cowsay: true
-    utils_fun_figlet: true
-    utils_fun_sl: true
+    utils_fun_cowsay_enabled: true
+    utils_fun_figlet_enabled: true
+    utils_fun_sl_enabled: true
 
   tasks:
     - name: Converge | Include utils role  # noqa: role-name[path]

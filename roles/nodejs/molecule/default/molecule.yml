@@ -5,10 +5,13 @@ platforms:
   - name: nodejs-archlinux
     image: docker.io/marcstraube/archlinux-ansible:latest
     pre_build_image: true
-    command: ${MOLECULE_DOCKER_COMMAND:-""}
+    command: /usr/lib/systemd/systemd
     privileged: true
-    ulimits:
-      - nofile=65535:65535
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      /run: rw,nosuid,nodev,size=65536k
+      /tmp: rw,nosuid,nodev
   - name: nodejs-debian-trixie
     image: docker.io/geerlingguy/docker-debian13-ansible:latest
     pre_build_image: true
@@ -22,7 +25,7 @@ platforms:
   - name: nodejs-rocky-9
     image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest
     pre_build_image: true
-    command: /usr/sbin/init
+    command: /usr/lib/systemd/systemd
     privileged: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -32,7 +35,7 @@ platforms:
   - name: nodejs-rocky-10
     image: docker.io/geerlingguy/docker-rockylinux10-ansible:latest
     pre_build_image: true
-    command: /usr/sbin/init
+    command: /usr/lib/systemd/systemd
     privileged: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -42,6 +45,7 @@ platforms:
 provisioner:
   name: ansible
   playbooks:
+    prepare: prepare.yml
     converge: converge.yml
     verify: verify.yml
   inventory:

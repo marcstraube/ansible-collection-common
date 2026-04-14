@@ -1,5 +1,5 @@
 {{ ansible_managed | comment }}
-{% if firejail_apparmor | default(false) | bool %}
+{% if firejail_apparmor_enabled | default(false) | bool %}
 
 # AppArmor confinement for all sandboxed applications
 apparmor

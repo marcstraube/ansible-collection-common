@@ -35,10 +35,12 @@ provisioner:
       stdout_callback: default
       result_format: yaml
       inject_facts_as_vars: false
+      allow_broken_conditionals: true
   inventory:
     host_vars:
       auditd-archlinux:
         ansible_port: 2222
+        ansible_python_interpreter: /usr/bin/python
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/auditd-archlinux/virtualbox/private_key
@@ -50,11 +52,13 @@ provisioner:
           }}/.vagrant/machines/auditd-debian-trixie/virtualbox/private_key
       auditd-rocky-9:
         ansible_port: 2224
+        ansible_python_interpreter: /usr/bin/python3
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/auditd-rocky-9/virtualbox/private_key
       auditd-rocky-10:
         ansible_port: 2225
+        ansible_python_interpreter: /usr/bin/python3
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/auditd-rocky-10/virtualbox/private_key
@@ -62,6 +66,7 @@ provisioner:
       all:
         ansible_connection: ssh
         ansible_user: vagrant
+        ansible_become: true
         ansible_host: 127.0.0.1
         ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 
@@ -91,7 +96,7 @@ provisioner:
         auditd_pci_dss: true
 
         # Test syslog plugin
-        auditd_plugin_syslog: true
+        auditd_plugin_syslog_enabled: true
         auditd_syslog_facility: 'LOG_LOCAL6'
 
         # Custom watches

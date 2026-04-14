@@ -1,5 +1,5 @@
 ---
-- name: pacman | Ensure pacman hook directory exists
+- name: Pacman | Ensure hook directory exists
   ansible.builtin.file:
     path: '{{ pacman_hook_dir }}'
     state: directory
@@ -7,7 +7,7 @@
     group: root
     mode: '0755'
 
-- name: pacman | Import GPG keys for custom repositories
+- name: Pacman | Import GPG keys for custom repositories
   ansible.builtin.command:
     cmd: >-
       pacman-key --recv-keys {{ item.key_id }}
@@ -16,27 +16,28 @@
   loop_control:
     label: '{{ item.name }}'
   when: item.key_id is defined
-  register: gpg_import
-  changed_when: "'imported' in gpg_import.stdout"
+  register: __package_management_gpg_import
+  changed_when: "'imported' in __package_management_gpg_import.stdout"
   failed_when:
-    - gpg_import.rc != 0
-    - "'already in keyring' not in gpg_import.stderr"
+    - __package_management_gpg_import.rc != 0
+    - "'already in keyring' not in __package_management_gpg_import.stderr"
 
-- name: pacman | Check if GPG keys are locally signed
+- name: Pacman | Check if GPG keys are locally signed
   ansible.builtin.command:
     cmd: pacman-key --list-sigs {{ item.key_id }}
   loop: '{{ pacman_custom_repositories }}'
   loop_control:
     label: '{{ item.name }}'
   when: item.key_id is defined
-  register: gpg_sig_check
+  register: __package_management_gpg_sig_check
   changed_when: false
+  # Key may not be in keyring yet
   failed_when: false
 
-- name: pacman | Sign imported GPG keys
+- name: Pacman | Sign imported GPG keys
   ansible.builtin.command:
     cmd: pacman-key --lsign-key {{ item.item.key_id }}
-  loop: '{{ gpg_sig_check.results | default([]) }}'
+  loop: '{{ __package_management_gpg_sig_check.results | default([]) }}'
   loop_control:
     label: '{{ item.item.name }}'
   when:
@@ -44,7 +45,7 @@
     - "'[ultimate]' not in (item.stdout | default(''))"
   changed_when: true
 
-- name: pacman | Configure Pacman
+- name: Pacman | Deploy pacman.conf
   ansible.builtin.template:
     src: 'archlinux/pacman.conf.j2'
     dest: '/etc/pacman.conf'
@@ -54,15 +55,15 @@
     backup: true
   notify: 'pacman configuration changed'
 
-- name: pacman | Flush handlers to update pacman cache
+- name: Pacman | Flush handlers to update cache
   ansible.builtin.meta: flush_handlers
 
-- name: pacman | Install pacman-contrib
-  community.general.pacman:
+- name: Pacman | Install pacman-contrib
+  ansible.builtin.package:
     name: 'pacman-contrib'
     state: present
 
-- name: pacman | Configure paccache
+- name: Pacman | Configure paccache
   ansible.builtin.lineinfile:
     path: '/etc/conf.d/pacman-contrib'
     regexp: '^PACCACHE_ARGS=.*'
@@ -71,23 +72,15 @@
     group: root
     mode: '0644'
     create: true
-  when: paccache_enabled | bool
+  when: paccache_timer_enabled | bool
 
-- name: pacman | Enable paccache timer
-  ansible.builtin.systemd:
+- name: Pacman | Manage paccache timer
+  ansible.builtin.systemd_service:
     name: 'paccache.timer'
-    state: started
-    enabled: true
-  when: paccache_enabled | bool
+    enabled: "{{ paccache_timer_enabled | bool }}"
+    state: "{{ paccache_timer_enabled | bool | ternary('started', 'stopped') }}"
 
-- name: pacman | Disable paccache timer
-  ansible.builtin.systemd:
-    name: 'paccache.timer'
-    state: stopped
-    enabled: false
-  when: not (paccache_enabled | bool)
-
-- name: pacman | Install custom pacman hooks
+- name: Pacman | Install custom hooks
   ansible.builtin.copy:
     src: '{{ item }}'
     dest: '{{ pacman_hook_dir }}/{{ item | basename }}'

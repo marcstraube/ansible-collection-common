@@ -9,8 +9,8 @@
     podman_docker_enabled: false
     podman_podlet_enabled: true
     podman_desktop_enabled: false
-    podman_docker_alias: true
-    podman_docker_socket_symlink: false
+    podman_docker_alias_enabled: true
+    podman_docker_socket_symlink_enabled: false
     podman_socket_enabled: false
     podman_auto_update_enabled: false
     podman_prune_enabled: true
@@ -33,7 +33,6 @@
     podman_userns_mode: 'auto'
     podman_label: true
     podman_seccomp_enabled: true
-    podman_btrfs_enabled: false
 
   tasks:
     - name: Converge | Include podman role  # noqa: role-name[path]

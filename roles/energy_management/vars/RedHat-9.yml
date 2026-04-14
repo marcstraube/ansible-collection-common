@@ -1,16 +1,17 @@
 ---
-# Rocky 9 uses classic power-profiles-daemon (not tuned-ppd).
+# EL 9 uses classic power-profiles-daemon (not tuned-ppd).
 # Overrides RedHat.yml defaults for PPD packages and service.
 
 # Logind
-__energy_management_logind_conf_dir: '/etc/systemd/logind.conf.d'
-__energy_management_logind_conf_file: 'energy.conf'
+__energy_management_logind_service: 'systemd-logind.service'
+__energy_management_logind_config_dir: '/etc/systemd/logind.conf.d'
+__energy_management_logind_config_file: 'energy.conf'
 
 # Sleep
-__energy_management_sleep_conf_dir: '/etc/systemd/sleep.conf.d'
-__energy_management_sleep_conf_file: 'energy.conf'
+__energy_management_sleep_config_dir: '/etc/systemd/sleep.conf.d'
+__energy_management_sleep_config_file: 'energy.conf'
 
-# Power Profiles Daemon (classic PPD on Rocky 9)
+# Power Profiles Daemon (classic PPD on EL 9)
 __energy_management_ppd_packages:
   - 'power-profiles-daemon'
 __energy_management_ppd_service: 'power-profiles-daemon.service'

@@ -4,35 +4,35 @@
 - name: Udev | Deploy NitroKey rules
   ansible.builtin.copy:
     src: 41-nitrokey.rules
-    dest: '{{ __hardware_tokens_udev_rules_path }}/41-nitrokey.rules'
+    dest: '{{ __hardware_tokens_udev_rules_dir }}/41-nitrokey.rules'
     owner: root
     group: root
     mode: '0644'
   when:
-    - hardware_tokens_nitrokey | bool
+    - hardware_tokens_nitrokey_enabled | bool
     - ansible_facts['os_family'] != 'Archlinux'
   notify: Hardware tokens reload udev
 
 - name: Udev | Deploy YubiKey rules
   ansible.builtin.copy:
     src: 70-yubikey.rules
-    dest: '{{ __hardware_tokens_udev_rules_path }}/70-yubikey.rules'
+    dest: '{{ __hardware_tokens_udev_rules_dir }}/70-yubikey.rules'
     owner: root
     group: root
     mode: '0644'
   when:
-    - hardware_tokens_yubikey | bool
+    - hardware_tokens_yubikey_enabled | bool
     - ansible_facts['os_family'] != 'Archlinux'
   notify: Hardware tokens reload udev
 
 - name: Udev | Deploy FIDO2 rules
   ansible.builtin.copy:
     src: 60-fido2.rules
-    dest: '{{ __hardware_tokens_udev_rules_path }}/60-fido2.rules'
+    dest: '{{ __hardware_tokens_udev_rules_dir }}/60-fido2.rules'
     owner: root
     group: root
     mode: '0644'
   when:
-    - hardware_tokens_fido2 | bool
+    - hardware_tokens_fido2_enabled | bool
     - ansible_facts['os_family'] != 'Archlinux'
   notify: Hardware tokens reload udev

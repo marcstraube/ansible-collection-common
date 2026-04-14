@@ -5,9 +5,9 @@
 
   vars:
     gnupg_enabled: true
-    gnupg_install_gui: false
-    gnupg_install_tools: false
-    gnupg_agent_enable_ssh: true
+    gnupg_gui_enabled: false
+    gnupg_tools_enabled: false
+    gnupg_agent_ssh_enabled: true
     gnupg_agent_allow_preset_passphrase: true
     gnupg_no_greeting: true
     gnupg_throw_keyids: false

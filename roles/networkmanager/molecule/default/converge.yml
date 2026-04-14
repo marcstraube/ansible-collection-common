@@ -4,8 +4,8 @@
   gather_facts: true
   vars:
     # Use centralized test variables from molecule.yml
-    networkmanager_install_applet: "{{ test_networkmanager_install_applet }}"
-    networkmanager_configure_timezone: "{{ test_networkmanager_configure_timezone }}"
+    networkmanager_applet_enabled: "{{ test_networkmanager_applet_enabled }}"
+    networkmanager_timezone_enabled: "{{ test_networkmanager_timezone_enabled }}"
     networkmanager_dns: "{{ test_networkmanager_dns }}"
     networkmanager_log_level: "{{ test_networkmanager_log_level }}"
     networkmanager_wifi_powersave: "{{ test_networkmanager_wifi_powersave }}"
@@ -17,7 +17,7 @@
     networkmanager_sshfs_shares: "{{ test_networkmanager_sshfs_shares | default([]) }}"
     users_list: "{{ test_users_list }}"
     networkmanager_unmanaged_devices: "{{ test_networkmanager_unmanaged_devices }}"
-    networkmanager_polkit: "{{ test_networkmanager_polkit }}"
+    networkmanager_polkit_enabled: "{{ test_networkmanager_polkit_enabled }}"
     networkmanager_polkit_group: "{{ test_networkmanager_polkit_group }}"
 
   tasks:
@@ -30,7 +30,7 @@
         section: keyfile
         owner: root
         group: root
-        mode: "0644"
+        mode: '0644'
       notify: Restart NetworkManager
 
     - name: Converge | Include networkmanager role

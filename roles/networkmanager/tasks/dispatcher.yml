@@ -5,14 +5,14 @@
     dest: /etc/NetworkManager/dispatcher.d/09-timezone.sh
     owner: root
     group: root
-    mode: "0755"
-  when: networkmanager_configure_timezone
+    mode: '0755'
+  when: networkmanager_timezone_enabled | bool
 
 - name: Dispatcher | Ensure timezone dispatcher script is removed
   ansible.builtin.file:
     path: /etc/NetworkManager/dispatcher.d/09-timezone.sh
     state: absent
-  when: not networkmanager_configure_timezone
+  when: not (networkmanager_timezone_enabled | bool)
 
 - name: Dispatcher | Ensure VPN auto-connect dispatcher script is installed
   ansible.builtin.template:
@@ -20,7 +20,7 @@
     dest: /etc/NetworkManager/dispatcher.d/20-vpn-autoconnect.sh
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   when: networkmanager_vpn_autoconnect.enabled | default(false) | bool
   vars:
     network_connections_data: "{{ all_network_connections }}"
@@ -63,7 +63,7 @@
     owner: "{{ item }}"
     group: "{{ (users_list | selectattr('name', 'equalto', item) | first).group |
       default(item) }}"
-    mode: "0700"
+    mode: '0700'
   loop: "{{ __networkmanager_smb_user_names | default([]) }}"
   loop_control:
     label: "{{ item }}:{{ networkmanager_smb_credentials_dir }}"
@@ -80,7 +80,7 @@
     owner: "{{ item.user.name }}"
     group: "{{ (users_list | selectattr('name', 'equalto', item.user.name) | first).group |
       default(item.user.name) }}"
-    mode: "0600"
+    mode: '0600'
   loop: "{{ __networkmanager_smb_credentials | default([]) }}"
   loop_control:
     label: "{{ item.user.name }}:{{ item.credentials_name }}"
@@ -94,7 +94,7 @@
     owner: "{{ item.1.name }}"
     group: "{{ (users_list | selectattr('name', 'equalto', item.1.name) | first).group |
       default(item.1.name) }}"
-    mode: "0755"
+    mode: '0755'
   loop: "{{ networkmanager_smb_shares | subelements('users') }}"
   loop_control:
     label: "{{ item.1.name }}:{{ item.0.mount_subpath }}"
@@ -106,7 +106,7 @@
     dest: /etc/NetworkManager/dispatcher.d/{{ item | regex_replace(".j2$", "") }}
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   loop:
     - 30-mount-smb.sh.j2
     - 40-umount-smb.sh.j2
@@ -129,7 +129,7 @@
     dest: /etc/NetworkManager/dispatcher.d/pre-down.d/30-umount-smb.sh
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   when: networkmanager_smb_shares | length > 0
   vars:
     network_connections_data: "{{ all_network_connections }}"
@@ -146,7 +146,7 @@
     dest: /etc/NetworkManager/dispatcher.d/{{ item | regex_replace(".j2$", "") }}
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   loop:
     - 30-mount-sshfs.sh.j2
     - 40-umount-sshfs.sh.j2
@@ -169,7 +169,7 @@
     dest: /etc/NetworkManager/dispatcher.d/pre-down.d/30-umount-sshfs.sh
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   when: networkmanager_sshfs_shares | length > 0
   vars:
     network_connections_data: "{{ all_network_connections }}"
@@ -191,7 +191,7 @@
     dest: /etc/NetworkManager/dispatcher.d/50-vpn-mount-smb.sh
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   when: (networkmanager_smb_shares | selectattr('depends_on', 'defined') |
     map(attribute='depends_on') | flatten |
     intersect(networkmanager_connections.vpn.keys() | list) | list | length > 0)
@@ -212,7 +212,7 @@
     dest: /etc/NetworkManager/dispatcher.d/60-vpn-umount-smb.sh
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   when: (networkmanager_smb_shares | selectattr('depends_on', 'defined') |
     map(attribute='depends_on') | flatten |
     intersect(networkmanager_connections.vpn.keys() | list) | list | length > 0)
@@ -238,7 +238,7 @@
     dest: /etc/NetworkManager/dispatcher.d/99-wifi-auto-toggle.sh
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   when: (networkmanager_connections.ethernet | dict2items |
     selectattr('value.toggle_wifi', 'defined') | selectattr('value.toggle_wifi')) |
     list | length > 0

@@ -8,3 +8,4 @@ __networkmanager_applet_packages:
 
 __networkmanager_service_name: NetworkManager.service
 __networkmanager_dispatcher_service: NetworkManager-dispatcher.service
+__networkmanager_polkit_service: polkit.service

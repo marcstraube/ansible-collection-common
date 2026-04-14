@@ -1,6 +1,18 @@
 ---
+- name: Reload chrony systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  failed_when: false
+  when: chrony_enabled | bool
+
 - name: Restart chrony
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __chrony_service_name }}'
     state: restarted
-  when: chrony_enabled | bool
+  when: chrony_service_enabled | bool
+
+- name: Reload chrony
+  ansible.builtin.systemd_service:
+    name: '{{ __chrony_service_name }}'
+    state: reloaded
+  when: chrony_service_enabled | bool

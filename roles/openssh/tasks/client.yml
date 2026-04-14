@@ -1,16 +1,16 @@
 ---
 - name: Client | Ensure ssh_config.d directory exists
   ansible.builtin.file:
-    path: "{{ __openssh_client_config_d_dir }}"
+    path: '{{ __openssh_client_config_d_dir }}'
     state: directory
-    owner: 'root'
-    group: 'root'
+    owner: root
+    group: root
     mode: '0755'
 
 - name: Client | Configure SSH client defaults
   ansible.builtin.template:
     src: ssh_config.j2
-    dest: "{{ __openssh_client_config_d_dir }}/99-defaults.conf"
-    owner: 'root'
-    group: 'root'
+    dest: '{{ __openssh_client_config_d_dir }}/99-defaults.conf'
+    owner: root
+    group: root
     mode: '0644'

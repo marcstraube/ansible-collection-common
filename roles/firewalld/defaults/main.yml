@@ -1,10 +1,13 @@
 ---
 #
-# Service Control
+# Role Control
 #
 
-# Enable/disable firewalld service
+# Enable the firewalld role
 firewalld_enabled: true
+
+# Enable and start the firewalld service
+firewalld_service_enabled: true
 
 #
 # firewalld.conf — Global Daemon Settings

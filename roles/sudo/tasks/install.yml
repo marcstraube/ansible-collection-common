@@ -1,6 +1,5 @@
 ---
-- name: Install | sudo package
+- name: Install | sudo packages
   ansible.builtin.package:
-    name: '{{ __sudo_package }}'
+    name: '{{ __sudo_packages }}'
     state: present
-  when: sudo_enabled | bool

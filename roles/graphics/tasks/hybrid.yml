@@ -4,16 +4,17 @@
     name: '{{ __graphics_hybrid_switcheroo }}'
     state: present
   when:
-    - graphics_hybrid_switcheroo | bool
+    - graphics_hybrid_switcheroo_enabled | bool
     - __graphics_hybrid_switcheroo | length > 0
 
+# Hardware-dependent service — exempt from ternary pattern
 - name: Hybrid | Enable switcheroo-control service
-  ansible.builtin.systemd:
-    name: switcheroo-control.service
+  ansible.builtin.systemd_service:
+    name: '{{ __graphics_hybrid_switcheroo_service }}'
     enabled: true
     state: started
   when:
-    - graphics_hybrid_switcheroo | bool
+    - graphics_hybrid_switcheroo_enabled | bool
     - __graphics_hybrid_switcheroo | length > 0
 
 - name: Hybrid | Install prime-run helper
@@ -21,7 +22,7 @@
     name: '{{ __graphics_hybrid_prime_run }}'
     state: present
   when:
-    - graphics_hybrid_prime_run | bool
+    - graphics_hybrid_prime_run_enabled | bool
     - __graphics_hybrid_prime_run | length > 0
 
 - name: Hybrid | Deploy NVIDIA RTD3 udev rules
@@ -32,10 +33,10 @@
     group: root
     mode: '0644'
   notify:
-    - Reload graphics udev rules
-    - Trigger udev rules
+    - Reload GPU udev rules
+    - Trigger GPU udev rules
   when:
-    - graphics_hybrid_nvidia_rtd3 | bool
+    - graphics_hybrid_nvidia_rtd3_enabled | bool
     - __graphics_install_nvidia | bool
 
 - name: Hybrid | Remove NVIDIA RTD3 udev rules when disabled
@@ -43,8 +44,8 @@
     path: /etc/udev/rules.d/80-nvidia-pm.rules
     state: absent
   notify:
-    - Reload graphics udev rules
-  when: not (graphics_hybrid_nvidia_rtd3 | bool) or not (__graphics_install_nvidia | bool)
+    - Reload GPU udev rules
+  when: not (graphics_hybrid_nvidia_rtd3_enabled | bool) or not (__graphics_install_nvidia | bool)
 
 - name: Hybrid | Deploy NVIDIA power management modprobe config
   ansible.builtin.template:
@@ -54,29 +55,31 @@
     group: root
     mode: '0644'
   when:
-    - graphics_hybrid_nvidia_rtd3 | bool
+    - graphics_hybrid_nvidia_rtd3_enabled | bool
     - __graphics_install_nvidia | bool
 
 - name: Hybrid | Remove NVIDIA PM modprobe config when disabled
   ansible.builtin.file:
     path: /etc/modprobe.d/nvidia-pm.conf
     state: absent
-  when: not (graphics_hybrid_nvidia_rtd3 | bool) or not (__graphics_install_nvidia | bool)
+  when: not (graphics_hybrid_nvidia_rtd3_enabled | bool) or not (__graphics_install_nvidia | bool)
 
+# Hardware-dependent service — exempt from ternary pattern
 - name: Hybrid | Enable nvidia-persistenced service
-  ansible.builtin.systemd:
-    name: nvidia-persistenced.service
+  ansible.builtin.systemd_service:
+    name: '{{ __graphics_nvidia_persistenced_service }}'
     enabled: true
     state: started
   when:
-    - graphics_hybrid_nvidia_persistenced | bool
+    - graphics_hybrid_nvidia_persistenced_enabled | bool
     - __graphics_install_nvidia | bool
     - graphics_nvidia_driver != 'nouveau'
 
+# Hardware-dependent service — may not exist on the system
 - name: Hybrid | Disable nvidia-persistenced service when not needed
-  ansible.builtin.systemd:
-    name: nvidia-persistenced.service
+  ansible.builtin.systemd_service:
+    name: '{{ __graphics_nvidia_persistenced_service }}'
     enabled: false
     state: stopped
   failed_when: false
-  when: not (graphics_hybrid_nvidia_persistenced | bool) or not (__graphics_install_nvidia | bool)
+  when: not (graphics_hybrid_nvidia_persistenced_enabled | bool) or not (__graphics_install_nvidia | bool)

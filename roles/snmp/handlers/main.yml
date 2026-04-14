@@ -1,11 +1,13 @@
 ---
-- name: Reload snmp systemd units
-  ansible.builtin.systemd:
+- name: Reload SNMP systemd units
+  ansible.builtin.systemd_service:
     daemon_reload: true
+  # Container-safety for molecule
   failed_when: false
+  when: snmp_enabled | bool
 
-- name: Restart snmpd
-  ansible.builtin.systemd:
+- name: Restart SNMP daemon
+  ansible.builtin.systemd_service:
     name: '{{ __snmp_service_name }}'
     state: restarted
-  when: snmp_enabled | bool
+  when: snmp_service_enabled | bool

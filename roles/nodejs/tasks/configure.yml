@@ -7,6 +7,7 @@
   ansible.builtin.command: npm config get proxy
   register: __nodejs_current_proxy
   changed_when: false
+  # Returns 'undefined' when key is not set
   failed_when: false
   when: nodejs_npm_proxy | length > 0
 
@@ -21,6 +22,7 @@
   ansible.builtin.command: npm config get https-proxy
   register: __nodejs_current_https_proxy
   changed_when: false
+  # Returns 'undefined' when key is not set
   failed_when: false
   when: nodejs_npm_proxy | length > 0
 
@@ -35,13 +37,13 @@
   ansible.builtin.command: npm config get proxy
   register: __nodejs_current_proxy_remove
   changed_when: false
+  # Returns 'undefined' when key is not set
   failed_when: false
   when: nodejs_npm_proxy | length == 0
 
 - name: Configure | Remove npm HTTP proxy
   ansible.builtin.command: npm config delete proxy
   changed_when: true
-  failed_when: false
   when:
     - nodejs_npm_proxy | length == 0
     - __nodejs_current_proxy_remove.stdout | default('null') | trim not in ['null', 'undefined', '']
@@ -50,13 +52,13 @@
   ansible.builtin.command: npm config get https-proxy
   register: __nodejs_current_https_proxy_remove
   changed_when: false
+  # Returns 'undefined' when key is not set
   failed_when: false
   when: nodejs_npm_proxy | length == 0
 
 - name: Configure | Remove npm HTTPS proxy
   ansible.builtin.command: npm config delete https-proxy
   changed_when: true
-  failed_when: false
   when:
     - nodejs_npm_proxy | length == 0
     - __nodejs_current_https_proxy_remove.stdout | default('null') | trim not in ['null', 'undefined', '']
@@ -72,6 +74,7 @@
     label: '{{ item.key }}'
   register: __nodejs_npm_config_current
   changed_when: false
+  # Returns 'undefined' when key is not set
   failed_when: false
   when: nodejs_npm_config | length > 0
 

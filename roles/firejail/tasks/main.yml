@@ -1,10 +1,46 @@
 ---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+      skip: true
+
+- name: Main | Handle deprecated firejail_apparmor variable
+  ansible.builtin.set_fact:
+    firejail_apparmor_enabled: >-
+      {{ firejail_apparmor | default(firejail_apparmor_enabled) | bool }}
+  when:
+    - firejail_enabled | bool
+    - firejail_apparmor is defined
+  tags:
+    - firejail
+
+- name: Main | Handle deprecated firejail_pacman_hook variable
+  ansible.builtin.set_fact:
+    firejail_pacman_hook_enabled: >-
+      {{ firejail_pacman_hook | default(firejail_pacman_hook_enabled) | bool }}
+  when:
+    - firejail_enabled | bool
+    - firejail_pacman_hook is defined
+  tags:
+    - firejail
+
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: firejail_enabled | bool
-  tags: [firejail, firejail:install]
+  tags:
+    - firejail
+    - firejail:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
   when: firejail_enabled | bool
-  tags: [firejail, firejail:configure]
+  tags:
+    - firejail
+    - firejail:configure

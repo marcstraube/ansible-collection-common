@@ -3,6 +3,7 @@
 # Role Control
 #
 
+# Enable the graphics role
 graphics_enabled: true
 
 #
@@ -21,48 +22,74 @@ graphics_gpus: []
 # Intel GPU
 #
 
-# Install Intel GPU drivers
+# Enable Intel GPU drivers
 graphics_intel_enabled: false
 
-# Mesa driver (required for 3D)
-graphics_intel_mesa: true
+# Enable Intel Mesa driver (required for 3D)
+graphics_intel_mesa_enabled: true
 
-# Vulkan support (Broadwell and newer)
-graphics_intel_vulkan: true
+# DEPRECATED: Use graphics_intel_mesa_enabled instead (removed in v2.0.0)
+# graphics_intel_mesa: {{ graphics_intel_mesa_enabled }}
+
+# Enable Intel Vulkan support (Broadwell and newer)
+graphics_intel_vulkan_enabled: true
+
+# DEPRECATED: Use graphics_intel_vulkan_enabled instead (removed in v2.0.0)
+# graphics_intel_vulkan: {{ graphics_intel_vulkan_enabled }}
+
+# Enable Intel VA-API hardware video acceleration
+graphics_intel_vaapi_enabled: true
+
+# DEPRECATED: Use graphics_intel_vaapi_enabled instead (removed in v2.0.0)
+# graphics_intel_vaapi: {{ graphics_intel_vaapi_enabled }}
 
 # VA-API driver: intel-media-driver (modern, Gen 8+) or libva-intel-driver (legacy)
 # Recommended: intel-media-driver for Gen 8 (Broadwell) and newer
-graphics_intel_vaapi: true
 graphics_intel_vaapi_driver: 'intel-media-driver'
 
 # Enable GuC/HuC firmware (Gen 9+ Skylake and newer)
 # Warning: Can cause kernel taint and potential freezes on some systems
-graphics_intel_guc_huc: false
+graphics_intel_guc_huc_enabled: false
 
-# 32-bit support (for Steam, Wine, etc.)
-graphics_intel_32bit: false
+# DEPRECATED: Use graphics_intel_guc_huc_enabled instead (removed in v2.0.0)
+# graphics_intel_guc_huc: {{ graphics_intel_guc_huc_enabled }}
+
+# Enable 32-bit support (for Steam, Wine, etc.)
+graphics_intel_32bit_enabled: false
+
+# DEPRECATED: Use graphics_intel_32bit_enabled instead (removed in v2.0.0)
+# graphics_intel_32bit: {{ graphics_intel_32bit_enabled }}
 
 #
 # AMD GPU
 #
 
-# Install AMD GPU drivers
+# Enable AMD GPU drivers
 graphics_amd_enabled: false
 
-# Mesa driver (required for 3D, includes VA-API/VDPAU)
-graphics_amd_mesa: true
+# Enable AMD Mesa driver (required for 3D, includes VA-API/VDPAU)
+graphics_amd_mesa_enabled: true
 
-# Vulkan support
-graphics_amd_vulkan: true
+# DEPRECATED: Use graphics_amd_mesa_enabled instead (removed in v2.0.0)
+# graphics_amd_mesa: {{ graphics_amd_mesa_enabled }}
 
-# 32-bit support (for Steam, Wine, etc.)
-graphics_amd_32bit: false
+# Enable AMD Vulkan support
+graphics_amd_vulkan_enabled: true
+
+# DEPRECATED: Use graphics_amd_vulkan_enabled instead (removed in v2.0.0)
+# graphics_amd_vulkan: {{ graphics_amd_vulkan_enabled }}
+
+# Enable AMD 32-bit support (for Steam, Wine, etc.)
+graphics_amd_32bit_enabled: false
+
+# DEPRECATED: Use graphics_amd_32bit_enabled instead (removed in v2.0.0)
+# graphics_amd_32bit: {{ graphics_amd_32bit_enabled }}
 
 #
 # NVIDIA GPU
 #
 
-# Install NVIDIA GPU drivers
+# Enable NVIDIA GPU drivers
 graphics_nvidia_enabled: false
 
 # Driver type: open, proprietary, nouveau
@@ -76,27 +103,45 @@ graphics_nvidia_driver: 'open'
 # Arch: legacy drivers are AUR packages (community maintained)
 graphics_nvidia_legacy_version: ''
 
-# 32-bit support (for Steam, Wine, etc.)
-graphics_nvidia_32bit: false
+# Enable NVIDIA 32-bit support (for Steam, Wine, etc.)
+graphics_nvidia_32bit_enabled: false
 
-# Install CUDA support
-graphics_nvidia_cuda: false
+# DEPRECATED: Use graphics_nvidia_32bit_enabled instead (removed in v2.0.0)
+# graphics_nvidia_32bit: {{ graphics_nvidia_32bit_enabled }}
+
+# Enable NVIDIA CUDA support
+graphics_nvidia_cuda_enabled: false
+
+# DEPRECATED: Use graphics_nvidia_cuda_enabled instead (removed in v2.0.0)
+# graphics_nvidia_cuda: {{ graphics_nvidia_cuda_enabled }}
 
 #
-# Common Options
+# Common Tools
 #
 
-# Install Vulkan loader and tools
-graphics_vulkan_tools: true
+# Enable Vulkan loader and tools
+graphics_vulkan_tools_enabled: true
 
-# Install VA-API tools (vainfo)
-graphics_vaapi_tools: true
+# DEPRECATED: Use graphics_vulkan_tools_enabled instead (removed in v2.0.0)
+# graphics_vulkan_tools: {{ graphics_vulkan_tools_enabled }}
 
-# Install VDPAU tools (vdpauinfo)
-graphics_vdpau_tools: false
+# Enable VA-API tools (vainfo)
+graphics_vaapi_tools_enabled: true
 
-# Install Mesa utilities (glxinfo, glxgears)
-graphics_mesa_utils: true
+# DEPRECATED: Use graphics_vaapi_tools_enabled instead (removed in v2.0.0)
+# graphics_vaapi_tools: {{ graphics_vaapi_tools_enabled }}
+
+# Enable VDPAU tools (vdpauinfo)
+graphics_vdpau_tools_enabled: false
+
+# DEPRECATED: Use graphics_vdpau_tools_enabled instead (removed in v2.0.0)
+# graphics_vdpau_tools: {{ graphics_vdpau_tools_enabled }}
+
+# Enable Mesa utilities (glxinfo, glxgears)
+graphics_mesa_utils_enabled: true
+
+# DEPRECATED: Use graphics_mesa_utils_enabled instead (removed in v2.0.0)
+# graphics_mesa_utils: {{ graphics_mesa_utils_enabled }}
 
 #
 # Hybrid Graphics (PRIME)
@@ -105,17 +150,26 @@ graphics_mesa_utils: true
 # Enable hybrid graphics support (Intel/AMD iGPU + NVIDIA dGPU)
 graphics_hybrid_enabled: false
 
-# Install switcheroo-control for desktop environment GPU switching
+# Enable switcheroo-control for desktop environment GPU switching
 # (GNOME, KDE, Cinnamon, COSMIC, Budgie right-click "Run on dGPU")
-graphics_hybrid_switcheroo: true
+graphics_hybrid_switcheroo_enabled: true
 
-# Install prime-run helper script (Arch: nvidia-prime package)
-graphics_hybrid_prime_run: true
+# DEPRECATED: Use graphics_hybrid_switcheroo_enabled instead (removed in v2.0.0)
+# graphics_hybrid_switcheroo: {{ graphics_hybrid_switcheroo_enabled }}
 
-# NVIDIA RTD3 (Runtime D3) power management
+# Enable prime-run helper script (Arch: nvidia-prime package)
+graphics_hybrid_prime_run_enabled: true
+
+# DEPRECATED: Use graphics_hybrid_prime_run_enabled instead (removed in v2.0.0)
+# graphics_hybrid_prime_run: {{ graphics_hybrid_prime_run_enabled }}
+
+# Enable NVIDIA RTD3 (Runtime D3) power management
 # Allows the dGPU to power off when not in use
 # Supported on Turing+ with Intel Coffee Lake+ or compatible AMD CPUs
-graphics_hybrid_nvidia_rtd3: false
+graphics_hybrid_nvidia_rtd3_enabled: false
+
+# DEPRECATED: Use graphics_hybrid_nvidia_rtd3_enabled instead (removed in v2.0.0)
+# graphics_hybrid_nvidia_rtd3: {{ graphics_hybrid_nvidia_rtd3_enabled }}
 
 # RTD3 dynamic power management level
 # 0x02 = fine-grained (Turing/pre-Ampere)
@@ -123,23 +177,21 @@ graphics_hybrid_nvidia_rtd3: false
 graphics_hybrid_nvidia_rtd3_level: '0x02'
 
 # Enable nvidia-persistenced service (recommended with RTD3)
-graphics_hybrid_nvidia_persistenced: false
+graphics_hybrid_nvidia_persistenced_enabled: false
+
+# DEPRECATED: Use graphics_hybrid_nvidia_persistenced_enabled instead (removed in v2.0.0)
+# graphics_hybrid_nvidia_persistenced: {{ graphics_hybrid_nvidia_persistenced_enabled }}
 
 #
 # Kernel Parameters (modprobe.d)
 #
 
-# Deploy modprobe.d config files for GPU kernel module options
+# Enable modprobe.d config files for GPU kernel module options
 graphics_kernel_params_enabled: false
 
 # Intel i915 kernel module options (written to /etc/modprobe.d/i915.conf)
 # Each entry is a full 'options' line, e.g. 'i915 fastboot=1'
 graphics_intel_kernel_params: []
-# Example:
-#   - 'i915 fastboot=1'
 
 # NVIDIA kernel module options (written to /etc/modprobe.d/nvidia.conf)
 graphics_nvidia_kernel_params: []
-# Example:
-#   - 'nvidia-drm modeset=1'
-#   - 'nvidia NVreg_PreserveVideoMemoryAllocations=1'

@@ -3,24 +3,34 @@
 # Role Control
 #
 
+# Enable the ansible role
 ansible_tools_enabled: true
 
 #
 # Components
 #
 
-# Install Ansible (ansible on Arch/Debian, ansible-core on RedHat)
-ansible_tools_install_ansible: true
+# Enable Ansible install (ansible on Arch/Debian, ansible-core on RedHat)
+ansible_tools_ansible_enabled: true
 
-# Install Molecule testing framework
-ansible_tools_install_molecule: true
+# DEPRECATED: Use ansible_tools_ansible_enabled instead (removed in v2.0.0)
+# ansible_tools_install_ansible: {{ ansible_tools_ansible_enabled }}
+
+# Enable Molecule testing framework install
+ansible_tools_molecule_enabled: true
+
+# DEPRECATED: Use ansible_tools_molecule_enabled instead (removed in v2.0.0)
+# ansible_tools_install_molecule: {{ ansible_tools_molecule_enabled }}
 
 # Container driver to install: 'podman' (default) or 'docker'
 # Set to '' to skip driver installation
 ansible_tools_container_driver: 'podman'
 
-# Install linting tools (ansible-lint, yamllint)
-ansible_tools_install_lint: true
+# Enable linting tools install (ansible-lint, yamllint)
+ansible_tools_lint_enabled: true
+
+# DEPRECATED: Use ansible_tools_lint_enabled instead (removed in v2.0.0)
+# ansible_tools_install_lint: {{ ansible_tools_lint_enabled }}
 
 # Extra pipx-injected plugins (Debian/RedHat only, ignored on Archlinux)
 # Example:

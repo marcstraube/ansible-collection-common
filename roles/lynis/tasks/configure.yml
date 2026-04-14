@@ -1,12 +1,11 @@
 ---
 - name: Configure | Create lynis configuration directory
   ansible.builtin.file:
-    path: '/etc/lynis'
+    path: '{{ __lynis_config_dir }}'
     state: directory
     owner: root
     group: root
     mode: '0755'
-  when: lynis_enabled | bool
 
 - name: Configure | Create lynis report directory
   ansible.builtin.file:
@@ -15,7 +14,6 @@
     owner: root
     group: root
     mode: '0750'
-  when: lynis_enabled | bool
 
 - name: Configure | Create custom tests directory
   ansible.builtin.file:
@@ -24,18 +22,15 @@
     owner: root
     group: root
     mode: '0750'
-  when:
-    - lynis_enabled | bool
-    - lynis_custom_tests_enabled | bool
+  when: lynis_custom_tests_enabled | bool
 
 - name: Configure | Deploy custom profile
   ansible.builtin.template:
     src: custom.prf.j2
-    dest: '/etc/lynis/custom.prf'
+    dest: '{{ __lynis_config_dir }}/custom.prf'
     owner: root
     group: root
     mode: '0644'
-  when: lynis_enabled | bool
 
 - name: Configure | Deploy audit script
   ansible.builtin.template:
@@ -44,6 +39,4 @@
     owner: root
     group: root
     mode: '0755'
-  when:
-    - lynis_enabled | bool
-    - lynis_timer_enabled | bool
+  when: lynis_timer_enabled | bool

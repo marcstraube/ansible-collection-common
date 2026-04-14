@@ -1,5 +1,7 @@
 ---
-# For RHEL 9 / Rocky 9, see Rocky-9.yml override.
+# For EL 9, see RedHat-9.yml override.
+
+__fonts_fontconfig_package: 'fontconfig'
 
 __fonts_dejavu_package: 'dejavu-sans-fonts'
 __fonts_liberation_package: 'liberation-fonts'

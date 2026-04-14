@@ -1,5 +1,5 @@
 ---
-- name: Verify PAM hardening configuration
+- name: Verify
   hosts: all
   gather_facts: true
 

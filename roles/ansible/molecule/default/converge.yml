@@ -5,9 +5,9 @@
 
   vars:
     ansible_tools_enabled: true
-    ansible_tools_install_ansible: true
-    ansible_tools_install_molecule: true
-    ansible_tools_install_lint: true
+    ansible_tools_ansible_enabled: true
+    ansible_tools_molecule_enabled: true
+    ansible_tools_lint_enabled: true
 
   roles:
     - role: "{{ playbook_dir }}/../../../python"  # noqa: role-name[path]

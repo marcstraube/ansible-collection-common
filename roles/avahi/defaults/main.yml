@@ -1,10 +1,13 @@
 ---
 #
-# Service Control
+# Role Control
 #
 
-# Enable or disable the avahi-daemon service
+# Enable the avahi role
 avahi_enabled: true
+
+# Enable and start the avahi service
+avahi_service_enabled: true
 
 #
 # Server Settings
@@ -45,7 +48,7 @@ avahi_ratelimit_interval_usec: 1000000
 avahi_ratelimit_burst: 1000
 
 #
-# DBUS
+# D-Bus
 #
 
 # Enable D-Bus interface (required for most client functionality)
@@ -111,8 +114,11 @@ avahi_rlimit_stack: 8388608
 # NSS-mDNS
 #
 
-# Install nss-mdns for .local hostname resolution
-avahi_nss_mdns: true
+# Enable nss-mdns for .local hostname resolution
+avahi_nss_mdns_enabled: true
+
+# DEPRECATED: Use avahi_nss_mdns_enabled instead (removed in v2.0.0)
+# avahi_nss_mdns: {{ avahi_nss_mdns_enabled }}
 
 # nsswitch.conf hosts line — customize for environments with SSSD, Winbind, etc.
 avahi_nsswitch_hosts: >-
@@ -132,5 +138,5 @@ avahi_firewalld_zone: 'public'
 # AppArmor
 #
 
-# Enable AppArmor profile enforcement (Arch + Debian only, not RHEL/Rocky)
+# Enable AppArmor profile enforcement (Arch/Debian only, not RHEL/Rocky)
 avahi_apparmor_enabled: false

@@ -1,7 +1,6 @@
 ---
-- name: Service | Enable pcscd socket
-  ansible.builtin.systemd:
+- name: Service | Manage pcscd socket
+  ansible.builtin.systemd_service:
     name: '{{ __hardware_tokens_pcscd_service }}'
-    enabled: true
-    state: started
-  when: hardware_tokens_pcscd | bool
+    enabled: "{{ hardware_tokens_pcscd_socket_enabled | bool }}"
+    state: "{{ hardware_tokens_pcscd_socket_enabled | bool | ternary('started', 'stopped') }}"

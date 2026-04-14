@@ -1,7 +1,7 @@
 ---
 - name: Logind | Create logind.conf.d directory
   ansible.builtin.file:
-    path: '{{ __energy_management_logind_conf_dir }}'
+    path: '{{ __energy_management_logind_config_dir }}'
     state: directory
     owner: root
     group: root
@@ -10,7 +10,7 @@
 - name: Logind | Deploy energy.conf drop-in
   ansible.builtin.template:
     src: 'logind-energy.conf.j2'
-    dest: '{{ __energy_management_logind_conf_dir }}/{{ __energy_management_logind_conf_file }}'
+    dest: '{{ __energy_management_logind_config_dir }}/{{ __energy_management_logind_config_file }}'
     owner: root
     group: root
     mode: '0644'

@@ -61,9 +61,9 @@
   community.crypto.x509_certificate:
     path: '{{ pki_certs_dir }}/{{ item.name }}.crt'
     csr_path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
-    ownca_path: '{{ _pki_signing_ca_cert }}'
-    ownca_privatekey_path: '{{ _pki_signing_ca_key }}'
-    ownca_privatekey_passphrase: '{{ _pki_signing_ca_passphrase | default(omit, true) }}'
+    ownca_path: '{{ __pki_signing_ca_cert }}'
+    ownca_privatekey_path: '{{ __pki_signing_ca_key }}'
+    ownca_privatekey_passphrase: '{{ __pki_signing_ca_passphrase | default(omit, true) }}'
     ownca_not_after: '+{{ item.validity_days | default(pki_client_validity_days) }}d'
     provider: ownca
     owner: root
@@ -79,7 +79,7 @@
     path: '{{ pki_certs_dir }}/{{ item.name }}.p12'
     certificate_path: '{{ pki_certs_dir }}/{{ item.name }}.crt'
     privatekey_path: '{{ pki_private_dir }}/{{ item.name }}.key'
-    other_certificates: '{{ _pki_signing_ca_chain }}'
+    other_certificates: '{{ __pki_signing_ca_chain }}'
     passphrase: '{{ item.pkcs12_passphrase }}'
     friendly_name: '{{ item.common_name }}'
     owner: root
@@ -87,6 +87,7 @@
     mode: '0600'
     action: export
     state: present
+  no_log: true
   loop: '{{ pki_client_certs }}'
   loop_control:
     label: '{{ item.name }}'

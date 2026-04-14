@@ -1,16 +1,19 @@
 ---
-# NoCOW for log directory
+# NoCOW for log directory (write-heavy when file logging is enabled)
 
 - name: BTRFS | Check filesystem type for log directory
   ansible.builtin.command:
-    cmd: "stat -f -c '%T' {{ restic_log_dir }}"
+    cmd: 'stat -f -c %T {{ restic_log_dir }}'
   register: __restic_log_fstype
   changed_when: false
+  # Directory may not exist yet
   failed_when: false
+  when: restic_log_to_file | bool
 
 - name: BTRFS | Set NoCOW on log directory
   ansible.builtin.command:
-    cmd: "chattr +C {{ restic_log_dir }}"
+    cmd: 'chattr +C {{ restic_log_dir }}'
   when:
+    - restic_log_to_file | bool
     - __restic_log_fstype.stdout | default('') == 'btrfs'
   changed_when: false

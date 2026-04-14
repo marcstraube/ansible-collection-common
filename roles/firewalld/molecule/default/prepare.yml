@@ -42,7 +42,7 @@
         state: present
 
     - name: Prepare | Start dbus
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: dbus
         state: started
       failed_when: false
@@ -61,6 +61,8 @@
       ansible.builtin.file:
         path: '{{ item }}'
         state: directory
+        owner: root
+        group: root
         mode: '0755'
       loop:
         - /run/polkit-1/rules.d
@@ -68,13 +70,13 @@
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Prepare | Restart dbus to clear stale activation state (Debian)
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: dbus
         state: restarted
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Prepare | Start polkit (Debian)
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: polkit
         state: started
       when: ansible_facts['os_family'] == 'Debian'

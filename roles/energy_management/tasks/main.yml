@@ -4,75 +4,107 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [energy]
+  tags:
+    - energy
 
-# Logind configuration (all systemd distros)
+# Deprecation: energy_management_battery_tp_smapi -> energy_management_battery_tp_smapi_enabled
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    energy_management_battery_tp_smapi_enabled: >-
+      {{ energy_management_battery_tp_smapi | default(energy_management_battery_tp_smapi_enabled) | bool }}
+  when:
+    - energy_management_enabled | bool
+    - energy_management_battery_tp_smapi is defined
+  tags:
+    - energy
+
 - name: Main | Include logind tasks
   ansible.builtin.include_tasks:
     file: logind.yml
     apply:
-      tags: [energy, energy:logind]
-  tags: [energy, energy:logind]
+      tags:
+        - energy
+        - energy:logind
   when:
     - energy_management_enabled | bool
     - energy_management_logind_enabled | bool
+  tags:
+    - energy
+    - energy:logind
 
-# Sleep configuration (all systemd distros)
 - name: Main | Include sleep tasks
   ansible.builtin.include_tasks:
     file: sleep.yml
     apply:
-      tags: [energy, energy:sleep]
-  tags: [energy, energy:sleep]
+      tags:
+        - energy
+        - energy:sleep
   when:
     - energy_management_enabled | bool
     - energy_management_sleep_enabled | bool
+  tags:
+    - energy
+    - energy:sleep
 
-# Power manager: PPD or TLP (OS-specific)
-- name: Main | Include power-profiles-daemon tasks
+- name: Main | Include PPD tasks
   ansible.builtin.include_tasks:
     file: ppd.yml
     apply:
-      tags: [energy, energy:ppd]
-  tags: [energy, energy:ppd]
+      tags:
+        - energy
+        - energy:ppd
   when:
     - energy_management_enabled | bool
     - energy_management_power_manager == 'ppd'
+  tags:
+    - energy
+    - energy:ppd
 
 - name: Main | Include TLP tasks
   ansible.builtin.include_tasks:
     file: tlp.yml
     apply:
-      tags: [energy, energy:tlp]
-  tags: [energy, energy:tlp]
+      tags:
+        - energy
+        - energy:tlp
   when:
     - energy_management_enabled | bool
     - energy_management_power_manager == 'tlp'
+  tags:
+    - energy
+    - energy:tlp
 
-# Battery threshold (laptop only, OS-specific)
 - name: Main | Include battery tasks
   ansible.builtin.include_tasks:
     file: battery.yml
     apply:
-      tags: [energy, energy:battery]
-  tags: [energy, energy:battery]
+      tags:
+        - energy
+        - energy:battery
   when:
     - energy_management_enabled | bool
     - energy_management_battery_enabled | bool
     - energy_management_system_type == 'laptop'
+  tags:
+    - energy
+    - energy:battery
 
-# Backlight (laptop only, OS-specific)
 - name: Main | Include backlight tasks
   ansible.builtin.include_tasks:
     file: backlight.yml
     apply:
-      tags: [energy, energy:backlight]
-  tags: [energy, energy:backlight]
+      tags:
+        - energy
+        - energy:backlight
   when:
     - energy_management_enabled | bool
     - energy_management_backlight_enabled | bool
     - energy_management_system_type == 'laptop'
+  tags:
+    - energy
+    - energy:backlight

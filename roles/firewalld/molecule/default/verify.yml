@@ -17,13 +17,13 @@
       failed_when: __verify_pkg.changed
 
     - name: Verify | Check firewalld service is running
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: firewalld
       register: __verify_svc
       failed_when: __verify_svc.status.ActiveState != 'active'
 
     - name: Verify | Check firewalld service is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: firewalld
       register: __verify_svc_enabled
       failed_when: __verify_svc_enabled.status.UnitFileState != 'enabled'

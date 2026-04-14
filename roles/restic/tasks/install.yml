@@ -1,5 +1,5 @@
 ---
-- name: Install | restic from package manager
+- name: Install | Restic from package manager
   ansible.builtin.package:
     name: '{{ __restic_packages }}'
     state: present
@@ -8,7 +8,7 @@
 - name: Install | Download restic binary
   when: not restic_install_from_package | bool
   block:
-    - name: Install | bzip2 for binary extraction
+    - name: Install | Bzip2 for binary extraction
       ansible.builtin.package:
         name: '{{ __restic_binary_packages }}'
         state: present
@@ -17,6 +17,8 @@
       ansible.builtin.get_url:
         url: '{{ restic_binary_url }}'
         dest: '/tmp/restic.bz2'
+        owner: root
+        group: root
         mode: '0644'
 
     - name: Install | Extract restic binary
@@ -24,7 +26,7 @@
         cmd: 'bunzip2 -f /tmp/restic.bz2'
         creates: '/tmp/restic'
 
-    - name: Install | restic binary
+    - name: Install | Deploy restic binary
       ansible.builtin.copy:
         src: '/tmp/restic'
         dest: '{{ restic_binary_path }}'

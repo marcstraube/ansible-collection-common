@@ -4,6 +4,17 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - which
+        - sudo
+      Debian:
+        - curl
+        - gnupg
+        - ca-certificates
+      RedHat: []
+
   tasks:
     - name: Prepare | Update package cache (Arch)
       community.general.pacman:
@@ -21,24 +32,14 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Prepare | Install dependencies on Archlinux
-      community.general.pacman:
-        name:
-          - which
-          - sudo
+    - name: Prepare | Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
-      when: ansible_facts['os_family'] == 'Archlinux'
+      when: __prepare_packages[ansible_facts["os_family"]] | length > 0
 
-    - name: Prepare | Install dependencies on Debian
-      ansible.builtin.apt:
-        name:
-          - curl
-          - gnupg
-          - ca-certificates
-        state: present
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Prepare | Replace curl-minimal with curl (RedHat Docker)  # noqa: command-instead-of-module
+    # Replace curl-minimal with full curl (RedHat container images)
+    - name: Prepare | Replace curl-minimal with curl (RedHat)  # noqa: command-instead-of-module
       ansible.builtin.command: dnf swap -y curl-minimal curl
       changed_when: false
       failed_when: false

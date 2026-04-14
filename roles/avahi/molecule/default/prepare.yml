@@ -4,8 +4,14 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Debian:
+        - systemd
+        - dbus
+
   tasks:
-    - name: Prepare | Update package cache (Arch)
+    - name: Prepare | Full system update (Arch)
       community.general.pacman:
         update_cache: true
         upgrade: true
@@ -21,10 +27,8 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Prepare | Install systemd and dbus on Debian (minimal image)
-      ansible.builtin.apt:
-        name:
-          - systemd
-          - dbus
+    - name: Prepare | Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
-      when: ansible_facts['os_family'] == 'Debian'
+      when: ansible_facts['os_family'] in __prepare_packages

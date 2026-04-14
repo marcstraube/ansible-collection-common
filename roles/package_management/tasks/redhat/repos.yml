@@ -75,8 +75,8 @@
     - ansible_facts['distribution'] in ['Rocky', 'AlmaLinux']
 
 - name: Repos | Install EPEL repository
-  ansible.builtin.dnf:
-    name: epel-release
+  ansible.builtin.package:
+    name: 'epel-release'
     state: present
   when:
     - dnf_epel_enabled | bool
@@ -102,21 +102,22 @@
     - name: Repos | Check current PHP module stream
       ansible.builtin.command:
         cmd: dnf module list php --enabled
-      register: remi_php_current
+      register: __package_management_remi_php_current
       changed_when: false
+      # Module may not be available yet
       failed_when: false
       when:
         - dnf_remi_php_version | length > 0
         - ansible_facts['distribution_major_version'] | int < 10
 
     - name: Repos | Enable Remi PHP module stream (dnf4, modularity removed in dnf5)
-      ansible.builtin.command:
+      ansible.builtin.shell:
         cmd: "dnf module reset php -y && dnf module enable php:remi-{{ dnf_remi_php_version }} -y"
       changed_when: true
       when:
         - dnf_remi_php_version | length > 0
         - ansible_facts['distribution_major_version'] | int < 10
-        - "'remi-' + dnf_remi_php_version not in (remi_php_current.stdout | default(''))"
+        - "'remi-' + dnf_remi_php_version not in (__package_management_remi_php_current.stdout | default(''))"
 
 #
 # RPM Fusion (Free)
@@ -131,7 +132,7 @@
       https://mirrors.rpmfusion.org/free/{{ __rpmfusion_distro }}/rpmfusion-free-release-{{ __distro_ver }}.noarch.rpm
     state: present
     disable_gpg_check: true
-  when: dnf_rpmfusion_free | bool
+  when: dnf_rpmfusion_free_enabled | bool
   notify: 'dnf configuration changed'
 
 #
@@ -149,11 +150,11 @@
       __distro_ver }}.noarch.rpm
     state: present
     disable_gpg_check: true
-  when: dnf_rpmfusion_nonfree | bool
+  when: dnf_rpmfusion_nonfree_enabled | bool
   notify: 'dnf configuration changed'
 
 #
-# ELRepo (Kernel, Hardware drivers)
+# ELRepo (Kernel, Hardware Drivers)
 #
 
 - name: Repos | Install ELRepo repository
@@ -174,7 +175,7 @@
 #
 
 - name: Repos | Setup Docker CE repository
-  when: dnf_docker_repo | bool
+  when: dnf_docker_repo_enabled | bool
   vars:
     __docker_distro: >-
       {{ 'fedora' if ansible_facts['distribution'] == 'Fedora'
@@ -204,7 +205,7 @@
     state: present
     disable_gpg_check: true
   when:
-    - dnf_postgresql_repo | bool
+    - dnf_postgresql_repo_enabled | bool
     - ansible_facts['distribution'] != 'Fedora'
   notify: 'dnf configuration changed'
 
@@ -213,7 +214,7 @@
 #
 
 - name: Repos | Setup Grafana repository
-  when: dnf_grafana_repo | bool
+  when: dnf_grafana_repo_enabled | bool
   block:
     - name: Repos | Add Grafana repository
       ansible.builtin.yum_repository:
@@ -230,7 +231,7 @@
 #
 
 - name: Repos | Setup Kubernetes repository
-  when: dnf_kubernetes_repo | bool
+  when: dnf_kubernetes_repo_enabled | bool
   block:
     - name: Repos | Add Kubernetes repository
       ansible.builtin.yum_repository:
@@ -244,14 +245,15 @@
       notify: 'dnf configuration changed'
 
 #
-# COPR repositories
+# COPR Repositories
 #
 
 - name: Repos | Check enabled COPR repositories
   ansible.builtin.command:
     cmd: dnf copr list --enabled
-  register: copr_list
+  register: __package_management_copr_list
   changed_when: false
+  # COPR plugin may not be installed
   failed_when: false
   when: dnf_copr_repos | length > 0
 
@@ -262,10 +264,10 @@
   changed_when: true
   when:
     - dnf_copr_repos | length > 0
-    - item not in (copr_list.stdout | default(''))
+    - item not in (__package_management_copr_list.stdout | default(''))
 
 #
-# Custom repositories
+# Custom Repositories
 #
 
 - name: Repos | Add custom repositories

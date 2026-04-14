@@ -30,13 +30,13 @@
     owner: root
     group: root
     mode: '0644'
-  when: podman_docker_alias | bool
+  when: podman_docker_alias_enabled | bool
 
 - name: Configure | Remove docker alias when disabled
   ansible.builtin.file:
     path: '/etc/profile.d/podman-docker.sh'
     state: absent
-  when: not (podman_docker_alias | bool)
+  when: not (podman_docker_alias_enabled | bool)
 
 - name: Configure | Create docker socket symlink
   ansible.builtin.file:
@@ -44,7 +44,8 @@
     dest: '/run/docker.sock'
     state: link
     force: true
-  when: podman_docker_socket_symlink | bool
+  when: podman_docker_socket_symlink_enabled | bool
+  # Socket may not exist yet before podman.socket is started
   failed_when: false
 
 - name: Configure | Ensure root config directory exists for auth

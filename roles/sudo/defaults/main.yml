@@ -3,6 +3,7 @@
 # Role Control
 #
 
+# Enable the sudo role
 sudo_enabled: true
 
 #
@@ -10,7 +11,10 @@ sudo_enabled: true
 #
 
 # Allow wheel group to use sudo
-sudo_wheel_group: true
+sudo_wheel_group_enabled: true
+
+# DEPRECATED: Use sudo_wheel_group_enabled instead (removed in v2.0.0)
+# sudo_wheel_group: {{ sudo_wheel_group_enabled }}
 
 # Require password for wheel group
 sudo_wheel_requires_password: true
@@ -135,7 +139,10 @@ sudo_always_set_home: true
 sudo_extra_defaults: []
 
 # Remove unmanaged sudoers.d files
-sudo_purge_sudoers_d: false
+sudo_purge_sudoers_d_enabled: false
+
+# DEPRECATED: Use sudo_purge_sudoers_d_enabled instead (removed in v2.0.0)
+# sudo_purge_sudoers_d: {{ sudo_purge_sudoers_d_enabled }}
 
 # Files to never remove from sudoers.d (only when purge enabled)
 sudo_keep_sudoers_files:

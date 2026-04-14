@@ -35,9 +35,11 @@ provisioner:
       stdout_callback: default
       result_format: yaml
       inject_facts_as_vars: false
+      allow_broken_conditionals: true
   inventory:
     host_vars:
       hardening-archlinux:
+        ansible_python_interpreter: /usr/bin/python
         ansible_port: 2222
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
@@ -49,11 +51,13 @@ provisioner:
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/hardening-debian-trixie/virtualbox/private_key
       hardening-rocky-9:
+        ansible_python_interpreter: /usr/bin/python3
         ansible_port: 2224
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/hardening-rocky-9/virtualbox/private_key
       hardening-rocky-10:
+        ansible_python_interpreter: /usr/bin/python3
         ansible_port: 2225
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
@@ -62,6 +66,7 @@ provisioner:
       all:
         ansible_connection: ssh
         ansible_user: vagrant
+        ansible_become: true
         ansible_host: 127.0.0.1
         ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 
@@ -70,7 +75,7 @@ provisioner:
         hardening_kernel_enabled: true
         hardening_modules_enabled: true
         hardening_fs_enabled: true
-        hardening_fs_vartmp_bind: true
+        hardening_fs_vartmp_bind_enabled: true
 
         # Extra module blacklisting for test coverage
         hardening_modules_blacklist_extra:

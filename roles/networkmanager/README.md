@@ -17,19 +17,30 @@ This role provides comprehensive NetworkManager management:
 
 ## Requirements
 
-- **Ansible**: >= 2.20
+- **Ansible**: >= 2.17
 - **Collections**: `community.general`
 
 ## Supported Platforms
 
-| Platform      | NM Version  | Notes                             |
-| ------------- | ----------- | --------------------------------- |
-| Arch Linux    | 1.56.x      | Full install + configure          |
-| Debian Trixie | 1.52.x      | Full install + configure          |
-| Rocky 9       | 1.48.x      | Configure only (NM pre-installed) |
-| Rocky 10      | 1.52-1.54.x | Configure only (NM pre-installed) |
+| Platform                  | Notes                             |
+|---------------------------|-----------------------------------|
+| Arch Linux                | Full install + configure          |
+| Debian Trixie             | Full install + configure          |
+| EL 9 (Rocky, Alma, RHEL)  | Configure only (NM pre-installed) |
+| EL 10 (Rocky, Alma, RHEL) | Configure only (NM pre-installed) |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
+
+### Role Control
+
+```yaml
+networkmanager_enabled: true            # enable the networkmanager role
+networkmanager_service_enabled: true    # enable and start the networkmanager service
+```
 
 ### Daemon Configuration
 
@@ -47,8 +58,8 @@ networkmanager_hostname_mode: ''          # default, dhcp, none
 networkmanager_firewall_backend: ''       # iptables, nftables, none (auto-detected)
 networkmanager_no_auto_default: []        # device specs excluded from auto wired connections
 networkmanager_ignore_carrier: []         # device specs ignoring carrier state
-networkmanager_plugins: []               # settings storage plugins (keyfile always appended)
-networkmanager_migrate_ifcfg_rh: false   # auto-convert ifcfg-rh to keyfile (RHEL/Rocky)
+networkmanager_plugins: []                # settings storage plugins (keyfile always appended)
+networkmanager_migrate_ifcfg_rh: false    # auto-convert ifcfg-rh to keyfile (RHEL/Rocky)
 ```
 
 #### [logging] section
@@ -96,14 +107,14 @@ networkmanager_ifupdown_managed: false     # manage /etc/network/interfaces devi
 ### Installation
 
 ```yaml
-networkmanager_install_applet: false   # nm-applet + nm-connection-editor
+networkmanager_applet_enabled: false   # nm-applet + nm-connection-editor
 networkmanager_vpn_plugins: []         # VPN plugin packages (OS-native names)
 ```
 
 VPN plugin package names differ by OS:
 
 | Plugin      | Arch                         | Debian                        | Rocky                        |
-| ----------- | ---------------------------- | ----------------------------- | ---------------------------- |
+|-------------|------------------------------|-------------------------------|------------------------------|
 | OpenVPN     | `networkmanager-openvpn`     | `network-manager-openvpn`     | `NetworkManager-openvpn`     |
 | OpenConnect | `networkmanager-openconnect` | `network-manager-openconnect` | `NetworkManager-openconnect` |
 | VPNC        | `networkmanager-vpnc`        | `network-manager-vpnc`        | `NetworkManager-vpnc`        |
@@ -198,7 +209,7 @@ networkmanager_apply_global_dns: true    # enable global DNS application
 
 ```yaml
 # Automatic timezone via ipapi.co
-networkmanager_configure_timezone: false
+networkmanager_timezone_enabled: false
 
 # VPN auto-connect on non-home networks
 networkmanager_vpn_autoconnect:
@@ -217,8 +228,8 @@ networkmanager_sshfs_shares: []
 ### Polkit
 
 ```yaml
-networkmanager_polkit: false          # deploy polkit rule
-networkmanager_polkit_group: 'wheel'  # group allowed to manage NM
+networkmanager_polkit_enabled: false     # deploy polkit rule
+networkmanager_polkit_group: 'wheel'     # group allowed to manage NM
 ```
 
 ### Unmanaged Devices
@@ -229,21 +240,17 @@ networkmanager_unmanaged_devices:
   - ifname: "docker0"
 ```
 
-## Dispatcher Scripts
+## Tags
 
-| Script                          | Trigger     | Purpose                                      |
-| ------------------------------- | ----------- | -------------------------------------------- |
-| `09-timezone.sh`                | `up`        | Set timezone via IP geolocation              |
-| `20-vpn-autoconnect.sh`         | `up`/`down` | Auto-activate WireGuard on non-home networks |
-| `30-mount-smb.sh`               | `up`        | Mount SMB shares on connection up            |
-| `40-umount-smb.sh`              | `down`      | Unmount SMB shares on connection down        |
-| `30-mount-sshfs.sh`             | `up`        | Mount SSHFS shares                           |
-| `40-umount-sshfs.sh`            | `down`      | Unmount SSHFS shares                         |
-| `50-vpn-mount-smb.sh`           | `vpn-up`    | Mount SMB shares on VPN connect              |
-| `60-vpn-umount-smb.sh`          | `vpn-down`  | Unmount SMB shares on VPN disconnect         |
-| `99-wifi-auto-toggle.sh`        | `up`/`down` | Disable WiFi when ethernet connected         |
-| `pre-down.d/30-umount-smb.sh`   | `pre-down`  | Graceful SMB unmount                         |
-| `pre-down.d/30-umount-sshfs.sh` | `pre-down`  | Graceful SSHFS unmount                       |
+| Tag                          | Scope                |
+|------------------------------|----------------------|
+| `networkmanager`             | All tasks            |
+| `networkmanager:install`     | Package installation |
+| `networkmanager:configure`   | Daemon configuration |
+| `networkmanager:service`     | Service management   |
+| `networkmanager:connections` | Connection profiles  |
+| `networkmanager:polkit`      | Polkit rules         |
+| `networkmanager:dispatcher`  | Dispatcher scripts   |
 
 ## Example Playbook
 
@@ -257,7 +264,7 @@ networkmanager_unmanaged_devices:
         networkmanager_dns: systemd-resolved
         networkmanager_wifi_powersave: disable
         networkmanager_log_level: WARN
-        networkmanager_polkit: true
+        networkmanager_polkit_enabled: true
 
         networkmanager_connections:
           ethernet:
@@ -282,20 +289,8 @@ networkmanager_unmanaged_devices:
         networkmanager_unmanaged_devices:
           - ifname: "docker0"
 
-        networkmanager_configure_timezone: true
+        networkmanager_timezone_enabled: true
 ```
-
-## Tags
-
-| Tag                          | Scope                |
-| ---------------------------- | -------------------- |
-| `networkmanager`             | All tasks            |
-| `networkmanager:install`     | Package installation |
-| `networkmanager:configure`   | Daemon configuration |
-| `networkmanager:service`     | Service management   |
-| `networkmanager:connections` | Connection profiles  |
-| `networkmanager:polkit`      | Polkit rules         |
-| `networkmanager:dispatcher`  | Dispatcher scripts   |
 
 ## Testing
 
@@ -304,7 +299,25 @@ cd roles/networkmanager
 molecule test
 ```
 
-Driver: `vagrant` | Platforms: Arch Linux
+Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+## Notes
+
+### Dispatcher Scripts
+
+| Script                          | Trigger     | Purpose                                      |
+|---------------------------------|-------------|----------------------------------------------|
+| `09-timezone.sh`                | `up`        | Set timezone via IP geolocation              |
+| `20-vpn-autoconnect.sh`         | `up`/`down` | Auto-activate WireGuard on non-home networks |
+| `30-mount-smb.sh`               | `up`        | Mount SMB shares on connection up            |
+| `40-umount-smb.sh`              | `down`      | Unmount SMB shares on connection down        |
+| `30-mount-sshfs.sh`             | `up`        | Mount SSHFS shares                           |
+| `40-umount-sshfs.sh`            | `down`      | Unmount SSHFS shares                         |
+| `50-vpn-mount-smb.sh`           | `vpn-up`    | Mount SMB shares on VPN connect              |
+| `60-vpn-umount-smb.sh`          | `vpn-down`  | Unmount SMB shares on VPN disconnect         |
+| `99-wifi-auto-toggle.sh`        | `up`/`down` | Disable WiFi when ethernet connected         |
+| `pre-down.d/30-umount-smb.sh`   | `pre-down`  | Graceful SMB unmount                         |
+| `pre-down.d/30-umount-sshfs.sh` | `pre-down`  | Graceful SSHFS unmount                       |
 
 ## License
 

@@ -1,10 +1,12 @@
 ---
-- name: Reload graphics udev rules
+- name: Reload GPU udev rules
   ansible.builtin.command:
     cmd: udevadm control --reload-rules
-  changed_when: true
+  changed_when: false
+  when: graphics_enabled | bool
 
-- name: Trigger udev rules
+- name: Trigger GPU udev rules
   ansible.builtin.command:
     cmd: udevadm trigger
-  changed_when: true
+  changed_when: false
+  when: graphics_enabled | bool

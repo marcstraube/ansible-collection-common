@@ -4,60 +4,92 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [always]
+  tags:
+    - always
+
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    base_dialog_enabled: >-
+      {{ base_dialog | default(base_dialog_enabled) | bool }}
+  when:
+    - base_enabled | bool
+    - base_dialog is defined
+  tags:
+    - always
 
 - name: Main | Import hostname tasks
   ansible.builtin.import_tasks: hostname.yml
   when: base_enabled | bool
-  tags: [base, base:hostname]
+  tags:
+    - base
+    - base:hostname
 
 - name: Main | Import locale tasks
   ansible.builtin.import_tasks: locale.yml
   when: base_enabled | bool
-  tags: [base, base:locale]
+  tags:
+    - base
+    - base:locale
 
 - name: Main | Import timezone tasks
   ansible.builtin.import_tasks: timezone.yml
   when: base_enabled | bool
-  tags: [base, base:timezone]
+  tags:
+    - base
+    - base:timezone
 
 - name: Main | Import keyboard tasks
   ansible.builtin.import_tasks: keyboard.yml
   when: base_enabled | bool
-  tags: [base, base:keyboard]
+  tags:
+    - base
+    - base:keyboard
 
 - name: Main | Import packages tasks
   ansible.builtin.import_tasks: packages.yml
   when: base_enabled | bool
-  tags: [base, base:packages]
+  tags:
+    - base
+    - base:packages
 
 - name: Main | Import sysctl tasks
   ansible.builtin.import_tasks: sysctl.yml
   when: base_enabled | bool
-  tags: [base, base:sysctl]
+  tags:
+    - base
+    - base:sysctl
 
 - name: Main | Import systemd tasks
   ansible.builtin.import_tasks: systemd.yml
   when: base_enabled | bool
-  tags: [base, base:systemd]
+  tags:
+    - base
+    - base:systemd
 
 - name: Main | Include kernel tasks
   ansible.builtin.include_tasks:
     file: kernel.yml
     apply:
-      tags: [base, base:kernel]
+      tags:
+        - base
+        - base:kernel
   when:
     - base_enabled | bool
     - ansible_facts['os_family'] == 'Archlinux'
-  tags: [base, base:kernel]
+  tags:
+    - base
+    - base:kernel
 
 - name: Main | Import bootloader tasks
   ansible.builtin.import_tasks: bootloader.yml
   when:
     - base_enabled | bool
     - base_bootloader != 'none'
-  tags: [base, base:bootloader]
+  tags:
+    - base
+    - base:bootloader

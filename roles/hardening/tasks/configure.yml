@@ -6,4 +6,4 @@
     owner: root
     group: root
     mode: '0644'
-  notify: Hardening apply sysctl
+  notify: Apply sysctl hardening

@@ -5,24 +5,6 @@
 
   vars:
     avahi_enabled: true
-    avahi_nss_mdns: true
-    avahi_domain_name: 'local'
-    avahi_use_ipv4: true
-    avahi_use_ipv6: true
-    avahi_enable_dbus: true
-    avahi_enable_wide_area: false
-    avahi_disable_publishing: false
-    avahi_publish_addresses: true
-    avahi_publish_hinfo: false
-    avahi_publish_workstation: false
-    avahi_publish_domain: true
-    avahi_publish_aaaa_on_ipv4: true
-    avahi_publish_a_on_ipv6: false
-    avahi_enable_reflector: false
-    avahi_reflect_ipv: false
-    avahi_cache_entries_max: 4096
-    avahi_firewalld_enabled: false
-    avahi_apparmor_enabled: false
 
   tasks:
     - name: Converge | Include avahi role  # noqa: role-name[path]

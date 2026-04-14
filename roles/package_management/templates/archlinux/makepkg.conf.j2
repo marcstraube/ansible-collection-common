@@ -86,7 +86,7 @@ DEBUG_RUSTFLAGS="{{ makepkg_debug_rustflags }}"
 #########################################################################
 #
 # Makepkg defaults: BUILDENV=(!distcc color !ccache check !sign)
-# Note: sccache only included if makepkg_sccache=true (requires pacman >= 7.0)
+# Note: sccache only included if makepkg_sccache_enabled=true (requires pacman >= 7.0)
 #  A negated environment option will do the opposite of the comments below.
 #
 #-- distcc:   Use the Distributed C/C++/ObjC compiler
@@ -96,11 +96,11 @@ DEBUG_RUSTFLAGS="{{ makepkg_debug_rustflags }}"
 #-- sccache:  Use sccache to cache Rust compilation
 #-- sign:     Generate PGP signature file
 #
-BUILDENV=({% if not makepkg_distcc %}!{% endif %}distcc {% if makepkg_color %}color{% else %}!color{% endif %} {% if makepkg_ccache %}ccache{% else %}!ccache{% endif %} {% if makepkg_check %}check{% else %}!check{% endif %}{% if makepkg_sccache %} sccache{% endif %} {% if makepkg_sign and makepkg_gpg_key %}sign{% else %}!sign{% endif %})
+BUILDENV=({% if not makepkg_distcc_enabled %}!{% endif %}distcc {% if makepkg_color %}color{% else %}!color{% endif %} {% if makepkg_ccache_enabled %}ccache{% else %}!ccache{% endif %} {% if makepkg_check %}check{% else %}!check{% endif %}{% if makepkg_sccache_enabled %} sccache{% endif %} {% if makepkg_sign and makepkg_gpg_key %}sign{% else %}!sign{% endif %})
 #
 #-- If using DistCC, your MAKEFLAGS will also need modification. In addition,
 #-- specify a space-delimited list of hosts running in the DistCC cluster.
-{% if makepkg_distcc and makepkg_distcc_hosts %}
+{% if makepkg_distcc_enabled and makepkg_distcc_hosts %}
 DISTCC_HOSTS="{{ makepkg_distcc_hosts }}"
 {% else %}
 #DISTCC_HOSTS=""
@@ -187,7 +187,7 @@ LOGDEST="{{ makepkg_logdest }}"
 {% if makepkg_packager %}
 PACKAGER="{{ makepkg_packager }}"
 {% else %}
-#PACKAGER="John Doe <john@doe.com>"
+#PACKAGER="John Doe <john@example.com>"
 {% endif %}
 #-- Specify a key to use for package signing
 {% if makepkg_gpg_key %}

@@ -16,53 +16,58 @@ definitions. This is the infrastructure-wide standard firewall role.
 
 ## Supported Platforms
 
-| Platform | firewalld Version | Notes |
-| -------- | ----------------- | ----- |
-| Arch Linux | 2.x | nftables backend, full feature set |
-| Debian Trixie | 2.x | nftables backend, full feature set |
-| Rocky Linux 9 | 1.x | Some 2.x features ignored (strict_forward_ports, flowtable, counters, table_owner) |
-| Rocky Linux 10 | 2.x | nftables backend, full feature set |
+| Platform                  | Notes                                |
+|---------------------------|--------------------------------------|
+| Arch Linux                | firewalld 2.x, full feature set      |
+| Debian Trixie             | firewalld 2.x, full feature set      |
+| EL 9 (Rocky, Alma, RHEL)  | firewalld 1.x, some 2.x features N/A |
+| EL 10 (Rocky, Alma, RHEL) | firewalld 2.x, full feature set      |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
-### Service Control
+### Role Control
 
-| Variable            | Default | Description                      |
-| ------------------- | ------- | -------------------------------- |
-| `firewalld_enabled` | `true`  | Enable/disable firewalld service |
+| Variable                    | Default | Description                            |
+|-----------------------------|---------|----------------------------------------|
+| `firewalld_enabled`         | `true`  | Enable the firewalld role              |
+| `firewalld_service_enabled` | `true`  | Enable and start the firewalld service |
 
 ### Daemon Settings
 
 Deployed as `/etc/firewalld/firewalld.conf`.
 
-| Variable | Default | Description |
-| -------- | ------- | ----------- |
-| `firewalld_default_zone` | `public` | Default zone for unassigned interfaces |
-| `firewalld_backend` | `''` | Backend: `nftables` or `iptables` (empty = system default) |
-| `firewalld_log_denied` | `off` | Log denied packets: `off`, `all`, `unicast`, `broadcast`, `multicast` |
-| `firewalld_cleanup_on_exit` | `true` | Clean up rules on daemon exit |
-| `firewalld_cleanup_modules_on_exit` | `false` | Clean up kernel modules on exit |
-| `firewalld_lockdown` | `false` | Restrict firewall modification to whitelisted apps |
-| `firewalld_ipv6_rpfilter` | `strict` | IPv6 reverse path filter |
-| `firewalld_individual_calls` | `false` | Use individual calls instead of transactions |
-| `firewalld_flush_all_on_reload` | `true` | Flush all rules on reload |
-| `firewalld_reload_policy` | `INPUT:DROP,FORWARD:DROP,OUTPUT:DROP` | Default policy during reload |
-| `firewalld_rfc3964_ipv4` | `true` | Auto-add 6to4/Teredo rules |
-| `firewalld_strict_forward_ports` | `false` | Require forwarding targets in same zone (2.x only) |
-| `firewalld_nftables_flowtable` | `off` | nftables flowtable offloading (2.x only) |
-| `firewalld_nftables_counters` | `false` | nftables packet counters (2.x only) |
-| `firewalld_nftables_table_owner` | `true` | nftables table owner flag (2.x only) |
+| Variable                            | Default  | Description                        |
+|-------------------------------------|----------|------------------------------------|
+| `firewalld_default_zone`            | `public` | Default zone                       |
+| `firewalld_backend`                 | `''`     | `nftables` or `iptables`           |
+| `firewalld_log_denied`              | `off`    | Log denied packets                 |
+| `firewalld_cleanup_on_exit`         | `true`   | Clean rules on exit                |
+| `firewalld_cleanup_modules_on_exit` | `false`  | Clean modules on exit              |
+| `firewalld_lockdown`                | `false`  | Restrict to whitelisted apps       |
+| `firewalld_ipv6_rpfilter`           | `strict` | IPv6 reverse path filter           |
+| `firewalld_individual_calls`        | `false`  | Individual calls (no transactions) |
+| `firewalld_flush_all_on_reload`     | `true`   | Flush all rules on reload          |
+| `firewalld_reload_policy`           | `*:DROP` | Policy during reload               |
+| `firewalld_rfc3964_ipv4`            | `true`   | Auto-add 6to4/Teredo rules         |
+| `firewalld_strict_forward_ports`    | `false`  | Same-zone forwarding only (2.x)    |
+| `firewalld_nftables_flowtable`      | `off`    | Flowtable offloading (2.x)         |
+| `firewalld_nftables_counters`       | `false`  | Packet counters (2.x)              |
+| `firewalld_nftables_table_owner`    | `true`   | Table owner flag (2.x)             |
 
 ### Zone Management
 
 | Variable          | Default | Description                                  |
-| ----------------- | ------- | -------------------------------------------- |
+|-------------------|---------|----------------------------------------------|
 | `firewalld_zones` | `[]`    | Zones to create or modify (`{name, target}`) |
 
 ### Services
 
 | Variable                      | Default   | Description                                     |
-| ----------------------------- | --------- | ----------------------------------------------- |
+|-------------------------------|-----------|-------------------------------------------------|
 | `firewalld_services`          | `['ssh']` | Services to enable in default zone              |
 | `firewalld_zone_services`     | `[]`      | Services per zone (`{zone, services}`)          |
 | `firewalld_services_disabled` | `[]`      | Services to explicitly disable                  |
@@ -71,62 +76,62 @@ Deployed as `/etc/firewalld/firewalld.conf`.
 ### Ports
 
 | Variable               | Default | Description                                     |
-| ---------------------- | ------- | ----------------------------------------------- |
+|------------------------|---------|-------------------------------------------------|
 | `firewalld_ports`      | `[]`    | Ports to open in default zone (`port/protocol`) |
 | `firewalld_zone_ports` | `[]`    | Ports per zone (`{zone, ports}`)                |
 
 ### Rich Rules
 
 | Variable               | Default | Description                           |
-| ---------------------- | ------- | ------------------------------------- |
+|------------------------|---------|---------------------------------------|
 | `firewalld_rich_rules` | `[]`    | Rich rules for complex firewall logic |
 
 ### Source-Based Routing
 
 | Variable            | Default | Description                                          |
-| ------------------- | ------- | ---------------------------------------------------- |
+|---------------------|---------|------------------------------------------------------|
 | `firewalld_sources` | `[]`    | Source networks assigned to zones (`{zone, source}`) |
 
 ### Interface Assignment
 
 | Variable               | Default | Description                                        |
-| ---------------------- | ------- | -------------------------------------------------- |
+|------------------------|---------|----------------------------------------------------|
 | `firewalld_interfaces` | `[]`    | Interfaces assigned to zones (`{zone, interface}`) |
 
 ### Port Forwarding
 
 | Variable             | Default | Description                                        |
-| -------------------- | ------- | -------------------------------------------------- |
+|----------------------|---------|----------------------------------------------------|
 | `firewalld_forwards` | `[]`    | Port forwarding rules (`{port, to_port, to_addr}`) |
 
 ### Masquerading (NAT)
 
 | Variable               | Default | Description                                      |
-| ---------------------- | ------- | ------------------------------------------------ |
+|------------------------|---------|--------------------------------------------------|
 | `firewalld_masquerade` | `[]`    | Enable masquerading per zone (`{zone, enabled}`) |
 
 ### ICMP Blocking
 
 | Variable                | Default | Description                  |
-| ----------------------- | ------- | ---------------------------- |
+|-------------------------|---------|------------------------------|
 | `firewalld_icmp_blocks` | `[]`    | ICMP types to block per zone |
 
 ### Direct Rules
 
 | Variable                 | Default | Description                                           |
-| ------------------------ | ------- | ----------------------------------------------------- |
+|--------------------------|---------|-------------------------------------------------------|
 | `firewalld_direct_rules` | `[]`    | Low-level nftables/iptables rules (deprecated in 2.x) |
 
 ### Custom Services
 
 | Variable                    | Default | Description                    |
-| --------------------------- | ------- | ------------------------------ |
+|-----------------------------|---------|--------------------------------|
 | `firewalld_custom_services` | `[]`    | Custom service XML definitions |
 
 ## Tags
 
 | Tag                   | Scope                       |
-| --------------------- | --------------------------- |
+|-----------------------|-----------------------------|
 | `firewalld`           | All role tasks              |
 | `firewalld:install`   | Package installation        |
 | `firewalld:configure` | Configuration and rules     |

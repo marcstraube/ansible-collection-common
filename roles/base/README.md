@@ -10,28 +10,34 @@ kernel/microcode (Arch), bootloader (GRUB/systemd-boot), sysctl, and systemd
 
 ## Requirements
 
-- `ansible-core >= 2.17`
+- ansible-core >= 2.17
 - Collections: `community.general`, `ansible.posix`
 
 ## Supported Platforms
 
-- Arch Linux (rolling)
-- Debian Trixie (13)
-- Rocky Linux 9
-- Rocky Linux 10
+| Platform                  | Notes |
+|---------------------------|-------|
+| Arch Linux                |       |
+| Debian Trixie             |       |
+| EL 9 (Rocky, Alma, RHEL)  |       |
+| EL 10 (Rocky, Alma, RHEL) |       |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
 ### Role Control
 
-| Variable       | Default | Description                    |
-| -------------- | ------- | ------------------------------ |
-| `base_enabled` | `true`  | Enable/disable the entire role |
+| Variable       | Default | Description          |
+|----------------|---------|----------------------|
+| `base_enabled` | `true`  | Enable the base role |
 
 ### Hostname
 
 | Variable               | Default                    | Description                                          |
-| ---------------------- | -------------------------- | ---------------------------------------------------- |
+|------------------------|----------------------------|------------------------------------------------------|
 | `base_hostname`        | `{{ inventory_hostname }}` | System hostname                                      |
 | `base_pretty_hostname` | `''`                       | Pretty hostname (shown in UI)                        |
 | `base_chassis`         | `'desktop'`                | Chassis type: desktop, laptop, server, vm, container |
@@ -42,7 +48,7 @@ kernel/microcode (Arch), bootloader (GRUB/systemd-boot), sysctl, and systemd
 ### Locale
 
 | Variable           | Default                 | Description                   |
-| ------------------ | ----------------------- | ----------------------------- |
+|--------------------|-------------------------|-------------------------------|
 | `base_locale`      | `'en_US.UTF-8'`         | System locale (LANG)          |
 | `base_locales`     | `['en_US.UTF-8 UTF-8']` | Locales to generate           |
 | `base_locale_lc_*` | `''`                    | Per-category locale overrides |
@@ -50,7 +56,7 @@ kernel/microcode (Arch), bootloader (GRUB/systemd-boot), sysctl, and systemd
 ### Timezone & NTP
 
 | Variable                    | Default | Description                                   |
-| --------------------------- | ------- | --------------------------------------------- |
+|-----------------------------|---------|-----------------------------------------------|
 | `base_timezone`             | `'UTC'` | System timezone                               |
 | `base_ntp_enabled`          | `false` | Enable systemd-timesyncd (false = use chrony) |
 | `base_ntp_servers`          | `[]`    | NTP servers                                   |
@@ -59,7 +65,7 @@ kernel/microcode (Arch), bootloader (GRUB/systemd-boot), sysctl, and systemd
 ### Keyboard
 
 | Variable            | Default        | Description          |
-| ------------------- | -------------- | -------------------- |
+|---------------------|----------------|----------------------|
 | `base_keymap`       | `'de-latin1'`  | Console keymap       |
 | `base_console_font` | `''`           | Console font         |
 | `base_xkb_layout`   | `'de'`         | X11 keyboard layout  |
@@ -69,19 +75,19 @@ kernel/microcode (Arch), bootloader (GRUB/systemd-boot), sysctl, and systemd
 
 ### Kernel (Arch Linux only)
 
-| Variable | Default | Description |
-| -------- | ------- | ----------- |
-| `base_kernel` | `'linux'` | Kernel package |
-| `base_kernel_extra_packages` | `['{{ base_kernel }}-headers']` | Additional kernel packages |
-| `base_microcode` | `'auto'` | Microcode: auto, intel-ucode, amd-ucode, '' |
-| `base_mkinitcpio_hooks` | `[]` | Override mkinitcpio hooks (empty = preserve installer config) |
-| `base_mkinitcpio_modules` | `[]` | Additional mkinitcpio modules |
-| `base_mkinitcpio_compression` | `'zstd'` | Initramfs compression |
+| Variable                      | Default                         | Description                         |
+|-------------------------------|---------------------------------|-------------------------------------|
+| `base_kernel`                 | `'linux'`                       | Kernel package                      |
+| `base_kernel_extra_packages`  | `['{{ base_kernel }}-headers']` | Additional kernel packages          |
+| `base_microcode`              | `'auto'`                        | auto, intel-ucode, amd-ucode, or '' |
+| `base_mkinitcpio_hooks`       | `[]`                            | Override mkinitcpio hooks           |
+| `base_mkinitcpio_modules`     | `[]`                            | Additional mkinitcpio modules       |
+| `base_mkinitcpio_compression` | `'zstd'`                        | Initramfs compression               |
 
 ### Bootloader
 
 | Variable                         | Default          | Description                                  |
-| -------------------------------- | ---------------- | -------------------------------------------- |
+|----------------------------------|------------------|----------------------------------------------|
 | `base_bootloader`                | `'systemd-boot'` | Bootloader: systemd-boot, grub, none         |
 | `base_grub_timeout`              | `5`              | GRUB menu timeout (seconds)                  |
 | `base_grub_default`              | `'0'`            | Default GRUB menu entry                      |
@@ -93,22 +99,22 @@ kernel/microcode (Arch), bootloader (GRUB/systemd-boot), sysctl, and systemd
 ### Packages
 
 | Variable               | Default     | Description                    |
-| ---------------------- | ----------- | ------------------------------ |
+|------------------------|-------------|--------------------------------|
 | `base_packages`        | OS-specific | Essential system packages      |
 | `base_extra_packages`  | `[]`        | Additional packages to install |
 | `base_remove_packages` | `[]`        | Packages to remove             |
-| `base_dialog`          | `true`      | Install dialog package         |
+| `base_dialog_enabled`  | `true`      | Install dialog package         |
 
 ### Sysctl
 
 | Variable      | Default | Description            |
-| ------------- | ------- | ---------------------- |
+|---------------|---------|------------------------|
 | `base_sysctl` | `{}`    | Sysctl key/value pairs |
 
 ### Systemd
 
 | Variable                      | Default    | Description                               |
-| ----------------------------- | ---------- | ----------------------------------------- |
+|-------------------------------|------------|-------------------------------------------|
 | `base_journald_max_use`       | `'500M'`   | Journald max disk usage                   |
 | `base_journald_max_retention` | `'1month'` | Journald max retention                    |
 | `base_coredump_storage`       | `'none'`   | Coredump storage: none, external, journal |
@@ -120,7 +126,7 @@ kernel/microcode (Arch), bootloader (GRUB/systemd-boot), sysctl, and systemd
 ## Tags
 
 | Tag               | Scope                                     |
-| ----------------- | ----------------------------------------- |
+|-------------------|-------------------------------------------|
 | `base`            | All base tasks                            |
 | `base:hostname`   | Hostname and machine-info                 |
 | `base:locale`     | Locale generation and configuration       |
@@ -135,20 +141,31 @@ kernel/microcode (Arch), bootloader (GRUB/systemd-boot), sysctl, and systemd
 ## Example Playbook
 
 ```yaml
-- name: Base system configuration
-  hosts: all
-  become: true
+- name: Include base role
+  ansible.builtin.include_role:
+    name: marcstraube.common.base
+  tags:
+    - base
+  when: base_enabled | default(true) | bool
+```
 
-  roles:
-    - role: marcstraube.common.base
-      vars:
-        base_hostname: 'myhost'
-        base_timezone: 'Europe/Berlin'
-        base_locale: 'en_US.UTF-8'
-        base_bootloader: 'grub'
-        base_kernel_parameters:
-          - 'quiet'
-          - 'splash'
+### Server with GRUB and Kernel Parameters
+
+```yaml
+- name: Include base role
+  ansible.builtin.include_role:
+    name: marcstraube.common.base
+  vars:
+    base_hostname: 'myserver'
+    base_timezone: 'Europe/Berlin'
+    base_locale: 'en_US.UTF-8'
+    base_bootloader: 'grub'
+    base_kernel_parameters:
+      - 'quiet'
+      - 'splash'
+  tags:
+    - base
+  when: base_enabled | default(true) | bool
 ```
 
 ## Testing
@@ -167,9 +184,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
   `base_kernel_parameters` only affects `GRUB_CMDLINE_LINUX_DEFAULT`.
 - **mkinitcpio**: Only managed when explicitly configured. Empty defaults preserve
   the installer-set hooks to avoid breaking encrypted/custom setups.
-- **NTP**: Disabled by default — use the dedicated `chrony` role for NTP.
+- **NTP**: Disabled by default -- use the dedicated `chrony` role for NTP.
 - Other roles (apparmor, plymouth) append their own kernel parameters using the
   same `lineinfile` pattern on `GRUB_CMDLINE_LINUX_DEFAULT`.
+- **Deprecated**: `base_dialog` renamed to `base_dialog_enabled` in v1.x.
+  Old variable accepted as fallback, removed in v2.0.0.
 
 ## License
 

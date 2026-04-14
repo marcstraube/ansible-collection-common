@@ -27,7 +27,7 @@
         postrotate: |
           true
 
-  tasks:
+  pre_tasks:
     - name: Converge | Create test log directory
       ansible.builtin.file:
         path: '/var/log/testapp'
@@ -36,6 +36,7 @@
         group: root
         mode: '0755'
 
+  tasks:
     - name: Converge | Include logrotate role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

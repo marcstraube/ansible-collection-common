@@ -1,5 +1,5 @@
 ---
-- name: Install | Sysctl packages
+- name: Install | sysctl packages
   ansible.builtin.package:
     name: '{{ __sysctl_packages }}'
     state: present
@@ -9,4 +9,4 @@
     name: br_netfilter
     state: present
     persistent: present
-  when: sysctl_profile_docker | default(false) | bool
+  when: sysctl_profile_docker_enabled | bool

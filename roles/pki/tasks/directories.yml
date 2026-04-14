@@ -9,7 +9,7 @@
   loop:
     - '{{ pki_certs_dir }}'
     - '{{ pki_csr_dir }}'
-  when: pki_create_dirs | bool
+  when: pki_create_dirs_enabled | bool
 
 - name: Directories | Ensure private key directory exists
   ansible.builtin.file:
@@ -18,4 +18,4 @@
     owner: root
     group: root
     mode: '{{ pki_private_dir_mode }}'
-  when: pki_create_dirs | bool
+  when: pki_create_dirs_enabled | bool

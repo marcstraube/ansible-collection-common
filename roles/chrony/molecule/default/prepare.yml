@@ -41,7 +41,7 @@
         state: present
 
     - name: Prepare | Stop chrony before applying override
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: '{{ __chrony_service_unit }}'
         state: stopped
       failed_when: false
@@ -60,11 +60,15 @@
       ansible.builtin.file:
         path: '/etc/systemd/system/{{ __chrony_service_unit }}.d'
         state: directory
+        owner: root
+        group: root
         mode: '0755'
 
     - name: Prepare | Override chronyd service for container compatibility
       ansible.builtin.copy:
         dest: '/etc/systemd/system/{{ __chrony_service_unit }}.d/override.conf'
+        owner: root
+        group: root
         mode: '0644'
         content: |
           [Unit]
@@ -80,5 +84,5 @@
           ExecStart={{ __chrony_binary }} -d -x
 
     - name: Prepare | Reload systemd
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         daemon_reload: true

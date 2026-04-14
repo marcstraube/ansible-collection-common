@@ -32,4 +32,4 @@
     mode: '0700'
   loop:
     - '{{ aide_database | dirname }}'
-    - '/var/log/aide'
+    - '{{ aide_log_dir }}'

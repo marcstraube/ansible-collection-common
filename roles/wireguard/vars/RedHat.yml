@@ -3,3 +3,5 @@ __wireguard_packages:
   - 'wireguard-tools'
 
 __wireguard_kernel_module: 'wireguard'
+
+__wireguard_service_name: 'wg-quick@{{ wireguard_interface }}'

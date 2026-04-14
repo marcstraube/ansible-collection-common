@@ -5,20 +5,36 @@
 
   tasks:
     #
+    # Load OS-Specific Variables
+    #
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    #
     # Package Verification
     #
 
     - name: Verify | Set package name fact
       ansible.builtin.set_fact:
-        openssh_package: "{{ 'openssh' if ansible_facts['os_family'] == 'Archlinux' else 'openssh-server' }}"
+        __openssh_verify_package: >-
+          {{ 'openssh' if ansible_facts['os_family'] == 'Archlinux' else 'openssh-server' }}
 
     - name: Verify | Check OpenSSH package is installed
       ansible.builtin.package:
-        name: "{{ openssh_package }}"
+        name: '{{ __openssh_verify_package }}'
         state: present
       check_mode: true
-      register: pkg_check
-      failed_when: pkg_check.changed
+      register: __openssh_pkg_check
+      failed_when: __openssh_pkg_check.changed
 
     #
     # Configuration Directory
@@ -27,14 +43,14 @@
     - name: Verify | Check sshd_config.d directory exists
       ansible.builtin.stat:
         path: /etc/ssh/sshd_config.d
-      register: config_d_dir
+      register: __openssh_config_d_dir
 
     - name: Verify | Assert sshd_config.d directory
       ansible.builtin.assert:
         that:
-          - config_d_dir.stat.exists
-          - config_d_dir.stat.isdir
-          - config_d_dir.stat.mode == '0700'
+          - __openssh_config_d_dir.stat.exists
+          - __openssh_config_d_dir.stat.isdir
+          - __openssh_config_d_dir.stat.mode == '0700'
         fail_msg: '/etc/ssh/sshd_config.d missing or wrong permissions'
 
     #
@@ -44,7 +60,7 @@
     - name: Verify | Check all config snippets exist
       ansible.builtin.stat:
         path: '/etc/ssh/sshd_config.d/{{ item }}'
-      register: config_files
+      register: __openssh_config_files
       loop:
         - '10-network.conf'
         - '20-hostkeys.conf'
@@ -61,11 +77,11 @@
       ansible.builtin.assert:
         that:
           - item.stat.exists
-          - item.stat.mode == '0644'
+          - item.stat.mode == '0600'
         fail_msg: '{{ item.item }} missing or wrong permissions'
-      loop: "{{ config_files.results }}"
+      loop: '{{ __openssh_config_files.results }}'
       loop_control:
-        label: "{{ item.item }}"
+        label: '{{ item.item }}'
 
     #
     # Authentication Config Content
@@ -74,22 +90,22 @@
     - name: Verify | Read authentication config
       ansible.builtin.slurp:
         src: /etc/ssh/sshd_config.d/40-authentication.conf
-      register: auth_content
+      register: __openssh_auth_content
 
     - name: Verify | Assert authentication settings
       ansible.builtin.assert:
         that:
-          - "'PermitRootLogin no' in (auth_content.content | b64decode)"
-          - "'PasswordAuthentication no' in (auth_content.content | b64decode)"
-          - "'MaxAuthTries 3' in (auth_content.content | b64decode)"
-          - "'KbdInteractiveAuthentication no' in (auth_content.content | b64decode)"
-          - "'UsePAM yes' in (auth_content.content | b64decode)"
+          - "'PermitRootLogin no' in (__openssh_auth_content.content | b64decode)"
+          - "'PasswordAuthentication no' in (__openssh_auth_content.content | b64decode)"
+          - "'MaxAuthTries 3' in (__openssh_auth_content.content | b64decode)"
+          - "'KbdInteractiveAuthentication no' in (__openssh_auth_content.content | b64decode)"
+          - "'UsePAM yes' in (__openssh_auth_content.content | b64decode)"
         fail_msg: 'Authentication config incorrect'
 
     - name: Verify | Assert ChallengeResponseAuthentication is removed
       ansible.builtin.assert:
         that:
-          - "'ChallengeResponseAuthentication' not in (auth_content.content | b64decode)"
+          - "'ChallengeResponseAuthentication' not in (__openssh_auth_content.content | b64decode)"
         fail_msg: 'Deprecated ChallengeResponseAuthentication still present'
 
     #
@@ -99,27 +115,27 @@
     - name: Verify | Read crypto config
       ansible.builtin.slurp:
         src: /etc/ssh/sshd_config.d/30-crypto.conf
-      register: crypto_content
+      register: __openssh_crypto_content
 
     - name: Verify | Assert crypto settings
       ansible.builtin.assert:
         that:
-          - "'curve25519-sha256' in (crypto_content.content | b64decode)"
-          - "'chacha20-poly1305@openssh.com' in (crypto_content.content | b64decode)"
-          - "'hmac-sha2-512-etm@openssh.com' in (crypto_content.content | b64decode)"
+          - "'curve25519-sha256' in (__openssh_crypto_content.content | b64decode)"
+          - "'chacha20-poly1305@openssh.com' in (__openssh_crypto_content.content | b64decode)"
+          - "'hmac-sha2-512-etm@openssh.com' in (__openssh_crypto_content.content | b64decode)"
         fail_msg: 'Crypto config incorrect'
 
     - name: Verify | Assert auto-derived host key algorithms
       ansible.builtin.assert:
         that:
-          - "'ssh-ed25519' in (crypto_content.content | b64decode)"
-          - "'rsa-sha2-512' in (crypto_content.content | b64decode)"
+          - "'ssh-ed25519' in (__openssh_crypto_content.content | b64decode)"
+          - "'rsa-sha2-512' in (__openssh_crypto_content.content | b64decode)"
         fail_msg: 'Auto-derived host key algorithms missing'
 
     - name: Verify | Assert RequiredRSASize on supported platforms
       ansible.builtin.assert:
         that:
-          - "'RequiredRSASize 3072' in (crypto_content.content | b64decode)"
+          - "'RequiredRSASize 3072' in (__openssh_crypto_content.content | b64decode)"
         fail_msg: 'RequiredRSASize missing on supported platform'
       when: >-
         not (ansible_facts['os_family'] == 'RedHat'
@@ -128,7 +144,7 @@
     - name: Verify | Assert RequiredRSASize absent on Rocky 9
       ansible.builtin.assert:
         that:
-          - "'RequiredRSASize' not in (crypto_content.content | b64decode)"
+          - "'RequiredRSASize' not in (__openssh_crypto_content.content | b64decode)"
         fail_msg: 'RequiredRSASize should not be present on Rocky 9'
       when: >-
         ansible_facts['os_family'] == 'RedHat'
@@ -141,12 +157,12 @@
     - name: Verify | Read access config
       ansible.builtin.slurp:
         src: /etc/ssh/sshd_config.d/50-access.conf
-      register: access_content
+      register: __openssh_access_content
 
     - name: Verify | Assert access control settings
       ansible.builtin.assert:
         that:
-          - "'AllowGroups wheel sudo' in (access_content.content | b64decode)"
+          - "'AllowGroups wheel sudo' in (__openssh_access_content.content | b64decode)"
         fail_msg: 'Access config incorrect'
 
     #
@@ -156,21 +172,21 @@
     - name: Verify | Read session config
       ansible.builtin.slurp:
         src: /etc/ssh/sshd_config.d/60-session.conf
-      register: session_content
+      register: __openssh_session_content
 
     - name: Verify | Assert session settings
       ansible.builtin.assert:
         that:
-          - "'ClientAliveInterval 300' in (session_content.content | b64decode)"
-          - "'ClientAliveCountMax 3' in (session_content.content | b64decode)"
-          - "'Banner /etc/ssh/banner' in (session_content.content | b64decode)"
-          - "'AcceptEnv LANG LC_*' in (session_content.content | b64decode)"
+          - "'ClientAliveInterval 300' in (__openssh_session_content.content | b64decode)"
+          - "'ClientAliveCountMax 3' in (__openssh_session_content.content | b64decode)"
+          - "'Banner /etc/ssh/banner' in (__openssh_session_content.content | b64decode)"
+          - "'AcceptEnv LANG LC_*' in (__openssh_session_content.content | b64decode)"
         fail_msg: 'Session config incorrect'
 
     - name: Verify | Assert PrintLastLog absent on platforms where removed
       ansible.builtin.assert:
         that:
-          - "'PrintLastLog' not in (session_content.content | b64decode)"
+          - "'PrintLastLog' not in (__openssh_session_content.content | b64decode)"
         fail_msg: 'PrintLastLog should not be present on this platform'
       when: >-
         ansible_facts['os_family'] != 'RedHat'
@@ -183,14 +199,14 @@
     - name: Verify | Read forwarding config
       ansible.builtin.slurp:
         src: /etc/ssh/sshd_config.d/70-forwarding.conf
-      register: fwd_content
+      register: __openssh_fwd_content
 
     - name: Verify | Assert forwarding disabled by default
       ansible.builtin.assert:
         that:
-          - "'AllowTcpForwarding no' in (fwd_content.content | b64decode)"
-          - "'AllowAgentForwarding no' in (fwd_content.content | b64decode)"
-          - "'X11Forwarding no' in (fwd_content.content | b64decode)"
+          - "'AllowTcpForwarding no' in (__openssh_fwd_content.content | b64decode)"
+          - "'AllowAgentForwarding no' in (__openssh_fwd_content.content | b64decode)"
+          - "'X11Forwarding no' in (__openssh_fwd_content.content | b64decode)"
         fail_msg: 'Forwarding should be disabled'
 
     #
@@ -200,20 +216,20 @@
     - name: Verify | Read match config
       ansible.builtin.slurp:
         src: /etc/ssh/sshd_config.d/90-match.conf
-      register: match_content
+      register: __openssh_match_content
 
     - name: Verify | Assert SFTP chroot match block
       ansible.builtin.assert:
         that:
-          - "'Match Group sftponly' in (match_content.content | b64decode)"
-          - "'ChrootDirectory /home/%u' in (match_content.content | b64decode)"
-          - "'ForceCommand internal-sftp' in (match_content.content | b64decode)"
+          - "'Match Group sftponly' in (__openssh_match_content.content | b64decode)"
+          - "'ChrootDirectory /home/%u' in (__openssh_match_content.content | b64decode)"
+          - "'ForceCommand internal-sftp' in (__openssh_match_content.content | b64decode)"
         fail_msg: 'SFTP chroot match block missing'
 
     - name: Verify | Assert custom match block
       ansible.builtin.assert:
         that:
-          - "'Match User testdeploy' in (match_content.content | b64decode)"
+          - "'Match User testdeploy' in (__openssh_match_content.content | b64decode)"
         fail_msg: 'Custom match block missing'
 
     #
@@ -223,13 +239,13 @@
     - name: Verify | Check sftponly group exists
       ansible.builtin.command:
         cmd: getent group sftponly
-      register: sftp_group
+      register: __openssh_sftp_group
       changed_when: false
 
     - name: Verify | Assert sftponly group
       ansible.builtin.assert:
         that:
-          - sftp_group.rc == 0
+          - __openssh_sftp_group.rc == 0
         fail_msg: 'sftponly group not created'
 
     #
@@ -239,12 +255,12 @@
     - name: Verify | Check banner file exists
       ansible.builtin.stat:
         path: /etc/ssh/banner
-      register: banner_file
+      register: __openssh_banner_file
 
     - name: Verify | Assert banner file
       ansible.builtin.assert:
         that:
-          - banner_file.stat.exists
+          - __openssh_banner_file.stat.exists
         fail_msg: 'Banner file not created'
 
     #
@@ -254,26 +270,26 @@
     - name: Verify | Check ED25519 host key
       ansible.builtin.stat:
         path: /etc/ssh/ssh_host_ed25519_key
-      register: ed25519_key
+      register: __openssh_ed25519_key
 
     - name: Verify | Check RSA host key
       ansible.builtin.stat:
         path: /etc/ssh/ssh_host_rsa_key
-      register: rsa_key
+      register: __openssh_rsa_key
 
     - name: Verify | Check DSA host key absent
       ansible.builtin.stat:
         path: /etc/ssh/ssh_host_dsa_key
-      register: dsa_key
+      register: __openssh_dsa_key
 
     - name: Verify | Assert host keys
       ansible.builtin.assert:
         that:
-          - ed25519_key.stat.exists
-          - ed25519_key.stat.mode == '0600'
-          - rsa_key.stat.exists
-          - rsa_key.stat.mode == '0600'
-          - not dsa_key.stat.exists
+          - __openssh_ed25519_key.stat.exists
+          - __openssh_ed25519_key.stat.mode == '0600'
+          - __openssh_rsa_key.stat.exists
+          - __openssh_rsa_key.stat.mode == '0600'
+          - not __openssh_dsa_key.stat.exists
         fail_msg: 'Host key verification failed'
 
     #
@@ -283,12 +299,12 @@
     - name: Verify | Read network config for header check
       ansible.builtin.slurp:
         src: /etc/ssh/sshd_config.d/10-network.conf
-      register: network_content
+      register: __openssh_network_content
 
     - name: Verify | Assert ansible_managed header
       ansible.builtin.assert:
         that:
-          - "'Ansible managed' in (network_content.content | b64decode)"
+          - "'Ansible managed' in (__openssh_network_content.content | b64decode)"
         fail_msg: 'ansible_managed header missing'
 
     #
@@ -298,12 +314,12 @@
     - name: Verify | Check client config exists
       ansible.builtin.stat:
         path: /etc/ssh/ssh_config.d/99-defaults.conf
-      register: client_conf
+      register: __openssh_client_conf
 
     - name: Verify | Assert client config exists
       ansible.builtin.assert:
         that:
-          - client_conf.stat.exists
+          - __openssh_client_conf.stat.exists
         fail_msg: 'Client config missing'
 
     #
@@ -311,34 +327,28 @@
     #
 
     - name: Verify | Validate SSH configuration
-      ansible.builtin.command: sshd -t
-      register: sshd_test
+      ansible.builtin.command:
+        cmd: sshd -t
+      register: __openssh_sshd_test
       changed_when: false
-      failed_when: sshd_test.rc != 0
+      failed_when: __openssh_sshd_test.rc != 0
 
     #
     # Service Verification
     #
 
-    - name: Verify | Set service name fact
-      ansible.builtin.set_fact:
-        sshd_service: "{{ 'sshd.service' if ansible_facts['os_family'] in ['Archlinux', 'RedHat'] else 'ssh.service' }}"
+    - name: Verify | Check openssh service is enabled and running
+      ansible.builtin.systemd_service:
+        name: '{{ __openssh_service_name }}'
+      register: __openssh_svc_check
 
-    - name: Verify | Check SSH service is enabled
-      ansible.builtin.systemd:
-        name: "{{ sshd_service }}"
-        enabled: true
-      check_mode: true
-      register: service_enabled
-      failed_when: service_enabled.changed
-
-    - name: Verify | Check SSH service is running
-      ansible.builtin.systemd:
-        name: "{{ sshd_service }}"
-        state: started
-      check_mode: true
-      register: service_running
-      failed_when: service_running.changed
+    - name: Verify | Assert openssh service is active
+      ansible.builtin.assert:
+        that:
+          - __openssh_svc_check.status.ActiveState == 'active'
+          - __openssh_svc_check.status.UnitFileState == 'enabled'
+        fail_msg: 'openssh service is not active or enabled'
+        success_msg: 'openssh service is active and enabled'
 
     #
     # Functional Tests
@@ -351,12 +361,13 @@
         timeout: 5
 
     - name: Verify | Get SSH version banner
-      ansible.builtin.command: ssh -V
-      register: ssh_version
+      ansible.builtin.command:
+        cmd: ssh -V
+      register: __openssh_ssh_version
       changed_when: false
 
     - name: Verify | Assert SSH version output
       ansible.builtin.assert:
         that:
-          - "'OpenSSH' in ssh_version.stderr"
+          - "'OpenSSH' in __openssh_ssh_version.stderr"
         fail_msg: 'SSH version output unexpected'

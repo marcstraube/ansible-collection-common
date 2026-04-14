@@ -3,39 +3,60 @@
 # Role Control
 #
 
+# Enable the fonts role
 fonts_enabled: true
 
 #
 # Base Fonts
 #
 
-# Install base font set (DejaVu, Liberation, Noto)
-fonts_base: true
+# Enable base font set (DejaVu, Liberation, Noto)
+fonts_base_enabled: true
 
-# Install DejaVu fonts (Bitstream Vera with extended Unicode)
-fonts_dejavu: true
+# DEPRECATED: Use fonts_base_enabled instead (removed in v2.0.0)
+# fonts_base: {{ fonts_base_enabled }}
 
-# Install Liberation fonts (metric-compatible with MS fonts)
-fonts_liberation: true
+# Enable DejaVu fonts (Bitstream Vera with extended Unicode)
+fonts_dejavu_enabled: true
 
-# Install Noto fonts (Google's Unicode coverage fonts)
-fonts_noto: true
+# DEPRECATED: Use fonts_dejavu_enabled instead (removed in v2.0.0)
+# fonts_dejavu: {{ fonts_dejavu_enabled }}
 
-# Install Noto Emoji fonts
-fonts_noto_emoji: true
+# Enable Liberation fonts (metric-compatible with MS fonts)
+fonts_liberation_enabled: true
 
-# Install Noto CJK fonts (Chinese, Japanese, Korean)
-# Warning: Large download (~1.5GB)
-fonts_noto_cjk: false
+# DEPRECATED: Use fonts_liberation_enabled instead (removed in v2.0.0)
+# fonts_liberation: {{ fonts_liberation_enabled }}
+
+# Enable Noto fonts (Google's Unicode coverage fonts)
+fonts_noto_enabled: true
+
+# DEPRECATED: Use fonts_noto_enabled instead (removed in v2.0.0)
+# fonts_noto: {{ fonts_noto_enabled }}
+
+# Enable Noto Emoji fonts
+fonts_noto_emoji_enabled: true
+
+# DEPRECATED: Use fonts_noto_emoji_enabled instead (removed in v2.0.0)
+# fonts_noto_emoji: {{ fonts_noto_emoji_enabled }}
+
+# Enable Noto CJK fonts (Chinese, Japanese, Korean, ~1.5 GB)
+fonts_noto_cjk_enabled: false
+
+# DEPRECATED: Use fonts_noto_cjk_enabled instead (removed in v2.0.0)
+# fonts_noto_cjk: {{ fonts_noto_cjk_enabled }}
 
 #
 # Coding Fonts
 #
 
-# Install coding/monospace fonts
-fonts_coding: false
+# Enable coding/monospace fonts
+fonts_coding_enabled: false
 
-# Specific coding fonts to install (when fonts_coding is true)
+# DEPRECATED: Use fonts_coding_enabled instead (removed in v2.0.0)
+# fonts_coding: {{ fonts_coding_enabled }}
+
+# Coding font families to install
 # Available: firacode, jetbrains, cascadia, iosevka, hack, source-code-pro
 fonts_coding_families:
   - 'firacode'
@@ -45,23 +66,17 @@ fonts_coding_families:
 # Nerd Fonts
 #
 
-# Install Nerd Fonts (patched fonts with icons)
-fonts_nerd: false
+# Enable Nerd Fonts (patched fonts with icons)
+fonts_nerd_enabled: false
+
+# DEPRECATED: Use fonts_nerd_enabled instead (removed in v2.0.0)
+# fonts_nerd: {{ fonts_nerd_enabled }}
 
 # Nerd Font families to install
 # Available: firacode, hack, jetbrains, meslo, source-code-pro, ubuntu,
 #            dejavu, liberation, noto, roboto, droid, terminus, symbols-only
 fonts_nerd_families:
   - 'symbols-only'
-
-#
-# Legacy/Compatibility Fonts (Removed)
-#
-
-# Microsoft fonts are no longer needed - Liberation fonts are metrically
-# compatible. If you really need MS fonts, add to fonts_extra_packages:
-#   ArchLinux (AUR): fonts_extra_packages: ['ttf-ms-fonts']
-#   Debian/Ubuntu:   fonts_extra_packages: ['ttf-mscorefonts-installer']
 
 #
 # Additional Fonts
@@ -78,13 +93,15 @@ fonts_extra_packages: []
 fonts_fontconfig_enabled: true
 
 # Prefer specific fonts for generic families
-# Example: fonts_fontconfig_prefer_sans: 'Noto Sans'
 fonts_fontconfig_prefer_sans: ''
 fonts_fontconfig_prefer_serif: ''
 fonts_fontconfig_prefer_mono: ''
 
 # Enable font antialiasing
-fonts_fontconfig_antialias: true
+fonts_fontconfig_antialias_enabled: true
+
+# DEPRECATED: Use fonts_fontconfig_antialias_enabled instead (removed in v2.0.0)
+# fonts_fontconfig_antialias: {{ fonts_fontconfig_antialias_enabled }}
 
 # Hinting style: hintnone, hintslight, hintmedium, hintfull
 fonts_fontconfig_hinting: 'hintslight'
@@ -99,5 +116,8 @@ fonts_fontconfig_lcdfilter: 'default'
 # Cache
 #
 
-# Rebuild font cache after installation
-fonts_rebuild_cache: true
+# Enable font cache rebuild after installation
+fonts_rebuild_cache_enabled: true
+
+# DEPRECATED: Use fonts_rebuild_cache_enabled instead (removed in v2.0.0)
+# fonts_rebuild_cache: {{ fonts_rebuild_cache_enabled }}

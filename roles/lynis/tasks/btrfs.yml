@@ -1,5 +1,6 @@
 ---
-# NoCOW for write-heavy report directory
+# BTRFS NoCOW for write-heavy report directory.
+# Auto-detected: only runs on BTRFS filesystems.
 
 - name: BTRFS | Check parent directory filesystem type
   ansible.builtin.command:
@@ -15,12 +16,10 @@
     owner: root
     group: root
     mode: '0750'
-  when:
-    - __lynis_report_fstype.stdout | default('') == 'btrfs'
+  when: __lynis_report_fstype.stdout | default('') == 'btrfs'
 
 - name: BTRFS | Set NoCOW attribute on report directory
   ansible.builtin.command:
     cmd: chattr +C {{ lynis_report_dir }}
-  when:
-    - __lynis_report_fstype.stdout | default('') == 'btrfs'
+  when: __lynis_report_fstype.stdout | default('') == 'btrfs'
   changed_when: false

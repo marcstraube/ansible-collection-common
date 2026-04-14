@@ -126,9 +126,10 @@
     - not (pam_faillock_enabled | bool)
 
 # RedHat: use authselect feature
+# failed_when: false — authselect returns non-zero when no profile is active
 - name: Configure | Check authselect current features (RedHat)
   ansible.builtin.command: authselect current --raw
-  register: __pam_authselect_current
+  register: __pam_hardening_authselect_current
   changed_when: false
   failed_when: false
   when: ansible_facts['os_family'] == 'RedHat'
@@ -138,7 +139,7 @@
   changed_when: true
   when:
     - ansible_facts['os_family'] == 'RedHat'
-    - __pam_authselect_current.rc != 0
+    - __pam_hardening_authselect_current.rc != 0
 
 - name: Configure | Enable faillock via authselect (RedHat)
   ansible.builtin.command: authselect enable-feature with-faillock
@@ -146,7 +147,7 @@
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - pam_faillock_enabled | bool
-    - "'with-faillock' not in (__pam_authselect_current.stdout | default(''))"
+    - "'with-faillock' not in (__pam_hardening_authselect_current.stdout | default(''))"
 
 #
 # Password History
@@ -182,7 +183,7 @@
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - pam_password_remember | int > 0
-    - "'with-pwhistory' not in (__pam_authselect_current.stdout | default(''))"
+    - "'with-pwhistory' not in (__pam_hardening_authselect_current.stdout | default(''))"
 
 - name: Configure | pwhistory remember value (RedHat)
   ansible.builtin.lineinfile:
@@ -320,7 +321,7 @@
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - pam_access_enabled | bool
-    - "'with-pamaccess' not in (__pam_authselect_current.stdout | default(''))"
+    - "'with-pamaccess' not in (__pam_hardening_authselect_current.stdout | default(''))"
 
 #
 # Umask
@@ -386,7 +387,7 @@
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - not (pam_permit_empty_passwords | bool)
-    - "'without-nullok' not in (__pam_authselect_current.stdout | default(''))"
+    - "'without-nullok' not in (__pam_hardening_authselect_current.stdout | default(''))"
 
 #
 # Login Delay
@@ -410,7 +411,6 @@
     line: 'auth    optional                        pam_faildelay.so delay={{ pam_delay }}'
     insertbefore: '^auth\s+required'
     state: present
-  failed_when: false
   when: ansible_facts['os_family'] == 'Debian'
 
 # RedHat: FAIL_DELAY in login.defs is respected by login(1)

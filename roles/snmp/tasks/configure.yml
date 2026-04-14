@@ -31,7 +31,7 @@
     owner: root
     group: root
     mode: '0600'
-  notify: Restart snmpd
+  notify: Restart SNMP daemon
   no_log: true
 
 # Arch Linux snmpd.service hardcodes "udp: udp6:" in ExecStart, which
@@ -54,6 +54,6 @@
     group: root
     mode: '0644'
   notify:
-    - Reload snmp systemd units
-    - Restart snmpd
+    - Reload SNMP systemd units
+    - Restart SNMP daemon
   when: ansible_facts['os_family'] == 'Archlinux'

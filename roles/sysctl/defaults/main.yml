@@ -1,8 +1,9 @@
 ---
 #
-# Service Control
+# Role Control
 #
 
+# Enable the sysctl role
 sysctl_enabled: true
 
 #
@@ -10,36 +11,50 @@ sysctl_enabled: true
 #
 # Key-value pairs applied to sysctl.conf
 
+# Custom sysctl key-value pairs (override profiles)
 sysctl_parameters: {}
-# Example:
-#   net.ipv4.ip_forward: 1
-#   vm.swappiness: 10
 
 #
 # Preset Profiles
 #
 # Enable predefined parameter sets for common use cases
 
-# Security hardening profile (CIS benchmark recommended)
-sysctl_profile_security: true
+# Enable security hardening profile (CIS benchmark recommended)
+sysctl_profile_security_enabled: true
 
-# Network performance profile (high-traffic servers)
-sysctl_profile_network_performance: false
+# DEPRECATED: Use sysctl_profile_security_enabled instead (removed in v2.0.0)
+# sysctl_profile_security: {{ sysctl_profile_security_enabled }}
 
-# Database server profile (PostgreSQL, MariaDB)
-sysctl_profile_database: false
+# Enable network performance profile (high-traffic servers)
+sysctl_profile_network_performance_enabled: false
 
-# Web server profile (nginx, Apache)
-sysctl_profile_webserver: false
+# DEPRECATED: Use sysctl_profile_network_performance_enabled instead (removed in v2.0.0)
+# sysctl_profile_network_performance: {{ sysctl_profile_network_performance_enabled }}
 
-# Docker/container host profile
-sysctl_profile_docker: false
+# Enable database server profile (PostgreSQL, MariaDB)
+sysctl_profile_database_enabled: false
+
+# DEPRECATED: Use sysctl_profile_database_enabled instead (removed in v2.0.0)
+# sysctl_profile_database: {{ sysctl_profile_database_enabled }}
+
+# Enable web server profile (nginx, Apache)
+sysctl_profile_webserver_enabled: false
+
+# DEPRECATED: Use sysctl_profile_webserver_enabled instead (removed in v2.0.0)
+# sysctl_profile_webserver: {{ sysctl_profile_webserver_enabled }}
+
+# Enable Docker/container host profile
+sysctl_profile_docker_enabled: false
+
+# DEPRECATED: Use sysctl_profile_docker_enabled instead (removed in v2.0.0)
+# sysctl_profile_docker: {{ sysctl_profile_docker_enabled }}
 
 #
 # Security Profile Parameters
 #
-# Applied when sysctl_profile_security: true
+# Applied when sysctl_profile_security_enabled is true
 
+# Security-focused sysctl parameters
 sysctl_security_parameters:
   # Disable IP forwarding
   net.ipv4.ip_forward: 0
@@ -80,8 +95,9 @@ sysctl_security_parameters:
 #
 # Network Performance Profile Parameters
 #
-# Applied when sysctl_profile_network_performance: true
+# Applied when sysctl_profile_network_performance_enabled is true
 
+# Network performance tuning parameters
 sysctl_network_performance_parameters:
   # Increase socket buffer sizes
   net.core.rmem_max: 16777216
@@ -114,8 +130,9 @@ sysctl_network_performance_parameters:
 #
 # Database Profile Parameters
 #
-# Applied when sysctl_profile_database: true
+# Applied when sysctl_profile_database_enabled is true
 
+# Database-optimized sysctl parameters
 sysctl_database_parameters:
   # Reduce swappiness for databases
   vm.swappiness: 10
@@ -141,8 +158,9 @@ sysctl_database_parameters:
 #
 # Web Server Profile Parameters
 #
-# Applied when sysctl_profile_webserver: true
+# Applied when sysctl_profile_webserver_enabled is true
 
+# Web server sysctl parameters
 sysctl_webserver_parameters:
   # Connection handling
   net.core.somaxconn: 65535
@@ -161,8 +179,9 @@ sysctl_webserver_parameters:
 #
 # Docker Profile Parameters
 #
-# Applied when sysctl_profile_docker: true
+# Applied when sysctl_profile_docker_enabled is true
 
+# Docker/container runtime sysctl parameters
 sysctl_docker_parameters:
   # Enable IP forwarding for containers
   net.ipv4.ip_forward: 1
@@ -177,7 +196,7 @@ sysctl_docker_parameters:
   fs.inotify.max_user_instances: 512
 
 #
-# Configuration Options
+# Configuration
 #
 
 # File to write sysctl parameters

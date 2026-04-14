@@ -30,6 +30,3 @@ galaxy_info:
     - desktop
 
 dependencies: []
-
-collections:
-  - community.general

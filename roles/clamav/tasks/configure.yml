@@ -32,39 +32,40 @@
     mode: '0755'
 
 #
-# Configuration files
+# Configuration Files
 #
 
 - name: Configure | Deploy clamd.conf
   ansible.builtin.template:
     src: 'clamd.conf.j2'
-    dest: '{{ __clamav_clamd_config }}'
+    dest: '{{ __clamav_daemon_config_file }}'
     owner: root
     group: '{{ clamav_group | default(__clamav_group, true) }}'
     mode: '0644'
-  notify: Restart clamav-daemon
+  notify: Restart ClamAV daemon
 
 - name: Configure | Deploy freshclam.conf
   ansible.builtin.template:
     src: 'freshclam.conf.j2'
-    dest: '{{ __clamav_freshclam_config }}'
+    dest: '{{ __clamav_freshclam_config_file }}'
     owner: root
     group: '{{ clamav_group | default(__clamav_group, true) }}'
     mode: '0640'
-  notify: Restart clamav-freshclam
+  no_log: true
+  notify: Restart ClamAV freshclam
 
 - name: Configure | Deploy clamav-milter.conf
   ansible.builtin.template:
     src: 'clamav-milter.conf.j2'
-    dest: '{{ __clamav_milter_config }}'
+    dest: '{{ __clamav_milter_config_file }}'
     owner: root
     group: '{{ clamav_group | default(__clamav_group, true) }}'
     mode: '0640'
-  notify: Restart clamav-milter
+  notify: Restart ClamAV milter
   when: clamav_milter_enabled | bool
 
 #
-# Mail server integration
+# Mail Server Integration
 #
 
 - name: Configure | Check if postfix user exists
@@ -73,7 +74,7 @@
     key: postfix
   register: __clamav_postfix_user
   failed_when: false
-  when: clamav_postfix_integration | bool
+  when: clamav_postfix_integration_enabled | bool
 
 - name: Configure | Add postfix to clamav group
   ansible.builtin.user:
@@ -81,7 +82,7 @@
     groups: '{{ clamav_group | default(__clamav_group, true) }}'
     append: true
   when:
-    - clamav_postfix_integration | bool
+    - clamav_postfix_integration_enabled | bool
     - __clamav_postfix_user.ansible_facts.getent_passwd is defined
     - __clamav_postfix_user.ansible_facts.getent_passwd.postfix is defined
 
@@ -91,7 +92,7 @@
     key: _rspamd
   register: __clamav_rspamd_user
   failed_when: false
-  when: clamav_rspamd_integration | bool
+  when: clamav_rspamd_integration_enabled | bool
 
 - name: Configure | Add rspamd to clamav group
   ansible.builtin.user:
@@ -99,12 +100,12 @@
     groups: '{{ clamav_group | default(__clamav_group, true) }}'
     append: true
   when:
-    - clamav_rspamd_integration | bool
+    - clamav_rspamd_integration_enabled | bool
     - __clamav_rspamd_user.ansible_facts.getent_passwd is defined
     - __clamav_rspamd_user.ansible_facts.getent_passwd._rspamd is defined
 
 #
-# Initial database download
+# Initial Database Download
 #
 
 - name: Configure | Check if virus database exists
@@ -119,4 +120,5 @@
     - not __clamav_db_check.stat.exists
     - clamav_freshclam_enabled | bool
   changed_when: "'main.cvd updated' in (__clamav_freshclam_result.stdout | default(''))"
+  # Network may be unavailable in containers or during initial setup
   failed_when: false

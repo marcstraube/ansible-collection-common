@@ -3,15 +3,30 @@
 # Role Control
 #
 
+# Enable the editors role
 editors_enabled: true
 
 #
-# Editors to Install
+# Editors
 #
 
-editors_nano: true
-editors_vim: true
-editors_neovim: true
+# Enable nano editor
+editors_nano_enabled: true
+
+# DEPRECATED: Use editors_nano_enabled instead (removed in v2.0.0)
+# editors_nano: {{ editors_nano_enabled }}
+
+# Enable vim editor
+editors_vim_enabled: true
+
+# DEPRECATED: Use editors_vim_enabled instead (removed in v2.0.0)
+# editors_vim: {{ editors_vim_enabled }}
+
+# Enable neovim editor
+editors_neovim_enabled: true
+
+# DEPRECATED: Use editors_neovim_enabled instead (removed in v2.0.0)
+# editors_neovim: {{ editors_neovim_enabled }}
 
 # Default editor (for EDITOR/VISUAL env vars via /etc/profile.d/editor.sh)
 # Options: nano, vim, nvim
@@ -22,23 +37,44 @@ editors_default: 'nvim'
 #
 # Set to false to skip deploying global config (e.g. when using own dotfiles)
 
-editors_nano_config_manage: true
-editors_vim_config_manage: true
-editors_neovim_config_manage: true
+# Enable global nano configuration deployment
+editors_nano_config_enabled: true
+
+# DEPRECATED: Use editors_nano_config_enabled instead (removed in v2.0.0)
+# editors_nano_config_manage: {{ editors_nano_config_enabled }}
+
+# Enable global vim configuration deployment
+editors_vim_config_enabled: true
+
+# DEPRECATED: Use editors_vim_config_enabled instead (removed in v2.0.0)
+# editors_vim_config_manage: {{ editors_vim_config_enabled }}
+
+# Enable global neovim configuration deployment
+editors_neovim_config_enabled: true
+
+# DEPRECATED: Use editors_neovim_config_enabled instead (removed in v2.0.0)
+# editors_neovim_config_manage: {{ editors_neovim_config_enabled }}
 
 #
-# Neovim Binary Install (RedHat/Rocky only)
+# Neovim Binary Install (RedHat only)
 #
 # Neovim is not in EPEL — install pre-built binary from GitHub releases.
 # Set to true on RedHat systems. Ignored on Arch/Debian (uses package manager).
 
-editors_neovim_binary_install: false
+# Enable neovim binary install from GitHub releases
+editors_neovim_binary_enabled: false
+
+# DEPRECATED: Use editors_neovim_binary_enabled instead (removed in v2.0.0)
+# editors_neovim_binary_install: {{ editors_neovim_binary_enabled }}
+
+# Neovim release version to install
 editors_neovim_version: 'v0.10.4'
 
 #
 # Nano Configuration
 #
 
+# Nano editor settings
 editors_nano_config:
   set_autoindent: true
   set_linenumbers: true
@@ -46,15 +82,19 @@ editors_nano_config:
   set_tabsize: 4
   set_tabstospaces: true
   set_softwrap: true
-  set_constantshow: true             # Show cursor position in status bar
-  set_indicator: true                # Show scroll position indicator
-  set_stateflags: true               # Show state flags in title bar
+  # Show cursor position in status bar
+  set_constantshow: true
+  # Show scroll position indicator
+  set_indicator: true
+  # Show state flags in title bar
+  set_stateflags: true
   syntax_highlighting: true
 
 #
 # Vim Configuration
 #
 
+# Vim editor settings
 editors_vim_config:
   # Syntax and line numbers
   syntax_on: true
@@ -90,7 +130,6 @@ editors_vim_config:
 #
 # Per-User Configuration
 #
-
 # Per-user editor config deployment. Each entry controls which editor configs
 # are deployed to the user's home directory.
 #
@@ -126,6 +165,7 @@ editors_user_config_merge: true
 # Neovim Configuration
 #
 
+# Neovim editor settings
 editors_neovim_config:
   # Syntax and line numbers
   syntax_on: true

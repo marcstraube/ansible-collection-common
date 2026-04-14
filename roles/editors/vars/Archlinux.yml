@@ -4,6 +4,7 @@ __editors_vim_package: 'vim'
 __editors_neovim_package: 'neovim'
 
 # Config paths
-__editors_nano_config_global: '/etc/nanorc'
-__editors_vim_config_global: '/etc/vimrc'
-__editors_neovim_config_global: '/etc/xdg/nvim/sysinit.vim'
+__editors_nano_config_file: '/etc/nanorc'
+__editors_vim_config_file: '/etc/vimrc'
+__editors_neovim_config_dir: '/etc/xdg/nvim'
+__editors_neovim_config_file: '/etc/xdg/nvim/sysinit.vim'

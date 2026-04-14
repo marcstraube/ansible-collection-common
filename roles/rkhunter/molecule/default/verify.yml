@@ -1,9 +1,24 @@
 ---
-- name: Verify rkhunter installation and configuration
+- name: Verify
   hosts: all
   gather_facts: true
 
   tasks:
+    #
+    # Load OS-Specific Variables
+    #
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
     #
     # Package Verification
     #
@@ -42,7 +57,7 @@
 
     - name: Verify | Check rkhunter config exists
       ansible.builtin.stat:
-        path: '/etc/rkhunter.conf'
+        path: '{{ __rkhunter_config_file }}'
       register: __rkhunter_config
 
     - name: Verify | Assert rkhunter config
@@ -56,7 +71,7 @@
 
     - name: Verify | Read rkhunter config content
       ansible.builtin.slurp:
-        src: '/etc/rkhunter.conf'
+        src: '{{ __rkhunter_config_file }}'
       register: __rkhunter_config_content
 
     - name: Verify | Set config content fact
@@ -74,22 +89,28 @@
         fail_msg: "rkhunter config missing essential directives"
         success_msg: "rkhunter config contains required directives"
 
-    - name: Verify | Assert OS-specific PKGMGR setting
+    - name: Verify | Assert OS-specific PKGMGR setting (Debian)
       ansible.builtin.assert:
         that:
           - "'PKGMGR=DPKG' in __rkhunter_config_decoded"
+        fail_msg: "PKGMGR not set to DPKG on Debian"
+        success_msg: "PKGMGR correctly set to DPKG"
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Verify | Assert OS-specific PKGMGR setting
+    - name: Verify | Assert OS-specific PKGMGR setting (RedHat)
       ansible.builtin.assert:
         that:
           - "'PKGMGR=RPM' in __rkhunter_config_decoded"
+        fail_msg: "PKGMGR not set to RPM on RedHat"
+        success_msg: "PKGMGR correctly set to RPM"
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Verify | Assert OS-specific PKGMGR setting
+    - name: Verify | Assert OS-specific PKGMGR setting (Archlinux)
       ansible.builtin.assert:
         that:
           - "'PKGMGR=NONE' in __rkhunter_config_decoded"
+        fail_msg: "PKGMGR not set to NONE on Archlinux"
+        success_msg: "PKGMGR correctly set to NONE"
       when: ansible_facts['os_family'] == 'Archlinux'
 
     #
@@ -137,11 +158,11 @@
         src: '/usr/local/bin/rkhunter-check.sh'
       register: __rkhunter_script_content
 
-    - name: Verify | Check script content
+    - name: Verify | Set check script content fact
       ansible.builtin.set_fact:
         __rkhunter_script_decoded: "{{ __rkhunter_script_content.content | b64decode }}"
 
-    - name: Verify | Check script has required content
+    - name: Verify | Assert check script has required content
       ansible.builtin.assert:
         that:
           - "'#!/bin/bash' in __rkhunter_script_decoded"
@@ -236,7 +257,7 @@
         src: '/etc/systemd/system/rkhunter-check.service'
       register: __rkhunter_service_content
 
-    - name: Verify | Assert service unit hardening
+    - name: Verify | Set service unit content fact
       ansible.builtin.set_fact:
         __rkhunter_service_decoded: "{{ __rkhunter_service_content.content | b64decode }}"
 

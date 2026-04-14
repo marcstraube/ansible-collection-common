@@ -1,9 +1,31 @@
 ---
-- name: Verify Lynis installation and configuration
+- name: Verify
   hosts: all
   gather_facts: true
 
   tasks:
+    #
+    # Load OS-Specific Variables
+    #
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    - name: Verify | Determine effective install method
+      ansible.builtin.set_fact:
+        __lynis_effective_install_method: >-
+          {{ 'git' if (ansible_facts['os_family'] == 'RedHat' and
+             ansible_facts['distribution_major_version'] == '10')
+             else (lynis_install_method | default('package')) }}
+
     #
     # Package Verification
     #
@@ -18,13 +40,13 @@
           - "'lynis' in ansible_facts.packages"
         fail_msg: "Lynis package not installed"
         success_msg: "Lynis package installed"
-      when: (lynis_install_method | default('package')) == 'package'
+      when: __lynis_effective_install_method == 'package'
 
     - name: Verify | Check lynis git directory exists (git method)
       ansible.builtin.stat:
         path: '/usr/local/lynis/lynis'
       register: __lynis_git_binary
-      when: (lynis_install_method | default('package')) == 'git'
+      when: __lynis_effective_install_method == 'git'
 
     - name: Verify | Assert lynis git install
       ansible.builtin.assert:
@@ -32,7 +54,7 @@
           - __lynis_git_binary.stat.exists
         fail_msg: "Lynis git install not found"
         success_msg: "Lynis installed from git"
-      when: (lynis_install_method | default('package')) == 'git'
+      when: __lynis_effective_install_method == 'git'
 
     #
     # Binary Verification
@@ -42,27 +64,22 @@
       ansible.builtin.set_fact:
         __lynis_bin: >-
           {{ '/usr/local/bin/lynis'
-             if (lynis_install_method | default('package')) == 'git'
+             if __lynis_effective_install_method == 'git'
              else 'lynis' }}
 
     - name: Verify | Check lynis binary
       ansible.builtin.command:
         cmd: "{{ __lynis_bin }} show version"
-      register: __lynis_version
+      register: __lynis_version_output
       changed_when: false
-      failed_when: __lynis_version.rc != 0
-
-    - name: Verify | Store lynis version
-      ansible.builtin.set_fact:
-        __lynis_version_str: "{{ __lynis_version.stdout | default('unknown') }}"
+      failed_when: __lynis_version_output.rc != 0
 
     - name: Verify | Assert lynis version output
       ansible.builtin.assert:
         that:
-          - __lynis_version_str | length > 0
-          - __lynis_version_str != 'unknown'
+          - __lynis_version_output.stdout | length > 0
         fail_msg: "Lynis version command failed"
-        success_msg: "Lynis version: {{ __lynis_version_str }}"
+        success_msg: "Lynis version: {{ __lynis_version_output.stdout }}"
 
     #
     # Configuration Verification
@@ -192,7 +209,7 @@
         success_msg: "Systemd timer unit exists"
 
     - name: Verify | Check lynis timer is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: lynis-audit.timer
         enabled: true
       check_mode: true

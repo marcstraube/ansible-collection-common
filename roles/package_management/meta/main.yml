@@ -32,7 +32,3 @@ galaxy_info:
     - packages
 
 dependencies: []
-
-collections:
-  - community.general
-  - kewlfft.aur

@@ -4,32 +4,67 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  when: gnupg_enabled | default(true) | bool
-  tags: [gnupg]
+  tags:
+    - gnupg
+
+- name: Main | Handle deprecated gnupg_install_gui variable
+  ansible.builtin.set_fact:
+    gnupg_gui_enabled: >-
+      {{ gnupg_install_gui | default(gnupg_gui_enabled) | bool }}
+  when:
+    - gnupg_enabled | bool
+    - gnupg_install_gui is defined
+  tags:
+    - gnupg
+
+- name: Main | Handle deprecated gnupg_install_tools variable
+  ansible.builtin.set_fact:
+    gnupg_tools_enabled: >-
+      {{ gnupg_install_tools | default(gnupg_tools_enabled) | bool }}
+  when:
+    - gnupg_enabled | bool
+    - gnupg_install_tools is defined
+  tags:
+    - gnupg
+
+- name: Main | Handle deprecated gnupg_agent_enable_ssh variable
+  ansible.builtin.set_fact:
+    gnupg_agent_ssh_enabled: >-
+      {{ gnupg_agent_enable_ssh | default(gnupg_agent_ssh_enabled) | bool }}
+  when: gnupg_agent_enable_ssh is defined
+  tags:
+    - gnupg
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  when: gnupg_enabled | default(true) | bool
-  tags: [gnupg, gnupg:install]
+  when: gnupg_enabled | bool
+  tags:
+    - gnupg
+    - gnupg:install
 
-- name: Main | Configure users
+- name: Main | Include configure tasks
   ansible.builtin.include_tasks:
     file: configure.yml
     apply:
-      tags: [gnupg, gnupg:configure]
+      tags:
+        - gnupg
+        - gnupg:configure
   loop: '{{ gnupg_users }}'
   loop_control:
     loop_var: gnupg_user
   when:
-    - gnupg_enabled | default(true) | bool
+    - gnupg_enabled | bool
     - gnupg_users | length > 0
     - (gnupg_user.mode | default(gnupg_user_config_mode)) != 'disabled'
     - >-
       (gnupg_user.mode | default(gnupg_user_config_mode)) == 'managed'
       or ((gnupg_user.mode | default(gnupg_user_config_mode)) == 'initial'
           and gnupg_user.username in (__users_newly_created | default([])))
-  tags: [gnupg, gnupg:configure]
+  tags:
+    - gnupg
+    - gnupg:configure

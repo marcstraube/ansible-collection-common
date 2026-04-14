@@ -22,8 +22,8 @@
         ([__graphics_nvidia_utils]
          if graphics_nvidia_driver != 'nouveau' and __graphics_nvidia_utils | length > 0
          else []) +
-        (graphics_nvidia_32bit | bool | ternary([__graphics_nvidia_utils_32bit], [])) +
-        (graphics_nvidia_cuda | bool | ternary([__graphics_nvidia_cuda], []))
+        (graphics_nvidia_32bit_enabled | bool | ternary([__graphics_nvidia_utils_32bit], [])) +
+        (graphics_nvidia_cuda_enabled | bool | ternary([__graphics_nvidia_cuda], []))
       }}
 
 - name: NVIDIA | Warn about legacy AUR package

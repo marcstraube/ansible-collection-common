@@ -7,37 +7,37 @@
     __utils_packages: >-
       {{
         [
-          (utils_monitor_htop | bool)      | ternary(__utils_monitor_htop, ''),
-          (utils_monitor_btop | bool)      | ternary(__utils_monitor_btop, ''),
-          (utils_monitor_bottom | bool)    | ternary(__utils_monitor_bottom, ''),
-          (utils_monitor_atop | bool)      | ternary(__utils_monitor_atop, ''),
-          (utils_mux_tmux | bool)          | ternary(__utils_mux_tmux, ''),
-          (utils_mux_zellij | bool)        | ternary(__utils_mux_zellij, ''),
-          (utils_mux_screen | bool)        | ternary(__utils_mux_screen, ''),
-          (utils_transfer_rsync | bool)    | ternary(__utils_transfer_rsync, ''),
-          (utils_search_ripgrep | bool)    | ternary(__utils_search_ripgrep, ''),
-          (utils_search_fd | bool)         | ternary(__utils_search_fd, ''),
-          (utils_fetch_fastfetch | bool)   | ternary(__utils_fetch_fastfetch, ''),
-          (utils_fetch_hyfetch | bool)     | ternary(__utils_fetch_hyfetch, ''),
-          (utils_fetch_archey4 | bool)     | ternary(__utils_fetch_archey4, ''),
-          (utils_fetch_cpufetch | bool)    | ternary(__utils_fetch_cpufetch, ''),
-          (utils_fun_cowsay | bool)        | ternary(__utils_fun_cowsay, ''),
-          (utils_fun_fortune | bool)       | ternary(__utils_fun_fortune, ''),
-          (utils_fun_lolcat | bool)        | ternary(__utils_fun_lolcat, ''),
-          (utils_fun_ponysay | bool)       | ternary(__utils_fun_ponysay, ''),
-          (utils_fun_figlet | bool)        | ternary(__utils_fun_figlet, ''),
-          (utils_fun_toilet | bool)        | ternary(__utils_fun_toilet, ''),
-          (utils_fun_sl | bool)            | ternary(__utils_fun_sl, ''),
-          (utils_fun_cmatrix | bool)       | ternary(__utils_fun_cmatrix, ''),
-          (utils_fun_cbonsai | bool)       | ternary(__utils_fun_cbonsai, ''),
-          (utils_fun_asciiquarium | bool)  | ternary(__utils_fun_asciiquarium, ''),
-          (utils_fun_nyancat | bool)       | ternary(__utils_fun_nyancat, ''),
-          (utils_fun_no_more_secrets | bool) | ternary(__utils_fun_no_more_secrets, ''),
-          (utils_fun_tty_clock | bool)     | ternary(__utils_fun_tty_clock, ''),
-          (utils_fun_pipes | bool)         | ternary(__utils_fun_pipes, ''),
-          (utils_fun_pokemon_colorscripts | bool) | ternary(__utils_fun_pokemon_colorscripts, ''),
-          (utils_fun_pokemonsay | bool)    | ternary(__utils_fun_pokemonsay, ''),
-          (utils_fun_hollywood | bool)     | ternary(__utils_fun_hollywood, ''),
+          (utils_monitor_htop_enabled | bool)      | ternary(__utils_monitor_htop, ''),
+          (utils_monitor_btop_enabled | bool)      | ternary(__utils_monitor_btop, ''),
+          (utils_monitor_bottom_enabled | bool)    | ternary(__utils_monitor_bottom, ''),
+          (utils_monitor_atop_enabled | bool)      | ternary(__utils_monitor_atop, ''),
+          (utils_mux_tmux_enabled | bool)          | ternary(__utils_mux_tmux, ''),
+          (utils_mux_zellij_enabled | bool)        | ternary(__utils_mux_zellij, ''),
+          (utils_mux_screen_enabled | bool)        | ternary(__utils_mux_screen, ''),
+          (utils_transfer_rsync_enabled | bool)    | ternary(__utils_transfer_rsync, ''),
+          (utils_search_ripgrep_enabled | bool)    | ternary(__utils_search_ripgrep, ''),
+          (utils_search_fd_enabled | bool)         | ternary(__utils_search_fd, ''),
+          (utils_fetch_fastfetch_enabled | bool)   | ternary(__utils_fetch_fastfetch, ''),
+          (utils_fetch_hyfetch_enabled | bool)     | ternary(__utils_fetch_hyfetch, ''),
+          (utils_fetch_archey4_enabled | bool)     | ternary(__utils_fetch_archey4, ''),
+          (utils_fetch_cpufetch_enabled | bool)    | ternary(__utils_fetch_cpufetch, ''),
+          (utils_fun_cowsay_enabled | bool)        | ternary(__utils_fun_cowsay, ''),
+          (utils_fun_fortune_enabled | bool)       | ternary(__utils_fun_fortune, ''),
+          (utils_fun_lolcat_enabled | bool)        | ternary(__utils_fun_lolcat, ''),
+          (utils_fun_ponysay_enabled | bool)       | ternary(__utils_fun_ponysay, ''),
+          (utils_fun_figlet_enabled | bool)        | ternary(__utils_fun_figlet, ''),
+          (utils_fun_toilet_enabled | bool)        | ternary(__utils_fun_toilet, ''),
+          (utils_fun_sl_enabled | bool)            | ternary(__utils_fun_sl, ''),
+          (utils_fun_cmatrix_enabled | bool)       | ternary(__utils_fun_cmatrix, ''),
+          (utils_fun_cbonsai_enabled | bool)       | ternary(__utils_fun_cbonsai, ''),
+          (utils_fun_asciiquarium_enabled | bool)  | ternary(__utils_fun_asciiquarium, ''),
+          (utils_fun_nyancat_enabled | bool)       | ternary(__utils_fun_nyancat, ''),
+          (utils_fun_no_more_secrets_enabled | bool) | ternary(__utils_fun_no_more_secrets, ''),
+          (utils_fun_tty_clock_enabled | bool)     | ternary(__utils_fun_tty_clock, ''),
+          (utils_fun_pipes_enabled | bool)         | ternary(__utils_fun_pipes, ''),
+          (utils_fun_pokemon_colorscripts_enabled | bool) | ternary(__utils_fun_pokemon_colorscripts, ''),
+          (utils_fun_pokemonsay_enabled | bool)    | ternary(__utils_fun_pokemonsay, ''),
+          (utils_fun_hollywood_enabled | bool)     | ternary(__utils_fun_hollywood, ''),
         ] | reject('equalto', '') | list
       }}
 
@@ -45,45 +45,41 @@
   ansible.builtin.package:
     name: '{{ __utils_packages }}'
     state: present
-  when:
-    - __utils_packages | length > 0
+  when: __utils_packages | length > 0
 
 #
-# AUR packages (Arch Linux only)
+# AUR Packages (Arch Linux Only)
 #
 
 - name: Install | Build AUR package list
   ansible.builtin.set_fact:
-    __utils_aur_packages: >-
+    __utils_aur_install_list: >-
       {{
-        [
-          (utils_fun_cbonsai | bool)
-            | ternary(__utils_fun_cbonsai_aur | default(''), ''),
-          (utils_fun_no_more_secrets | bool)
-            | ternary(__utils_fun_no_more_secrets_aur | default(''), ''),
-          (utils_fun_tty_clock | bool)
-            | ternary(__utils_fun_tty_clock_aur | default(''), ''),
-          (utils_fun_pipes | bool)
-            | ternary(__utils_fun_pipes_aur | default(''), ''),
-          (utils_fetch_archey4 | bool)
-            | ternary(__utils_fetch_archey4_aur | default(''), ''),
-          (utils_fun_pokemon_colorscripts | bool)
-            | ternary(__utils_fun_pokemon_colorscripts_aur | default(''), ''),
-          (utils_fun_pokemonsay | bool)
-            | ternary(__utils_fun_pokemonsay_aur | default(''), ''),
-          (utils_fun_hollywood | bool)
-            | ternary(__utils_fun_hollywood_aur | default(''), ''),
-        ] | reject('equalto', '') | list
+        ((utils_fun_cbonsai_enabled | bool) | ternary(
+          __utils_aur_packages.cbonsai | default([]), [])) +
+        ((utils_fun_no_more_secrets_enabled | bool) | ternary(
+          __utils_aur_packages.no_more_secrets | default([]), [])) +
+        ((utils_fun_tty_clock_enabled | bool) | ternary(
+          __utils_aur_packages.tty_clock | default([]), [])) +
+        ((utils_fun_pipes_enabled | bool) | ternary(
+          __utils_aur_packages.pipes | default([]), [])) +
+        ((utils_fetch_archey4_enabled | bool) | ternary(
+          __utils_aur_packages.archey4 | default([]), [])) +
+        ((utils_fun_pokemon_colorscripts_enabled | bool) | ternary(
+          __utils_aur_packages.pokemon_colorscripts | default([]), [])) +
+        ((utils_fun_pokemonsay_enabled | bool) | ternary(
+          __utils_aur_packages.pokemonsay | default([]), [])) +
+        ((utils_fun_hollywood_enabled | bool) | ternary(
+          __utils_aur_packages.hollywood | default([]), []))
       }}
-  when:
-    - ansible_facts['os_family'] == 'Archlinux'
+  when: ansible_facts['os_family'] == 'Archlinux'
 
 - name: Install | AUR packages (Arch)
   become: true
-  become_user: 'aur_builder'
+  become_user: aur_builder
   kewlfft.aur.aur:
-    name: '{{ __utils_aur_packages }}'
+    name: '{{ __utils_aur_install_list }}'
     state: present
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - __utils_aur_packages | length > 0
+    - __utils_aur_install_list | default([]) | length > 0

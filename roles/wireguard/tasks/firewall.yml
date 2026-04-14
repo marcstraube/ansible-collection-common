@@ -1,25 +1,35 @@
 ---
-- name: Firewall | Open WireGuard port
+- name: Firewall | Check if firewalld is running
+  ansible.builtin.systemd_service:
+    name: firewalld
+  register: __wireguard_firewalld_status
+  failed_when: false
+
+- name: Firewall | Manage WireGuard port rule
   ansible.posix.firewalld:
     port: '{{ wireguard_port }}/udp'
     zone: '{{ wireguard_firewalld_zone }}'
     permanent: true
     immediate: true
-    state: enabled
+    state: "{{ wireguard_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+  when: __wireguard_firewalld_status.status.ActiveState | default('') == 'active'
 
-- name: Firewall | Add WireGuard interface to trusted zone
+- name: Firewall | Manage WireGuard interface in trusted zone
   ansible.posix.firewalld:
     interface: '{{ wireguard_interface }}'
     zone: 'trusted'
     permanent: true
     immediate: true
-    state: enabled
+    state: "{{ wireguard_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+  when: __wireguard_firewalld_status.status.ActiveState | default('') == 'active'
 
-- name: Firewall | Enable masquerading for server mode
+- name: Firewall | Manage masquerading for server mode
   ansible.posix.firewalld:
     masquerade: true
     zone: '{{ wireguard_firewalld_zone }}'
     permanent: true
     immediate: true
-    state: enabled
-  when: wireguard_server_mode | bool
+    state: "{{ wireguard_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+  when:
+    - __wireguard_firewalld_status.status.ActiveState | default('') == 'active'
+    - wireguard_server_mode_enabled | bool

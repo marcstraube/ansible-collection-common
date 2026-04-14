@@ -1,12 +1,12 @@
 ---
 - name: Unattended | Install unattended-upgrades
-  ansible.builtin.apt:
+  ansible.builtin.package:
     name:
       - unattended-upgrades
       - apt-listchanges
     state: present
 
-- name: Unattended | Configure unattended-upgrades
+- name: Unattended | Deploy unattended-upgrades config
   ansible.builtin.template:
     src: 'debian/unattended-upgrades.conf.j2'
     dest: '/etc/apt/apt.conf.d/50unattended-upgrades'
@@ -14,7 +14,7 @@
     group: root
     mode: '0644'
 
-- name: Unattended | Enable unattended-upgrades
+- name: Unattended | Deploy auto-upgrades config
   ansible.builtin.template:
     src: 'debian/auto-upgrades.conf.j2'
     dest: '/etc/apt/apt.conf.d/20auto-upgrades'
@@ -22,8 +22,8 @@
     group: root
     mode: '0644'
 
-- name: Unattended | Enable unattended-upgrades timer
-  ansible.builtin.systemd:
+- name: Unattended | Manage unattended-upgrades timer
+  ansible.builtin.systemd_service:
     name: 'apt-daily-upgrade.timer'
-    state: started
-    enabled: true
+    enabled: "{{ apt_unattended_upgrades_enabled | bool }}"
+    state: "{{ apt_unattended_upgrades_enabled | bool | ternary('started', 'stopped') }}"

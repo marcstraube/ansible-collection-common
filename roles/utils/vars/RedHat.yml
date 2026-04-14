@@ -1,29 +1,47 @@
 ---
-# System monitors
+#
+# System Monitors
+#
+
 __utils_monitor_htop: 'htop'
 __utils_monitor_btop: 'btop'
 __utils_monitor_bottom: ''
 __utils_monitor_atop: 'atop'
 
-# Terminal multiplexers
+#
+# Terminal Multiplexers
+#
+
 __utils_mux_tmux: 'tmux'
 __utils_mux_zellij: ''
 __utils_mux_screen: 'screen'
 
-# File transfer
+#
+# File Transfer
+#
+
 __utils_transfer_rsync: 'rsync'
 
-# Search tools
+#
+# Search Tools
+#
+
 __utils_search_ripgrep: 'ripgrep'
 __utils_search_fd: 'fd-find'
 
-# System info (fetch tools)
+#
+# System Info (Fetch Tools)
+#
+
 __utils_fetch_fastfetch: 'fastfetch'
 __utils_fetch_hyfetch: ''
 __utils_fetch_archey4: ''
 __utils_fetch_cpufetch: ''
 
-# Fun tools
+#
+# Fun Tools
+#
+
 __utils_fun_cowsay: 'cowsay'
 __utils_fun_fortune: 'fortune-mod'
 __utils_fun_lolcat: ''

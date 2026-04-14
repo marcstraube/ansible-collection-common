@@ -3,6 +3,7 @@
   ansible.builtin.command: nmcli -t -f NAME connection show
   register: __nm_existing_connections
   changed_when: false
+  # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
   check_mode: false
 
@@ -175,6 +176,7 @@
     - item.value.dhcp_send_hostname_ipv4 is defined
   register: current_ipv4_dhcp_send_hostname
   changed_when: false
+  # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
 
 - name: Connections | Set ipv4.dhcp-send-hostname for connections
@@ -190,7 +192,7 @@
     - not item.skipped | default(false)
     - item.stdout | trim != ('1' if item.item.value.dhcp_send_hostname_ipv4 else '0')
   changed_when: true
-  notify: Reload NetworkManager connection
+  notify: Reload NetworkManager connections
 
 - name: Connections | Check current ipv6.dhcp-send-hostname for connections
   ansible.builtin.shell: |
@@ -206,6 +208,7 @@
     - item.value.dhcp_send_hostname_ipv6 is defined
   register: current_ipv6_dhcp_send_hostname
   changed_when: false
+  # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
 
 - name: Connections | Set ipv6.dhcp-send-hostname for connections
@@ -221,7 +224,7 @@
     - not item.skipped | default(false)
     - item.stdout | trim != ('1' if item.item.value.dhcp_send_hostname_ipv6 else '0')
   changed_when: true
-  notify: Reload NetworkManager connection
+  notify: Reload NetworkManager connections
 
 - name: Connections | Create placeholder for WireGuard connections
   community.general.nmcli:
@@ -273,6 +276,7 @@
     - item.value.peers | length > 0
   register: __networkmanager_current_wg_peers
   changed_when: false
+  # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
 
 - name: Connections | Configure WireGuard peers
@@ -307,7 +311,7 @@
       != item.stdout_lines | default([]) | sort | list
   changed_when: true
   no_log: true
-  notify: Reload NetworkManager connection
+  notify: Reload NetworkManager connections
 
 - name: Connections | Ensure NetworkManager VPN connections exist
   community.general.nmcli:
@@ -346,6 +350,7 @@
     - item.item.value.state | default("present") == "present"
   register: all_uuids
   changed_when: false
+  # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
 
 - name: Connections | Add type to UUID results
@@ -397,6 +402,7 @@
     - item.item.value.state | default("present") == "present"
   register: vpn_uuids
   changed_when: false
+  # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
 
 - name: Connections | Collect VPN connection details
@@ -453,6 +459,7 @@
     - item.ansible_facts.vpn_uuids_for_connection is defined
   register: current_ethernet_secondaries
   changed_when: false
+  # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
 
 - name: Connections | Configure VPN auto-connect via connection.secondaries for Ethernet connections
@@ -499,6 +506,7 @@
     - item.ansible_facts.vpn_uuids_for_connection is defined
   register: current_wifi_secondaries
   changed_when: false
+  # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
 
 - name: Connections | Configure VPN auto-connect via connection.secondaries for WiFi connections

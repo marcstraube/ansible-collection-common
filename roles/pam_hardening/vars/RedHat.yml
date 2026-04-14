@@ -1,8 +1,8 @@
 ---
-__pam_packages:
+__pam_hardening_packages:
   - pam
   - authselect
 
-__pam_pwquality_package: 'libpwquality'
+__pam_hardening_pwquality_package: 'libpwquality'
 
-__pam_google_authenticator_package: 'google-authenticator'
+__pam_hardening_google_authenticator_package: 'google-authenticator'

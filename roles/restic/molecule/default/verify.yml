@@ -108,7 +108,7 @@
       failed_when: not __restic_timer_file.stat.exists
 
     - name: Verify | Check timer is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: 'restic-backup-test.timer'
       register: __restic_timer_status
       failed_when: __restic_timer_status.status.UnitFileState != 'enabled'

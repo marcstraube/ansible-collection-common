@@ -4,16 +4,24 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [pam-hardening]
+  tags:
+    - pam-hardening
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [pam-hardening, pam-hardening:install]
+  when: pam_hardening_enabled | bool
+  tags:
+    - pam-hardening
+    - pam-hardening:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
-  tags: [pam-hardening, pam-hardening:configure]
+  when: pam_hardening_enabled | bool
+  tags:
+    - pam-hardening
+    - pam-hardening:configure

@@ -1,6 +1,6 @@
 ---
-- name: Install | Firejail
+- name: Install | Firejail packages
   ansible.builtin.package:
-    name: '{{ __firejail_package }}'
+    name: '{{ __firejail_packages }}'
     state: present
   notify: apply firecfg

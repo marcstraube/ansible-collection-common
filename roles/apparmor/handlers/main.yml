@@ -1,5 +1,19 @@
 ---
+# failed_when: false — container-safety for molecule (no systemd in containers)
+- name: Reload AppArmor systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  failed_when: false
+  when: apparmor_enabled | bool
+
+- name: Restart AppArmor
+  ansible.builtin.systemd_service:
+    name: '{{ __apparmor_service_name }}'
+    state: restarted
+  when: apparmor_service_enabled | bool
+
 - name: Reload AppArmor
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __apparmor_service_name }}'
     state: reloaded
+  when: apparmor_service_enabled | bool

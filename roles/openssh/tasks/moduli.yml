@@ -19,16 +19,16 @@
 
     - name: Moduli | Install hardened moduli file
       ansible.builtin.copy:
-        src: "{{ __openssh_moduli_file }}.safe"
+        src: '{{ __openssh_moduli_file }}.safe'
         remote_src: true
-        dest: "{{ __openssh_moduli_file }}"
-        owner: 'root'
-        group: 'root'
+        dest: '{{ __openssh_moduli_file }}'
+        owner: root
+        group: root
         mode: '0644'
         backup: true
       notify: 'restart sshd'
 
     - name: Moduli | Remove temporary moduli file
       ansible.builtin.file:
-        path: "{{ __openssh_moduli_file }}.safe"
+        path: '{{ __openssh_moduli_file }}.safe'
         state: absent

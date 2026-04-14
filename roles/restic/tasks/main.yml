@@ -4,38 +4,50 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [restic]
+  tags:
+    - restic
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  when: restic_enabled | default(true) | bool
-  tags: [restic, restic:install]
-
-- name: Main | Import configure tasks
-  ansible.builtin.import_tasks: configure.yml
-  when: restic_enabled | default(true) | bool
-  tags: [restic, restic:configure]
+  when: restic_enabled | bool
+  tags:
+    - restic
+    - restic:install
 
 - name: Main | Include BTRFS tasks
   ansible.builtin.include_tasks:
     file: btrfs.yml
     apply:
-      tags: [restic, restic:configure]
-  when:
-    - restic_enabled | default(true) | bool
-    - restic_log_to_file | default(false) | bool
-  tags: [restic, restic:configure]
+      tags:
+        - restic
+        - restic:configure
+  when: restic_enabled | bool
+  tags:
+    - restic
+    - restic:configure
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: restic_enabled | bool
+  tags:
+    - restic
+    - restic:configure
 
 - name: Main | Import job tasks
   ansible.builtin.import_tasks: jobs.yml
-  when: restic_enabled | default(true) | bool
-  tags: [restic, restic:configure]
+  when: restic_enabled | bool
+  tags:
+    - restic
+    - restic:configure
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
-  when: restic_enabled | default(true) | bool
-  tags: [restic, restic:service]
+  when: restic_enabled | bool
+  tags:
+    - restic
+    - restic:service

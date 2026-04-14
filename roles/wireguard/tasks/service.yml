@@ -1,6 +1,7 @@
 ---
-- name: Service | Enable and start WireGuard
-  ansible.builtin.systemd:
-    name: 'wg-quick@{{ wireguard_interface }}'
-    enabled: true
-    state: started
+- name: Service | Manage WireGuard service
+  ansible.builtin.systemd_service:
+    name: '{{ __wireguard_service_name }}'
+    enabled: "{{ wireguard_service_enabled | bool }}"
+    state: "{{ wireguard_service_enabled | bool | ternary('started', 'stopped') }}"
+    daemon_reload: true

@@ -13,10 +13,11 @@
       with_first_found:
         - files:
             - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
             - '{{ ansible_facts["distribution"] }}.yml'
             - '{{ ansible_facts["os_family"] }}.yml'
           paths:
-            - '{{ playbook_dir }}/../../vars'
+            - '../../vars'
 
     #
     # Package Verification
@@ -109,9 +110,14 @@
     # Service Verification
     #
 
-    - name: Verify | Check avahi service is enabled  # noqa: command-instead-of-module
-      ansible.builtin.command:
-        cmd: 'systemctl is-enabled {{ __avahi_service_name }}'
-      register: _avahi_service
-      changed_when: false
-      failed_when: _avahi_service.stdout != 'enabled'
+    - name: Verify | Check avahi service status
+      ansible.builtin.systemd_service:
+        name: '{{ __avahi_service_name }}'
+      register: _avahi_svc_check
+
+    - name: Verify | Assert avahi service is active and enabled
+      ansible.builtin.assert:
+        that:
+          - _avahi_svc_check.status.ActiveState == 'active'
+          - _avahi_svc_check.status.UnitFileState == 'enabled'
+        fail_msg: 'avahi service is not active or enabled'

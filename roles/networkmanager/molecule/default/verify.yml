@@ -286,7 +286,7 @@
           - timezone_script.stat.mode == "0755"
         fail_msg: Timezone dispatcher script does not exist or is not executable
         success_msg: Timezone dispatcher script exists and is executable
-      when: test_networkmanager_configure_timezone | bool
+      when: test_networkmanager_timezone_enabled | bool
 
     - name: Verify | Set dispatcher scripts to check based on configuration
       ansible.builtin.set_fact:

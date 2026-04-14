@@ -22,7 +22,7 @@
       when: ansible_facts['os_family'] == 'RedHat'
 
     - name: Prepare | Install base-devel (Arch)
-      community.general.pacman:
+      ansible.builtin.package:
         name: base-devel
         state: present
       when: ansible_facts['os_family'] == 'Archlinux'
@@ -39,5 +39,7 @@
         path: /etc/sudoers.d/99-aur_builder
         line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
         create: true
+        owner: root
+        group: root
         mode: '0440'
       when: ansible_facts['os_family'] == 'Archlinux'

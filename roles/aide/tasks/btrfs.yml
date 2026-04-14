@@ -6,6 +6,7 @@
     cmd: stat -f -c %T {{ (aide_database | dirname) | dirname }}
   register: __aide_db_fstype
   changed_when: false
+  # Filesystem may not support stat -f (container, network mount)
   failed_when: false
 
 - name: BTRFS | Set BTRFS detection fact
@@ -17,6 +18,7 @@
     cmd: btrfs subvolume show {{ aide_database | dirname }}
   register: __aide_subvol_check
   changed_when: false
+  # Directory may not be a subvolume yet
   failed_when: false
   when: __aide_is_btrfs | bool
 
@@ -58,5 +60,6 @@
     cmd: chattr +C {{ aide_database | dirname }}
   register: __aide_chattr
   changed_when: __aide_chattr.rc == 0
+  # chattr +C may fail in containers or on non-BTRFS filesystems
   failed_when: false
   when: __aide_is_btrfs | bool

@@ -40,7 +40,7 @@ Bytecode {{ 'yes' if clamav_freshclam_bytecode else 'no' }}
 {% if clamav_daemon_enabled | bool %}
 
 # Notify clamd when the database is updated
-NotifyClamd {{ __clamav_clamd_config }}
+NotifyClamd {{ __clamav_daemon_config_file }}
 {% endif %}
 
 # =============================================================================

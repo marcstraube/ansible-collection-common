@@ -14,5 +14,5 @@
     regexp: '^hosts:'
     line: '{{ avahi_nsswitch_hosts }}'
     backup: true
-  when: avahi_nss_mdns | bool
+  when: avahi_nss_mdns_enabled | bool
   notify: Restart avahi

@@ -1,9 +1,13 @@
 ---
 #
-# Service Control
+# Role Control
 #
 
+# Enable the wireguard role
 wireguard_enabled: true
+
+# Enable and start the WireGuard service
+wireguard_service_enabled: true
 
 #
 # Interface Configuration
@@ -18,7 +22,7 @@ wireguard_address: '10.100.0.1/24'
 # IPv6 address (optional)
 wireguard_address_ipv6: ''
 
-# Listen port
+# Listen port (UDP)
 wireguard_port: 51820
 
 # Private key (auto-generated if empty)
@@ -33,15 +37,22 @@ wireguard_dns:
 #
 
 # Enable server mode (IP forwarding, firewalld masquerade)
-wireguard_server_mode: true
+wireguard_server_mode_enabled: true
+
+# DEPRECATED: Use wireguard_server_mode_enabled instead (removed in v2.0.0)
+# wireguard_server_mode: {{ wireguard_server_mode_enabled }}
 
 # Enable IP forwarding
-wireguard_ip_forward: true
+wireguard_ip_forward_enabled: true
+
+# DEPRECATED: Use wireguard_ip_forward_enabled instead (removed in v2.0.0)
+# wireguard_ip_forward: {{ wireguard_ip_forward_enabled }}
 
 #
 # Peers
 #
 
+# List of peer definitions
 wireguard_peers: []
 # Example:
 #   - name: 'laptop'
@@ -60,9 +71,13 @@ wireguard_peers: []
 #
 # Client Mode
 #
-# (When this host connects to another WireGuard server)
+# When this host connects to another WireGuard server.
 
-wireguard_client_mode: false
+# Enable client mode
+wireguard_client_mode_enabled: false
+
+# DEPRECATED: Use wireguard_client_mode_enabled instead (removed in v2.0.0)
+# wireguard_client_mode: {{ wireguard_client_mode_enabled }}
 
 # Server endpoint (IP:Port)
 wireguard_client_endpoint: ''
@@ -84,23 +99,26 @@ wireguard_client_persistent_keepalive: 25
 # Firewall
 #
 
-# Automatically configure firewalld
+# Enable firewalld integration
 wireguard_firewalld_enabled: true
 
-# Zone for WireGuard interface
+# Firewalld zone for WireGuard port
 wireguard_firewalld_zone: 'public'
 
 #
 # Key Management
 #
 
-# Directory for storing keys
+# Directory for storing keys and configuration
 wireguard_config_dir: '/etc/wireguard'
 
-# Generate keys automatically
-wireguard_generate_keys: true
+# Auto-generate WireGuard keys if not provided
+wireguard_generate_keys_enabled: true
 
-# Permissions for config files
+# DEPRECATED: Use wireguard_generate_keys_enabled instead (removed in v2.0.0)
+# wireguard_generate_keys: {{ wireguard_generate_keys_enabled }}
+
+# File permissions for configuration files
 wireguard_config_mode: '0600'
 
 #
@@ -110,21 +128,25 @@ wireguard_config_mode: '0600'
 # Use this for NAT/masquerade when not using firewalld, or any other
 # tunnel lifecycle hooks. %i expands to the interface name.
 
+# Commands run before interface up
 wireguard_preup: []
-# Examples:
+# Example:
 #   - 'sysctl -w net.ipv4.conf.%i.rp_filter=2'
 
+# Commands run after interface up
 wireguard_postup: []
-# Examples:
+# Example:
 #   - 'iptables -t nat -A POSTROUTING -s 10.100.0.0/24 -o eth0 -j MASQUERADE'
 #   - 'iptables -A FORWARD -i %i -j ACCEPT'
 
+# Commands run before interface down
 wireguard_predown: []
-# Examples:
+# Example:
 #   - 'echo "Shutting down %i"'
 
+# Commands run after interface down
 wireguard_postdown: []
-# Examples:
+# Example:
 #   - 'iptables -t nat -D POSTROUTING -s 10.100.0.0/24 -o eth0 -j MASQUERADE'
 #   - 'iptables -D FORWARD -i %i -j ACCEPT'
 
@@ -133,7 +155,10 @@ wireguard_postdown: []
 #
 
 # Save runtime config on shutdown (wg-quick SaveConfig directive)
-wireguard_saveconfig: false
+wireguard_saveconfig_enabled: false
+
+# DEPRECATED: Use wireguard_saveconfig_enabled instead (removed in v2.0.0)
+# wireguard_saveconfig: {{ wireguard_saveconfig_enabled }}
 
 #
 # Firewall Mark

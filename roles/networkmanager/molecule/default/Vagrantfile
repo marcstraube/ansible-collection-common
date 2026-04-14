@@ -1,4 +1,4 @@
-# marcstraube.networkmanager/molecule/default/Vagrantfile
+# marcstraube.common.networkmanager/molecule/default/Vagrantfile
 #
 # MOLECULE_PLATFORM_NAME filters which VM to create.
 # If unset, all VMs are created (not recommended — RAM constraints).

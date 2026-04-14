@@ -1,9 +1,13 @@
 ---
 #
-# Service Control
+# Role Control
 #
 
+# Enable the unbound role
 unbound_enabled: true
+
+# Enable and start the unbound service
+unbound_service_enabled: true
 
 #
 # Network Settings
@@ -31,7 +35,7 @@ unbound_access_control:
     action: 'allow'
   - subnet: '::1/128'
     action: 'allow'
-# Example for LAN:
+# Example:
 #   - subnet: '10.0.0.0/8'
 #     action: 'allow'
 #   - subnet: '192.168.0.0/16'
@@ -92,6 +96,9 @@ unbound_so_sndbuf: '4m'
 # Security / DNSSEC
 #
 
+# TLS certificate bundle path (empty = OS default)
+unbound_tls_cert_bundle: ''
+
 # Enable DNSSEC validation
 unbound_dnssec_enabled: true
 
@@ -136,7 +143,7 @@ unbound_aggressive_nsec: true
 
 # Forward zones
 unbound_forward_zones: []
-# Example for forwarding all queries:
+# Example:
 #   - name: '.'
 #     forward_addresses:
 #       - '1.1.1.1@853#cloudflare-dns.com'
@@ -148,8 +155,6 @@ unbound_forward_zones: []
 
 # DNS over TLS upstream (privacy - encrypt DNS queries)
 unbound_tls_upstream: true
-# TLS certificate bundle path (auto-detected per OS, override via inventory)
-# unbound_tls_cert_bundle: '/etc/ssl/certs/ca-certificates.crt'
 
 #
 # Local Data
@@ -213,16 +218,22 @@ unbound_logfile: ''
 #
 
 # Auto-update root hints via systemd timer
-unbound_root_hints_update: true
+unbound_root_hints_update_enabled: true
 unbound_root_hints_file: '/var/lib/unbound/root.hints'
+
+# DEPRECATED: Use unbound_root_hints_update_enabled instead (removed in v2.0.0)
+# unbound_root_hints_update: {{ unbound_root_hints_update_enabled }}
 
 #
 # Remote Control
 #
 
 # Enable unbound-control (required for reload, stats queries)
-unbound_remote_control: true
+unbound_remote_control_enabled: true
 unbound_control_interface: '/run/unbound/control'
+
+# DEPRECATED: Use unbound_remote_control_enabled instead (removed in v2.0.0)
+# unbound_remote_control: {{ unbound_remote_control_enabled }}
 
 #
 # Advanced
@@ -250,18 +261,13 @@ unbound_chroot: ''
 unbound_username: ''
 
 #
-# BTRFS
-#
-
-# Enable BTRFS NoCOW for data directory (/var/lib/unbound/)
-unbound_btrfs_enabled: true
-
-#
 # Firewall
 #
 
 # Enable firewalld integration for DNS port
 unbound_firewalld_enabled: false
+
+# Firewalld zone for service rules
 unbound_firewalld_zone: 'public'
 
 #

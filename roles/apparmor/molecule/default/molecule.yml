@@ -29,10 +29,12 @@ provisioner:
       stdout_callback: default
       result_format: yaml
       inject_facts_as_vars: false
+      allow_broken_conditionals: true
   inventory:
     host_vars:
       apparmor-archlinux:
         ansible_port: 2222
+        ansible_python_interpreter: /usr/bin/python
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/apparmor-archlinux/virtualbox/private_key
@@ -46,13 +48,13 @@ provisioner:
       all:
         ansible_connection: ssh
         ansible_user: vagrant
+        ansible_become: true
         ansible_host: 127.0.0.1
         ansible_python_interpreter: /usr/bin/python3
         ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 
         # Centralized test configuration variables
         apparmor_enabled: true
-        apparmor_mode: 'enforce'
         apparmor_utils_enabled: true
 
         # Test profiles

@@ -5,11 +5,11 @@
 
   vars:
     sysctl_enabled: true
-    sysctl_profile_security: true
-    sysctl_profile_network_performance: true
-    sysctl_profile_database: false
-    sysctl_profile_webserver: false
-    sysctl_profile_docker: false
+    sysctl_profile_security_enabled: true
+    sysctl_profile_network_performance_enabled: true
+    sysctl_profile_database_enabled: false
+    sysctl_profile_webserver_enabled: false
+    sysctl_profile_docker_enabled: false
     sysctl_parameters:
       vm.swappiness: 10
       net.core.somaxconn: 1024

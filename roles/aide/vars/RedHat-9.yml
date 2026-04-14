@@ -1,7 +1,7 @@
 ---
-# Rocky 9 ships AIDE 0.16 which uses different directives than 0.18+.
-# This file overrides the RedHat.yml defaults for Rocky 9 only.
-# Rocky 10+ ships AIDE 0.18 and falls through to RedHat.yml.
+# EL 9 ships AIDE 0.16 which uses different directives than 0.18+.
+# This file overrides the RedHat.yml defaults for all EL 9 distros.
+# EL 10+ ships AIDE 0.18 and falls through to RedHat.yml.
 
 __aide_package: 'aide'
 

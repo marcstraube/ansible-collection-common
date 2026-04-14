@@ -188,7 +188,7 @@
     #
 
     - name: Verify | Check Fail2ban service is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: fail2ban
         enabled: true
       check_mode: true
@@ -196,7 +196,7 @@
       failed_when: service_enabled.changed
 
     - name: Verify | Check Fail2ban service is running
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: fail2ban
         state: started
       check_mode: true

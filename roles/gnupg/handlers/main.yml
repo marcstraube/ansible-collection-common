@@ -2,7 +2,7 @@
 # Reloads gpg-agent for all configured users. The agent runs per-user,
 # so we iterate over gnupg_users to reload each user's agent.
 # failed_when: false — gpg-agent not running in containers (no user session)
-- name: GnuPG reload agent
+- name: Reload GnuPG agent
   ansible.builtin.command:
     cmd: 'gpgconf --reload gpg-agent'
   become: true
@@ -12,9 +12,10 @@
     label: '{{ item.username }}'
   changed_when: false
   failed_when: false
+  when: gnupg_enabled | bool
 
 # failed_when: false — scdaemon requires smartcard hardware (unavailable in containers)
-- name: GnuPG reload scdaemon
+- name: Reload GnuPG scdaemon
   ansible.builtin.command:
     cmd: 'gpgconf --reload scdaemon'
   become: true
@@ -24,3 +25,4 @@
     label: '{{ item.username }}'
   changed_when: false
   failed_when: false
+  when: gnupg_enabled | bool

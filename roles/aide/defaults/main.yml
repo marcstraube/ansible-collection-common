@@ -3,12 +3,8 @@
 # Role Control
 #
 
+# Enable the aide role
 aide_enabled: true
-
-# Create BTRFS subvolume for AIDE database directory with NoCOW attribute
-# Only applies when database directory is on a BTRFS filesystem
-# Subvolume is only created if the directory is empty (fresh install)
-aide_btrfs_subvolume: true
 
 #
 # AIDE Configuration
@@ -38,25 +34,34 @@ aide_report_urls: []
 #
 
 # Monitor system binaries
-aide_monitor_binaries: true
+aide_monitor_binaries_enabled: true
 
 # Monitor system libraries
-aide_monitor_libraries: true
+aide_monitor_libraries_enabled: true
 
 # Monitor boot files
-aide_monitor_boot: true
+aide_monitor_boot_enabled: true
 
 # Monitor configuration files
-aide_monitor_configs: true
+aide_monitor_configs_enabled: true
 
 # Monitor system directories
-aide_monitor_system_dirs: true
+aide_monitor_system_dirs_enabled: true
 
 # Monitor user home directories (detect compromised accounts)
-aide_monitor_home_dirs: true
+aide_monitor_home_dirs_enabled: true
 
 # Monitor log files
-aide_monitor_logs: false
+aide_monitor_logs_enabled: false
+
+# DEPRECATED: Use aide_monitor_*_enabled instead (removed in v2.0.0)
+# aide_monitor_binaries: {{ aide_monitor_binaries_enabled }}
+# aide_monitor_libraries: {{ aide_monitor_libraries_enabled }}
+# aide_monitor_boot: {{ aide_monitor_boot_enabled }}
+# aide_monitor_configs: {{ aide_monitor_configs_enabled }}
+# aide_monitor_system_dirs: {{ aide_monitor_system_dirs_enabled }}
+# aide_monitor_home_dirs: {{ aide_monitor_home_dirs_enabled }}
+# aide_monitor_logs: {{ aide_monitor_logs_enabled }}
 
 #
 # Custom Rules
@@ -109,10 +114,16 @@ aide_email_on_change_only: true
 #
 
 # Initialize database on first run
-aide_init_db: true
+aide_init_db_enabled: true
+
+# DEPRECATED: Use aide_init_db_enabled instead (removed in v2.0.0)
+# aide_init_db: {{ aide_init_db_enabled }}
 
 # Force database re-initialization
-aide_force_init: false
+aide_force_init_enabled: false
+
+# DEPRECATED: Use aide_force_init_enabled instead (removed in v2.0.0)
+# aide_force_init: {{ aide_force_init_enabled }}
 
 #
 # Logging

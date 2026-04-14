@@ -1,5 +1,5 @@
 ---
-- name: AppArmor | Check if AppArmor is active
+- name: AppArmor | Check if AppArmor is available
   ansible.builtin.stat:
     path: /sys/kernel/security/apparmor
   register: __snmp_apparmor_active

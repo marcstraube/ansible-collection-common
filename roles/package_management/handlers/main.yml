@@ -1,45 +1,51 @@
 ---
 #
-# ArchLinux Handlers
+# Arch Linux Handlers
 #
 
 - name: Update pacman cache
   community.general.pacman:
     update_cache: true
   listen: 'pacman configuration changed'
+  when: package_management_enabled | bool
 
 - name: Run reflector
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: 'reflector.service'
     state: started
   listen: 'reflector configuration changed'
+  when: package_management_enabled | bool
 
 - name: Update pkgfile database
   ansible.builtin.command:
     cmd: pkgfile --update
   changed_when: true
   listen: 'pkgfile installed'
+  when: package_management_enabled | bool
 
 #
-# Debian/Ubuntu Handlers
+# Debian Handlers
 #
 
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: true
   listen: 'apt configuration changed'
+  when: package_management_enabled | bool
 
 - name: Update apt-file database
   ansible.builtin.command:
     cmd: apt-file update
   changed_when: true
   listen: 'apt-file installed'
+  when: package_management_enabled | bool
 
 #
-# RHEL/Fedora/Rocky Handlers
+# RedHat Handlers
 #
 
 - name: Update dnf cache
   ansible.builtin.dnf:
     update_cache: true
   listen: 'dnf configuration changed'
+  when: package_management_enabled | bool

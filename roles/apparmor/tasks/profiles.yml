@@ -7,6 +7,7 @@
 # aa-status --json returns {"profiles": {"/path": "enforce"|"complain", ...}}
 # Keys are inconsistent: sometimes full path (/usr/bin/man), sometimes
 # basename only (tcpdump). We check both forms for reliable matching.
+# failed_when: false — aa-status requires kernel AppArmor subsystem (unavailable in containers)
 - name: Profiles | Get current AppArmor profile status
   ansible.builtin.command:
     cmd: aa-status --json
@@ -30,6 +31,7 @@
 # Enforce Profiles
 #
 
+# failed_when: false — profile may not exist on system (user-provided list)
 - name: Profiles | Set profiles to enforce mode
   ansible.builtin.command:
     cmd: 'aa-enforce {{ item }}'
@@ -44,6 +46,7 @@
 # Complain Profiles
 #
 
+# failed_when: false — profile may not exist on system (user-provided list)
 - name: Profiles | Set profiles to complain mode
   ansible.builtin.command:
     cmd: 'aa-complain {{ item }}'
@@ -58,6 +61,7 @@
 # Disable Profiles
 #
 
+# failed_when: false — profile may not exist on system (user-provided list)
 - name: Profiles | Disable profiles
   ansible.builtin.command:
     cmd: 'aa-disable {{ item }}'
@@ -89,6 +93,7 @@
 # Only enforce custom profiles when the file was actually changed.
 # The profile name inside the file differs from the filename, making
 # aa-status lookup unreliable for custom profiles.
+# failed_when: false — aa-enforce may fail if AppArmor parser rejects the profile
 - name: Profiles | Enforce custom profiles
   ansible.builtin.command:
     cmd: 'aa-enforce /etc/apparmor.d/{{ item.item.name }}'

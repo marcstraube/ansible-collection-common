@@ -9,8 +9,8 @@
       - '127.0.0.1'
     unbound_port: 5353
     unbound_dnssec_enabled: false
-    unbound_root_hints_update: false
-    unbound_remote_control: false
+    unbound_root_hints_update_enabled: false
+    unbound_remote_control_enabled: false
     unbound_access_control:
       - subnet: '127.0.0.0/8'
         action: 'allow'

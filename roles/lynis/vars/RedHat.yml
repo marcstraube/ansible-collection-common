@@ -1,2 +1,7 @@
 ---
-__lynis_package: 'lynis'
+# Lynis is not available in EPEL 10 — use lynis_install_method: 'git'
+__lynis_packages: []
+
+__lynis_timer_name: 'lynis-audit.timer'
+__lynis_service_name: 'lynis-audit.service'
+__lynis_config_dir: '/etc/lynis'

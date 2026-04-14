@@ -1,6 +1,7 @@
 ---
 # Subvolume + NoCOW for audit log directory
 
+# failed_when: false — stat may fail if path does not exist yet
 - name: BTRFS | Check if audit log parent filesystem is BTRFS
   ansible.builtin.command:
     cmd: stat -f -c %T {{ (auditd_log_file | dirname) | dirname }}
@@ -12,6 +13,7 @@
   ansible.builtin.set_fact:
     __auditd_is_btrfs: "{{ __auditd_fstype.stdout | default('') == 'btrfs' }}"
 
+# failed_when: false — returns rc=1 when path is not a subvolume (expected)
 - name: BTRFS | Check if audit log directory is already a BTRFS subvolume
   ansible.builtin.command:
     cmd: btrfs subvolume show {{ auditd_log_file | dirname }}
@@ -53,6 +55,7 @@
         mode: '0700'
         state: directory
 
+# failed_when: false — chattr +C may fail on non-BTRFS or already-set directories
 - name: BTRFS | Set NoCOW attribute on audit log directory
   ansible.builtin.command:
     cmd: chattr +C {{ auditd_log_file | dirname }}

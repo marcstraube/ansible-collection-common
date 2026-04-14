@@ -1,13 +1,19 @@
 ---
 #
-# Service Control
+# Role Control
 #
 
-# Enable or disable the SSH server
-openssh_server_enabled: true
+# Enable the openssh role
+openssh_enabled: true
 
-# Service state: started, stopped
-openssh_server_state: 'started'
+# Enable and start the openssh service
+openssh_service_enabled: true
+
+# DEPRECATED: Use openssh_enabled instead (removed in v2.0.0)
+# openssh_server_enabled: {{ openssh_enabled }}
+
+# DEPRECATED: Use openssh_service_enabled instead (removed in v2.0.0)
+# openssh_server_state: replaced by ternary pattern
 
 #
 # Network Settings
@@ -190,7 +196,7 @@ openssh_server_max_startups: '10:30:60'
 # Allow only specific users (empty = all users)
 openssh_server_allow_users: []
 # Example:
-#   - 'admin'
+#   - 'johndoe'
 #   - 'deploy'
 
 # Deny specific users
@@ -290,13 +296,16 @@ openssh_server_log_level: 'VERBOSE'
 #
 
 # Remove weak Diffie-Hellman moduli (< 3072 bits)
-openssh_server_harden_moduli: true
+openssh_server_harden_moduli_enabled: true
 
 # Minimum moduli size
 openssh_server_moduli_minimum_size: 3071
 
+# DEPRECATED: Use openssh_server_harden_moduli_enabled instead (removed in v2.0.0)
+# openssh_server_harden_moduli: {{ openssh_server_harden_moduli_enabled }}
+
 #
-# Penalty System (OpenSSH 9.8+, ignored on older versions)
+# Penalty System (OpenSSH 9.8+, Ignored on Older Versions)
 #
 
 # Penalty conditions and durations for misbehaving clients
@@ -316,7 +325,7 @@ openssh_server_per_source_penalties: []
 openssh_server_per_source_net_block_size: ''
 
 #
-# Channel / Connection Timeouts (OpenSSH 9.2+/9.7+, ignored on older)
+# Channel / Connection Timeouts (OpenSSH 9.2+/9.7+, Ignored on Older)
 #
 
 # Timeout for connections with no open channels (OpenSSH 9.2+)
@@ -399,7 +408,7 @@ openssh_server_revoked_keys: ''
 # Client Configuration
 #
 
-# Configure SSH client settings
+# Enable SSH client configuration
 openssh_client_enabled: true
 
 # Global known hosts file
@@ -419,21 +428,39 @@ openssh_client_visual_host_key: false
 #
 
 # Enable global ssh-agent service (systemd user service)
-openssh_agent_global_service: false
+openssh_agent_global_service_enabled: false
 
-# SSH askpass program
+# DEPRECATED: Use openssh_agent_global_service_enabled instead (removed in v2.0.0)
+# openssh_agent_global_service: {{ openssh_agent_global_service_enabled }}
+
+# Enable SSH askpass program
 openssh_askpass_enabled: false
 
 #
 # SSHFP DNS Records
 #
 
-# Generate and show SSHFP DNS records
-openssh_server_generate_sshfp_records: false
+# Enable SSHFP DNS record generation
+openssh_server_generate_sshfp_records_enabled: false
+
+# DEPRECATED: Use openssh_server_generate_sshfp_records_enabled instead (removed in v2.0.0)
+# openssh_server_generate_sshfp_records: {{ openssh_server_generate_sshfp_records_enabled }}
+
+# SSHFP hostname
 openssh_server_sshfp_hostname: '{{ ansible_facts["fqdn"] }}'
 
 #
-# Firewall Integration
+# Security Tools
+#
+
+# Enable ssh-audit install for security analysis
+openssh_ssh_audit_enabled: true
+
+# DEPRECATED: Use openssh_ssh_audit_enabled instead (removed in v2.0.0)
+# openssh_install_ssh_audit: {{ openssh_ssh_audit_enabled }}
+
+#
+# Firewall
 #
 
 # Enable firewalld integration
@@ -443,15 +470,8 @@ openssh_firewalld_enabled: false
 openssh_firewalld_zone: 'public'
 
 #
-# AppArmor Integration
+# AppArmor
 #
 
 # Enable AppArmor profile enforcement (Arch/Debian only, not RHEL/Rocky)
 openssh_apparmor_enabled: false
-
-#
-# Security Tools
-#
-
-# Install ssh-audit for security analysis
-openssh_install_ssh_audit: true

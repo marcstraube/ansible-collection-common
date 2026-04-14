@@ -23,6 +23,9 @@ platforms:
   - name: hardware-tokens-rocky-9
     groups:
       - test_hosts
+  - name: hardware-tokens-rocky-10
+    groups:
+      - test_hosts
 
 provisioner:
   name: ansible
@@ -34,40 +37,53 @@ provisioner:
       stdout_callback: default
       result_format: yaml
       inject_facts_as_vars: false
+      allow_broken_conditionals: true
   inventory:
     host_vars:
       hardware-tokens-archlinux:
+        ansible_python_interpreter: /usr/bin/python
         ansible_port: 2222
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/hardware-tokens-archlinux/virtualbox/private_key
       hardware-tokens-debian-trixie:
-        ansible_port: 2223
         ansible_python_interpreter: /usr/bin/python3
+        ansible_port: 2223
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/hardware-tokens-debian-trixie/virtualbox/private_key
       hardware-tokens-rocky-9:
+        ansible_python_interpreter: /usr/bin/python3
         ansible_port: 2224
         ansible_ssh_private_key_file: >-
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/hardware-tokens-rocky-9/virtualbox/private_key
+      hardware-tokens-rocky-10:
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_port: 2225
+        ansible_ssh_private_key_file: >-
+          {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
+          }}/.vagrant/machines/hardware-tokens-rocky-10/virtualbox/private_key
     group_vars:
       all:
         ansible_connection: ssh
         ansible_user: vagrant
+        ansible_become: true
         ansible_host: 127.0.0.1
         ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
 
-        # Role configuration for testing
+        #
+        # Role Configuration for Testing
+        #
+
         hardware_tokens_enabled: true
-        hardware_tokens_nitrokey: true
-        hardware_tokens_yubikey: true
-        hardware_tokens_fido2: true
-        hardware_tokens_smartcard: true
-        hardware_tokens_opensc: true
-        hardware_tokens_pcscd: true
-        hardware_tokens_lock_on_removal: true
+        hardware_tokens_nitrokey_enabled: true
+        hardware_tokens_yubikey_enabled: true
+        hardware_tokens_fido2_enabled: true
+        hardware_tokens_smartcard_enabled: true
+        hardware_tokens_opensc_enabled: true
+        hardware_tokens_pcscd_socket_enabled: true
+        hardware_tokens_lock_on_removal_enabled: true
         hardware_tokens_lock_on_removal_devices:
           - vendor: '20a0'
             product: '42b2'

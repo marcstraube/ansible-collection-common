@@ -4,34 +4,45 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [firewalld]
+  tags:
+    - firewalld
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [firewalld, firewalld:install]
-
-- name: Main | Include configure tasks
-  ansible.builtin.include_tasks:
-    file: configure.yml
-    apply:
-      tags: [firewalld, firewalld:configure]
   when: firewalld_enabled | bool
-  tags: [firewalld, firewalld:configure]
+  tags:
+    - firewalld
+    - firewalld:install
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: firewalld_enabled | bool
+  tags:
+    - firewalld
+    - firewalld:configure
 
 - name: Main | Include purge tasks
   ansible.builtin.include_tasks:
     file: purge.yml
     apply:
-      tags: [firewalld, firewalld:purge]
+      tags:
+        - firewalld
+        - firewalld:purge
   when:
     - firewalld_enabled | bool
     - firewalld_purge_services | bool
-  tags: [firewalld, firewalld:purge]
+  tags:
+    - firewalld
+    - firewalld:purge
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
-  tags: [firewalld, firewalld:service]
+  when: firewalld_enabled | bool
+  tags:
+    - firewalld
+    - firewalld:service

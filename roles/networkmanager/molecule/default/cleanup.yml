@@ -1,9 +1,0 @@
----
-- name: Cleanup
-  hosts: all
-  gather_facts: false
-  become: true
-  tasks:
-    - name: Cleanup | Task placeholder
-      ansible.builtin.debug:
-        msg: No cleanup tasks defined

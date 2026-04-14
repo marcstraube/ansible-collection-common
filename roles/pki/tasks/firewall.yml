@@ -1,8 +1,15 @@
 ---
-- name: Firewall | Allow OCSP responder port
+- name: Firewall | Check if firewalld is running
+  ansible.builtin.systemd_service:
+    name: firewalld
+  register: __pki_firewalld_status
+  failed_when: false
+
+- name: Firewall | Manage OCSP responder firewall rule
   ansible.posix.firewalld:
     port: '{{ pki_ocsp_port }}/tcp'
     zone: '{{ pki_firewalld_zone }}'
     permanent: true
     immediate: true
-    state: enabled
+    state: "{{ pki_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+  when: __pki_firewalld_status.status.ActiveState | default('') == 'active'

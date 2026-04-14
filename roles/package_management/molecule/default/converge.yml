@@ -21,7 +21,7 @@
       age: 24
     aur_helper: ''  # Skip AUR helper in tests
     paccache_enabled: true
-    pacman_install_pkgfile: true
+    pacman_pkgfile_enabled: true
     makepkg_users:
       - username: 'testuser'
         mode: 'managed'
@@ -34,9 +34,9 @@
     apt_periodic_enabled: true
     apt_periodic_update: 1
     apt_install_recommends: true
-    apt_unattended_upgrades: false
-    apt_install_apt_file: true
-    apt_install_needrestart: true
+    apt_unattended_upgrades_enabled: false
+    apt_apt_file_enabled: true
+    apt_needrestart_enabled: true
 
     # RedHat/Fedora specific
     dnf_fastestmirror: true
@@ -44,7 +44,7 @@
     dnf_best: true
     dnf_epel_enabled: true
     dnf_automatic_enabled: false
-    dnf_install_utils: true
+    dnf_utils_enabled: true
 
   pre_tasks:
     - name: Converge | Create test user for makepkg (Arch only)

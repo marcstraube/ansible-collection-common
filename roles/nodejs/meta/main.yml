@@ -9,11 +9,9 @@ galaxy_info:
     - name: ArchLinux
       versions:
         - all
-
     - name: Debian
       versions:
         - trixie
-
     - name: EL
       versions:
         - all

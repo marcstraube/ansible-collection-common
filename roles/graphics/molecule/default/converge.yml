@@ -8,17 +8,17 @@
     # In containers, no real GPU — set manually
     graphics_gpu: 'intel'
     graphics_intel_enabled: true
-    graphics_intel_mesa: true
-    graphics_intel_vulkan: false
-    graphics_intel_vaapi: false
-    graphics_intel_32bit: false
+    graphics_intel_mesa_enabled: true
+    graphics_intel_vulkan_enabled: false
+    graphics_intel_vaapi_enabled: false
+    graphics_intel_32bit_enabled: false
     graphics_amd_enabled: false
     graphics_nvidia_enabled: false
     # Test common tools
-    graphics_vulkan_tools: false
-    graphics_vaapi_tools: false
-    graphics_vdpau_tools: false
-    graphics_mesa_utils: true
+    graphics_vulkan_tools_enabled: false
+    graphics_vaapi_tools_enabled: false
+    graphics_vdpau_tools_enabled: false
+    graphics_mesa_utils_enabled: true
     # Kernel params (test modprobe config deployment)
     graphics_kernel_params_enabled: true
     graphics_intel_kernel_params:

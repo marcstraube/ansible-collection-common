@@ -1,9 +1,17 @@
 ---
-- name: Firewall | Allow ClamAV TCP port through firewalld
+- name: Firewall | Check if firewalld is running
+  ansible.builtin.systemd_service:
+    name: firewalld
+  register: __clamav_firewalld_status
+  failed_when: false
+
+- name: Firewall | Manage ClamAV TCP port firewall rule
   ansible.posix.firewalld:
     port: '{{ clamav_tcp_socket }}/tcp'
     zone: '{{ clamav_firewalld_zone }}'
     permanent: true
     immediate: true
-    state: enabled
-  when: clamav_tcp_socket | default('') | length > 0
+    state: "{{ clamav_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+  when:
+    - __clamav_firewalld_status.status.ActiveState | default('') == 'active'
+    - clamav_tcp_socket | default('') | length > 0

@@ -1,55 +1,130 @@
 ---
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    openssh_enabled: >-
+      {{ openssh_server_enabled | default(openssh_enabled) | bool }}
+  when: openssh_server_enabled is defined
+
+- name: Main | Handle deprecated service variable
+  ansible.builtin.set_fact:
+    openssh_service_enabled: >-
+      {{ openssh_server_enabled | default(openssh_service_enabled) | bool }}
+  when: openssh_server_enabled is defined and openssh_server_state is not defined
+
+- name: Main | Handle deprecated state variable
+  ansible.builtin.set_fact:
+    openssh_service_enabled: >-
+      {{ (openssh_server_state | default('started')) == 'started' }}
+  when: openssh_server_state is defined
+
+- name: Main | Handle deprecated moduli variable
+  ansible.builtin.set_fact:
+    openssh_server_harden_moduli_enabled: >-
+      {{ openssh_server_harden_moduli | default(openssh_server_harden_moduli_enabled) | bool }}
+  when: openssh_server_harden_moduli is defined
+
+- name: Main | Handle deprecated ssh-audit variable
+  ansible.builtin.set_fact:
+    openssh_ssh_audit_enabled: >-
+      {{ openssh_install_ssh_audit | default(openssh_ssh_audit_enabled) | bool }}
+  when: openssh_install_ssh_audit is defined
+
+- name: Main | Handle deprecated agent service variable
+  ansible.builtin.set_fact:
+    openssh_agent_global_service_enabled: >-
+      {{ openssh_agent_global_service | default(openssh_agent_global_service_enabled) | bool }}
+  when: openssh_agent_global_service is defined
+
+- name: Main | Handle deprecated SSHFP variable
+  ansible.builtin.set_fact:
+    openssh_server_generate_sshfp_records_enabled: >-
+      {{ openssh_server_generate_sshfp_records | default(openssh_server_generate_sshfp_records_enabled) | bool }}
+  when: openssh_server_generate_sshfp_records is defined
+
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [openssh]
+  tags:
+    - openssh
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [openssh, openssh:install]
+  when: openssh_enabled | bool
+  tags:
+    - openssh
+    - openssh:install
 
 - name: Main | Import hostkeys tasks
   ansible.builtin.import_tasks: hostkeys.yml
-  tags: [openssh, openssh:hostkeys]
+  when: openssh_enabled | bool
+  tags:
+    - openssh
+    - openssh:hostkeys
 
 - name: Main | Import moduli tasks
   ansible.builtin.import_tasks: moduli.yml
-  when: openssh_server_harden_moduli | bool
-  tags: [openssh, openssh:configure]
+  when:
+    - openssh_enabled | bool
+    - openssh_server_harden_moduli_enabled | bool
+  tags:
+    - openssh
+    - openssh:configure
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
-  tags: [openssh, openssh:configure]
+  when: openssh_enabled | bool
+  tags:
+    - openssh
+    - openssh:configure
 
 - name: Main | Import client tasks
   ansible.builtin.import_tasks: client.yml
-  when: openssh_client_enabled | bool
-  tags: [openssh, openssh:client]
+  when:
+    - openssh_enabled | bool
+    - openssh_client_enabled | bool
+  tags:
+    - openssh
+    - openssh:client
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
-  tags: [openssh, openssh:service]
+  when: openssh_enabled | bool
+  tags:
+    - openssh
+    - openssh:service
 
 - name: Main | Include firewall tasks
   ansible.builtin.include_tasks:
     file: firewall.yml
     apply:
-      tags: [openssh, openssh:firewall]
-  when: openssh_firewalld_enabled | default(false) | bool
-  tags: [openssh, openssh:firewall]
+      tags:
+        - openssh
+        - openssh:firewall
+  when:
+    - openssh_enabled | bool
+    - openssh_firewalld_enabled | bool
+  tags:
+    - openssh
+    - openssh:firewall
 
 - name: Main | Include AppArmor tasks
   ansible.builtin.include_tasks:
     file: apparmor.yml
     apply:
-      tags: [openssh, openssh:apparmor]
+      tags:
+        - openssh
+        - openssh:apparmor
   when:
-    - openssh_apparmor_enabled | default(false) | bool
+    - openssh_enabled | bool
+    - openssh_apparmor_enabled | bool
     - ansible_facts['os_family'] != 'RedHat'
-  tags: [openssh, openssh:apparmor]
+  tags:
+    - openssh
+    - openssh:apparmor

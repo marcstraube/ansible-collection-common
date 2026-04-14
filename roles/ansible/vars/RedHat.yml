@@ -2,8 +2,6 @@
 __ansible_tools_ansible_packages:
   - 'ansible-core'
 
-__ansible_tools_epel_required: true
-
 __ansible_tools_molecule_pipx_package: 'molecule'
 
 __ansible_tools_podman_pipx_inject: 'molecule-plugins[podman]'

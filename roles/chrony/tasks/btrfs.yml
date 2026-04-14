@@ -11,6 +11,5 @@
   ansible.builtin.command:
     cmd: chattr +C {{ chrony_log_dir }}
   when:
-    - chrony_btrfs_nocow | bool
     - __chrony_log_fstype.stdout | default('') == 'btrfs'
   changed_when: false

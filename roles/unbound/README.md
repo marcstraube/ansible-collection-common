@@ -22,45 +22,65 @@ management.
 
 ## Supported Platforms
 
-| Platform      | Version | Package Source |
-| ------------- | ------- | -------------- |
-| Arch Linux    | 1.24.2  | Extra repo     |
-| Debian Trixie | 1.22.0  | Main repo      |
-| Rocky 9       | 1.16.2  | AppStream      |
-| Rocky 10      | 1.20.0  | AppStream      |
+| Platform                  | Notes |
+|---------------------------|-------|
+| Arch Linux                |       |
+| Debian Trixie             |       |
+| EL 9 (Rocky, Alma, RHEL)  |       |
+| EL 10 (Rocky, Alma, RHEL) |       |
+
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
 See [`defaults/main.yml`](defaults/main.yml) for all variables with descriptions.
 
+### Role Control
+
+| Variable                  | Default | Description                          |
+|---------------------------|---------|--------------------------------------|
+| `unbound_enabled`         | `true`  | Enable the unbound role              |
+| `unbound_service_enabled` | `true`  | Enable and start the unbound service |
+
 ### Key Variables
 
-| Variable                    | Default                | Description                               |
-| --------------------------- | ---------------------- | ----------------------------------------- |
-| `unbound_enabled`           | `true`                 | Enable the unbound role                   |
-| `unbound_interfaces`        | `['127.0.0.1', '::1']` | Interfaces to listen on                   |
-| `unbound_port`              | `53`                   | Listen port                               |
-| `unbound_dnssec_enabled`    | `true`                 | Enable DNSSEC validation                  |
-| `unbound_tls_upstream`      | `true`                 | Configure TLS cert bundle for upstream    |
-| `unbound_forward_zones`     | `[]`                   | List of forward zone definitions          |
-| `unbound_local_zones`       | `[]`                   | Local zone definitions                    |
-| `unbound_local_data`        | `[]`                   | Simple local A/AAAA records               |
-| `unbound_blocklist_enabled` | `false`                | Enable ad/tracker blocking                |
-| `unbound_root_hints_update` | `true`                 | Auto-update root hints weekly             |
-| `unbound_remote_control`    | `true`                 | Enable unbound-control socket             |
-| `unbound_btrfs_enabled`     | `true`                 | Enable BTRFS NoCOW on `/var/lib/unbound/` |
-| `unbound_firewalld_enabled` | `false`                | Enable firewalld DNS service rule         |
-| `unbound_apparmor_enabled`  | `false`                | Enforce AppArmor profile (Arch/Debian)    |
+| Variable                    | Default                | Description                            |
+|-----------------------------|------------------------|----------------------------------------|
+| `unbound_interfaces`        | `['127.0.0.1', '::1']` | Interfaces to listen on                |
+| `unbound_port`              | `53`                   | Listen port                            |
+| `unbound_dnssec_enabled`    | `true`                 | Enable DNSSEC validation               |
+| `unbound_tls_upstream`      | `true`                 | Configure TLS cert bundle for upstream |
+| `unbound_forward_zones`     | `[]`                   | List of forward zone definitions       |
+| `unbound_local_zones`       | `[]`                   | Local zone definitions                 |
+| `unbound_local_data`        | `[]`                   | Simple local A/AAAA records            |
+| `unbound_blocklist_enabled` | `false`                | Enable ad/tracker blocking             |
+| `unbound_root_hints_update_enabled` | `true`                 | Auto-update root hints weekly          |
+| `unbound_remote_control_enabled`    | `true`                 | Enable unbound-control socket          |
+
+### Firewall
+
+| Variable                    | Default    | Description                      |
+|-----------------------------|------------|----------------------------------|
+| `unbound_firewalld_enabled` | `false`    | Enable firewalld integration     |
+| `unbound_firewalld_zone`    | `'public'` | Firewalld zone for service rules |
+
+### AppArmor
+
+| Variable                   | Default | Description                         |
+|----------------------------|---------|-------------------------------------|
+| `unbound_apparmor_enabled` | `false` | Enable AppArmor profile enforcement |
 
 ## Tags
 
 | Tag                 | Scope                                                  |
-| ------------------- | ------------------------------------------------------ |
+|---------------------|--------------------------------------------------------|
 | `unbound`           | All role tasks                                         |
 | `unbound:install`   | Package installation, root hints download, timer setup |
 | `unbound:configure` | Config files, DNSSEC anchor, unbound-control keys      |
 | `unbound:blocklist` | Blocklist script, timer, initial download              |
-| `unbound:service`   | Service enable/start                                   |
+| `unbound:service`   | Service management                                     |
 | `unbound:firewall`  | Firewalld DNS rule                                     |
 | `unbound:apparmor`  | AppArmor profile enforcement                           |
 
@@ -103,13 +123,13 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 ## Notes
 
 - On BTRFS filesystems, NoCOW (`chattr +C`) is applied to `/var/lib/unbound/` to avoid
-  copy-on-write overhead for DNS cache and root hints data. Disable with
-  `unbound_btrfs_enabled: false`.
+  copy-on-write overhead for DNS cache and root hints data.
 - Rocky 9 ships unbound 1.16.2 which is significantly older than other platforms. All
   directives used in this role are compatible with 1.16+.
 - On Rocky 10, `unbound-anchor` is a separate package (automatically installed).
 - Debian ships an AppArmor profile for unbound (enforced by default when AppArmor is active).
-- The blocklist feature downloads hosts-format blocklists and converts them to unbound `local-zone` entries.
+- The blocklist feature downloads hosts-format blocklists and converts them to unbound
+  `local-zone` entries.
 
 ## License
 

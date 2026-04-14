@@ -1,25 +1,33 @@
 ---
-- name: AppArmor | Check if AppArmor is active
+- name: AppArmor | Check if AppArmor is available
   ansible.builtin.stat:
     path: /sys/kernel/security/apparmor
   register: __fail2ban_apparmor_active
 
-- name: AppArmor | Check current AppArmor profile mode for fail2ban-server
+- name: AppArmor | Get current profile status
   ansible.builtin.command:
     cmd: aa-status --json
   register: __fail2ban_aa_status
   changed_when: false
+  failed_when: false
   when: __fail2ban_apparmor_active.stat.exists
 
-- name: AppArmor | Enforce AppArmor profile for fail2ban-server
-  ansible.builtin.command:
-    cmd: aa-enforce {{ __fail2ban_apparmor_profile }}
-  changed_when: true
+- name: AppArmor | Build enforce set
+  ansible.builtin.set_fact:
+    __fail2ban_apparmor_enforce_set: >-
+      {{ (__fail2ban_aa_status.stdout | default('{}') | from_json).get('profiles', {})
+         | dict2items | selectattr('value', 'eq', 'enforce')
+         | map(attribute='key') | list }}
   when:
     - __fail2ban_apparmor_active.stat.exists
-    - __fail2ban_apparmor_profile not in
-      ((__fail2ban_aa_status.stdout | default('{}') | from_json).get('profiles', {})
-      | dict2items | selectattr('value', 'eq', 'enforce') | map(attribute='key') | list)
-    - __fail2ban_apparmor_profile | basename not in
-      ((__fail2ban_aa_status.stdout | default('{}') | from_json).get('profiles', {})
-      | dict2items | selectattr('value', 'eq', 'enforce') | map(attribute='key') | list)
+    - __fail2ban_aa_status.rc == 0
+
+- name: AppArmor | Enforce fail2ban profile
+  ansible.builtin.command:
+    cmd: 'aa-enforce {{ __fail2ban_apparmor_profile }}'
+  when:
+    - __fail2ban_apparmor_active.stat.exists
+    - >-
+      __fail2ban_apparmor_profile not in __fail2ban_apparmor_enforce_set | default([])
+      and (__fail2ban_apparmor_profile | basename) not in __fail2ban_apparmor_enforce_set | default([])
+  changed_when: true

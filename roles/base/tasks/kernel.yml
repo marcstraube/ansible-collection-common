@@ -1,7 +1,7 @@
 ---
 - name: Kernel | Detect CPU vendor for microcode
   ansible.builtin.set_fact:
-    _base_microcode_package: |-
+    __base_microcode_package: |-
       {% if base_microcode == 'auto' %}
       {%
         if 'GenuineIntel' in ansible_facts['processor']
@@ -14,17 +14,17 @@
   when: base_microcode != ''
 
 - name: Kernel | Install kernel packages
-  community.general.pacman:
+  ansible.builtin.package:
     name: '{{ [base_kernel] + base_kernel_extra_packages }}'
     state: present
 
 - name: Kernel | Install microcode package
-  community.general.pacman:
-    name: '{{ _base_microcode_package }}'
+  ansible.builtin.package:
+    name: '{{ __base_microcode_package }}'
     state: present
   when:
-    - _base_microcode_package is defined
-    - _base_microcode_package | length > 0
+    - __base_microcode_package is defined
+    - __base_microcode_package | length > 0
 
 # mkinitcpio — only manage when explicitly configured
 # IMPORTANT: Do NOT template mkinitcpio.conf unless the user explicitly sets
@@ -36,7 +36,7 @@
 
 - name: Kernel | Check if mkinitcpio is explicitly configured
   ansible.builtin.set_fact:
-    _base_mkinitcpio_managed: >-
+    __base_mkinitcpio_managed: >-
       {{ (base_mkinitcpio_hooks | length > 0) or
          (base_mkinitcpio_modules | length > 0) or
          (base_mkinitcpio_binaries | length > 0) or
@@ -81,4 +81,4 @@
     regexp: '^COMPRESSION='
     line: 'COMPRESSION="{{ base_mkinitcpio_compression }}"'
   notify: 'regenerate initramfs'
-  when: _base_mkinitcpio_managed | bool
+  when: __base_mkinitcpio_managed | bool

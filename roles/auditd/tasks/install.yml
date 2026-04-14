@@ -1,5 +1,5 @@
 ---
-- name: Install | auditd packages
+- name: Install | Auditd packages
   ansible.builtin.package:
     name: '{{ __auditd_packages }}'
     state: present

@@ -1,5 +1,5 @@
 ---
-- name: paru | Derive shared users from wheel group (exclude system users)  # noqa: var-naming[no-role-prefix]
+- name: Paru | Derive shared users from wheel group (exclude system users)  # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     paru_shared_users: >-
       {{ (users_list
@@ -17,26 +17,26 @@
     - users_list is defined
     - users_list | length > 0
 
-- name: paru | Create shared AUR group
+- name: Paru | Create shared AUR group
   ansible.builtin.group:
     name: aur_shared
     system: true
     state: present
 
-- name: paru | Add aur_builder to shared AUR group
+- name: Paru | Add aur_builder to shared AUR group
   ansible.builtin.user:
     name: '{{ aur_builder_user }}'
     groups: aur_shared
     append: true
 
-- name: paru | Add users to shared AUR group
+- name: Paru | Add users to shared AUR group
   ansible.builtin.user:
     name: '{{ item }}'
     groups: aur_shared
     append: true
   loop: '{{ paru_shared_users }}'
 
-- name: paru | Create shared clone directory
+- name: Paru | Create shared clone directory
   ansible.builtin.file:
     path: '{{ paru_clone_dir }}'
     state: directory
@@ -44,16 +44,17 @@
     group: aur_shared
     mode: '2775'
 
-- name: paru | Disable Copy-on-Write on shared clone directory (btrfs)
+- name: Paru | Disable Copy-on-Write on shared clone directory (BTRFS)
   ansible.builtin.file:
     path: '{{ paru_clone_dir }}'
     attr: +C
+  # BTRFS attribute only works on BTRFS filesystems
   failed_when: false
 
-- name: paru | Deploy paru.conf
+- name: Paru | Deploy paru.conf
   ansible.builtin.template:
-    src: archlinux/paru.conf.j2
-    dest: /etc/paru.conf
+    src: 'archlinux/paru.conf.j2'
+    dest: '/etc/paru.conf'
     owner: root
     group: root
     mode: '0644'

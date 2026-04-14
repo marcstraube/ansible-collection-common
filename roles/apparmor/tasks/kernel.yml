@@ -18,6 +18,7 @@
 # GRUB Configuration — Arch Linux (lsm= kernel parameter)
 #
 
+# failed_when: false — grep returns rc=1 when pattern not found (expected)
 - name: Kernel | Check if AppArmor LSM is configured in GRUB (Arch Linux)
   ansible.builtin.command:
     cmd: grep -cP 'lsm=\S*apparmor' /etc/default/grub
@@ -46,6 +47,7 @@
 # GRUB Configuration — Debian (apparmor=1 security=apparmor)
 #
 
+# failed_when: false — grep returns rc=1 when pattern not found (expected)
 - name: Kernel | Check if AppArmor is configured in GRUB (Debian)
   ansible.builtin.command:
     cmd: grep -c 'security=apparmor' /etc/default/grub
@@ -152,6 +154,7 @@
 # Status Check (only when kernel module is active)
 #
 
+# failed_when: false — aa-status may fail when kernel module is loaded but not fully active
 - name: Kernel | Check AppArmor module status
   ansible.builtin.command:
     cmd: aa-status

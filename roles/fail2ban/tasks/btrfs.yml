@@ -5,6 +5,7 @@
     cmd: stat -f -c %T /var/lib
   register: __fail2ban_db_fstype
   changed_when: false
+  # stat may fail if directory does not exist yet
   failed_when: false
 
 - name: BTRFS | Set database BTRFS detection fact
@@ -16,6 +17,7 @@
     cmd: btrfs subvolume show /var/lib/fail2ban
   register: __fail2ban_subvol_check
   changed_when: false
+  # Directory may not be a subvolume yet
   failed_when: false
   when: __fail2ban_db_is_btrfs | bool
 
@@ -52,13 +54,24 @@
         mode: '0755'
         state: directory
 
+- name: BTRFS | Check NoCOW attribute on fail2ban database directory
+  ansible.builtin.command:
+    cmd: lsattr -d /var/lib/fail2ban
+  register: __fail2ban_db_lsattr
+  changed_when: false
+  # lsattr may fail on non-ext/btrfs filesystems
+  failed_when: false
+  when: __fail2ban_db_is_btrfs | bool
+
 - name: BTRFS | Set NoCOW attribute on fail2ban database directory
   ansible.builtin.command:
     cmd: chattr +C /var/lib/fail2ban
-  register: __fail2ban_db_chattr
-  changed_when: __fail2ban_db_chattr.rc == 0
+  changed_when: true
+  # chattr may fail in containers without filesystem support
   failed_when: false
-  when: __fail2ban_db_is_btrfs | bool
+  when:
+    - __fail2ban_db_is_btrfs | bool
+    - "'C' not in (__fail2ban_db_lsattr.stdout | default(''))"
 
 # Log file: NoCOW only (single file in /var/log, no subvolume)
 - name: BTRFS | Check if fail2ban log directory is on BTRFS
@@ -66,6 +79,7 @@
     cmd: stat -f -c %T {{ fail2ban_logtarget | dirname }}
   register: __fail2ban_log_fstype
   changed_when: false
+  # stat may fail if directory does not exist yet
   failed_when: false
   when: fail2ban_logtarget is not search('SYSLOG|SYSTEMD|STDOUT|STDERR')
 

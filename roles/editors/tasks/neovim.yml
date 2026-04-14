@@ -1,7 +1,7 @@
 ---
 - name: Neovim | Ensure global config directory exists
   ansible.builtin.file:
-    path: '/etc/xdg/nvim'
+    path: '{{ __editors_neovim_config_dir }}'
     state: directory
     owner: root
     group: root
@@ -10,7 +10,7 @@
 - name: Neovim | Deploy global configuration
   ansible.builtin.template:
     src: init.vim.j2
-    dest: '{{ __editors_neovim_config_global }}'
+    dest: '{{ __editors_neovim_config_file }}'
     owner: root
     group: root
     mode: '0644'

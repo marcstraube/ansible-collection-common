@@ -4,6 +4,8 @@
   gather_facts: true
 
   vars:
+    openssh_enabled: true
+
     # Test security settings
     openssh_server_port: 22
     openssh_server_permit_root_login: 'no'
@@ -37,10 +39,10 @@
     openssh_server_client_alive_count_max: 3
 
     # Disable moduli hardening for faster tests
-    openssh_server_harden_moduli: false
+    openssh_server_harden_moduli_enabled: false
 
-    # Disable ssh-audit installation for faster tests
-    openssh_install_ssh_audit: false
+    # Disable ssh-audit install for faster tests
+    openssh_ssh_audit_enabled: false
 
     # Test logging
     openssh_server_log_level: 'VERBOSE'
@@ -66,6 +68,6 @@
     openssh_server_banner_content: 'Test banner'
 
   tasks:
-    - name: Converge | Include ansible-openssh role  # noqa: role-name[path]
+    - name: Converge | Include openssh role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

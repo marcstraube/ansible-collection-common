@@ -1,14 +1,6 @@
 ---
-- name: Service | Enable and start avahi
-  ansible.builtin.systemd:
+- name: Service | Manage avahi service
+  ansible.builtin.systemd_service:
     name: '{{ __avahi_service_name }}'
-    enabled: true
-    state: started
-  when: avahi_enabled | bool
-
-- name: Service | Stop and disable avahi
-  ansible.builtin.systemd:
-    name: '{{ __avahi_service_name }}'
-    enabled: false
-    state: stopped
-  when: not (avahi_enabled | bool)
+    enabled: "{{ avahi_service_enabled | bool }}"
+    state: "{{ avahi_service_enabled | bool | ternary('started', 'stopped') }}"

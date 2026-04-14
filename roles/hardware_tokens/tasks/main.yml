@@ -4,47 +4,111 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  when: hardware_tokens_enabled | bool
-  tags: [hardware-tokens, hardware-tokens:vars]
+  tags:
+    - hardware-tokens
+
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    hardware_tokens_nitrokey_enabled: >-
+      {{ hardware_tokens_nitrokey | default(hardware_tokens_nitrokey_enabled) | bool }}
+    hardware_tokens_nitrokey_app_enabled: >-
+      {{ hardware_tokens_nitrokey_app | default(hardware_tokens_nitrokey_app_enabled) | bool }}
+    hardware_tokens_yubikey_enabled: >-
+      {{ hardware_tokens_yubikey | default(hardware_tokens_yubikey_enabled) | bool }}
+    hardware_tokens_yubikey_manager_enabled: >-
+      {{ hardware_tokens_yubikey_manager | default(hardware_tokens_yubikey_manager_enabled) | bool }}
+    hardware_tokens_fido2_enabled: >-
+      {{ hardware_tokens_fido2 | default(hardware_tokens_fido2_enabled) | bool }}
+    hardware_tokens_smartcard_enabled: >-
+      {{ hardware_tokens_smartcard | default(hardware_tokens_smartcard_enabled) | bool }}
+    hardware_tokens_opensc_enabled: >-
+      {{ hardware_tokens_opensc | default(hardware_tokens_opensc_enabled) | bool }}
+    hardware_tokens_pcscd_socket_enabled: >-
+      {{ hardware_tokens_pcscd | default(hardware_tokens_pcscd_enabled | default(hardware_tokens_pcscd_socket_enabled)) | bool }}
+    hardware_tokens_pam_u2f_enabled: >-
+      {{ hardware_tokens_pam_u2f | default(hardware_tokens_pam_u2f_enabled) | bool }}
+    hardware_tokens_pam_u2f_pin_enabled: >-
+      {{ hardware_tokens_pam_u2f_pin | default(hardware_tokens_pam_u2f_pin_enabled) | bool }}
+    hardware_tokens_udev_rules_enabled: >-
+      {{ hardware_tokens_udev_rules | default(hardware_tokens_udev_rules_enabled) | bool }}
+    hardware_tokens_lock_on_removal_enabled: >-
+      {{ hardware_tokens_lock_on_removal | default(hardware_tokens_lock_on_removal_enabled) | bool }}
+    hardware_tokens_pam_u2f_nouserok_enabled: >-
+      {{ hardware_tokens_pam_u2f_nouserok | default(hardware_tokens_pam_u2f_nouserok_enabled) | bool }}
+    hardware_tokens_pam_u2f_system_auth_enabled: >-
+      {{ hardware_tokens_pam_u2f_system_auth | default(hardware_tokens_pam_u2f_system_auth_enabled) | bool }}
+  when:
+    - hardware_tokens_enabled | bool
+    - >-
+      hardware_tokens_nitrokey is defined or
+      hardware_tokens_nitrokey_app is defined or
+      hardware_tokens_yubikey is defined or
+      hardware_tokens_yubikey_manager is defined or
+      hardware_tokens_fido2 is defined or
+      hardware_tokens_smartcard is defined or
+      hardware_tokens_opensc is defined or
+      hardware_tokens_pcscd is defined or
+      hardware_tokens_pcscd_enabled is defined or
+      hardware_tokens_pam_u2f is defined or
+      hardware_tokens_pam_u2f_pin is defined or
+      hardware_tokens_pam_u2f_nouserok is defined or
+      hardware_tokens_pam_u2f_system_auth is defined or
+      hardware_tokens_udev_rules is defined or
+      hardware_tokens_lock_on_removal is defined
+  tags:
+    - hardware-tokens
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: hardware_tokens_enabled | bool
-  tags: [hardware-tokens, hardware-tokens:install]
+  tags:
+    - hardware-tokens
+    - hardware-tokens:install
 
 - name: Main | Import udev tasks
   ansible.builtin.import_tasks: udev.yml
   when:
     - hardware_tokens_enabled | bool
-    - hardware_tokens_udev_rules | bool
-  tags: [hardware-tokens, hardware-tokens:udev]
+    - hardware_tokens_udev_rules_enabled | bool
+  tags:
+    - hardware-tokens
+    - hardware-tokens:udev
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
   when: hardware_tokens_enabled | bool
-  tags: [hardware-tokens, hardware-tokens:service]
+  tags:
+    - hardware-tokens
+    - hardware-tokens:service
 
 - name: Main | Import users tasks
   ansible.builtin.import_tasks: users.yml
   when:
     - hardware_tokens_enabled | bool
     - hardware_tokens_users | length > 0
-  tags: [hardware-tokens, hardware-tokens:users]
+  tags:
+    - hardware-tokens
+    - hardware-tokens:users
 
 - name: Main | Import PAM U2F tasks
   ansible.builtin.import_tasks: pam_u2f.yml
   when:
     - hardware_tokens_enabled | bool
-    - hardware_tokens_pam_u2f | bool
-  tags: [hardware-tokens, hardware-tokens:pam]
+    - hardware_tokens_pam_u2f_enabled | bool
+  tags:
+    - hardware-tokens
+    - hardware-tokens:pam
 
 - name: Main | Import lock on removal tasks
   ansible.builtin.import_tasks: lock_on_removal.yml
   when:
     - hardware_tokens_enabled | bool
-    - hardware_tokens_lock_on_removal | bool
-  tags: [hardware-tokens, hardware-tokens:lock]
+    - hardware_tokens_lock_on_removal_enabled | bool
+  tags:
+    - hardware-tokens
+    - hardware-tokens:lock

@@ -9,7 +9,7 @@
     name: '{{ __python_pipx_packages }}'
     state: present
   when:
-    - python_pipx_enabled | default(true) | bool
+    - python_pipx_enabled | bool
     - __python_pipx_packages | length > 0
 
 #
@@ -21,7 +21,7 @@
     cmd: '{{ __python_venv_command }} /opt/pipx-bootstrap'
     creates: /opt/pipx-bootstrap/bin/python
   when:
-    - python_pipx_enabled | default(true) | bool
+    - python_pipx_enabled | bool
     - __python_bootstrap_pipx | default(false) | bool
 
 - name: Install | pipx in bootstrap venv
@@ -30,22 +30,22 @@
     state: present
     virtualenv: /opt/pipx-bootstrap
   when:
-    - python_pipx_enabled | default(true) | bool
+    - python_pipx_enabled | bool
     - __python_bootstrap_pipx | default(false) | bool
 
 #
-# Extra packages
+# Extra Packages
 #
 
 - name: Install | Extra Python packages (AUR)
   become: true
-  become_user: 'aur_builder'
+  become_user: aur_builder
   kewlfft.aur.aur:
     name: '{{ __python_aur_packages.extra }}'
     state: present
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - __python_aur_packages.extra | length > 0
+    - __python_aur_packages.extra | default([]) | length > 0
 
 - name: Install | Extra Python packages
   ansible.builtin.package:

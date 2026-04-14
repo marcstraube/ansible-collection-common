@@ -3,6 +3,7 @@
 # Role Control
 #
 
+# Enable the rkhunter role
 rkhunter_enabled: true
 
 #

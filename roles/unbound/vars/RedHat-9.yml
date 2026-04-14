@@ -1,5 +1,5 @@
 ---
-# Rocky 9 bundles unbound-anchor in the main unbound package.
+# EL 9 bundles unbound-anchor in the main unbound package.
 
 __unbound_packages:
   - 'unbound'

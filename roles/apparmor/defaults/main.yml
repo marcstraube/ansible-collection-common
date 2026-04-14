@@ -3,7 +3,11 @@
 # Role Control
 #
 
+# Enable the apparmor role
 apparmor_enabled: true
+
+# Enable and start the apparmor service
+apparmor_service_enabled: true
 
 #
 # Boot Configuration
@@ -70,7 +74,13 @@ apparmor_tunables: {}
 apparmor_utils_enabled: true
 
 # Install apparmor-profiles-extra (broader profile coverage)
-apparmor_extra_profiles: true
+apparmor_extra_profiles_enabled: true
+
+# DEPRECATED: Use apparmor_extra_profiles_enabled instead (removed in v2.0.0)
+# apparmor_extra_profiles: {{ apparmor_extra_profiles_enabled }}
 
 # Install apparmor-notify (desktop denial notifications)
-apparmor_notify_package: true
+apparmor_notify_enabled: true
+
+# DEPRECATED: Use apparmor_notify_enabled instead (removed in v2.0.0)
+# apparmor_notify_package: {{ apparmor_notify_enabled }}

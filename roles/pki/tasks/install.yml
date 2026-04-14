@@ -1,5 +1,5 @@
 ---
-- name: Install | Ensure PKI packages are installed
+- name: Install | PKI packages
   ansible.builtin.package:
     name: '{{ __pki_packages }}'
     state: present

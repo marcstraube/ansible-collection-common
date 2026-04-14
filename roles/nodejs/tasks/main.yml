@@ -4,78 +4,121 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [nodejs]
+  tags:
+    - nodejs
 
 - name: Main | Validate install method
   ansible.builtin.assert:
     that:
       - nodejs_install_method in ['nodesource', 'package', 'nvm']
     fail_msg: "nodejs_install_method must be one of: nodesource, package, nvm (got '{{ nodejs_install_method }}')"
-  tags: [nodejs]
+  when: nodejs_enabled | bool
+  tags:
+    - nodejs
 
 - name: Main | Auto-fallback to package on Arch (NodeSource not supported)
   ansible.builtin.set_fact:
-    _nodejs_install_method: 'package'
+    __nodejs_install_method: 'package'
   when:
+    - nodejs_enabled | bool
     - not __nodejs_nodesource_supported
     - nodejs_install_method == 'nodesource'
-  tags: [nodejs]
+  tags:
+    - nodejs
 
 - name: Main | Set effective install method
   ansible.builtin.set_fact:
-    _nodejs_install_method: '{{ _nodejs_install_method | default(nodejs_install_method) }}'
-  tags: [nodejs]
+    __nodejs_install_method: '{{ __nodejs_install_method | default(nodejs_install_method) }}'
+  when: nodejs_enabled | bool
+  tags:
+    - nodejs
 
-- name: Main | Include NodeSource installation tasks
+- name: Main | Include NodeSource install tasks
   ansible.builtin.include_tasks:
     file: install_nodesource.yml
     apply:
-      tags: [nodejs, nodejs:install]
-  when: _nodejs_install_method == 'nodesource'
-  tags: [nodejs, nodejs:install]
+      tags:
+        - nodejs
+        - nodejs:install
+  when:
+    - nodejs_enabled | bool
+    - __nodejs_install_method | default('') == 'nodesource'
+  tags:
+    - nodejs
+    - nodejs:install
 
-- name: Main | Include system package installation tasks
+- name: Main | Include system package install tasks
   ansible.builtin.include_tasks:
     file: install_package.yml
     apply:
-      tags: [nodejs, nodejs:install]
-  when: _nodejs_install_method == 'package'
-  tags: [nodejs, nodejs:install]
+      tags:
+        - nodejs
+        - nodejs:install
+  when:
+    - nodejs_enabled | bool
+    - __nodejs_install_method | default('') == 'package'
+  tags:
+    - nodejs
+    - nodejs:install
 
-- name: Main | Include nvm installation tasks
+- name: Main | Include nvm install tasks
   ansible.builtin.include_tasks:
     file: install_nvm.yml
     apply:
-      tags: [nodejs, nodejs:install]
-  when: _nodejs_install_method == 'nvm'
-  tags: [nodejs, nodejs:install]
+      tags:
+        - nodejs
+        - nodejs:install
+  when:
+    - nodejs_enabled | bool
+    - __nodejs_install_method | default('') == 'nvm'
+  tags:
+    - nodejs
+    - nodejs:install
 
-- name: Main | Include npm configuration tasks
+- name: Main | Include npm configure tasks
   ansible.builtin.include_tasks:
     file: configure.yml
     apply:
-      tags: [nodejs, nodejs:configure]
-  when: _nodejs_install_method != 'nvm'
-  tags: [nodejs, nodejs:configure]
+      tags:
+        - nodejs
+        - nodejs:configure
+  when:
+    - nodejs_enabled | bool
+    - __nodejs_install_method | default('') != 'nvm'
+  tags:
+    - nodejs
+    - nodejs:configure
 
-- name: Main | Include additional package managers tasks
+- name: Main | Include package managers tasks
   ansible.builtin.include_tasks:
     file: package_managers.yml
     apply:
-      tags: [nodejs, nodejs:configure]
+      tags:
+        - nodejs
+        - nodejs:configure
   when:
+    - nodejs_enabled | bool
     - nodejs_package_managers | length > 0
-    - _nodejs_install_method != 'nvm'
-  tags: [nodejs, nodejs:configure]
+    - __nodejs_install_method | default('') != 'nvm'
+  tags:
+    - nodejs
+    - nodejs:configure
 
-- name: Main | Include installation verification tasks
+- name: Main | Include verify tasks
   ansible.builtin.include_tasks:
     file: verify.yml
     apply:
-      tags: [nodejs, nodejs:install]
-  when: _nodejs_install_method != 'nvm'
-  tags: [nodejs, nodejs:install]
+      tags:
+        - nodejs
+        - nodejs:install
+  when:
+    - nodejs_enabled | bool
+    - __nodejs_install_method | default('') != 'nvm'
+  tags:
+    - nodejs
+    - nodejs:install

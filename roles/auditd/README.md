@@ -1,7 +1,5 @@
 # Ansible Role: marcstraube.common.auditd
 
-Configure auditd for system auditing and compliance.
-
 ## Description
 
 This role installs, configures, and manages the Linux Audit daemon (auditd).
@@ -15,39 +13,36 @@ use `auditctl --signal` for stop/reload operations.
 
 ## Requirements
 
-- **Ansible**: >= 2.15
+- **Ansible**: >= 2.17
 - **Kernel audit subsystem**: Required (available in all modern kernels)
 - **Full VM or bare metal**: Containers lack kernel audit support
 
 ## Supported Platforms
 
-| Platform      | audit Version | Package Source                    |
-| ------------- | ------------- | --------------------------------- |
-| Arch Linux    | 4.0.x         | pacman (`audit`)                  |
-| Debian Trixie | 4.0.x         | apt (`auditd`, `audispd-plugins`) |
-| Rocky 9       | 3.1.x         | dnf (`audit`, `audit-libs`)       |
-| Rocky 10      | 4.0.x         | dnf (`audit`, `audit-libs`)       |
+| Platform                   | Notes |
+|----------------------------|-------|
+| Arch Linux                 |       |
+| Debian Trixie              |       |
+| EL 9 (Rocky, Alma, RHEL)  |       |
+| EL 10 (Rocky, Alma, RHEL) |       |
 
-### Version Differences
-
-- **audit 3.x vs 4.x**: `auditd.conf` directives are identical. The
-  `report_interval` directive is only available in audit >= 4.0.3.
-- **`max_log_file_action: exec`**: Only available in audit >= 4.0.3.
-- **`space_left_action: halt`**: Deprecated in latest 4.x releases.
+Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
+Fedora) should work but are not actively tested. Use distro-specific vars
+overrides if needed.
 
 ## Role Variables
 
 ### Role Control
 
-| Variable               | Default | Description                           |
-| ---------------------- | ------- | ------------------------------------- |
-| `auditd_enabled`       | `true`  | Enable/disable the entire role        |
-| `auditd_rules_enabled` | `true`  | Enable/disable audit rules deployment |
+| Variable                 | Default | Description                         |
+|--------------------------|---------|-------------------------------------|
+| `auditd_enabled`         | `true`  | Enable the auditd role              |
+| `auditd_service_enabled` | `true`  | Enable and start the auditd service |
 
 ### Daemon Configuration
 
 | Variable                         | Default                    | Description                   |
-| -------------------------------- | -------------------------- | ----------------------------- |
+|----------------------------------|----------------------------|-------------------------------|
 | `auditd_log_file`                | `/var/log/audit/audit.log` | Log file location             |
 | `auditd_log_format`              | `ENRICHED`                 | Log format: `RAW`, `ENRICHED` |
 | `auditd_log_group`               | `root`                     | Log file group                |
@@ -64,21 +59,10 @@ use `auditctl --signal` for stop/reload operations.
 | `auditd_disk_full_action`        | `suspend`                  | Action on disk full           |
 | `auditd_disk_error_action`       | `suspend`                  | Action on disk error          |
 
-### BTRFS Support
-
-| Variable                 | Default | Description                                |
-| ------------------------ | ------- | ------------------------------------------ |
-| `auditd_btrfs_subvolume` | `true`  | Create BTRFS subvolume + NoCOW for log dir |
-
-On BTRFS filesystems, the role creates a nested subvolume for the audit log
-directory with the NoCOW attribute (`chattr +C`). This prevents CoW overhead
-and excludes audit logs from parent snapshots. The subvolume is only created
-if the directory is empty (fresh install).
-
 ### Network / Remote Logging Receiver
 
 | Variable                     | Default   | Description                            |
-| ---------------------------- | --------- | -------------------------------------- |
+|------------------------------|-----------|----------------------------------------|
 | `auditd_use_libwrap`         | `true`    | Use tcp_wrappers (if compiled in)      |
 | `auditd_tcp_listen_port`     | *(unset)* | TCP listen port (set to enable)        |
 | `auditd_tcp_listen_queue`    | `5`       | TCP listen queue depth                 |
@@ -90,8 +74,8 @@ if the directory is empty (fresh install).
 ### Remote Logging (audisp-remote)
 
 | Variable                               | Default     | Description                    |
-| -------------------------------------- | ----------- | ------------------------------ |
-| `auditd_remote_logging`                | `false`     | Enable remote log forwarding   |
+|----------------------------------------|-------------|--------------------------------|
+| `auditd_remote_logging_enabled`        | `false`     | Enable remote log forwarding   |
 | `auditd_remote_server`                 | `''`        | Remote server (hostname or IP) |
 | `auditd_remote_port`                   | `60`        | Remote port                    |
 | `auditd_remote_transport`              | `tcp`       | Transport: `tcp`, `krb5`       |
@@ -103,26 +87,27 @@ See `defaults/main.yml` for the complete list of remote logging variables.
 
 ### Firewall
 
-| Variable                   | Default  | Description                                    |
-| -------------------------- | -------- | ---------------------------------------------- |
-| `auditd_firewalld_enabled` | `false`  | Enable firewalld rule for audit remote logging |
-| `auditd_firewalld_zone`    | `public` | Firewalld zone for audit remote logging        |
+| Variable                   | Default  | Description                              |
+|----------------------------|----------|------------------------------------------|
+| `auditd_firewalld_enabled` | `false`  | Enable firewalld rule for remote logging |
+| `auditd_firewalld_zone`    | `public` | Firewalld zone for audit remote logging  |
 
 When enabled, opens port 60/tcp (or the configured `auditd_remote_port`) in the
 specified firewalld zone. This is intended for servers that **receive** remote
-audit logs. The rule is only applied when `auditd_remote_server` is defined.
+audit logs.
 
 ### Email Alerts
 
 | Variable               | Default | Description                          |
-| ---------------------- | ------- | ------------------------------------ |
+|------------------------|---------|--------------------------------------|
 | `auditd_email_enabled` | `true`  | Show warning for localhost addresses |
 | `auditd_email_address` | `root`  | `action_mail_acct` in auditd.conf    |
 
 ### Audit Rules
 
 | Variable                   | Default | Description                                |
-| -------------------------- | ------- | ------------------------------------------ |
+|----------------------------|---------|--------------------------------------------|
+| `auditd_rules_enabled`     | `true`  | Enable audit rules deployment              |
 | `auditd_buffer_size`       | `8192`  | Audit buffer size                          |
 | `auditd_backlog_wait_time` | `60000` | Backlog wait time (ms)                     |
 | `auditd_rules_immutable`   | `true`  | Lock rules (CIS 4.1.17)                    |
@@ -131,7 +116,7 @@ audit logs. The rule is only applied when `auditd_remote_server` is defined.
 ### Compliance Presets
 
 | Variable         | Default | Description        |
-| ---------------- | ------- | ------------------ |
+|------------------|---------|--------------------|
 | `auditd_pci_dss` | `true`  | PCI-DSS 10.2 rules |
 | `auditd_hipaa`   | `true`  | HIPAA rules        |
 | `auditd_nist`    | `true`  | NIST 800-53 rules  |
@@ -140,7 +125,7 @@ audit logs. The rule is only applied when `auditd_remote_server` is defined.
 ### Syscall Monitoring
 
 | Variable                 | Default | Description              |
-| ------------------------ | ------- | ------------------------ |
+|--------------------------|---------|--------------------------|
 | `auditd_time_change`     | `true`  | Time changes             |
 | `auditd_identity_change` | `true`  | User/group changes       |
 | `auditd_network_change`  | `true`  | Network config changes   |
@@ -158,22 +143,26 @@ audit logs. The rule is only applied when `auditd_remote_server` is defined.
 ### File Watches
 
 | Variable                | Default                            | Description           |
-| ----------------------- | ---------------------------------- | --------------------- |
+|-------------------------|------------------------------------|-----------------------|
 | `auditd_watches`        | `[{path: /var/log/auth.log, ...}]` | Built-in file watches |
 | `auditd_custom_watches` | `[]`                               | Custom file watches   |
 
 ### Plugins
 
-| Variable                 | Default      | Description          |
-| ------------------------ | ------------ | -------------------- |
-| `auditd_plugin_syslog`   | `true`       | Enable syslog plugin |
-| `auditd_syslog_facility` | `LOG_LOCAL6` | Syslog facility      |
-| `auditd_syslog_priority` | `LOG_INFO`   | Syslog priority      |
+| Variable                       | Default      | Description          |
+|--------------------------------|--------------|----------------------|
+| `auditd_plugin_syslog_enabled` | `true`       | Enable syslog plugin |
+| `auditd_syslog_facility`       | `LOG_LOCAL6` | Syslog facility      |
+| `auditd_syslog_priority`       | `LOG_INFO`   | Syslog priority      |
+
+**Deprecated variables** (removed in v2.0.0):
+- `auditd_remote_logging` -- use `auditd_remote_logging_enabled`
+- `auditd_plugin_syslog` -- use `auditd_plugin_syslog_enabled`
 
 ## Tags
 
 | Tag                | Scope                 |
-| ------------------ | --------------------- |
+|--------------------|-----------------------|
 | `auditd`           | All role tasks        |
 | `auditd:install`   | Package installation  |
 | `auditd:configure` | Configuration files   |
@@ -185,20 +174,32 @@ audit logs. The rule is only applied when `auditd_remote_server` is defined.
 ## Example Playbook
 
 ```yaml
-- name: Configure auditd
-  hosts: all
-  become: true
-  roles:
-    - role: marcstraube.common.auditd
-      vars:
-        auditd_max_log_file: 100
-        auditd_num_logs: 20
-        auditd_email_address: 'admin@example.com'
-        auditd_space_left_action: 'email'
-        auditd_custom_watches:
-          - path: '/etc/ssh/sshd_config'
-            permissions: 'wa'
-            key: 'sshd_config'
+- name: Include auditd role
+  ansible.builtin.include_role:
+    name: marcstraube.common.auditd
+  tags:
+    - auditd
+  when: auditd_enabled | default(true) | bool
+```
+
+### Custom Audit Configuration
+
+```yaml
+- name: Include auditd role
+  ansible.builtin.include_role:
+    name: marcstraube.common.auditd
+  vars:
+    auditd_max_log_file: 100
+    auditd_num_logs: 20
+    auditd_email_address: 'admin@example.com'
+    auditd_space_left_action: 'email'
+    auditd_custom_watches:
+      - path: '/etc/ssh/sshd_config'
+        permissions: 'wa'
+        key: 'sshd_config'
+  tags:
+    - auditd
+  when: auditd_enabled | default(true) | bool
 ```
 
 ## Testing
@@ -209,6 +210,15 @@ molecule test
 ```
 
 Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+## Notes
+
+### Version Differences
+
+- **audit 3.x vs 4.x**: `auditd.conf` directives are identical. The
+  `report_interval` directive is only available in audit >= 4.0.3.
+- **`max_log_file_action: exec`**: Only available in audit >= 4.0.3.
+- **`space_left_action: halt`**: Deprecated in latest 4.x releases.
 
 ## License
 

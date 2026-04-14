@@ -22,7 +22,7 @@
     fail2ban_findtime: '15m'
     fail2ban_maxretry: 3
     # Progressive ban
-    fail2ban_bantime_increment: true
+    fail2ban_bantime_increment_enabled: true
     fail2ban_bantime_factor: 2
     fail2ban_bantime_maxtime: '4w'
     # Database settings

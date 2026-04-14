@@ -2,6 +2,7 @@
 #
 # Backports (Debian only)
 #
+
 - name: Repos | Enable Debian Backports
   ansible.builtin.apt_repository:
     repo: "deb http://deb.debian.org/debian {{ ansible_facts['distribution_release'] }}-backports main contrib non-free"
@@ -15,6 +16,7 @@
 #
 # PPAs (Ubuntu only)
 #
+
 - name: Repos | Add PPAs
   ansible.builtin.apt_repository:
     repo: '{{ item }}'
@@ -28,13 +30,16 @@
 #
 # Docker CE
 #
+
 - name: Repos | Setup Docker CE repository
-  when: apt_docker_repo | bool
+  when: apt_docker_repo_enabled | bool
   block:
     - name: Repos | Add Docker GPG key
       ansible.builtin.get_url:
         url: 'https://download.docker.com/linux/{{ ansible_facts["distribution"] | lower }}/gpg'
         dest: '/etc/apt/keyrings/docker.asc'
+        owner: root
+        group: root
         mode: '0644'
 
     - name: Repos | Add Docker repository
@@ -51,13 +56,16 @@
 #
 # PostgreSQL PGDG
 #
+
 - name: Repos | Setup PostgreSQL repository
-  when: apt_postgresql_repo | bool
+  when: apt_postgresql_repo_enabled | bool
   block:
     - name: Repos | Add PostgreSQL GPG key
       ansible.builtin.get_url:
         url: 'https://www.postgresql.org/media/keys/ACCC4CF8.asc'
         dest: '/etc/apt/keyrings/postgresql.asc'
+        owner: root
+        group: root
         mode: '0644'
 
     - name: Repos | Add PostgreSQL repository
@@ -75,12 +83,14 @@
 #
 
 - name: Repos | Setup PHP Sury repository
-  when: apt_php_sury_repo | bool
+  when: apt_php_sury_repo_enabled | bool
   block:
     - name: Repos | Add PHP Sury GPG key
       ansible.builtin.get_url:
-        url: "https://packages.sury.org/php/apt.gpg"
+        url: 'https://packages.sury.org/php/apt.gpg'
         dest: '/etc/apt/keyrings/php-sury.gpg'
+        owner: root
+        group: root
         mode: '0644'
       when: ansible_facts['distribution'] == 'Debian'
 
@@ -104,13 +114,16 @@
 #
 # Grafana
 #
+
 - name: Repos | Setup Grafana repository
-  when: apt_grafana_repo | bool
+  when: apt_grafana_repo_enabled | bool
   block:
     - name: Repos | Add Grafana GPG key
       ansible.builtin.get_url:
         url: 'https://apt.grafana.com/gpg.key'
         dest: '/etc/apt/keyrings/grafana.asc'
+        owner: root
+        group: root
         mode: '0644'
 
     - name: Repos | Add Grafana repository
@@ -125,13 +138,16 @@
 #
 # Kubernetes
 #
+
 - name: Repos | Setup Kubernetes repository
-  when: apt_kubernetes_repo | bool
+  when: apt_kubernetes_repo_enabled | bool
   block:
     - name: Repos | Add Kubernetes GPG key
       ansible.builtin.get_url:
         url: "https://pkgs.k8s.io/core:/stable:/v{{ apt_kubernetes_version }}/deb/Release.key"
         dest: '/etc/apt/keyrings/kubernetes.asc'
+        owner: root
+        group: root
         mode: '0644'
 
     - name: Repos | Add Kubernetes repository
@@ -144,13 +160,15 @@
       notify: 'apt configuration changed'
 
 #
-# Custom repositories
+# Custom Repositories
 #
 
 - name: Repos | Add custom repository GPG keys
   ansible.builtin.get_url:
     url: '{{ item.gpg_key }}'
     dest: '/etc/apt/keyrings/{{ item.name }}.asc'
+    owner: root
+    group: root
     mode: '0644'
   loop: '{{ apt_custom_repos }}'
   loop_control:

@@ -3,6 +3,7 @@
 # Role Control
 #
 
+# Enable the nodejs role
 nodejs_enabled: true
 
 #
@@ -47,8 +48,9 @@ nodejs_npm_config: {}
 nodejs_package_managers: []
 
 #
-# NVM Settings (only when nodejs_install_method is 'nvm')
+# NVM Settings
 #
+# Only used when nodejs_install_method is 'nvm'
 
 # nvm version to install ('latest' or specific tag like 'v0.40.1')
 nodejs_nvm_version: 'latest'

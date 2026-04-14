@@ -1,18 +1,27 @@
 ---
-- name: Firewall | Allow SSH service
+- name: Firewall | Check if firewalld is running
+  ansible.builtin.systemd_service:
+    name: firewalld
+  register: __openssh_firewalld_status
+  failed_when: false
+
+- name: Firewall | Manage SSH firewall rule
   ansible.posix.firewalld:
     service: ssh
     zone: '{{ openssh_firewalld_zone }}'
     permanent: true
     immediate: true
-    state: enabled
+    state: "{{ openssh_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+  when: __openssh_firewalld_status.status.ActiveState | default('') == 'active'
 
-- name: Firewall | Allow additional SSH ports
+- name: Firewall | Manage additional SSH port rules
   ansible.posix.firewalld:
     port: '{{ item }}/tcp'
     zone: '{{ openssh_firewalld_zone }}'
     permanent: true
     immediate: true
-    state: enabled
+    state: "{{ openssh_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
   loop: '{{ openssh_server_additional_ports }}'
-  when: openssh_server_additional_ports | length > 0
+  when:
+    - __openssh_firewalld_status.status.ActiveState | default('') == 'active'
+    - openssh_server_additional_ports | length > 0

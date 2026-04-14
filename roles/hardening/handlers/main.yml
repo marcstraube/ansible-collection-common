@@ -1,5 +1,8 @@
 ---
-- name: Hardening apply sysctl
+# Kernel subsystem — may fail in containers without /proc/sys
+- name: Apply sysctl hardening
   ansible.builtin.command:
     cmd: 'sysctl --system'
   changed_when: false
+  failed_when: false
+  when: hardening_enabled | bool

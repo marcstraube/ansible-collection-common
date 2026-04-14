@@ -17,7 +17,7 @@
       firefox:
         - 'whitelist ${HOME}/.mozilla'
         - 'private-tmp'
-    firejail_pacman_hook: true
+    firejail_pacman_hook_enabled: true
 
   tasks:
     - name: Converge | Include firejail role  # noqa: role-name[path]

@@ -68,9 +68,9 @@
   community.crypto.x509_certificate:
     path: '{{ item.dest_cert | default(pki_certs_dir + "/" + item.name + ".crt") }}'
     csr_path: '{{ pki_csr_dir }}/{{ item.name }}.csr'
-    ownca_path: '{{ _pki_signing_ca_cert }}'
-    ownca_privatekey_path: '{{ _pki_signing_ca_key }}'
-    ownca_privatekey_passphrase: '{{ _pki_signing_ca_passphrase | default(omit, true) }}'
+    ownca_path: '{{ __pki_signing_ca_cert }}'
+    ownca_privatekey_path: '{{ __pki_signing_ca_key }}'
+    ownca_privatekey_passphrase: '{{ __pki_signing_ca_passphrase | default(omit, true) }}'
     ownca_not_after: '+{{ item.validity_days | default(pki_server_validity_days) }}d'
     provider: ownca
     owner: '{{ item.owner | default("root") }}'
@@ -102,7 +102,7 @@
   ansible.builtin.shell:
     cmd: >-
       cat "{{ item.dest_cert | default(pki_certs_dir + '/' + item.name + '.crt') }}"
-      "{{ _pki_signing_ca_chain }}"
+      "{{ __pki_signing_ca_chain }}"
     executable: /bin/bash
   register: _pki_server_chain_output
   changed_when: false

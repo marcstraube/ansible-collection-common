@@ -13,6 +13,7 @@
       with_first_found:
         - files:
             - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
             - '{{ ansible_facts["distribution"] }}.yml'
             - '{{ ansible_facts["os_family"] }}.yml'
           paths:
@@ -24,13 +25,13 @@
 
     - name: Verify | Check logind.conf.d directory exists
       ansible.builtin.stat:
-        path: '{{ __energy_management_logind_conf_dir }}'
+        path: '{{ __energy_management_logind_config_dir }}'
       register: logind_dir
       failed_when: not logind_dir.stat.exists
 
     - name: Verify | Check logind energy.conf exists
       ansible.builtin.stat:
-        path: '{{ __energy_management_logind_conf_dir }}/{{ __energy_management_logind_conf_file }}'
+        path: '{{ __energy_management_logind_config_dir }}/{{ __energy_management_logind_config_file }}'
       register: logind_conf
       failed_when: not logind_conf.stat.exists
 
@@ -42,7 +43,7 @@
 
     - name: Verify | Read logind energy.conf
       ansible.builtin.slurp:
-        src: '{{ __energy_management_logind_conf_dir }}/{{ __energy_management_logind_conf_file }}'
+        src: '{{ __energy_management_logind_config_dir }}/{{ __energy_management_logind_config_file }}'
       register: logind_content
 
     - name: Verify | Check logind energy.conf content
@@ -62,13 +63,13 @@
 
     - name: Verify | Check sleep.conf.d directory exists
       ansible.builtin.stat:
-        path: '{{ __energy_management_sleep_conf_dir }}'
+        path: '{{ __energy_management_sleep_config_dir }}'
       register: sleep_dir
       failed_when: not sleep_dir.stat.exists
 
     - name: Verify | Check sleep energy.conf exists
       ansible.builtin.stat:
-        path: '{{ __energy_management_sleep_conf_dir }}/{{ __energy_management_sleep_conf_file }}'
+        path: '{{ __energy_management_sleep_config_dir }}/{{ __energy_management_sleep_config_file }}'
       register: sleep_conf
       failed_when: not sleep_conf.stat.exists
 
@@ -80,7 +81,7 @@
 
     - name: Verify | Read sleep energy.conf
       ansible.builtin.slurp:
-        src: '{{ __energy_management_sleep_conf_dir }}/{{ __energy_management_sleep_conf_file }}'
+        src: '{{ __energy_management_sleep_config_dir }}/{{ __energy_management_sleep_config_file }}'
       register: sleep_content
 
     - name: Verify | Check sleep energy.conf content

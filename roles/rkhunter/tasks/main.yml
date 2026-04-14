@@ -4,31 +4,43 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [rkhunter]
+  tags:
+    - rkhunter
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  when: rkhunter_enabled | default(true) | bool
-  tags: [rkhunter, rkhunter:install]
+  when: rkhunter_enabled | bool
+  tags:
+    - rkhunter
+    - rkhunter:install
 
 - name: Main | Include BTRFS tasks
   ansible.builtin.include_tasks:
     file: btrfs.yml
     apply:
-      tags: [rkhunter, rkhunter:configure]
-  when: rkhunter_enabled | default(true) | bool
-  tags: [rkhunter, rkhunter:configure]
+      tags:
+        - rkhunter
+        - rkhunter:install
+  when: rkhunter_enabled | bool
+  tags:
+    - rkhunter
+    - rkhunter:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
-  when: rkhunter_enabled | default(true) | bool
-  tags: [rkhunter, rkhunter:configure]
+  when: rkhunter_enabled | bool
+  tags:
+    - rkhunter
+    - rkhunter:configure
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
-  when: rkhunter_enabled | default(true) | bool
-  tags: [rkhunter, rkhunter:service]
+  when: rkhunter_enabled | bool
+  tags:
+    - rkhunter
+    - rkhunter:service

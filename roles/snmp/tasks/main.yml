@@ -4,63 +4,80 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [snmp]
+  tags:
+    - snmp
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [snmp, snmp:install]
+  when: snmp_enabled | bool
+  tags:
+    - snmp
+    - snmp:install
 
-- name: Main | Include configure tasks
-  ansible.builtin.include_tasks:
-    file: configure.yml
-    apply:
-      tags: [snmp, snmp:configure]
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
   when:
     - snmp_enabled | bool
     - not (ansible_check_mode and __snmp_install is changed)
-  tags: [snmp, snmp:configure]
+  tags:
+    - snmp
+    - snmp:configure
 
 - name: Main | Include SNMPv3 user tasks
   ansible.builtin.include_tasks:
     file: snmpv3_users.yml
     apply:
-      tags: [snmp, snmp:configure]
+      tags:
+        - snmp
+        - snmp:configure
   when:
     - snmp_enabled | bool
     - snmp_v3_enabled | bool
     - snmp_v3_users | length > 0
     - not (ansible_check_mode and __snmp_install is changed)
-  tags: [snmp, snmp:configure]
+  tags:
+    - snmp
+    - snmp:configure
 
-- name: Main | Include service tasks
-  ansible.builtin.include_tasks:
-    file: service.yml
-    apply:
-      tags: [snmp, snmp:service]
-  when: not (ansible_check_mode and __snmp_install is changed)
-  tags: [snmp, snmp:service]
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  when:
+    - snmp_enabled | bool
+    - not (ansible_check_mode and __snmp_install is changed)
+  tags:
+    - snmp
+    - snmp:service
 
 - name: Main | Include firewall tasks
   ansible.builtin.include_tasks:
     file: firewall.yml
     apply:
-      tags: [snmp, snmp:firewall]
+      tags:
+        - snmp
+        - snmp:firewall
   when:
     - snmp_enabled | bool
     - snmp_firewalld_enabled | bool
-  tags: [snmp, snmp:firewall]
+  tags:
+    - snmp
+    - snmp:firewall
 
 - name: Main | Include AppArmor tasks
   ansible.builtin.include_tasks:
     file: apparmor.yml
     apply:
-      tags: [snmp, snmp:apparmor]
+      tags:
+        - snmp
+        - snmp:apparmor
   when:
     - snmp_enabled | bool
     - snmp_apparmor_enabled | bool
     - ansible_facts['os_family'] != 'RedHat'
-  tags: [snmp, snmp:apparmor]
+  tags:
+    - snmp
+    - snmp:apparmor

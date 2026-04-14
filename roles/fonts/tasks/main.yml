@@ -1,24 +1,67 @@
 ---
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    fonts_base_enabled: >-
+      {{ fonts_base | default(fonts_base_enabled) | bool }}
+    fonts_dejavu_enabled: >-
+      {{ fonts_dejavu | default(fonts_dejavu_enabled) | bool }}
+    fonts_liberation_enabled: >-
+      {{ fonts_liberation | default(fonts_liberation_enabled) | bool }}
+    fonts_noto_enabled: >-
+      {{ fonts_noto | default(fonts_noto_enabled) | bool }}
+    fonts_noto_emoji_enabled: >-
+      {{ fonts_noto_emoji | default(fonts_noto_emoji_enabled) | bool }}
+    fonts_noto_cjk_enabled: >-
+      {{ fonts_noto_cjk | default(fonts_noto_cjk_enabled) | bool }}
+    fonts_coding_enabled: >-
+      {{ fonts_coding | default(fonts_coding_enabled) | bool }}
+    fonts_nerd_enabled: >-
+      {{ fonts_nerd | default(fonts_nerd_enabled) | bool }}
+    fonts_fontconfig_antialias_enabled: >-
+      {{ fonts_fontconfig_antialias | default(fonts_fontconfig_antialias_enabled) | bool }}
+    fonts_rebuild_cache_enabled: >-
+      {{ fonts_rebuild_cache | default(fonts_rebuild_cache_enabled) | bool }}
+  when:
+    - fonts_enabled | bool
+    - >-
+      fonts_base is defined
+      or fonts_dejavu is defined
+      or fonts_liberation is defined
+      or fonts_noto is defined
+      or fonts_noto_emoji is defined
+      or fonts_noto_cjk is defined
+      or fonts_coding is defined
+      or fonts_nerd is defined
+      or fonts_fontconfig_antialias is defined
+      or fonts_rebuild_cache is defined
+  tags:
+    - fonts
+
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  when: fonts_enabled | bool
-  tags: [fonts, fonts:vars]
+  tags:
+    - fonts
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: fonts_enabled | bool
-  tags: [fonts, fonts:install]
+  tags:
+    - fonts
+    - fonts:install
 
 - name: Main | Import fontconfig tasks
   ansible.builtin.import_tasks: fontconfig.yml
   when:
     - fonts_enabled | bool
     - fonts_fontconfig_enabled | bool
-  tags: [fonts, fonts:config]
+  tags:
+    - fonts
+    - fonts:config

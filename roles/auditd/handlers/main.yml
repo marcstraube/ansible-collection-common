@@ -5,13 +5,14 @@
     cmd: auditctl --signal TERM
   changed_when: true
   listen: Restart auditd
-  notify: Start auditd
+  when: auditd_service_enabled | bool
 
-- name: Start auditd
-  ansible.builtin.systemd:
+- name: Start auditd after signal stop
+  ansible.builtin.systemd_service:
     name: '{{ __auditd_service_name }}'
     state: started
-  listen: Start auditd
+  listen: Restart auditd
+  when: auditd_service_enabled | bool
 
   # failed_when: false — auditctl requires kernel audit subsystem (unavailable in containers)
 - name: Reload auditd config
@@ -19,7 +20,7 @@
     cmd: auditctl --signal HUP
   changed_when: true
   failed_when: false
-  listen: Reload auditd config
+  when: auditd_service_enabled | bool
 
   # failed_when: false — augenrules requires kernel audit subsystem (unavailable in containers)
 - name: Reload auditd rules
@@ -27,4 +28,4 @@
     cmd: augenrules --load
   changed_when: true
   failed_when: false
-  listen: Reload auditd rules
+  when: auditd_enabled | bool

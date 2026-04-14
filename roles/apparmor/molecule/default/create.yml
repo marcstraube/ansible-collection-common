@@ -12,24 +12,24 @@
       - name: apparmor-debian-trixie
         port: 2223
   tasks:
-    - name: Check if Vagrant is installed
+    - name: Create | Check if Vagrant is installed
       ansible.builtin.command: vagrant --version
       register: vagrant_version
       changed_when: false
       failed_when: false
 
-    - name: Fail if Vagrant is not installed
+    - name: Create | Fail if Vagrant is not installed
       ansible.builtin.fail:
         msg: Vagrant is not installed. Please install Vagrant first.
       when: vagrant_version.rc != 0
 
-    - name: Copy Vagrantfile to ephemeral directory
+    - name: Create | Copy Vagrantfile to ephemeral directory
       ansible.builtin.copy:
         src: "{{ molecule_scenario_directory }}/Vagrantfile"
         dest: "{{ molecule_ephemeral_directory }}/Vagrantfile"
         mode: "0644"
 
-    - name: Check if VMs already exist
+    - name: Create | Check if VMs already exist
       ansible.builtin.command:
         cmd: vagrant status --machine-readable
         chdir: "{{ molecule_ephemeral_directory }}"
@@ -37,7 +37,7 @@
       changed_when: false
       failed_when: false
 
-    - name: Destroy existing VMs if poweroff or aborted
+    - name: Create | Destroy existing VMs if poweroff or aborted
       ansible.builtin.command:
         cmd: vagrant destroy -f
         chdir: "{{ molecule_ephemeral_directory }}"
@@ -48,21 +48,21 @@
       failed_when: false
       changed_when: vagrant_destroy_result.rc == 0
 
-    - name: Set platforms to create
+    - name: Create | Set platforms to create
       ansible.builtin.set_fact:
         active_platforms: >-
           {{ all_platforms | selectattr('name', 'eq', platform_name) | list
           if platform_name | length > 0
           else all_platforms }}
 
-    - name: Start Vagrant VMs
+    - name: Create | Start Vagrant VMs
       ansible.builtin.command:
         cmd: vagrant up
         chdir: "{{ molecule_ephemeral_directory }}"
       register: vagrant_up
       changed_when: "'already running' not in vagrant_up.stderr"
 
-    - name: Wait for SSH to be available
+    - name: Create | Wait for SSH to be available
       ansible.builtin.wait_for:
         host: 127.0.0.1
         port: "{{ item.port }}"
@@ -73,6 +73,6 @@
       loop_control:
         label: "{{ item.name }} (port {{ item.port }})"
 
-    - name: Display instance information
+    - name: Create | Display instance information
       ansible.builtin.debug:
         msg: "Vagrant instances running: {{ active_platforms | map(attribute='name') | join(', ') }}"

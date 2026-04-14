@@ -8,4 +8,4 @@
   ansible.builtin.package:
     name: '{{ __avahi_nss_packages }}'
     state: present
-  when: avahi_nss_mdns | bool
+  when: avahi_nss_mdns_enabled | bool

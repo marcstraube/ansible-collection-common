@@ -1,7 +1,7 @@
 {{ ansible_managed | comment }}
-{% if editors_nano_config.set_autoindent | default(true) %}
 
 # Nano Editor Configuration
+{% if editors_nano_config.set_autoindent | default(true) %}
 set autoindent
 {% endif %}
 {% if editors_nano_config.set_linenumbers | default(true) %}

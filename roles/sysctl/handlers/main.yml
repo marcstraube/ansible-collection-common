@@ -1,8 +1,10 @@
 ---
-# failed_when: false — sysctl -p writes to /proc/sys which is read-only in containers
-- name: Reload sysctl
+# failed_when: false — sysctl writes to /proc/sys which is read-only in containers
+- name: Apply sysctl settings
   ansible.builtin.command:
     cmd: sysctl -p {{ sysctl_config_file | default('/etc/sysctl.d/90-ansible.conf') }}
   changed_when: false
   failed_when: false
-  when: sysctl_apply_immediately | default(true) | bool
+  when:
+    - sysctl_enabled | bool
+    - sysctl_apply_immediately | bool

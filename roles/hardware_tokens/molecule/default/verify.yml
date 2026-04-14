@@ -163,7 +163,7 @@
     #
 
     - name: Verify | Check pcscd.socket is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: pcscd.socket
       register: pcscd_socket_status
 

@@ -3,6 +3,6 @@
 {% for param in graphics_intel_kernel_params %}
 options {{ param }}
 {% endfor %}
-{% if graphics_intel_guc_huc | bool %}
+{% if graphics_intel_guc_huc_enabled | bool %}
 options i915 enable_guc=3
 {% endif %}

@@ -8,7 +8,7 @@
     mode: '0755'
 
 #
-# Main configuration
+# Main Configuration
 #
 
 - name: Configure | Deploy jail.local
@@ -31,7 +31,7 @@
   when: fail2ban_logtarget is not search('SYSLOG|SYSTEMD|STDOUT|STDERR')
 
 #
-# SSH jail
+# SSH Jail
 #
 
 - name: Configure | Deploy SSH jail
@@ -44,7 +44,7 @@
   notify: Reload fail2ban
 
 #
-# Mail server jails
+# Mail Server Jails
 #
 
 - name: Configure | Deploy mail server jails
@@ -55,9 +55,9 @@
     group: root
     mode: '0644'
   when: >-
-    fail2ban_postfix_enabled or fail2ban_dovecot_enabled or
-    fail2ban_postfix_sasl_enabled or fail2ban_postfix_rbl_enabled or
-    fail2ban_sogo_enabled or fail2ban_roundcube_enabled
+    fail2ban_postfix_enabled | bool or fail2ban_dovecot_enabled | bool or
+    fail2ban_postfix_sasl_enabled | bool or fail2ban_postfix_rbl_enabled | bool or
+    fail2ban_sogo_enabled | bool or fail2ban_roundcube_enabled | bool
   notify: Reload fail2ban
 
 - name: Configure | Remove mail jail if disabled
@@ -65,13 +65,13 @@
     path: '{{ __fail2ban_jail_d_dir }}/mail.local'
     state: absent
   when: >-
-    not (fail2ban_postfix_enabled or fail2ban_dovecot_enabled or
-    fail2ban_postfix_sasl_enabled or fail2ban_postfix_rbl_enabled or
-    fail2ban_sogo_enabled or fail2ban_roundcube_enabled)
+    not (fail2ban_postfix_enabled | bool or fail2ban_dovecot_enabled | bool or
+    fail2ban_postfix_sasl_enabled | bool or fail2ban_postfix_rbl_enabled | bool or
+    fail2ban_sogo_enabled | bool or fail2ban_roundcube_enabled | bool)
   notify: Reload fail2ban
 
 #
-# Recidive jail
+# Recidive Jail
 #
 
 - name: Configure | Deploy recidive jail
@@ -92,7 +92,7 @@
   notify: Reload fail2ban
 
 #
-# Apache jails
+# Apache Jails
 #
 
 - name: Configure | Deploy Apache jails
@@ -103,11 +103,11 @@
     group: root
     mode: '0644'
   when: >-
-    fail2ban_apache_auth_enabled or fail2ban_apache_badbots_enabled or
-    fail2ban_apache_noscript_enabled or fail2ban_apache_overflows_enabled or
-    fail2ban_apache_nohome_enabled or fail2ban_apache_botsearch_enabled or
-    fail2ban_apache_fakegooglebot_enabled or fail2ban_apache_modsecurity_enabled or
-    fail2ban_apache_shellshock_enabled
+    fail2ban_apache_auth_enabled | bool or fail2ban_apache_badbots_enabled | bool or
+    fail2ban_apache_noscript_enabled | bool or fail2ban_apache_overflows_enabled | bool or
+    fail2ban_apache_nohome_enabled | bool or fail2ban_apache_botsearch_enabled | bool or
+    fail2ban_apache_fakegooglebot_enabled | bool or fail2ban_apache_modsecurity_enabled | bool or
+    fail2ban_apache_shellshock_enabled | bool
   notify: Reload fail2ban
 
 - name: Configure | Remove Apache jails if disabled
@@ -115,15 +115,15 @@
     path: '{{ __fail2ban_jail_d_dir }}/apache.local'
     state: absent
   when: >-
-    not (fail2ban_apache_auth_enabled or fail2ban_apache_badbots_enabled or
-    fail2ban_apache_noscript_enabled or fail2ban_apache_overflows_enabled or
-    fail2ban_apache_nohome_enabled or fail2ban_apache_botsearch_enabled or
-    fail2ban_apache_fakegooglebot_enabled or fail2ban_apache_modsecurity_enabled or
-    fail2ban_apache_shellshock_enabled)
+    not (fail2ban_apache_auth_enabled | bool or fail2ban_apache_badbots_enabled | bool or
+    fail2ban_apache_noscript_enabled | bool or fail2ban_apache_overflows_enabled | bool or
+    fail2ban_apache_nohome_enabled | bool or fail2ban_apache_botsearch_enabled | bool or
+    fail2ban_apache_fakegooglebot_enabled | bool or fail2ban_apache_modsecurity_enabled | bool or
+    fail2ban_apache_shellshock_enabled | bool)
   notify: Reload fail2ban
 
 #
-# Nginx jails
+# Nginx Jails
 #
 
 - name: Configure | Deploy Nginx jails
@@ -134,9 +134,9 @@
     group: root
     mode: '0644'
   when: >-
-    fail2ban_nginx_http_auth_enabled or fail2ban_nginx_limit_req_enabled or
-    fail2ban_nginx_botsearch_enabled or fail2ban_nginx_forbidden_enabled or
-    fail2ban_nginx_bad_request_enabled
+    fail2ban_nginx_http_auth_enabled | bool or fail2ban_nginx_limit_req_enabled | bool or
+    fail2ban_nginx_botsearch_enabled | bool or fail2ban_nginx_forbidden_enabled | bool or
+    fail2ban_nginx_bad_request_enabled | bool
   notify: Reload fail2ban
 
 - name: Configure | Remove Nginx jails if disabled
@@ -144,13 +144,13 @@
     path: '{{ __fail2ban_jail_d_dir }}/nginx.local'
     state: absent
   when: >-
-    not (fail2ban_nginx_http_auth_enabled or fail2ban_nginx_limit_req_enabled or
-    fail2ban_nginx_botsearch_enabled or fail2ban_nginx_forbidden_enabled or
-    fail2ban_nginx_bad_request_enabled)
+    not (fail2ban_nginx_http_auth_enabled | bool or fail2ban_nginx_limit_req_enabled | bool or
+    fail2ban_nginx_botsearch_enabled | bool or fail2ban_nginx_forbidden_enabled | bool or
+    fail2ban_nginx_bad_request_enabled | bool)
   notify: Reload fail2ban
 
 #
-# Database jails
+# Database Jails
 #
 
 - name: Configure | Deploy database jails
@@ -171,7 +171,7 @@
   notify: Reload fail2ban
 
 #
-# Grafana jail
+# Grafana Jail
 #
 
 - name: Configure | Deploy Grafana jail
@@ -192,7 +192,7 @@
   notify: Reload fail2ban
 
 #
-# Custom jails, filters, and actions
+# Custom Jails, Filters, and Actions
 #
 
 - name: Configure | Deploy custom jails
@@ -225,7 +225,7 @@
 - name: Configure | Deploy custom actions
   ansible.builtin.copy:
     content: '{{ item.definition }}'
-    dest: '/etc/fail2ban/action.d/{{ item.name }}.local'
+    dest: '{{ __fail2ban_action_d_dir }}/{{ item.name }}.local'
     owner: root
     group: root
     mode: '0644'

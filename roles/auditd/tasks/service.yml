@@ -1,7 +1,7 @@
 ---
-- name: Service | Enable and start auditd service
-  ansible.builtin.systemd:
+- name: Service | Manage auditd service
+  ansible.builtin.systemd_service:
     name: '{{ __auditd_service_name }}'
-    enabled: true
-    state: started
+    enabled: "{{ auditd_service_enabled | bool }}"
+    state: "{{ auditd_service_enabled | bool | ternary('started', 'stopped') }}"
     daemon_reload: true

@@ -1,0 +1,13 @@
+---
+# EL9 overrides for packages available via EPEL on EL9 but not on EL10
+
+#
+# Fun Tools
+#
+
+__utils_fun_cmatrix: 'cmatrix'
+__utils_fun_cbonsai: 'cbonsai'
+__utils_fun_asciiquarium: 'asciiquarium'
+__utils_fun_nyancat: 'nyancat'
+__utils_fun_no_more_secrets: 'no-more-secrets'
+__utils_fun_tty_clock: 'tty-clock'

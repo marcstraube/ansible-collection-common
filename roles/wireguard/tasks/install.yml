@@ -25,7 +25,7 @@
     state: present
     sysctl_set: true
     reload: true
-  when: wireguard_ip_forward | bool
+  when: wireguard_ip_forward_enabled | bool
 
 - name: Install | Enable IP forwarding (IPv6)
   ansible.posix.sysctl:
@@ -35,5 +35,5 @@
     sysctl_set: true
     reload: true
   when:
-    - wireguard_ip_forward | bool
+    - wireguard_ip_forward_enabled | bool
     - wireguard_address_ipv6 | length > 0

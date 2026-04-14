@@ -1,26 +1,29 @@
 ---
 - name: Restart logind
-  ansible.builtin.systemd:
-    name: 'systemd-logind.service'
+  ansible.builtin.systemd_service:
+    name: '{{ __energy_management_logind_service }}'
     state: restarted
     daemon_reload: true
+  when: energy_management_logind_enabled | bool
   listen: 'restart logind'
 
 - name: Restart TLP
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __energy_management_tlp_service }}'
     state: restarted
   when: energy_management_power_manager == 'tlp'
   listen: 'restart tlp'
 
-- name: Reload energy management udev rules
+- name: Reload udev rules
   ansible.builtin.command:
     cmd: 'udevadm control --reload-rules'
-  changed_when: true
+  changed_when: false
+  when: energy_management_enabled | bool
   listen: 'reload udev'
 
 - name: Trigger udev backlight
   ansible.builtin.command:
     cmd: 'udevadm trigger --subsystem-match=backlight'
-  changed_when: true
+  changed_when: false
+  when: energy_management_enabled | bool
   listen: 'reload udev'

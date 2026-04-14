@@ -18,7 +18,7 @@
 
 - name: PAM U2F | Build pam_u2f.so options string
   ansible.builtin.set_fact:
-    _pam_u2f_options: >-
+    __hardware_tokens_pam_u2f_options: >-
       authfile={{ hardware_tokens_pam_u2f_config.authfile }}
       {{ 'cue' if hardware_tokens_pam_u2f_config.cue | default(false) else '' }}
       {{ 'interactive' if hardware_tokens_pam_u2f_config.interactive | default(false) else '' }}
@@ -26,21 +26,21 @@
       appid={{ hardware_tokens_pam_u2f_config.appid }}
       {{
         'pinverification=1'
-        if hardware_tokens_pam_u2f_mode == 'passwordless' and hardware_tokens_pam_u2f_pin | bool
+        if hardware_tokens_pam_u2f_mode == 'passwordless' and hardware_tokens_pam_u2f_pin_enabled | bool
         else ''
       }}
-      {{ 'nouserok' if hardware_tokens_pam_u2f_nouserok | bool else '' }}
+      {{ 'nouserok' if hardware_tokens_pam_u2f_nouserok_enabled | bool else '' }}
 
 - name: PAM U2F | Normalize options string
   ansible.builtin.set_fact:
-    _pam_u2f_options: "{{ _pam_u2f_options | regex_replace('\\s+', ' ') | trim }}"
+    __hardware_tokens_pam_u2f_options: "{{ __hardware_tokens_pam_u2f_options | regex_replace('\\s+', ' ') | trim }}"
 
 - name: PAM U2F | Build target PAM files list
   ansible.builtin.set_fact:
-    _pam_u2f_targets: >-
+    __hardware_tokens_pam_u2f_targets: >-
       {{
-        [__hardware_tokens_pam_system_auth]
-        if hardware_tokens_pam_u2f_system_auth | bool
+        [__hardware_tokens_pam_auth_config_file]
+        if hardware_tokens_pam_u2f_system_auth_enabled | bool
         else hardware_tokens_pam_u2f_services | map('regex_replace', '^(.*)$', '/etc/pam.d/\1') | list
       }}
 
@@ -48,20 +48,20 @@
   ansible.builtin.lineinfile:
     path: "{{ item }}"
     insertafter: '.*pam_unix\.so.*'
-    line: "auth       required   pam_u2f.so {{ _pam_u2f_options }}"
+    line: "auth       required   pam_u2f.so {{ __hardware_tokens_pam_u2f_options }}"
     regexp: '.*pam_u2f\.so.*'
     state: present
-  loop: "{{ _pam_u2f_targets }}"
+  loop: "{{ __hardware_tokens_pam_u2f_targets }}"
   when: hardware_tokens_pam_u2f_mode == '2fa'
 
 - name: PAM U2F | Configure passwordless mode (auth sufficient, before pam_unix)
   ansible.builtin.lineinfile:
     path: "{{ item }}"
     insertbefore: '.*pam_unix\.so.*'
-    line: "auth       sufficient pam_u2f.so {{ _pam_u2f_options }}"
+    line: "auth       sufficient pam_u2f.so {{ __hardware_tokens_pam_u2f_options }}"
     regexp: '.*pam_u2f\.so.*'
     state: present
-  loop: "{{ _pam_u2f_targets }}"
+  loop: "{{ __hardware_tokens_pam_u2f_targets }}"
   when: hardware_tokens_pam_u2f_mode == 'passwordless'
 
 - name: PAM U2F | Display enrollment instructions

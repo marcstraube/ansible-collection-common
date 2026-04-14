@@ -3,7 +3,7 @@
 # Role Control
 #
 
-# Enable or disable the entire role
+# Enable the pam_hardening role
 pam_hardening_enabled: true
 
 #
@@ -186,10 +186,11 @@ pam_limits_core: 0
 # Custom limits entries
 # Each item: domain, type (soft/hard/-), item, value
 pam_limits_custom: []
-#  - domain: '@users'
-#    type: hard
-#    item: nproc
-#    value: 50
+# Example:
+#   - domain: '@users'
+#     type: hard
+#     item: nproc
+#     value: 50
 
 #
 # Access Control (access.conf)

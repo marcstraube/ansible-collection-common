@@ -1,51 +1,51 @@
 ---
 - name: Hostkeys | Ensure host key directory exists
   ansible.builtin.file:
-    path: "{{ __openssh_host_keys_dir }}"
+    path: '{{ __openssh_host_keys_dir }}'
     state: directory
-    owner: 'root'
-    group: 'root'
+    owner: root
+    group: root
     mode: '0755'
 
 - name: Hostkeys | Generate ED25519 host key
   community.crypto.openssh_keypair:
-    path: "{{ __openssh_host_keys_dir }}/ssh_host_ed25519_key"
-    type: 'ed25519'
-    owner: 'root'
-    group: 'root'
+    path: '{{ __openssh_host_keys_dir }}/ssh_host_ed25519_key'
+    type: ed25519
+    owner: root
+    group: root
     mode: '0600'
   when: "'ed25519' in openssh_server_host_key_types"
   notify: 'restart sshd'
 
 - name: Hostkeys | Generate RSA host key
   community.crypto.openssh_keypair:
-    path: "{{ __openssh_host_keys_dir }}/ssh_host_rsa_key"
-    type: 'rsa'
-    size: "{{ openssh_server_rsa_key_size }}"
-    owner: 'root'
-    group: 'root'
+    path: '{{ __openssh_host_keys_dir }}/ssh_host_rsa_key'
+    type: rsa
+    size: '{{ openssh_server_rsa_key_size }}'
+    owner: root
+    group: root
     mode: '0600'
   when: "'rsa' in openssh_server_host_key_types"
   notify: 'restart sshd'
 
 - name: Hostkeys | Generate ECDSA host key
   community.crypto.openssh_keypair:
-    path: "{{ __openssh_host_keys_dir }}/ssh_host_ecdsa_key"
-    type: 'ecdsa'
+    path: '{{ __openssh_host_keys_dir }}/ssh_host_ecdsa_key'
+    type: ecdsa
     size: 521
-    owner: 'root'
-    group: 'root'
+    owner: root
+    group: root
     mode: '0600'
   when: "'ecdsa' in openssh_server_host_key_types"
   notify: 'restart sshd'
 
 - name: Hostkeys | Remove DSA host key (deprecated)
   ansible.builtin.file:
-    path: "{{ __openssh_host_keys_dir }}/ssh_host_dsa_key"
+    path: '{{ __openssh_host_keys_dir }}/ssh_host_dsa_key'
     state: absent
   notify: 'restart sshd'
 
 - name: Hostkeys | Remove DSA host key public file
   ansible.builtin.file:
-    path: "{{ __openssh_host_keys_dir }}/ssh_host_dsa_key.pub"
+    path: '{{ __openssh_host_keys_dir }}/ssh_host_dsa_key.pub'
     state: absent

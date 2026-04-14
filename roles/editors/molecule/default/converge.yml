@@ -5,9 +5,9 @@
 
   vars:
     editors_enabled: true
-    editors_nano: true
-    editors_vim: true
-    editors_neovim: true
+    editors_nano_enabled: true
+    editors_vim_enabled: true
+    editors_neovim_enabled: true
     editors_default: 'vim'
     editors_users:
       - username: 'testuser'

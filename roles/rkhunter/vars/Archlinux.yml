@@ -1,4 +1,8 @@
 ---
-__rkhunter_package: 'rkhunter'
+__rkhunter_packages:
+  - rkhunter
+
+__rkhunter_config_file: '/etc/rkhunter.conf'
+__rkhunter_timer_name: 'rkhunter-check.timer'
 __rkhunter_scriptdir: '/usr/lib/rkhunter/scripts'
 __rkhunter_pkgmgr: 'NONE'

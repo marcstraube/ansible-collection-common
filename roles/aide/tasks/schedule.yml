@@ -14,8 +14,7 @@
     owner: root
     group: root
     mode: '0644'
-  when: aide_timer_enabled | bool
-  notify: Reload aide systemd units
+  notify: Reload AIDE systemd units
 
 - name: Schedule | Deploy AIDE systemd timer
   ansible.builtin.template:
@@ -24,15 +23,13 @@
     owner: root
     group: root
     mode: '0644'
-  when: aide_timer_enabled | bool
   notify:
-    - Reload aide systemd units
+    - Reload AIDE systemd units
     - Restart AIDE timer
 
-- name: Schedule | Enable and start AIDE timer
-  ansible.builtin.systemd:
+- name: Schedule | Manage AIDE timer
+  ansible.builtin.systemd_service:
     name: aide-check.timer
-    enabled: true
-    state: started
+    enabled: "{{ aide_timer_enabled | bool }}"
+    state: "{{ aide_timer_enabled | bool | ternary('started', 'stopped') }}"
     daemon_reload: true
-  when: aide_timer_enabled | bool

@@ -1,40 +1,40 @@
 ---
 - name: Tools | Install dnf-utils (dnf4)
-  ansible.builtin.dnf:
-    name: dnf-utils
+  ansible.builtin.package:
+    name: 'dnf-utils'
     state: present
   when:
-    - dnf_install_utils | bool
+    - dnf_utils_enabled | bool
     - ansible_facts['distribution_major_version'] | int < 10
 
 - name: Tools | Install needs-restarting helper (dnf4)
-  ansible.builtin.dnf:
-    name: yum-utils
+  ansible.builtin.package:
+    name: 'yum-utils'
     state: present
   when:
-    - dnf_install_needs_restarting | bool
+    - dnf_needs_restarting_enabled | bool
     - ansible_facts['distribution_major_version'] | int < 10
 
 - name: Tools | Install rpm-build for package building
-  ansible.builtin.dnf:
+  ansible.builtin.package:
     name:
       - rpm-build
       - rpmdevtools
     state: present
-  when: dnf_install_rpmbuild | bool
+  when: dnf_rpmbuild_enabled | bool
 
 - name: Tools | Install mock for chroot building
-  ansible.builtin.dnf:
-    name: mock
+  ansible.builtin.package:
+    name: 'mock'
     state: present
-  when: dnf_install_mock | bool
+  when: dnf_mock_enabled | bool
 
-- name: Tools | Add user to mock group
+- name: Tools | Add users to mock group
   ansible.builtin.user:
     name: '{{ item }}'
     groups: mock
     append: true
   loop: '{{ dnf_mock_users }}'
   when:
-    - dnf_install_mock | bool
+    - dnf_mock_enabled | bool
     - dnf_mock_users | length > 0

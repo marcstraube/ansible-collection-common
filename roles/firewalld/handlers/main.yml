@@ -1,12 +1,19 @@
 ---
-- name: Reload firewalld
-  ansible.builtin.systemd:
-    name: '{{ __firewalld_service_name }}'
-    state: reloaded
+- name: Reload firewalld systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  # Container-safety for molecule
+  failed_when: false
   when: firewalld_enabled | bool
 
+- name: Reload firewalld
+  ansible.builtin.systemd_service:
+    name: '{{ __firewalld_service_name }}'
+    state: reloaded
+  when: firewalld_service_enabled | bool
+
 - name: Restart firewalld
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ __firewalld_service_name }}'
     state: restarted
-  when: firewalld_enabled | bool
+  when: firewalld_service_enabled | bool

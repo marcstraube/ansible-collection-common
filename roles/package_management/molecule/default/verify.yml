@@ -51,7 +51,7 @@
           register: reflector_service
 
         - name: Verify | Check reflector timer enabled
-          ansible.builtin.systemd:
+          ansible.builtin.systemd_service:
             name: reflector.timer
           register: reflector_timer
           failed_when: reflector_timer.status.UnitFileState != 'enabled'

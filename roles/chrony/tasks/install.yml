@@ -4,12 +4,10 @@
     name: '{{ __chrony_packages }}'
     state: present
 
-- name: Install | Disable conflicting NTP services
-  ansible.builtin.systemd:
+- name: Install | Disable conflicting services
+  ansible.builtin.systemd_service:
     name: '{{ item }}'
     enabled: false
     state: stopped
-  loop:
-    - 'ntpd'
-    - 'systemd-timesyncd'
+  loop: '{{ __chrony_conflicting_services }}'
   failed_when: false

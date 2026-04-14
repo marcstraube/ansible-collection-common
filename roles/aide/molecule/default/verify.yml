@@ -1,5 +1,5 @@
 ---
-- name: Verify AIDE installation and configuration
+- name: Verify
   hosts: all
   gather_facts: true
 
@@ -213,7 +213,7 @@
         success_msg: "AIDE systemd timer file exists"
 
     - name: Verify | Get AIDE timer status
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: aide-check.timer
       register: aide_timer_status
 
@@ -288,6 +288,8 @@
       ansible.builtin.file:
         path: '/opt/test/testfile.txt'
         state: touch
+        owner: root
+        group: root
         mode: '0644'
 
     - name: Verify | Run AIDE check script

@@ -4,32 +4,67 @@
   with_first_found:
     - files:
         - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
         - '{{ ansible_facts["distribution"] }}.yml'
         - '{{ ansible_facts["os_family"] }}.yml'
       paths:
         - 'vars'
-  tags: [networkmanager]
+  tags:
+    - networkmanager
+
+- name: Main | Handle deprecated variables
+  ansible.builtin.set_fact:
+    networkmanager_applet_enabled: >-
+      {{ networkmanager_install_applet | default(networkmanager_applet_enabled) | bool }}
+    networkmanager_timezone_enabled: >-
+      {{ networkmanager_configure_timezone | default(networkmanager_timezone_enabled) | bool }}
+    networkmanager_polkit_enabled: >-
+      {{ networkmanager_polkit | default(networkmanager_polkit_enabled) | bool }}
+  when: >-
+    networkmanager_install_applet is defined or
+    networkmanager_configure_timezone is defined or
+    networkmanager_polkit is defined
+  tags:
+    - networkmanager
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  tags: [networkmanager, networkmanager:install]
+  when: networkmanager_enabled | bool
+  tags:
+    - networkmanager
+    - networkmanager:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
-  tags: [networkmanager, networkmanager:configure]
+  when: networkmanager_enabled | bool
+  tags:
+    - networkmanager
+    - networkmanager:configure
 
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
-  tags: [networkmanager, networkmanager:service]
+  when: networkmanager_enabled | bool
+  tags:
+    - networkmanager
+    - networkmanager:service
 
-- name: Main | Import connection management tasks
+- name: Main | Import connection tasks
   ansible.builtin.import_tasks: connections.yml
-  tags: [networkmanager, networkmanager:connections]
+  when: networkmanager_enabled | bool
+  tags:
+    - networkmanager
+    - networkmanager:connections
 
 - name: Main | Import polkit tasks
   ansible.builtin.import_tasks: polkit.yml
-  tags: [networkmanager, networkmanager:polkit]
+  when: networkmanager_enabled | bool
+  tags:
+    - networkmanager
+    - networkmanager:polkit
 
-- name: Main | Import dispatcher script management tasks
+- name: Main | Import dispatcher tasks
   ansible.builtin.import_tasks: dispatcher.yml
-  tags: [networkmanager, networkmanager:dispatcher]
+  when: networkmanager_enabled | bool
+  tags:
+    - networkmanager
+    - networkmanager:dispatcher

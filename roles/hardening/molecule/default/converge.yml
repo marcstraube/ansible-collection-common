@@ -3,6 +3,9 @@
   hosts: all
   gather_facts: true
 
+  vars:
+    hardening_enabled: true
+
   tasks:
     - name: Converge | Include hardening role  # noqa: role-name[path]
       ansible.builtin.include_role:

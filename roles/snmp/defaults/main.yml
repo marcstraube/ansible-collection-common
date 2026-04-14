@@ -1,9 +1,13 @@
 ---
 #
-# Service Control
+# Role Control
 #
 
-snmp_enabled: false
+# Enable the snmp role
+snmp_enabled: true
+
+# Enable and start the snmp service
+snmp_service_enabled: true
 
 #
 # Agent Settings

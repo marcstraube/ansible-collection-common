@@ -14,10 +14,10 @@
   ansible.builtin.package:
     name: '{{ __apparmor_extra_profiles_package }}'
     state: present
-  when: apparmor_extra_profiles | bool
+  when: apparmor_extra_profiles_enabled | bool
 
 - name: Install | apparmor-notify
   ansible.builtin.package:
     name: '{{ __apparmor_notify_package }}'
     state: present
-  when: apparmor_notify_package | bool
+  when: apparmor_notify_enabled | bool

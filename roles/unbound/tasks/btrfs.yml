@@ -1,5 +1,7 @@
 ---
-# NoCOW for data directory
+# BTRFS NoCOW for write-heavy directories.
+# Auto-detected: only runs on BTRFS filesystems.
+
 - name: BTRFS | Check data directory filesystem type
   ansible.builtin.command:
     cmd: stat -f -c %T /var/lib/unbound
@@ -10,7 +12,5 @@
 - name: BTRFS | Set NoCOW attribute on data directory
   ansible.builtin.command:
     cmd: chattr +C /var/lib/unbound
-  when:
-    - unbound_btrfs_enabled | bool
-    - __unbound_data_fstype.stdout | default('') == 'btrfs'
+  when: __unbound_data_fstype.stdout | default('') == 'btrfs'
   changed_when: false

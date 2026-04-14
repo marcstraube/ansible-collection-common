@@ -9,7 +9,7 @@
   ansible.builtin.package:
     name: '{{ __networkmanager_applet_packages }}'
     state: present
-  when: networkmanager_install_applet | default(false) | bool
+  when: networkmanager_applet_enabled | bool
 
 - name: Install | VPN plugins
   ansible.builtin.package:
@@ -22,7 +22,7 @@
     name: '{{ item.name }}'
     state: present
   loop:
-    - { name: curl, needed: "{{ networkmanager_configure_timezone }}" }
+    - { name: curl, needed: "{{ networkmanager_timezone_enabled }}" }
     - { name: cifs-utils, needed: "{{ networkmanager_smb_shares | length > 0 }}" }
     - { name: sshfs, needed: "{{ networkmanager_sshfs_shares | length > 0 }}" }
   when: item.needed | bool

@@ -16,11 +16,11 @@
     - "'config file already exists' not in __restic_init.stderr"
   when: restic_auto_init | bool
 
-- name: Service | Enable and start backup timers
-  ansible.builtin.systemd:
+- name: Service | Manage backup timers
+  ansible.builtin.systemd_service:
     name: 'restic-backup-{{ item.name }}.timer'
-    enabled: true
-    state: started
+    enabled: "{{ restic_timer_enabled | bool }}"
+    state: "{{ restic_timer_enabled | bool | ternary('started', 'stopped') }}"
   loop: '{{ restic_jobs }}'
   loop_control:
     label: '{{ item.name }}'

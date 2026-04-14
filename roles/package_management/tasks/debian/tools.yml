@@ -1,16 +1,16 @@
 ---
-- name: Tools | Install apt-file for command-not-found
-  ansible.builtin.apt:
-    name: apt-file
+- name: Tools | Install apt-file
+  ansible.builtin.package:
+    name: 'apt-file'
     state: present
-  when: apt_install_apt_file | bool
+  when: apt_apt_file_enabled | bool
   notify: 'apt-file installed'
 
 - name: Tools | Install needrestart
-  ansible.builtin.apt:
-    name: needrestart
+  ansible.builtin.package:
+    name: 'needrestart'
     state: present
-  when: apt_install_needrestart | bool
+  when: apt_needrestart_enabled | bool
 
 - name: Tools | Configure needrestart mode
   ansible.builtin.lineinfile:
@@ -20,16 +20,16 @@
     owner: root
     group: root
     mode: '0644'
-  when: apt_install_needrestart | bool
+  when: apt_needrestart_enabled | bool
 
-- name: Tools | Install debsums for package integrity checking
-  ansible.builtin.apt:
-    name: debsums
+- name: Tools | Install debsums
+  ansible.builtin.package:
+    name: 'debsums'
     state: present
-  when: apt_install_debsums | bool
+  when: apt_debsums_enabled | bool
 
 - name: Tools | Install debian-goodies
-  ansible.builtin.apt:
-    name: debian-goodies
+  ansible.builtin.package:
+    name: 'debian-goodies'
     state: present
-  when: apt_install_debian_goodies | bool
+  when: apt_debian_goodies_enabled | bool

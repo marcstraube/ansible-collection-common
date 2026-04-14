@@ -2,21 +2,29 @@
 - name: Main | Import groups tasks
   ansible.builtin.import_tasks: groups.yml
   when: users_enabled | bool
-  tags: [users, users:groups]
+  tags:
+    - users
+    - users:groups
 
 - name: Main | Import users tasks
   ansible.builtin.import_tasks: users.yml
   when: users_enabled | bool
-  tags: [users, users:users]
+  tags:
+    - users
+    - users:users
 
 - name: Main | Import SSH keys tasks
   ansible.builtin.import_tasks: ssh_keys.yml
   when: users_enabled | bool
-  tags: [users, users:ssh-keys]
+  tags:
+    - users
+    - users:ssh-keys
 
-- name: Main | Import profile tasks
+- name: Main | Import profile images tasks
   ansible.builtin.import_tasks: profile_images.yml
   when:
     - users_enabled | bool
     - users_profile_images_enabled | bool
-  tags: [users, users:profile-images]
+  tags:
+    - users
+    - users:profile-images

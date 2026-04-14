@@ -196,7 +196,7 @@
     #
 
     - name: Verify | Check apparmor service is enabled
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: apparmor.service
       register: __verify_apparmor_service
       failed_when: __verify_apparmor_service.status.UnitFileState != 'enabled'
@@ -244,7 +244,7 @@
         - __verify_aa_status.rc == 0
 
     - name: Verify | Check apparmor service is running (Debian)
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: apparmor.service
       register: __verify_apparmor_running
       failed_when: __verify_apparmor_running.status.ActiveState != 'active'

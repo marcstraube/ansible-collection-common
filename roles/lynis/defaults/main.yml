@@ -11,6 +11,7 @@ lynis_enabled: true
 #
 
 # Installation method: 'package' (OS package manager) or 'git' (upstream repo)
+# EL 10 requires 'git' — lynis is not available in EPEL 10
 lynis_install_method: 'package'
 
 # Git repository URL (only used when lynis_install_method: 'git')
@@ -23,7 +24,7 @@ lynis_install_dir: '/usr/local/lynis'
 lynis_version: 'master'
 
 #
-# Profile Configuration (custom.prf)
+# Profile Configuration
 #
 
 # Machine role: 'personal', 'workstation', or 'server'
@@ -103,14 +104,14 @@ lynis_upload_results: false
 # Custom Tests
 #
 
-# Directory for custom test plugins
-lynis_custom_tests_dir: '/etc/lynis/custom'
-
 # Deploy and enable custom tests directory
 lynis_custom_tests_enabled: false
 
+# Directory for custom test plugins
+lynis_custom_tests_dir: '/etc/lynis/custom'
+
 #
-# Scheduled Audits (systemd timer)
+# Scheduled Audits
 #
 
 # Enable systemd timer for scheduled audits
@@ -121,10 +122,3 @@ lynis_timer_oncalendar: 'daily'
 
 # Randomized delay to avoid load spikes on multiple hosts
 lynis_timer_randomized_delay: '1h'
-
-#
-# BTRFS
-#
-
-# Set NoCOW attribute on report directory (prevents CoW overhead on BTRFS)
-lynis_btrfs_nocow: true

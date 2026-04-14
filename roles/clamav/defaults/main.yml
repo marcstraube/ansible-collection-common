@@ -1,19 +1,10 @@
 ---
 #
-# Service Control
+# Role Control
 #
 
-# Enable the entire clamav role
+# Enable the clamav role
 clamav_enabled: true
-
-# Enable the clamd scanning daemon
-clamav_daemon_enabled: true
-
-# Enable the freshclam signature update service
-clamav_freshclam_enabled: true
-
-# Enable the clamav-milter mail filter (for Postfix integration)
-clamav_milter_enabled: false
 
 #
 # Process / Privileges
@@ -89,6 +80,9 @@ clamav_max_rechwp3: 16
 #
 # Daemon Settings
 #
+
+# Enable and start the clamd scanning daemon
+clamav_daemon_enabled: true
 
 # Maximum number of concurrent scanning threads (clamd: MaxThreads)
 clamav_max_threads: 10
@@ -269,6 +263,9 @@ clamav_bytecode_mode: 'Auto'
 # Freshclam Settings
 #
 
+# Enable and start the freshclam signature update service
+clamav_freshclam_enabled: true
+
 # Number of signature checks per day (freshclam: Checks)
 clamav_freshclam_checks_per_day: 12
 
@@ -278,7 +275,7 @@ clamav_freshclam_database_mirror: 'database.clamav.net'
 # Private mirror URL, used instead of public mirror if set (freshclam: PrivateMirror)
 clamav_freshclam_private_mirror: ''
 
-# List of extra database URLs to download (freshclam: ExtraDatabase)
+# List of extra database URLs to download (freshclam: DatabaseCustomURL)
 clamav_freshclam_extra_databases: []
 # Example for unofficial signatures:
 #   - 'http://www.rfxn.com/downloads/rfxn.ndb'
@@ -318,7 +315,6 @@ clamav_freshclam_http_proxy_password: '{{ vault_clamav_freshclam_http_proxy_pass
 #
 
 # clamd log file path (clamd: LogFile)
-
 clamav_log_file: '/var/log/clamav/clamd.log'
 
 # Maximum log file size before rotation, 0 = unlimited (clamd: LogFileMaxSize)
@@ -361,7 +357,7 @@ clamav_database_directory: '/var/lib/clamav'
 # Only load official ClamAV databases (clamd: OfficialDatabaseOnly)
 clamav_official_database_only: false
 
-# List of additional database URLs (clamd: DatabaseCustomURL)
+# List of additional database URLs (freshclam: DatabaseCustomURL)
 clamav_database_custom_url: []
 # Example:
 #   - 'http://myserver.com/sigs/custom.ndb'
@@ -454,6 +450,9 @@ clamav_stats_timeout: 10
 # Milter (for direct Postfix integration without rspamd)
 #
 
+# Enable and start the clamav-milter mail filter (for Postfix integration)
+clamav_milter_enabled: false
+
 # Unix socket path for clamav-milter (milter: MilterSocket)
 clamav_milter_socket: '/run/clamav/clamav-milter.sock'
 
@@ -498,10 +497,16 @@ clamav_milter_whitelist_hosts: []
 #
 
 # Add postfix user to clamav group for socket access
-clamav_postfix_integration: false
+clamav_postfix_integration_enabled: false
+
+# DEPRECATED: Use clamav_postfix_integration_enabled instead (removed in v2.0.0)
+# clamav_postfix_integration: {{ clamav_postfix_integration_enabled }}
 
 # Ensure clamd socket is accessible by rspamd
-clamav_rspamd_integration: false
+clamav_rspamd_integration_enabled: false
+
+# DEPRECATED: Use clamav_rspamd_integration_enabled instead (removed in v2.0.0)
+# clamav_rspamd_integration: {{ clamav_rspamd_integration_enabled }}
 
 #
 # Firewall (firewalld integration)
