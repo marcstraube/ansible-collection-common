@@ -72,17 +72,22 @@ jobs:
         run: yamllint -c .yamllint .
 
   # =============================================================================
-  # MOLECULE TESTS
+  # MOLECULE FORWARD-COMPATIBILITY (ansible-core 2.20, representative subset)
+  # Tests a diverse subset of roles on latest ansible-core to catch
+  # deprecations and breaking changes early.
   # =============================================================================
-  molecule-smoke:
-    name: Molecule Smoke Test (ansible-${{ matrix.ansible }})
+  molecule-compat:
+    name: Compat ${{ matrix.role }} (ansible-2.20)
     runs-on: ubuntu-latest
     needs: [lint, markdown-lint, yaml-lint]
     strategy:
       fail-fast: false
       matrix:
-        ansible:
-          - '2.17'
+        include:
+          - { role: chrony, platform: chrony-archlinux }
+          - { role: package_management, platform: package-management-archlinux }
+          - { role: openssh, platform: openssh-archlinux }
+          - { role: fail2ban, platform: fail2ban-archlinux }
 
     steps:
       - name: Checkout code
@@ -95,13 +100,20 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install "ansible-core~=${{ matrix.ansible }}.0" \
+          pip install "ansible-core~=2.20.0" \
                       molecule \
                       molecule-plugins[podman] \
+                      passlib
 
-      - name: Run Molecule smoke test
+      - name: Install collection dependencies
+        run: |
+          ansible-galaxy collection install community.general community.crypto ansible.posix kewlfft.aur containers.podman
+
+      - name: Run Molecule test
+        working-directory: roles/${{ matrix.role }}
         run: molecule test
         env:
+          MOLECULE_PLATFORM_NAME: ${{ matrix.platform }}
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
 
