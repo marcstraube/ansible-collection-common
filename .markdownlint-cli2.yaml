@@ -1,0 +1,5 @@
+---
+config:
+  extends: .markdownlint.yml
+ignores:
+  - "CHANGELOG.md"
