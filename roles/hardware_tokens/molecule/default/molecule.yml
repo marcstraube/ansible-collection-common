@@ -65,13 +65,13 @@ provisioner:
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/hardware-tokens-rocky-10/virtualbox/private_key
     group_vars:
-      all:
+      test_hosts:
         ansible_connection: ssh
         ansible_user: vagrant
         ansible_become: true
         ansible_host: 127.0.0.1
         ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-
+      all:
         #
         # Role Configuration for Testing
         #

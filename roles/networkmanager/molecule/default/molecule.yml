@@ -215,14 +215,14 @@ provisioner:
         test_networkmanager_sshfs_shares: []
 
     group_vars:
-      all:
+      test_hosts:
         ansible_connection: ssh
         ansible_user: vagrant
         ansible_become: true
         ansible_host: 127.0.0.1
         ansible_ssh_common_args: >-
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-
+      all:
         # Shared test configuration (all platforms)
         test_networkmanager_unmanaged_devices:
           - mac: 00:11:22:33:44:55

@@ -45,13 +45,14 @@ provisioner:
           {{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY')
           }}/.vagrant/machines/apparmor-debian-trixie/virtualbox/private_key
     group_vars:
-      all:
+      test_hosts:
         ansible_connection: ssh
         ansible_user: vagrant
         ansible_become: true
         ansible_host: 127.0.0.1
-        ansible_python_interpreter: /usr/bin/python3
         ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+      all:
+        ansible_python_interpreter: /usr/bin/python3
 
         # Centralized test configuration variables
         apparmor_enabled: true
