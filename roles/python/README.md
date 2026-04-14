@@ -19,12 +19,12 @@ modern version at `/opt/pipx-bootstrap/bin/pipx`.
 
 ## Supported Platforms
 
-| Platform                   | Notes                                            |
-|----------------------------|--------------------------------------------------|
-| Arch Linux                 |                                                  |
-| Debian Trixie              |                                                  |
-| EL 9 (Rocky, Alma, RHEL)  | pipx via bootstrap venv (`/opt/pipx-bootstrap`)  |
-| EL 10 (Rocky, Alma, RHEL) |                                                  |
+| Platform                    | Notes                                            |
+|-----------------------------|--------------------------------------------------|
+| Arch Linux                  |                                                  |
+| Debian Trixie               |                                                  |
+| EL 9 (Rocky, Alma, RHEL)    | pipx via bootstrap venv (`/opt/pipx-bootstrap`)  |
+| EL 10 (Rocky, Alma, RHEL)   |                                                  |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
@@ -40,10 +40,10 @@ overrides if needed.
 
 ### Python Settings
 
-| Variable                | Default | Description                                 |
-|-------------------------|---------|---------------------------------------------|
+| Variable                | Default | Description                                       |
+|-------------------------|---------|---------------------------------------------------|
 | `python_pipx_enabled`   | `true`  | Enable pipx for user-level Python tool management |
-| `python_extra_packages` | `[]`    | Additional OS packages to install           |
+| `python_extra_packages` | `[]`    | Additional OS packages to install                 |
 
 ## Tags
 

@@ -16,12 +16,12 @@ IP forwarding via sysctl, firewalld integration, and systemd service management.
 
 ## Supported Platforms
 
-| Platform                  | Notes |
-|---------------------------|-------|
-| Arch Linux                |       |
-| Debian Trixie             |       |
-| EL 9 (Rocky, Alma, RHEL)  |       |
-| EL 10 (Rocky, Alma, RHEL) |       |
+| Platform                   | Notes |
+|----------------------------|-------|
+| Arch Linux                 |       |
+| Debian Trixie              |       |
+| EL 9 (Rocky, Alma, RHEL)   |       |
+| EL 10 (Rocky, Alma, RHEL)  |       |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars

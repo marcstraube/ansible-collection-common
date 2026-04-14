@@ -14,8 +14,8 @@ user management, editors, and more.
 
 - Arch Linux (rolling)
 - Debian Trixie (13)
-- Rocky Linux 9
-- Rocky Linux 10
+- EL 9 (Rocky, Alma, RHEL)
+- EL 10 (Rocky, Alma, RHEL)
 
 ## Requirements
 

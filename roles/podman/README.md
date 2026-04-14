@@ -9,12 +9,12 @@ Install and configure Podman container runtime with rootless support and Docker 
 
 ## Supported Platforms
 
-| Platform                   | Notes |
-|----------------------------|-------|
-| Arch Linux                 |       |
-| Debian Trixie              |       |
-| EL 9 (Rocky, Alma, RHEL)  |       |
-| EL 10 (Rocky, Alma, RHEL) |       |
+| Platform                    | Notes |
+|-----------------------------|-------|
+| Arch Linux                  |       |
+| Debian Trixie               |       |
+| EL 9 (Rocky, Alma, RHEL)    |       |
+| EL 10 (Rocky, Alma, RHEL)   |       |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
@@ -40,10 +40,10 @@ overrides if needed.
 
 ### Docker Compatibility
 
-| Variable                              | Default | Description                                |
-|---------------------------------------|---------|--------------------------------------------|
-| `podman_docker_alias_enabled`         | `true`  | Enable docker/docker-compose shell aliases |
-| `podman_docker_socket_symlink_enabled` | `true`  | Enable docker.sock symlink                |
+| Variable                                 | Default | Description                                |
+|------------------------------------------|---------|--------------------------------------------|
+| `podman_docker_alias_enabled`            | `true`  | Enable docker/docker-compose shell aliases |
+| `podman_docker_socket_symlink_enabled`   | `true`  | Enable docker.sock symlink                 |
 
 ### Rootless Configuration
 
@@ -56,7 +56,7 @@ overrides if needed.
 
 | Variable                    | Default                          | Description                          |
 |-----------------------------|----------------------------------|--------------------------------------|
-| `podman_registries_search`  | `[docker.io, quay.io, ghcr.io]` | Unqualified search registries        |
+| `podman_registries_search`  | `[docker.io, quay.io, ghcr.io]`  | Unqualified search registries        |
 | `podman_short_name_mode`    | `permissive`                     | Short-name resolution mode           |
 | `podman_registries`         | `[]`                             | Registry configurations with mirrors |
 | `podman_registries_blocked` | `[]`                             | Blocked registries                   |
@@ -104,13 +104,13 @@ overrides if needed.
 
 ## Tags
 
-| Tag                | Scope                         |
-|--------------------|-------------------------------|
-| `podman`           | All podman tasks              |
+| Tag                | Scope                          |
+|--------------------|--------------------------------|
+| `podman`           | All podman tasks               |
 | `podman:install`   | Package installation and BTRFS |
-| `podman:configure` | Configuration files           |
-| `podman:rootless`  | Rootless user setup           |
-| `podman:service`   | Systemd services and timers   |
+| `podman:configure` | Configuration files            |
+| `podman:rootless`  | Rootless user setup            |
+| `podman:service`   | Systemd services and timers    |
 
 ## Example Playbook
 

@@ -23,8 +23,8 @@ use `auditctl --signal` for stop/reload operations.
 |----------------------------|-------|
 | Arch Linux                 |       |
 | Debian Trixie              |       |
-| EL 9 (Rocky, Alma, RHEL)  |       |
-| EL 10 (Rocky, Alma, RHEL) |       |
+| EL 9 (Rocky, Alma, RHEL)   |       |
+| EL 10 (Rocky, Alma, RHEL)  |       |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
@@ -156,6 +156,7 @@ audit logs.
 | `auditd_syslog_priority`       | `LOG_INFO`   | Syslog priority      |
 
 **Deprecated variables** (removed in v2.0.0):
+
 - `auditd_remote_logging` -- use `auditd_remote_logging_enabled`
 - `auditd_plugin_syslog` -- use `auditd_plugin_syslog_enabled`
 

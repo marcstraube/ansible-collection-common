@@ -20,11 +20,11 @@ All platforms ship rkhunter 1.4.6 (final upstream release).
 
 ## Supported Platforms
 
-| Platform                 | Notes                    |
-|--------------------------|--------------------------|
-| Arch Linux               |                          |
-| Debian Trixie            |                          |
-| EL 9 (Rocky, Alma, RHEL) | Requires EPEL repository |
+| Platform                  | Notes                    |
+|---------------------------|--------------------------|
+| Arch Linux                |                          |
+| Debian Trixie             |                          |
+| EL 9 (Rocky, Alma, RHEL)  | Requires EPEL repository |
 
 **Note:** Rocky Linux 10 / EL 10 is not supported -- rkhunter is not available
 in EPEL 10.
@@ -121,12 +121,12 @@ overrides if needed.
 
 ## Tags
 
-| Tag                  | Scope                    |
-|----------------------|--------------------------|
-| `rkhunter`           | All role tasks           |
+| Tag                  | Scope                        |
+|----------------------|------------------------------|
+| `rkhunter`           | All role tasks               |
 | `rkhunter:install`   | Package installation + BTRFS |
 | `rkhunter:configure` | Configuration                |
-| `rkhunter:service`   | Systemd timer management |
+| `rkhunter:service`   | Systemd timer management     |
 
 ## Example Playbook
 

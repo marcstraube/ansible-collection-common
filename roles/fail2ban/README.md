@@ -17,12 +17,12 @@ and optional AppArmor confinement.
 
 ## Supported Platforms
 
-| Platform                  | Notes                            |
-|---------------------------|----------------------------------|
-| Arch Linux                | Ban action defaults to firewalld |
-| Debian Trixie             | Ban action defaults to nftables  |
-| EL 9 (Rocky, Alma, RHEL)  | Ban action defaults to firewalld |
-| EL 10 (Rocky, Alma, RHEL) | Ban action defaults to firewalld |
+| Platform                   | Notes                            |
+|----------------------------|----------------------------------|
+| Arch Linux                 | Ban action defaults to firewalld |
+| Debian Trixie              | Ban action defaults to nftables  |
+| EL 9 (Rocky, Alma, RHEL)   | Ban action defaults to firewalld |
+| EL 10 (Rocky, Alma, RHEL)  | Ban action defaults to firewalld |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
@@ -49,13 +49,13 @@ overrides if needed.
 
 ### Progressive Ban Times
 
-| Variable                        | Default         | Description                  |
-|---------------------------------|-----------------|------------------------------|
-| `fail2ban_bantime_increment_enabled` | `false`    | Enable progressive ban times |
-| `fail2ban_bantime_factor`       | `2`             | Ban time multiplier          |
-| `fail2ban_bantime_formula`      | *(exponential)* | Ban time calculation formula |
-| `fail2ban_bantime_maxtime`      | `5w`            | Maximum ban duration         |
-| `fail2ban_bantime_overalljails_enabled` | `false` | Count bans across all jails  |
+| Variable                                | Default         | Description                  |
+|-----------------------------------------|-----------------|------------------------------|
+| `fail2ban_bantime_increment_enabled`    | `false`         | Enable progressive ban times |
+| `fail2ban_bantime_factor`               | `2`             | Ban time multiplier          |
+| `fail2ban_bantime_formula`              | *(exponential)* | Ban time calculation formula |
+| `fail2ban_bantime_maxtime`              | `5w`            | Maximum ban duration         |
+| `fail2ban_bantime_overalljails_enabled` | `false`         | Count bans across all jails  |
 
 ### Ban Action
 

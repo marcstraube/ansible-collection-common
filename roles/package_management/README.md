@@ -37,21 +37,21 @@ overrides if needed.
 
 ### Arch Linux - Pacman
 
-| Variable                     | Default                     | Description                           |
-|------------------------------|-----------------------------|---------------------------------------|
-| `pacman_parallel_downloads`  | `5`                         | Number of parallel downloads (1-10)   |
-| `pacman_color`               | `true`                      | Enable color output                   |
-| `pacman_verbose_pkg_lists`   | `true`                      | Verbose package lists during upgrades |
-| `pacman_check_space`         | `true`                      | Check available disk space            |
-| `pacman_ilovecandy`          | `true`                      | Animated pacman easter egg            |
-| `pacman_sig_level`           | `Required DatabaseOptional` | Package signature verification        |
-| `pacman_hold_packages`       | `[pacman, glibc]`           | Packages that won't be removed        |
-| `pacman_ignore_packages`     | `[]`                        | Packages that won't be upgraded       |
-| `pacman_testing_repos_enabled` | `false`                   | Enable testing repositories           |
-| `pacman_multilib_enabled`    | `false`                     | Enable 32-bit multilib support        |
-| `pacman_custom_repositories` | `[]`                        | Custom repository definitions         |
-| `pacman_download_user`       | `alpm`                      | Sandboxed download user               |
-| `pacman_hook_dir`            | `/etc/pacman.d/hooks`       | Custom hook directory                 |
+| Variable                       | Default                     | Description                           |
+|--------------------------------|-----------------------------|---------------------------------------|
+| `pacman_parallel_downloads`    | `5`                         | Number of parallel downloads (1-10)   |
+| `pacman_color`                 | `true`                      | Enable color output                   |
+| `pacman_verbose_pkg_lists`     | `true`                      | Verbose package lists during upgrades |
+| `pacman_check_space`           | `true`                      | Check available disk space            |
+| `pacman_ilovecandy`            | `true`                      | Animated pacman easter egg            |
+| `pacman_sig_level`             | `Required DatabaseOptional` | Package signature verification        |
+| `pacman_hold_packages`         | `[pacman, glibc]`           | Packages that won't be removed        |
+| `pacman_ignore_packages`       | `[]`                        | Packages that won't be upgraded       |
+| `pacman_testing_repos_enabled` | `false`                     | Enable testing repositories           |
+| `pacman_multilib_enabled`      | `false`                     | Enable 32-bit multilib support        |
+| `pacman_custom_repositories`   | `[]`                        | Custom repository definitions         |
+| `pacman_download_user`         | `alpm`                      | Sandboxed download user               |
+| `pacman_hook_dir`              | `/etc/pacman.d/hooks`       | Custom hook directory                 |
 
 ### Arch Linux - Reflector
 
@@ -63,17 +63,17 @@ overrides if needed.
 
 ### Arch Linux - Makepkg
 
-| Variable           | Default      | Description                                     |
-|--------------------|--------------|-------------------------------------------------|
-| `makepkg_packager` | `''`         | Packager name/email for built packages          |
-| `makepkg_cflags`   | `''`         | Custom C compiler flags (empty = Arch defaults) |
-| `makepkg_ltoflags` | `-flto=auto` | LTO flags                                       |
-| `makepkg_ccache_enabled`  | `false` | Enable ccache                                |
-| `makepkg_distcc_enabled`  | `false` | Enable distcc                                |
-| `makepkg_check`    | `true`       | Run check() in PKGBUILDs                        |
-| `makepkg_sign`     | `false`      | Sign built packages                             |
-| `makepkg_debug`    | `true`       | Build with debug symbols                        |
-| `makepkg_lto`      | `true`       | Build with LTO                                  |
+| Variable                 | Default      | Description                                     |
+|--------------------------|--------------|-------------------------------------------------|
+| `makepkg_packager`       | `''`         | Packager name/email for built packages          |
+| `makepkg_cflags`         | `''`         | Custom C compiler flags (empty = Arch defaults) |
+| `makepkg_ltoflags`       | `-flto=auto` | LTO flags                                       |
+| `makepkg_ccache_enabled` | `false`      | Enable ccache                                   |
+| `makepkg_distcc_enabled` | `false`      | Enable distcc                                   |
+| `makepkg_check`          | `true`       | Run check() in PKGBUILDs                        |
+| `makepkg_sign`           | `false`      | Sign built packages                             |
+| `makepkg_debug`          | `true`       | Build with debug symbols                        |
+| `makepkg_lto`            | `true`       | Build with LTO                                  |
 
 ### Arch Linux - Paru (AUR Helper)
 
@@ -111,33 +111,33 @@ overrides if needed.
 
 ### Debian/Ubuntu - APT
 
-| Variable                  | Default | Description                  |
-|---------------------------|---------|------------------------------|
-| `apt_install_recommends`  | `true`  | Install recommended packages |
-| `apt_install_suggests`    | `false` | Install suggested packages   |
-| `apt_assume_yes`          | `true`  | Non-interactive mode         |
-| `apt_allow_downgrades`    | `true`  | Allow package downgrades     |
-| `apt_languages`           | `none`  | Translation downloads        |
-| `apt_periodic_enabled`    | `true`  | Enable periodic updates      |
-| `apt_periodic_update`     | `1`     | Update interval (days)       |
-| `apt_periodic_autoclean`  | `7`     | Auto-clean interval (days)   |
-| `apt_preferences`         | `[]`    | Package pinning rules        |
-| `apt_unattended_upgrades_enabled` | `false` | Enable unattended-upgrades |
-| `apt_apt_file_enabled`    | `true`  | Install apt-file             |
-| `apt_needrestart_enabled` | `true`  | Install needrestart          |
-| `apt_debsums_enabled`     | `false` | Install debsums              |
+| Variable                          | Default | Description                  |
+|-----------------------------------|---------|------------------------------|
+| `apt_install_recommends`          | `true`  | Install recommended packages |
+| `apt_install_suggests`            | `false` | Install suggested packages   |
+| `apt_assume_yes`                  | `true`  | Non-interactive mode         |
+| `apt_allow_downgrades`            | `true`  | Allow package downgrades     |
+| `apt_languages`                   | `none`  | Translation downloads        |
+| `apt_periodic_enabled`            | `true`  | Enable periodic updates      |
+| `apt_periodic_update`             | `1`     | Update interval (days)       |
+| `apt_periodic_autoclean`          | `7`     | Auto-clean interval (days)   |
+| `apt_preferences`                 | `[]`    | Package pinning rules        |
+| `apt_unattended_upgrades_enabled` | `false` | Enable unattended-upgrades   |
+| `apt_apt_file_enabled`            | `true`  | Install apt-file             |
+| `apt_needrestart_enabled`         | `true`  | Install needrestart          |
+| `apt_debsums_enabled`             | `false` | Install debsums              |
 
 ### Debian/Ubuntu - Repositories
 
-| Variable                | Default | Description                   |
-|-------------------------|---------|-------------------------------|
-| `apt_backports_enabled` | `false` | Enable Debian Backports       |
-| `apt_docker_repo_enabled`     | `false` | Docker CE repository        |
-| `apt_postgresql_repo_enabled` | `false` | PostgreSQL PGDG repository  |
-| `apt_php_sury_repo_enabled`   | `false` | PHP Sury repository         |
-| `apt_grafana_repo_enabled`    | `false` | Grafana repository          |
-| `apt_kubernetes_repo_enabled` | `false` | Kubernetes repository       |
-| `apt_custom_repos`      | `[]`    | Custom repository definitions |
+| Variable                          | Default | Description                   |
+|-----------------------------------|---------|-------------------------------|
+| `apt_backports_enabled`           | `false` | Enable Debian Backports       |
+| `apt_docker_repo_enabled`         | `false` | Docker CE repository          |
+| `apt_postgresql_repo_enabled`     | `false` | PostgreSQL PGDG repository    |
+| `apt_php_sury_repo_enabled`       | `false` | PHP Sury repository           |
+| `apt_grafana_repo_enabled`        | `false` | Grafana repository            |
+| `apt_kubernetes_repo_enabled`     | `false` | Kubernetes repository         |
+| `apt_custom_repos`                | `[]`    | Custom repository definitions |
 
 ### RHEL/Rocky - DNF
 
@@ -156,17 +156,17 @@ overrides if needed.
 
 ### RHEL/Rocky - Repositories
 
-| Variable                 | Default | Description                                 |
-|--------------------------|---------|---------------------------------------------|
-| `dnf_epel_enabled`       | `true`  | Enable EPEL                                 |
-| `dnf_powertools_enabled` | `false` | Enable CRB/PowerTools                       |
-| `dnf_remi_enabled`       | `false` | Enable Remi (PHP module streams, dnf4 only) |
-| `dnf_rpmfusion_free_enabled`    | `false` | Enable RPM Fusion Free               |
-| `dnf_rpmfusion_nonfree_enabled` | `false` | Enable RPM Fusion Nonfree            |
-| `dnf_elrepo_enabled`     | `false` | Enable ELRepo                               |
-| `dnf_docker_repo_enabled`       | `false` | Docker CE repository                 |
-| `dnf_copr_repos`         | `[]`    | COPR repositories                           |
-| `dnf_custom_repos`       | `[]`    | Custom repository definitions               |
+| Variable                          | Default | Description                                 |
+|-----------------------------------|---------|---------------------------------------------|
+| `dnf_epel_enabled`                | `true`  | Enable EPEL                                 |
+| `dnf_powertools_enabled`          | `false` | Enable CRB/PowerTools                       |
+| `dnf_remi_enabled`                | `false` | Enable Remi (PHP module streams, dnf4 only) |
+| `dnf_rpmfusion_free_enabled`      | `false` | Enable RPM Fusion Free                      |
+| `dnf_rpmfusion_nonfree_enabled`   | `false` | Enable RPM Fusion Nonfree                   |
+| `dnf_elrepo_enabled`              | `false` | Enable ELRepo                               |
+| `dnf_docker_repo_enabled`         | `false` | Docker CE repository                        |
+| `dnf_copr_repos`                  | `[]`    | COPR repositories                           |
+| `dnf_custom_repos`                | `[]`    | Custom repository definitions               |
 
 ## Tags
 

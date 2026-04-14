@@ -23,8 +23,8 @@ directly or via the `logrotate_configs` list variable.
 |----------------------------|-------|
 | Arch Linux                 |       |
 | Debian Trixie              |       |
-| EL 9 (Rocky, Alma, RHEL)  |       |
-| EL 10 (Rocky, Alma, RHEL) |       |
+| EL 9 (Rocky, Alma, RHEL)   |       |
+| EL 10 (Rocky, Alma, RHEL)  |       |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars

@@ -18,12 +18,12 @@ Includes systemd service hardening and BTRFS NoCOW for log directory.
 
 ## Supported Platforms
 
-| Platform                   | Notes                      |
-|----------------------------|----------------------------|
-| Arch Linux                 | `restic` from community    |
-| Debian Trixie              | `restic` from apt          |
-| EL 9 (Rocky, Alma, RHEL)  | `restic` from EPEL         |
-| EL 10 (Rocky, Alma, RHEL) | `restic` from EPEL         |
+| Platform                   | Notes                   |
+|----------------------------|-------------------------|
+| Arch Linux                 | `restic` from community |
+| Debian Trixie              | `restic` from apt       |
+| EL 9 (Rocky, Alma, RHEL)   | `restic` from EPEL      |
+| EL 10 (Rocky, Alma, RHEL)  | `restic` from EPEL      |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
@@ -93,7 +93,7 @@ restic_jobs:
 | `restic_log_to_file`         | `false`             | Log to file instead of journald          |
 | `restic_log_dir`             | `'/var/log/restic'` | Log directory (when log_to_file enabled) |
 | `restic_default_retention`   | see defaults        | Default retention policy                 |
-| `restic_default_schedule`    | `'*-*-* 02:00:00'` | Default timer schedule                   |
+| `restic_default_schedule`    | `'*-*-* 02:00:00'`  | Default timer schedule                   |
 | `restic_auto_init`           | `true`              | Auto-initialize repositories             |
 | `restic_run_after_configure` | `false`             | Run backup after configuration           |
 | `restic_nice_level`          | `10`                | Process priority (0-19)                  |
@@ -101,13 +101,13 @@ restic_jobs:
 
 ### Monitoring
 
-| Variable                     | Default               | Description                     |
-|------------------------------|-----------------------|---------------------------------|
-| `restic_healthcheck_enabled` | `false`               | Enable healthcheck pings        |
-| `restic_healthcheck_url`     | `''`                  | Healthcheck URL                 |
-| `restic_email_on_failure`    | `false`               | Enable email on failure         |
-| `restic_email_recipient`     | `''`                  | Email recipient                 |
-| `restic_email_sender`        | `'restic@{{ fqdn }}'` | Email sender address            |
+| Variable                     | Default                | Description                    |
+|------------------------------|------------------------|--------------------------------|
+| `restic_healthcheck_enabled` | `false`                | Enable healthcheck pings       |
+| `restic_healthcheck_url`     | `''`                   | Healthcheck URL                |
+| `restic_email_on_failure`    | `false`                | Enable email on failure        |
+| `restic_email_recipient`     | `''`                   | Email recipient                |
+| `restic_email_sender`        | `'restic@{{ fqdn }}'`  | Email sender address           |
 
 ## Tags
 

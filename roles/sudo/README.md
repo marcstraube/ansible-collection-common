@@ -15,12 +15,12 @@ configurations with optional NOPASSWD and command restrictions.
 
 ## Supported Platforms
 
-| Platform                  | Notes |
-|---------------------------|-------|
-| Arch Linux                |       |
-| Debian Trixie             |       |
-| EL 9 (Rocky, Alma, RHEL)  |       |
-| EL 10 (Rocky, Alma, RHEL) |       |
+| Platform                   | Notes |
+|----------------------------|-------|
+| Arch Linux                 |       |
+| Debian Trixie              |       |
+| EL 9 (Rocky, Alma, RHEL)   |       |
+| EL 10 (Rocky, Alma, RHEL)  |       |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
@@ -76,15 +76,15 @@ overrides if needed.
 
 ### Advanced
 
-| Variable                  | Default               | Description                      |
-|---------------------------|-----------------------|----------------------------------|
-| `sudo_mailto`             | `''`                  | Mail recipient for alerts        |
-| `sudo_mail_on`            | `[]`                  | Mail events list                 |
-| `sudo_editor`             | `'/usr/bin/nvim:...'` | Editor for visudo                |
-| `sudo_always_set_home`    | `true`                | Set HOME to target user's home   |
-| `sudo_extra_defaults`     | `[]`                  | Extra raw sudoers defaults       |
-| `sudo_purge_sudoers_d_enabled` | `false`          | Remove unmanaged sudoers.d files |
-| `sudo_keep_sudoers_files` | `['README']`          | Files to keep when purging       |
+| Variable                       | Default               | Description                      |
+|--------------------------------|-----------------------|----------------------------------|
+| `sudo_mailto`                  | `''`                  | Mail recipient for alerts        |
+| `sudo_mail_on`                 | `[]`                  | Mail events list                 |
+| `sudo_editor`                  | `'/usr/bin/nvim:...'` | Editor for visudo                |
+| `sudo_always_set_home`         | `true`                | Set HOME to target user's home   |
+| `sudo_extra_defaults`          | `[]`                  | Extra raw sudoers defaults       |
+| `sudo_purge_sudoers_d_enabled` | `false`               | Remove unmanaged sudoers.d files |
+| `sudo_keep_sudoers_files`      | `['README']`          | Files to keep when purging       |
 
 ## Tags
 
@@ -117,9 +117,9 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 ### Deprecated Variables (removed in v2.0.0)
 
-| Old Variable           | New Variable                 |
-|------------------------|------------------------------|
-| `sudo_wheel_group`     | `sudo_wheel_group_enabled`   |
+| Old Variable           | New Variable                   |
+|------------------------|--------------------------------|
+| `sudo_wheel_group`     | `sudo_wheel_group_enabled`     |
 | `sudo_purge_sudoers_d` | `sudo_purge_sudoers_d_enabled` |
 
 The old variable names still work as a fallback but will be removed in v2.0.0.

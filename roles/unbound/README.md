@@ -22,12 +22,12 @@ management.
 
 ## Supported Platforms
 
-| Platform                  | Notes |
-|---------------------------|-------|
-| Arch Linux                |       |
-| Debian Trixie             |       |
-| EL 9 (Rocky, Alma, RHEL)  |       |
-| EL 10 (Rocky, Alma, RHEL) |       |
+| Platform                   | Notes |
+|----------------------------|-------|
+| Arch Linux                 |       |
+| Debian Trixie              |       |
+| EL 9 (Rocky, Alma, RHEL)   |       |
+| EL 10 (Rocky, Alma, RHEL)  |       |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
@@ -46,18 +46,18 @@ See [`defaults/main.yml`](defaults/main.yml) for all variables with descriptions
 
 ### Key Variables
 
-| Variable                    | Default                | Description                            |
-|-----------------------------|------------------------|----------------------------------------|
-| `unbound_interfaces`        | `['127.0.0.1', '::1']` | Interfaces to listen on                |
-| `unbound_port`              | `53`                   | Listen port                            |
-| `unbound_dnssec_enabled`    | `true`                 | Enable DNSSEC validation               |
-| `unbound_tls_upstream`      | `true`                 | Configure TLS cert bundle for upstream |
-| `unbound_forward_zones`     | `[]`                   | List of forward zone definitions       |
-| `unbound_local_zones`       | `[]`                   | Local zone definitions                 |
-| `unbound_local_data`        | `[]`                   | Simple local A/AAAA records            |
-| `unbound_blocklist_enabled` | `false`                | Enable ad/tracker blocking             |
-| `unbound_root_hints_update_enabled` | `true`                 | Auto-update root hints weekly          |
-| `unbound_remote_control_enabled`    | `true`                 | Enable unbound-control socket          |
+| Variable                              | Default                 | Description                            |
+|---------------------------------------|-------------------------|----------------------------------------|
+| `unbound_interfaces`                  | `['127.0.0.1', '::1']`  | Interfaces to listen on                |
+| `unbound_port`                        | `53`                    | Listen port                            |
+| `unbound_dnssec_enabled`              | `true`                  | Enable DNSSEC validation               |
+| `unbound_tls_upstream`                | `true`                  | Configure TLS cert bundle for upstream |
+| `unbound_forward_zones`               | `[]`                    | List of forward zone definitions       |
+| `unbound_local_zones`                 | `[]`                    | Local zone definitions                 |
+| `unbound_local_data`                  | `[]`                    | Simple local A/AAAA records            |
+| `unbound_blocklist_enabled`           | `false`                 | Enable ad/tracker blocking             |
+| `unbound_root_hints_update_enabled`   | `true`                  | Auto-update root hints weekly          |
+| `unbound_remote_control_enabled`      | `true`                  | Enable unbound-control socket          |
 
 ### Firewall
 

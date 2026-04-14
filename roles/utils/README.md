@@ -16,12 +16,12 @@ in vars) are silently skipped.
 
 ## Supported Platforms
 
-| Platform                  | Notes         |
-|---------------------------|---------------|
-| Arch Linux                |               |
-| Debian Trixie             |               |
-| EL 9 (Rocky, Alma, RHEL)  | EPEL required |
-| EL 10 (Rocky, Alma, RHEL) | EPEL required |
+| Platform                   | Notes         |
+|----------------------------|---------------|
+| Arch Linux                 |               |
+| Debian Trixie              |               |
+| EL 9 (Rocky, Alma, RHEL)   | EPEL required |
+| EL 10 (Rocky, Alma, RHEL)  | EPEL required |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars

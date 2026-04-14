@@ -48,4 +48,3 @@
     mode: '0644'
   when: unbound_root_hints_update_enabled | bool
   notify: Reload unbound systemd units
-
