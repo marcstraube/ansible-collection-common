@@ -265,7 +265,7 @@ unbound_username: ''
 #
 
 # Enable firewalld integration for DNS port
-unbound_firewalld_enabled: false
+unbound_firewalld_enabled: true
 
 # Firewalld zone for service rules
 unbound_firewalld_zone: 'public'

@@ -129,7 +129,7 @@ avahi_nsswitch_hosts: >-
 #
 
 # Enable firewalld integration (add mDNS service)
-avahi_firewalld_enabled: false
+avahi_firewalld_enabled: true
 
 # firewalld zone to add the mDNS service to
 avahi_firewalld_zone: 'public'

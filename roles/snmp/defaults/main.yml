@@ -206,7 +206,7 @@ snmp_extra_config: []
 #
 
 # Enable firewalld rule for SNMP (UDP/TCP 161)
-snmp_firewalld_enabled: false
+snmp_firewalld_enabled: true
 
 # Firewalld zone for SNMP service
 snmp_firewalld_zone: 'public'
