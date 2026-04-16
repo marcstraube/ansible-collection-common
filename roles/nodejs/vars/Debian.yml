@@ -5,7 +5,6 @@ __nodejs_packages:
 __nodejs_nvm_packages: []
 
 __nodejs_prerequisite_packages:
-  - 'curl'
   - 'gnupg'
   - 'ca-certificates'
 

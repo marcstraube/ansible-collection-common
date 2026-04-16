@@ -37,10 +37,3 @@
         name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
       when: __prepare_packages[ansible_facts["os_family"]] | length > 0
-
-    # Replace curl-minimal with full curl (RedHat container images)
-    - name: Prepare | Replace curl-minimal with curl (RedHat)  # noqa: command-instead-of-module
-      ansible.builtin.command: dnf swap -y curl-minimal curl
-      changed_when: false
-      failed_when: false
-      when: ansible_facts['os_family'] == 'RedHat'

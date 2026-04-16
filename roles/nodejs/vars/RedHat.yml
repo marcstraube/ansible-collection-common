@@ -5,8 +5,7 @@ __nodejs_packages:
 
 __nodejs_nvm_packages: []
 
-__nodejs_prerequisite_packages:
-  - 'curl'
+__nodejs_prerequisite_packages: []
 
 __nodejs_nodesource_supported: true
 __nodejs_nodesource_key_url: 'https://rpm.nodesource.com/gpgkey/ns-operations-public.key'
