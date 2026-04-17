@@ -4,6 +4,11 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - base-devel
+
   tasks:
     - name: Prepare | Update package cache (Arch)
       community.general.pacman:
@@ -21,11 +26,11 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Prepare | Install base-devel (Arch)
+    - name: Prepare | Install container dependencies
       ansible.builtin.package:
-        name: base-devel
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
-      when: ansible_facts['os_family'] == 'Archlinux'
+      when: ansible_facts['os_family'] in __prepare_packages
 
     - name: Prepare | Create aur_builder user for AUR packages (Arch)
       ansible.builtin.user:

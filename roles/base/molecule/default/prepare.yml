@@ -4,6 +4,17 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Debian:
+        - systemd
+        - systemd-timesyncd
+        - locales
+        - dbus
+      RedHat:
+        - glibc-langpack-en
+        - glibc-locale-source
+
   tasks:
     - name: Prepare | Update package cache (Arch)
       community.general.pacman:
@@ -21,28 +32,16 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Prepare | Install systemd on Debian (minimal image)
-      ansible.builtin.apt:
-        name:
-          - systemd
-          - systemd-timesyncd
-          - locales
-          - dbus
+    - name: Prepare | Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
-      when: ansible_facts['os_family'] == 'Debian'
+      when: ansible_facts['os_family'] in __prepare_packages
 
-    - name: Prepare | Replace curl-minimal with curl on RedHat (Docker image conflict)
+    - name: Prepare | Replace curl-minimal with curl (RedHat Docker image conflict)
       ansible.builtin.dnf:
         name:
           - curl
         state: present
         allowerasing: true
-      when: ansible_facts['os_family'] == 'RedHat'
-
-    - name: Prepare | Install glibc-langpack-en on RedHat (minimal image)
-      ansible.builtin.dnf:
-        name:
-          - glibc-langpack-en
-          - glibc-locale-source
-        state: present
       when: ansible_facts['os_family'] == 'RedHat'

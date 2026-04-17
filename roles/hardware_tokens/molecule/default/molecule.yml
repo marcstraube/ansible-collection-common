@@ -1,12 +1,6 @@
 ---
 # Vagrant-based: needs real udev for hardware token rules
 
-dependency:
-  name: galaxy
-  options:
-    requirements-file: requirements.yml
-    ignore-errors: true
-
 driver:
   name: default
   options:
@@ -103,7 +97,6 @@ verifier:
 scenario:
   name: default
   test_sequence:
-    - dependency
     - destroy
     - syntax
     - create
