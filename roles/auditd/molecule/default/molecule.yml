@@ -1,10 +1,4 @@
 ---
-dependency:
-  name: galaxy
-  options:
-    requirements-file: requirements.yml
-    ignore-errors: true
-
 driver:
   name: default
   options:

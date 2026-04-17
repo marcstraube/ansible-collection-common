@@ -1,12 +1,6 @@
 ---
 # Vagrant-based: needs kernel modules (modprobe wireguard)
 
-dependency:
-  name: galaxy
-  options:
-    requirements-file: requirements.yml
-    ignore-errors: true
-
 driver:
   name: default
   options:
