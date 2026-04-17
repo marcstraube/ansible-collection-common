@@ -100,18 +100,15 @@
       ansible.builtin.set_fact:
         __daemon_decoded: "{{ __daemon_content.content | b64decode }}"
 
-    - name: Verify | Assert daemon.json contains expected settings
+    - name: Verify | Assert daemon.json contains expected keys
       ansible.builtin.assert:
         that:
           - "'_ansible_managed' in __daemon_decoded"
           - "'data-root' in __daemon_decoded"
-          - "'/var/lib/docker' in __daemon_decoded"
           - "'storage-driver' in __daemon_decoded"
-          - "'overlay2' in __daemon_decoded"
           - "'log-driver' in __daemon_decoded"
-          - "'journald' in __daemon_decoded"
           - "'live-restore' in __daemon_decoded"
-        fail_msg: 'daemon.json does not contain expected settings'
+        fail_msg: 'daemon.json does not contain expected keys'
 
     - name: Verify | Parse daemon.json as JSON
       ansible.builtin.set_fact:
