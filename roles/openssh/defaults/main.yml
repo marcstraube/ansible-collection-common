@@ -464,7 +464,7 @@ openssh_ssh_audit_enabled: true
 #
 
 # Enable firewalld integration
-openssh_firewalld_enabled: false
+openssh_firewalld_enabled: true
 
 # Firewalld zone for SSH
 openssh_firewalld_zone: 'public'
