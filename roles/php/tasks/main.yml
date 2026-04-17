@@ -1,0 +1,75 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - php
+
+- name: Main | Validate php_versions
+  ansible.builtin.assert:
+    that:
+      - php_versions | length > 0
+      - php_default_version in (php_versions | map(attribute='version') | list)
+    fail_msg: >-
+      php_versions must not be empty and php_default_version ('{{ php_default_version }}')
+      must be listed in php_versions
+  when: php_enabled | bool
+  tags:
+    - php
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks:
+    file: install.yml
+  when: php_enabled | bool
+  tags:
+    - php
+    - php:install
+
+- name: Main | Import composer tasks
+  ansible.builtin.import_tasks:
+    file: composer.yml
+  when:
+    - php_enabled | bool
+    - php_composer_enabled | bool
+  tags:
+    - php
+    - php:install
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks:
+    file: configure.yml
+  when: php_enabled | bool
+  tags:
+    - php
+    - php:configure
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks:
+    file: service.yml
+  when: php_enabled | bool
+  tags:
+    - php
+    - php:service
+
+- name: Main | Import default version tasks
+  ansible.builtin.import_tasks:
+    file: default_version.yml
+  when: php_enabled | bool
+  tags:
+    - php
+    - php:configure
+
+- name: Main | Import verify tasks
+  ansible.builtin.import_tasks:
+    file: verify.yml
+  when: php_enabled | bool
+  tags:
+    - php
+    - php:install

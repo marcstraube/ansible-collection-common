@@ -1,0 +1,20 @@
+---
+# Package name patterns (resolved at runtime via __php_ver set in tasks)
+__php_cli_package: 'php{{ __php_ver }}-cli'
+__php_fpm_package: 'php{{ __php_ver }}-fpm'
+__php_extension_prefix: 'php{{ __php_ver }}-'
+__php_fpm_service: 'php{{ __php_ver }}-fpm'
+
+# Debian uses update-alternatives for default PHP version
+__php_has_alternatives: true
+
+# Configuration paths (version-dependent, resolved via __php_ver)
+__php_conf_dirs:
+  - '/etc/php/{{ __php_ver }}/cli/conf.d'
+  - '/etc/php/{{ __php_ver }}/fpm/conf.d'
+__php_fpm_pool_dir: '/etc/php/{{ __php_ver }}/fpm/pool.d'
+__php_fpm_listen_default: '/run/php/php{{ __php_ver }}-fpm.sock'
+
+# FPM pool defaults
+__php_fpm_default_user: 'www-data'
+__php_fpm_default_group: 'www-data'

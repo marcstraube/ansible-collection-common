@@ -1,0 +1,14 @@
+---
+- name: Service | PHP-FPM services
+  ansible.builtin.include_tasks:
+    file: service_version.yml
+    apply:
+      tags:
+        - php
+        - php:service
+  loop: '{{ php_versions }}'
+  loop_control:
+    loop_var: __php_service_item
+  tags:
+    - php
+    - php:service

@@ -1,0 +1,41 @@
+---
+- name: Default Version | Set version facts
+  ansible.builtin.set_fact:
+    __php_default_ver: '{{ php_default_version }}'
+    __php_default_ver_compact: "{{ php_default_version | replace('.', '') }}"
+
+- name: Default Version | Set default PHP via update-alternatives (Debian)
+  community.general.alternatives:
+    name: php
+    path: '/usr/bin/php{{ __php_default_ver }}'
+  when: __php_has_alternatives | bool
+
+- name: Default Version | Set default PHP symlink (RedHat)
+  ansible.builtin.file:
+    src: '/usr/bin/php{{ __php_default_ver_compact }}'
+    dest: '/usr/local/bin/php'
+    state: link
+    force: true
+    owner: root
+    group: root
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Default Version | Set default PHP symlink (Arch AUR)
+  ansible.builtin.file:
+    src: '/usr/bin/php{{ __php_default_ver_compact }}'
+    dest: '/usr/local/bin/php'
+    state: link
+    force: true
+    owner: root
+    group: root
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_default_ver != (__php_arch_current_version | default(''))
+
+- name: Default Version | Remove stale default PHP symlink (Arch official)
+  ansible.builtin.file:
+    path: '/usr/local/bin/php'
+    state: absent
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_default_ver == (__php_arch_current_version | default(''))

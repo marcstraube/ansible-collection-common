@@ -1,0 +1,3 @@
+---
+# Composer package name (all OS families)
+__php_composer_package: 'composer'

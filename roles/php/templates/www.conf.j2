@@ -1,0 +1,63 @@
+{{ ansible_managed | comment(decoration='; ') }}
+
+; Pool name
+[www]
+
+; Unix user/group of processes
+user = {{ __php_pool.user | default(php_fpm_pool_user | default(__php_fpm_default_user, true)) }}
+group = {{ __php_pool.group | default(php_fpm_pool_group | default(__php_fpm_default_group, true)) }}
+
+; The address on which to accept FastCGI requests.
+listen = {{ __php_pool.listen | default(php_fpm_pool_listen | default(__php_effective_listen, true)) }}
+
+; Set permissions for unix socket
+listen.owner = {{ __php_pool.listen_owner | default(php_fpm_pool_listen_owner | default(__php_fpm_default_user, true)) }}
+listen.group = {{ __php_pool.listen_group | default(php_fpm_pool_listen_group | default(__php_fpm_default_group, true)) }}
+listen.mode = {{ __php_pool.listen_mode | default(php_fpm_pool_listen_mode) }}
+
+; Choose how the process manager will control the number of child processes.
+; Possible Values:
+;   static  - a fixed number (pm.max_children) of child processes
+;   dynamic - the number of child processes are set dynamically based on the
+;             following directives
+;   ondemand - no children are created at launch, children will be forked when
+;              new requests will connect
+pm = {{ __php_pool.pm | default(php_fpm_pool_pm) }}
+
+; The number of child processes to be created when pm is set to 'static' and the
+; maximum number of child processes when pm is set to 'dynamic' or 'ondemand'.
+pm.max_children = {{ __php_pool.pm_max_children | default(php_fpm_pool_pm_max_children) }}
+
+; The number of child processes created on startup.
+; Used only when pm is set to 'dynamic'.
+pm.start_servers = {{ __php_pool.pm_start_servers | default(php_fpm_pool_pm_start_servers) }}
+
+; The desired minimum number of idle server processes.
+; Used only when pm is set to 'dynamic'.
+pm.min_spare_servers = {{ __php_pool.pm_min_spare_servers | default(php_fpm_pool_pm_min_spare_servers) }}
+
+; The desired maximum number of idle server processes.
+; Used only when pm is set to 'dynamic'.
+pm.max_spare_servers = {{ __php_pool.pm_max_spare_servers | default(php_fpm_pool_pm_max_spare_servers) }}
+
+; The number of seconds after which an idle process will be killed.
+; Used only when pm is set to 'ondemand'.
+pm.process_idle_timeout = {{ __php_pool.pm_process_idle_timeout | default(php_fpm_pool_pm_process_idle_timeout) }}
+
+; The number of requests each child process should execute before respawning.
+; This can be useful to work around memory leaks in 3rd party libraries. For
+; endless request processing specify '0'. Equivalent to PHP_FCGI_MAX_REQUESTS.
+pm.max_requests = {{ __php_pool.pm_max_requests | default(php_fpm_pool_pm_max_requests) }}
+
+; The timeout for serving a single request after which the worker process will
+; be killed. This option should be used when the 'max_execution_time' ini option
+; does not stop script execution for some reason.
+request_terminate_timeout = {{ __php_pool.request_terminate_timeout | default(php_fpm_pool_request_terminate_timeout) }}
+
+; The timeout for serving a single request after which a PHP backtrace will be
+; dumped to the 'slowlog' file. A value of '0s' means 'off'.
+request_slowlog_timeout = {{ __php_pool.request_slowlog_timeout | default(php_fpm_pool_request_slowlog_timeout) }}
+
+; Limits the extensions of the main script FPM will allow to parse. This can
+; prevent configuration mistakes on the web server side.
+security.limit_extensions = {{ __php_pool.security_limit_extensions | default(php_fpm_pool_security_limit_extensions) }}

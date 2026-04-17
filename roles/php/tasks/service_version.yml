@@ -1,0 +1,32 @@
+---
+- name: Service Version | Set version facts
+  ansible.builtin.set_fact:
+    __php_ver: '{{ __php_service_item.version }}'
+    __php_ver_compact: "{{ __php_service_item.version | replace('.', '') }}"
+  when: __php_service_item.fpm | default(true) | bool
+
+# Reset Arch service name to official default
+- name: Service Version | Reset Arch service name
+  ansible.builtin.set_fact:
+    __php_fpm_service: 'php-fpm'
+  when:
+    - __php_service_item.fpm | default(true) | bool
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_ver == (__php_arch_current_version | default(''))
+
+# Override for AUR versions
+- name: Service Version | Set Arch AUR service name
+  ansible.builtin.set_fact:
+    __php_fpm_service: 'php{{ __php_ver_compact }}-fpm'
+  when:
+    - __php_service_item.fpm | default(true) | bool
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_ver != (__php_arch_current_version | default(''))
+
+- name: Service Version | Manage PHP-FPM
+  ansible.builtin.systemd_service:
+    name: '{{ __php_fpm_service }}'
+    enabled: "{{ php_fpm_enabled | bool }}"
+    state: "{{ php_fpm_enabled | bool | ternary('started', 'stopped') }}"
+    daemon_reload: true
+  when: __php_service_item.fpm | default(true) | bool

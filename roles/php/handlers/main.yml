@@ -1,0 +1,7 @@
+---
+- name: Reload PHP-FPM
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    state: reloaded
+  loop: "{{ __php_fpm_changed_services | default([]) }}"
+  when: php_fpm_enabled | bool

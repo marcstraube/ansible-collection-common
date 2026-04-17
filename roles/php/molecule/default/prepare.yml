@@ -1,0 +1,71 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Install Debian prerequisites
+      ansible.builtin.apt:
+        name:
+          - gnupg
+          - ca-certificates
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Add Sury GPG key (Debian)
+      ansible.builtin.get_url:
+        url: 'https://packages.sury.org/php/apt.gpg'
+        dest: '/etc/apt/keyrings/php-sury.gpg'
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_facts['distribution'] == 'Debian'
+
+    - name: Prepare | Add Sury repository (Debian)
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [signed-by=/etc/apt/keyrings/php-sury.gpg]
+          https://packages.sury.org/php/ {{ ansible_facts['distribution_release'] }} main
+        state: present
+        filename: 'php-sury'
+      when: ansible_facts['distribution'] == 'Debian'
+
+    - name: Prepare | Update apt cache after Sury (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Install EPEL (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Install Remi repository (RedHat)
+      ansible.builtin.dnf:
+        name: "https://rpms.remirepo.net/enterprise/remi-release-{{ ansible_facts['distribution_major_version'] }}.rpm"
+        state: present
+        disable_gpg_check: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Update cache after repos (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'

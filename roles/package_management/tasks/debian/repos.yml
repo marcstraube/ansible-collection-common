@@ -79,11 +79,11 @@
       notify: 'apt configuration changed'
 
 #
-# PHP Sury (Debian/Ubuntu)
+# Sury (PHP, Apache2, nginx — Debian/Ubuntu)
 #
 
-- name: Repos | Setup PHP Sury repository
-  when: apt_php_sury_repo_enabled | bool
+- name: Repos | Setup Sury repository
+  when: apt_sury_enabled | bool
   block:
     - name: Repos | Add PHP Sury GPG key
       ansible.builtin.get_url:

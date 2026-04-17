@@ -1,0 +1,64 @@
+---
+- name: Configure Version | Set version facts
+  ansible.builtin.set_fact:
+    __php_ver: '{{ __php_config_item.version }}'
+    __php_ver_compact: "{{ __php_config_item.version | replace('.', '') }}"
+    __php_ini: '{{ __php_config_item.ini | default({}) }}'
+    __php_pool: '{{ __php_config_item.fpm_pool | default({}) }}'
+
+# Reset Arch paths to official defaults (overridden by set_fact in previous AUR iterations)
+- name: Configure Version | Reset Arch config paths
+  ansible.builtin.set_fact:
+    __php_conf_dirs:
+      - '/etc/php/conf.d'
+    __php_fpm_pool_dir: '/etc/php/php-fpm.d'
+    __php_fpm_listen_default: '/run/php-fpm/php-fpm.sock'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_ver == __php_arch_current_version
+
+# Override for AUR versions
+- name: Configure Version | Set Arch AUR config paths
+  ansible.builtin.set_fact:
+    __php_conf_dirs:
+      - '/etc/php{{ __php_ver_compact }}/conf.d'
+    __php_fpm_pool_dir: '/etc/php{{ __php_ver_compact }}/php-fpm.d'
+    __php_fpm_listen_default: '/run/php{{ __php_ver_compact }}-fpm/php{{ __php_ver_compact }}-fpm.sock'
+    __php_fpm_service: 'php{{ __php_ver_compact }}-fpm'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_ver != __php_arch_current_version
+
+- name: Configure Version | Set effective listen socket
+  ansible.builtin.set_fact:
+    __php_effective_listen: '{{ __php_fpm_listen_default }}'
+
+# Deploy php.ini drop-in to all conf.d directories for this version
+- name: Configure Version | Deploy php.ini override
+  ansible.builtin.template:
+    src: 99-ansible.ini.j2
+    dest: '{{ item }}/99-ansible.ini'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ __php_conf_dirs }}'
+
+# Deploy FPM pool configuration
+- name: Configure Version | Deploy www.conf
+  ansible.builtin.template:
+    src: www.conf.j2
+    dest: '{{ __php_fpm_pool_dir }}/www.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  register: __php_www_conf_result
+  when: __php_config_item.fpm | default(true) | bool
+
+- name: Configure Version | Queue FPM reload
+  ansible.builtin.set_fact:
+    __php_fpm_changed_services: "{{ __php_fpm_changed_services + [__php_fpm_service] }}"
+  when:
+    - __php_config_item.fpm | default(true) | bool
+    - __php_www_conf_result is changed
+  changed_when: true
+  notify: 'Reload PHP-FPM'

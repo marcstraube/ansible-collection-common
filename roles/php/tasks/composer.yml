@@ -1,0 +1,5 @@
+---
+- name: Composer | Install Composer
+  ansible.builtin.package:
+    name: '{{ __php_composer_package }}'
+    state: present

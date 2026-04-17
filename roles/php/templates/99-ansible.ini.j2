@@ -1,0 +1,32 @@
+{{ ansible_managed | comment(decoration='; ') }}
+
+[PHP]
+; Resource Limits
+memory_limit = {{ __php_ini.memory_limit | default(php_ini_memory_limit) }}
+max_execution_time = {{ __php_ini.max_execution_time | default(php_ini_max_execution_time) }}
+max_input_time = {{ __php_ini.max_input_time | default(php_ini_max_input_time) }}
+max_input_vars = {{ __php_ini.max_input_vars | default(php_ini_max_input_vars) }}
+
+; File Uploads
+file_uploads = {{ __php_ini.file_uploads | default(php_ini_file_uploads) }}
+upload_max_filesize = {{ __php_ini.upload_max_filesize | default(php_ini_upload_max_filesize) }}
+post_max_size = {{ __php_ini.post_max_size | default(php_ini_post_max_size) }}
+
+; Error Handling
+error_reporting = {{ __php_ini.error_reporting | default(php_ini_error_reporting) }}
+display_errors = {{ __php_ini.display_errors | default(php_ini_display_errors) }}
+display_startup_errors = {{ __php_ini.display_startup_errors | default(php_ini_display_startup_errors) }}
+log_errors = {{ __php_ini.log_errors | default(php_ini_log_errors) }}
+
+[Date]
+date.timezone = {{ __php_ini.date_timezone | default(php_ini_date_timezone) }}
+
+[Session]
+session.gc_maxlifetime = {{ __php_ini.session_gc_maxlifetime | default(php_ini_session_gc_maxlifetime) }}
+
+[opcache]
+opcache.enable = {{ __php_ini.opcache_enable | default(php_ini_opcache_enable) }}
+opcache.memory_consumption = {{ __php_ini.opcache_memory_consumption | default(php_ini_opcache_memory_consumption) }}
+opcache.max_accelerated_files = {{ __php_ini.opcache_max_accelerated_files | default(php_ini_opcache_max_accelerated_files) }}
+opcache.validate_timestamps = {{ __php_ini.opcache_validate_timestamps | default(php_ini_opcache_validate_timestamps) }}
+opcache.revalidate_freq = {{ __php_ini.opcache_revalidate_freq | default(php_ini_opcache_revalidate_freq) }}

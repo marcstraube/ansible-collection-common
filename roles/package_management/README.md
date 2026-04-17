@@ -129,15 +129,15 @@ overrides if needed.
 
 ### Debian/Ubuntu - Repositories
 
-| Variable                          | Default | Description                   |
-|-----------------------------------|---------|-------------------------------|
-| `apt_backports_enabled`           | `false` | Enable Debian Backports       |
-| `apt_docker_repo_enabled`         | `false` | Docker CE repository          |
-| `apt_postgresql_repo_enabled`     | `false` | PostgreSQL PGDG repository    |
-| `apt_php_sury_repo_enabled`       | `false` | PHP Sury repository           |
-| `apt_grafana_repo_enabled`        | `false` | Grafana repository            |
-| `apt_kubernetes_repo_enabled`     | `false` | Kubernetes repository         |
-| `apt_custom_repos`                | `[]`    | Custom repository definitions |
+| Variable                          | Default | Description                           |
+|-----------------------------------|---------|---------------------------------------|
+| `apt_backports_enabled`           | `false` | Enable Debian Backports               |
+| `apt_docker_repo_enabled`         | `false` | Docker CE repository                  |
+| `apt_postgresql_repo_enabled`     | `false` | PostgreSQL PGDG repository            |
+| `apt_sury_enabled`                | `false` | Sury repository (PHP, Apache2, nginx) |
+| `apt_grafana_repo_enabled`        | `false` | Grafana repository                    |
+| `apt_kubernetes_repo_enabled`     | `false` | Kubernetes repository                 |
+| `apt_custom_repos`                | `[]`    | Custom repository definitions         |
 
 ### RHEL/Rocky - DNF
 
@@ -160,7 +160,7 @@ overrides if needed.
 |-----------------------------------|---------|---------------------------------------------|
 | `dnf_epel_enabled`                | `true`  | Enable EPEL                                 |
 | `dnf_powertools_enabled`          | `false` | Enable CRB/PowerTools                       |
-| `dnf_remi_enabled`                | `false` | Enable Remi (PHP module streams, dnf4 only) |
+| `dnf_remi_enabled`                | `false` | Enable Remi (PHP, MariaDB)                  |
 | `dnf_rpmfusion_free_enabled`      | `false` | Enable RPM Fusion Free                      |
 | `dnf_rpmfusion_nonfree_enabled`   | `false` | Enable RPM Fusion Nonfree                   |
 | `dnf_elrepo_enabled`              | `false` | Enable ELRepo                               |
@@ -207,7 +207,8 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 - `dnf-plugins-core`, `dnf-utils`, `yum-utils` are automatically skipped (removed in dnf5)
 - `fastestmirror` is built into dnf5 (no plugin needed, config option still works)
-- Remi PHP module streams use dnf4 modularity (removed in dnf5, gated with version check)
+- Remi PHP module streams are deprecated — use `marcstraube.common.php` role instead
+  (`dnf_remi_php_version` removed in v2.0.0)
 
 ## License
 
