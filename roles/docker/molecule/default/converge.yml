@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    docker_enabled: true
+    docker_compose_enabled: true
+    docker_buildx_enabled: true
+    docker_users: []
+    docker_socket_enabled: false
+    docker_service_enabled: false
+    docker_prune_enabled: true
+    docker_prune_schedule: 'weekly'
+    docker_prune_all: true
+    docker_prune_volumes: true
+    docker_log_driver: 'journald'
+    docker_storage_driver: 'overlay2'
+    docker_live_restore: true
+
+  tasks:
+    - name: Converge | Include docker role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

@@ -1,0 +1,5 @@
+---
+__docker_config_dir: '/etc/docker'
+__docker_config_file: '/etc/docker/daemon.json'
+__docker_service_name: 'docker.service'
+__docker_socket_service: 'docker.socket'

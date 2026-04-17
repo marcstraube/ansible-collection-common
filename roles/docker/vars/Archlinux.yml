@@ -1,0 +1,6 @@
+---
+__docker_packages:
+  - 'docker'
+
+__docker_compose_package: 'docker-compose'
+__docker_buildx_package: 'docker-buildx'

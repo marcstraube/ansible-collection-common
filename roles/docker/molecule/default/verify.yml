@@ -1,0 +1,192 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '{{ playbook_dir }}/../../vars'
+
+    - name: Verify | Check Docker packages are installed
+      ansible.builtin.package:
+        name: '{{ __docker_packages }}'
+        state: present
+      check_mode: true
+      register: __pkg_check
+      failed_when: __pkg_check.changed
+
+    - name: Verify | Check Docker Compose plugin is installed
+      ansible.builtin.package:
+        name: '{{ __docker_compose_package }}'
+        state: present
+      check_mode: true
+      register: __compose_check
+      failed_when: __compose_check.changed
+
+    - name: Verify | Check Docker Buildx plugin is installed
+      ansible.builtin.package:
+        name: '{{ __docker_buildx_package }}'
+        state: present
+      check_mode: true
+      register: __buildx_check
+      failed_when: __buildx_check.changed
+
+    #
+    # Docker Group
+    #
+
+    - name: Verify | Check docker group exists
+      ansible.builtin.group:
+        name: docker
+        state: present
+        system: true
+      check_mode: true
+      register: __group_check
+      failed_when: __group_check.changed
+
+    #
+    # Configuration Files — Existence and Permissions
+    #
+
+    - name: Verify | Check config directory exists
+      ansible.builtin.stat:
+        path: '/etc/docker'
+      register: __docker_dir
+
+    - name: Verify | Assert config directory exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - __docker_dir.stat.exists
+          - __docker_dir.stat.isdir
+          - __docker_dir.stat.mode == '0755'
+        fail_msg: '/etc/docker does not exist or has wrong permissions'
+
+    - name: Verify | Check daemon.json exists
+      ansible.builtin.stat:
+        path: '/etc/docker/daemon.json'
+      register: __daemon_json
+
+    - name: Verify | Assert daemon.json exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - __daemon_json.stat.exists
+          - __daemon_json.stat.mode == '0644'
+          - __daemon_json.stat.pw_name == 'root'
+          - __daemon_json.stat.gr_name == 'root'
+        fail_msg: '/etc/docker/daemon.json does not exist or has wrong permissions'
+
+    #
+    # daemon.json Content
+    #
+
+    - name: Verify | Read daemon.json
+      ansible.builtin.slurp:
+        src: '/etc/docker/daemon.json'
+      register: __daemon_content
+
+    - name: Verify | Set daemon.json content fact
+      ansible.builtin.set_fact:
+        __daemon_decoded: "{{ __daemon_content.content | b64decode }}"
+
+    - name: Verify | Assert daemon.json contains expected keys
+      ansible.builtin.assert:
+        that:
+          - "'_ansible_managed' in __daemon_decoded"
+          - "'data-root' in __daemon_decoded"
+          - "'storage-driver' in __daemon_decoded"
+          - "'log-driver' in __daemon_decoded"
+          - "'live-restore' in __daemon_decoded"
+        fail_msg: 'daemon.json does not contain expected keys'
+
+    - name: Verify | Parse daemon.json as JSON
+      ansible.builtin.set_fact:
+        __daemon_parsed: "{{ __daemon_content.content | b64decode | from_json }}"
+
+    - name: Verify | Assert daemon.json values
+      ansible.builtin.assert:
+        that:
+          - __daemon_parsed['data-root'] == '/var/lib/docker'
+          - __daemon_parsed['storage-driver'] == 'overlay2'
+          - __daemon_parsed['log-driver'] == 'journald'
+          - __daemon_parsed['live-restore'] == true
+        fail_msg: 'daemon.json values are incorrect'
+
+    #
+    # Systemd Prune Units
+    #
+
+    - name: Verify | Check prune timer exists
+      ansible.builtin.stat:
+        path: '/etc/systemd/system/docker-prune.timer'
+      register: __prune_timer
+
+    - name: Verify | Assert prune timer exists
+      ansible.builtin.assert:
+        that:
+          - __prune_timer.stat.exists
+          - __prune_timer.stat.mode == '0644'
+        fail_msg: 'Prune timer does not exist'
+
+    - name: Verify | Read prune timer
+      ansible.builtin.slurp:
+        src: '/etc/systemd/system/docker-prune.timer'
+      register: __prune_timer_content
+
+    - name: Verify | Assert prune timer content
+      ansible.builtin.assert:
+        that:
+          - "'OnCalendar=weekly' in __prune_timer_content.content | b64decode"
+          - "'Ansible managed' in __prune_timer_content.content | b64decode"
+        fail_msg: 'Prune timer content incorrect'
+
+    - name: Verify | Check prune service exists
+      ansible.builtin.stat:
+        path: '/etc/systemd/system/docker-prune.service'
+      register: __prune_service
+
+    - name: Verify | Assert prune service exists
+      ansible.builtin.assert:
+        that:
+          - __prune_service.stat.exists
+        fail_msg: 'Prune service does not exist'
+
+    - name: Verify | Read prune service
+      ansible.builtin.slurp:
+        src: '/etc/systemd/system/docker-prune.service'
+      register: __prune_service_content
+
+    - name: Verify | Assert prune service content
+      ansible.builtin.assert:
+        that:
+          - "'docker system prune -af --volumes' in __prune_service_content.content | b64decode"
+          - "'Ansible managed' in __prune_service_content.content | b64decode"
+          - "'Requires=docker.service' in __prune_service_content.content | b64decode"
+        fail_msg: 'Prune service content incorrect'
+
+    #
+    # Functional Tests
+    #
+
+    - name: Verify | Test docker version command
+      ansible.builtin.command: docker --version
+      register: __docker_version
+      changed_when: false
+      failed_when: __docker_version.rc != 0
+
+    - name: Verify | Assert docker version output
+      ansible.builtin.assert:
+        that:
+          - "'Docker version' in __docker_version.stdout"
+        fail_msg: 'Docker version output unexpected'

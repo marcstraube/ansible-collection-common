@@ -1,0 +1,37 @@
+---
+- name: Service | Manage docker socket
+  ansible.builtin.systemd_service:
+    name: '{{ __docker_socket_service }}'
+    enabled: "{{ docker_socket_enabled | bool }}"
+    state: "{{ docker_socket_enabled | bool | ternary('started', 'stopped') }}"
+
+- name: Service | Manage docker service
+  ansible.builtin.systemd_service:
+    name: '{{ __docker_service_name }}'
+    enabled: "{{ docker_service_enabled | bool }}"
+    state: "{{ docker_service_enabled | bool | ternary('started', 'stopped') }}"
+
+- name: Service | Deploy system prune timer
+  ansible.builtin.template:
+    src: docker-prune.timer.j2
+    dest: '/etc/systemd/system/docker-prune.timer'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 'Reload Docker systemd units'
+
+- name: Service | Deploy system prune service
+  ansible.builtin.template:
+    src: docker-prune.service.j2
+    dest: '/etc/systemd/system/docker-prune.service'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 'Reload Docker systemd units'
+
+- name: Service | Manage system prune timer
+  ansible.builtin.systemd_service:
+    name: 'docker-prune.timer'
+    enabled: "{{ docker_prune_enabled | bool }}"
+    state: "{{ docker_prune_enabled | bool | ternary('started', 'stopped') }}"
+    daemon_reload: true

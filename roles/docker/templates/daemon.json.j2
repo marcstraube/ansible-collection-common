@@ -1,0 +1,79 @@
+{% set daemon = {} %}
+{% set _ = daemon.update({"_ansible_managed": ansible_managed}) %}
+{% set _ = daemon.update({"data-root": docker_data_root}) %}
+{% set _ = daemon.update({"storage-driver": docker_storage_driver}) %}
+{% if docker_storage_opts | length > 0 %}
+{% set _ = daemon.update({"storage-opts": docker_storage_opts}) %}
+{% endif %}
+{% set _ = daemon.update({"log-driver": docker_log_driver}) %}
+{% if docker_log_opts | length > 0 %}
+{% set _ = daemon.update({"log-opts": docker_log_opts}) %}
+{% endif %}
+{% if docker_log_level %}
+{% set _ = daemon.update({"log-level": docker_log_level}) %}
+{% endif %}
+{% if docker_bip %}
+{% set _ = daemon.update({"bip": docker_bip}) %}
+{% endif %}
+{% if docker_default_address_pools | length > 0 %}
+{% set _ = daemon.update({"default-address-pools": docker_default_address_pools}) %}
+{% endif %}
+{% if docker_dns | length > 0 %}
+{% set _ = daemon.update({"dns": docker_dns}) %}
+{% endif %}
+{% if docker_dns_search | length > 0 %}
+{% set _ = daemon.update({"dns-search": docker_dns_search}) %}
+{% endif %}
+{% if not docker_iptables %}
+{% set _ = daemon.update({"iptables": false}) %}
+{% endif %}
+{% if docker_ipv6 %}
+{% set _ = daemon.update({"ipv6": true}) %}
+{% endif %}
+{% if docker_mtu > 0 %}
+{% set _ = daemon.update({"mtu": docker_mtu}) %}
+{% endif %}
+{% if not docker_userland_proxy %}
+{% set _ = daemon.update({"userland-proxy": false}) %}
+{% endif %}
+{% set _ = daemon.update({"live-restore": docker_live_restore | bool}) %}
+{% if docker_no_new_privileges %}
+{% set _ = daemon.update({"no-new-privileges": true}) %}
+{% endif %}
+{% if docker_selinux_enabled %}
+{% set _ = daemon.update({"selinux-enabled": true}) %}
+{% endif %}
+{% if docker_userns_remap %}
+{% set _ = daemon.update({"userns-remap": docker_userns_remap}) %}
+{% endif %}
+{% if not docker_icc %}
+{% set _ = daemon.update({"icc": false}) %}
+{% endif %}
+{% if docker_registry_mirrors | length > 0 %}
+{% set _ = daemon.update({"registry-mirrors": docker_registry_mirrors}) %}
+{% endif %}
+{% if docker_insecure_registries | length > 0 %}
+{% set _ = daemon.update({"insecure-registries": docker_insecure_registries}) %}
+{% endif %}
+{% if docker_default_runtime != 'runc' %}
+{% set _ = daemon.update({"default-runtime": docker_default_runtime}) %}
+{% endif %}
+{% if docker_init %}
+{% set _ = daemon.update({"init": true}) %}
+{% endif %}
+{% if docker_default_ulimits | length > 0 %}
+{% set _ = daemon.update({"default-ulimits": docker_default_ulimits}) %}
+{% endif %}
+{% if docker_shutdown_timeout > 0 %}
+{% set _ = daemon.update({"shutdown-timeout": docker_shutdown_timeout}) %}
+{% endif %}
+{% if docker_max_concurrent_downloads > 0 %}
+{% set _ = daemon.update({"max-concurrent-downloads": docker_max_concurrent_downloads}) %}
+{% endif %}
+{% if docker_max_concurrent_uploads > 0 %}
+{% set _ = daemon.update({"max-concurrent-uploads": docker_max_concurrent_uploads}) %}
+{% endif %}
+{% if docker_daemon_options | length > 0 %}
+{% set _ = daemon.update(docker_daemon_options) %}
+{% endif %}
+{{ daemon | to_nice_json }}

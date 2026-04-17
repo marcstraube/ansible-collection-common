@@ -171,27 +171,6 @@
   notify: 'dnf configuration changed'
 
 #
-# Docker CE
-#
-
-- name: Repos | Setup Docker CE repository
-  when: dnf_docker_repo_enabled | bool
-  vars:
-    __docker_distro: >-
-      {{ 'fedora' if ansible_facts['distribution'] == 'Fedora'
-         else 'rhel' if ansible_facts['distribution'] == 'RedHat'
-         else 'centos' }}
-  block:
-    - name: Repos | Add Docker CE repository
-      ansible.builtin.command:
-        cmd: >-
-          dnf config-manager --add-repo
-          https://download.docker.com/linux/{{ __docker_distro }}/docker-ce.repo
-      args:
-        creates: '/etc/yum.repos.d/docker-ce.repo'
-      notify: 'dnf configuration changed'
-
-#
 # PostgreSQL PGDG
 #
 

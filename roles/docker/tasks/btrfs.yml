@@ -1,0 +1,75 @@
+---
+# Subvolume + NoCOW for Docker data directory
+
+- name: BTRFS | Check if storage parent filesystem is BTRFS
+  ansible.builtin.command:
+    cmd: stat -f -c %T {{ docker_data_root | dirname }}
+  register: __docker_fstype
+  changed_when: false
+  # stat may fail if directory does not exist yet
+  failed_when: false
+
+- name: BTRFS | Set BTRFS detection fact
+  ansible.builtin.set_fact:
+    __docker_is_btrfs: "{{ (__docker_fstype.stdout | default('')) == 'btrfs' }}"
+
+- name: BTRFS | Check if storage directory is already a BTRFS subvolume
+  ansible.builtin.command:
+    cmd: btrfs subvolume show {{ docker_data_root }}
+  register: __docker_subvol_check
+  changed_when: false
+  # Directory may not be a subvolume yet
+  failed_when: false
+  when: __docker_is_btrfs | bool
+
+- name: BTRFS | Check if storage directory exists and has content
+  ansible.builtin.find:
+    paths: '{{ docker_data_root }}'
+    file_type: any
+  register: __docker_dir_contents
+  when:
+    - __docker_is_btrfs | bool
+    - __docker_subvol_check.rc != 0
+
+- name: BTRFS | Create subvolume for Docker storage
+  when:
+    - __docker_is_btrfs | bool
+    - __docker_subvol_check.rc != 0
+    - __docker_dir_contents.matched == 0
+  block:
+    - name: BTRFS | Remove empty storage directory for subvolume creation
+      ansible.builtin.file:
+        path: '{{ docker_data_root }}'
+        state: absent
+
+    - name: BTRFS | Create BTRFS subvolume
+      ansible.builtin.command:
+        cmd: btrfs subvolume create {{ docker_data_root }}
+      changed_when: true
+
+    - name: BTRFS | Set ownership on subvolume
+      ansible.builtin.file:
+        path: '{{ docker_data_root }}'
+        owner: root
+        group: docker
+        mode: '0710'
+        state: directory
+
+- name: BTRFS | Check NoCOW attribute on storage directory
+  ansible.builtin.command:
+    cmd: lsattr -d {{ docker_data_root }}
+  register: __docker_lsattr
+  changed_when: false
+  # lsattr may fail on non-ext/btrfs filesystems
+  failed_when: false
+  when: __docker_is_btrfs | bool
+
+- name: BTRFS | Set NoCOW attribute on storage directory
+  ansible.builtin.command:
+    cmd: chattr +C {{ docker_data_root }}
+  changed_when: true
+  # chattr may fail in containers without filesystem support
+  failed_when: false
+  when:
+    - __docker_is_btrfs | bool
+    - "'C' not in (__docker_lsattr.stdout | default(''))"

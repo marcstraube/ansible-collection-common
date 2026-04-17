@@ -1,0 +1,14 @@
+{{ ansible_managed | comment }}
+#
+# Docker System Prune Service
+
+[Unit]
+Description=Docker system prune
+Wants=network-online.target
+After=network-online.target
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker system prune {{ '-af' if docker_prune_all else '-f' }}{{ ' --volumes' if docker_prune_volumes else '' }}
