@@ -2,6 +2,27 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [1.1.0](https://github.com/marcstraube/ansible-collection-common/compare/v1.0.1...v1.1.0) (2026-04-17)
+
+
+### Features
+
+* Add Docker CE role ([#20](https://github.com/marcstraube/ansible-collection-common/issues/20)) ([#26](https://github.com/marcstraube/ansible-collection-common/issues/26)) ([ec443ea](https://github.com/marcstraube/ansible-collection-common/commit/ec443ea32f94a76d58cf7b6bdc5279bce12dcc82))
+* Add PHP role with multi-version support, FPM, and Composer ([#15](https://github.com/marcstraube/ansible-collection-common/issues/15)) ([93323d0](https://github.com/marcstraube/ansible-collection-common/commit/93323d0e92f51b99e629586fe7e34371f21a490f))
+
+
+### Bug Fixes
+
+* Default firewalld_enabled to true for network-facing services ([5704fba](https://github.com/marcstraube/ansible-collection-common/commit/5704fba112d53a6d7c5d9652d2329767bc5337b4)), closes [#11](https://github.com/marcstraube/ansible-collection-common/issues/11)
+* Remove unnecessary curl prerequisite from nodejs role ([281edc9](https://github.com/marcstraube/ansible-collection-common/commit/281edc988a0da4cee5c9d627fa857c53316fc5c0))
+* Use explicit generic updater for galaxy.yml in release-please ([7887d36](https://github.com/marcstraube/ansible-collection-common/commit/7887d360d2750ebfa5cabeb1a283a4b12087ffd1))
+* Use YAML-aware updater for galaxy.yml in release-please ([0aa7f80](https://github.com/marcstraube/ansible-collection-common/commit/0aa7f80c3eeeff825c811d3a564b67512a9c9ccb))
+
+
+### Code Refactoring
+
+* Unify molecule prepare.yml and add dependency conventions ([5cfd469](https://github.com/marcstraube/ansible-collection-common/commit/5cfd4699bc7722800ee2441de40ea9b77447fc94)), closes [#17](https://github.com/marcstraube/ansible-collection-common/issues/17) [#21](https://github.com/marcstraube/ansible-collection-common/issues/21)
+
 ## [1.0.1](https://github.com/marcstraube/ansible-collection-common/compare/v1.0.0...v1.0.1) (2026-04-14)
 
 
