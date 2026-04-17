@@ -1,0 +1,19 @@
+---
+# Remi SCL package name patterns (resolved at runtime via __php_ver_compact set in tasks)
+__php_cli_package: 'php{{ __php_ver_compact }}-php-cli'
+__php_fpm_package: 'php{{ __php_ver_compact }}-php-fpm'
+__php_extension_prefix: 'php{{ __php_ver_compact }}-php-'
+__php_fpm_service: 'php{{ __php_ver_compact }}-php-fpm'
+
+# RHEL uses symlinks for default PHP version
+__php_has_alternatives: false
+
+# Configuration paths (version-dependent, resolved via __php_ver_compact)
+__php_conf_dirs:
+  - '/etc/opt/remi/php{{ __php_ver_compact }}/php.d'
+__php_fpm_pool_dir: '/etc/opt/remi/php{{ __php_ver_compact }}/php-fpm.d'
+__php_fpm_listen_default: '/var/opt/remi/php{{ __php_ver_compact }}/run/php-fpm/www.sock'
+
+# FPM pool defaults
+__php_fpm_default_user: 'apache'
+__php_fpm_default_group: 'apache'

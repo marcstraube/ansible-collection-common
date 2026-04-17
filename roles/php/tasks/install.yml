@@ -1,0 +1,28 @@
+---
+- name: Install | Detect current Arch PHP version
+  ansible.builtin.command:
+    cmd: pacman -Si php
+  register: __php_arch_repo_info
+  changed_when: false
+  check_mode: false
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Set Arch current PHP version fact
+  ansible.builtin.set_fact:
+    __php_arch_current_version: >-
+      {{ (__php_arch_repo_info.stdout | regex_search('Version\s*:\s*(\d+)\.(\d+)', '\1', '\2')) | join('.') }}
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | PHP versions
+  ansible.builtin.include_tasks:
+    file: install_version.yml
+    apply:
+      tags:
+        - php
+        - php:install
+  loop: '{{ php_versions }}'
+  loop_control:
+    loop_var: __php_version_item
+  tags:
+    - php
+    - php:install

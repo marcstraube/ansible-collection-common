@@ -1,0 +1,123 @@
+---
+#
+# Role Control
+#
+
+# Enable the php role
+php_enabled: true
+
+#
+# PHP-FPM
+#
+
+# Enable and start PHP-FPM services
+php_fpm_enabled: true
+
+#
+# PHP Versions
+#
+
+# PHP versions to install side by side
+# Each entry supports: version (required), extensions (list, default: []), fpm (bool, default: true)
+# Per-version config overrides via ini (dict) and fpm_pool (dict) — keys without prefix.
+# Example:
+#   php_versions:
+#     - version: '8.3'
+#       extensions:
+#         - curl
+#         - mbstring
+#       fpm: false
+#     - version: '8.4'
+#       extensions:
+#         - curl
+#         - mbstring
+#         - xml
+#         - zip
+#       fpm: true
+#       ini:
+#         memory_limit: '512M'
+#         display_errors: 'On'
+#       fpm_pool:
+#         pm_max_children: 50
+php_versions:
+  - version: '8.4'
+    extensions: []
+    fpm: true
+
+# Default PHP version for CLI (update-alternatives on Debian, symlinks on RHEL/Arch)
+php_default_version: '8.4'
+
+#
+# PHP Configuration (php.ini)
+#
+# Drop-in override deployed to conf.d/99-ansible.ini.
+# Only commonly tuned settings — upstream defaults for everything else.
+# Per-version overrides via php_versions[].ini dict (keys without php_ini_ prefix).
+
+# Resource limits
+php_ini_memory_limit: '128M'
+php_ini_max_execution_time: 30
+php_ini_max_input_time: 60
+php_ini_max_input_vars: 1000
+
+# Upload
+php_ini_file_uploads: 'On'
+php_ini_upload_max_filesize: '2M'
+php_ini_post_max_size: '8M'
+
+# Error handling
+php_ini_error_reporting: 'E_ALL & ~E_DEPRECATED & ~E_STRICT'
+php_ini_display_errors: 'Off'
+php_ini_display_startup_errors: 'Off'
+php_ini_log_errors: 'On'
+
+# Date/Time
+php_ini_date_timezone: 'UTC'
+
+# Session
+php_ini_session_gc_maxlifetime: 1440
+
+# OPcache
+php_ini_opcache_enable: 1
+php_ini_opcache_memory_consumption: 128
+php_ini_opcache_max_accelerated_files: 10000
+php_ini_opcache_validate_timestamps: 1
+php_ini_opcache_revalidate_freq: 2
+
+#
+# PHP-FPM Pool Configuration (www.conf)
+#
+# Per-version overrides via php_versions[].fpm_pool dict (keys without php_fpm_pool_ prefix).
+
+# Pool user/group (empty = OS default from vars/)
+php_fpm_pool_user: ''
+php_fpm_pool_group: ''
+
+# Listen socket (empty = auto-constructed per version and OS)
+php_fpm_pool_listen: ''
+php_fpm_pool_listen_owner: ''
+php_fpm_pool_listen_group: ''
+php_fpm_pool_listen_mode: '0660'
+
+# Process manager: static | dynamic | ondemand
+php_fpm_pool_pm: 'dynamic'
+php_fpm_pool_pm_max_children: 5
+php_fpm_pool_pm_start_servers: 2
+php_fpm_pool_pm_min_spare_servers: 1
+php_fpm_pool_pm_max_spare_servers: 3
+php_fpm_pool_pm_max_requests: 0
+php_fpm_pool_pm_process_idle_timeout: '10s'
+
+# Request limits
+php_fpm_pool_request_terminate_timeout: 0
+php_fpm_pool_request_slowlog_timeout: 0
+
+# Security
+php_fpm_pool_security_limit_extensions: '.php'
+
+#
+# Composer
+#
+
+# Enable Composer (PHP dependency manager)
+php_composer_enabled: false

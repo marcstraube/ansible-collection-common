@@ -27,7 +27,9 @@
       - old: apt_postgresql_repo
         new: apt_postgresql_repo_enabled
       - old: apt_php_sury_repo
-        new: apt_php_sury_repo_enabled
+        new: apt_sury_enabled
+      - old: apt_php_sury_repo_enabled
+        new: apt_sury_enabled
       - old: apt_grafana_repo
         new: apt_grafana_repo_enabled
       - old: apt_kubernetes_repo
@@ -72,6 +74,17 @@
         new: makepkg_sccache_enabled
       - old: paccache_enabled
         new: paccache_timer_enabled
+  tags:
+    - package-management
+
+- name: Main | Warn about deprecated dnf_remi_php_version
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: dnf_remi_php_version is deprecated and will be removed in v2.0.0.
+      Use the marcstraube.common.php role for PHP version management.
+  when:
+    - package_management_enabled | bool
+    - dnf_remi_php_version | default('') | length > 0
   tags:
     - package-management
 

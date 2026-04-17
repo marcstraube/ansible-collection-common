@@ -551,8 +551,8 @@ apt_docker_repo_enabled: false
 # PostgreSQL PGDG repository
 apt_postgresql_repo_enabled: false
 
-# PHP Sury repository (deb.sury.org for Debian, PPA for Ubuntu)
-apt_php_sury_repo_enabled: false
+# Sury repository (PHP, Apache2, nginx — deb.sury.org for Debian, PPA for Ubuntu)
+apt_sury_enabled: false
 
 # Grafana repository
 apt_grafana_repo_enabled: false
@@ -567,8 +567,11 @@ apt_kubernetes_version: '1.29'
 # DEPRECATED: Use apt_postgresql_repo_enabled instead (removed in v2.0.0)
 # apt_postgresql_repo: {{ apt_postgresql_repo_enabled }}
 
-# DEPRECATED: Use apt_php_sury_repo_enabled instead (removed in v2.0.0)
-# apt_php_sury_repo: {{ apt_php_sury_repo_enabled }}
+# DEPRECATED: Use apt_sury_enabled instead (removed in v2.0.0)
+# apt_php_sury_repo: {{ apt_sury_enabled }}
+
+# DEPRECATED: Use apt_sury_enabled instead (removed in v2.0.0)
+# apt_php_sury_repo_enabled: {{ apt_sury_enabled }}
 
 # DEPRECATED: Use apt_grafana_repo_enabled instead (removed in v2.0.0)
 # apt_grafana_repo: {{ apt_grafana_repo_enabled }}
@@ -694,7 +697,8 @@ dnf_epel_enabled: true
 
 # Enable Remi repository (PHP, MariaDB)
 dnf_remi_enabled: false
-# Remi PHP version to enable (e.g., '8.2', '8.3')
+
+# DEPRECATED: Use marcstraube.common.php role instead (removed in v2.0.0)
 dnf_remi_php_version: ''
 
 # Enable RPM Fusion Free

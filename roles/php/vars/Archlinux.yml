@@ -1,0 +1,21 @@
+---
+# Official repo package patterns (for current Arch PHP version)
+# AUR patterns are set dynamically in tasks for non-current versions
+__php_cli_package: 'php'
+__php_fpm_package: 'php-fpm'
+__php_extension_prefix: 'php-'
+__php_fpm_service: 'php-fpm'
+
+# Arch does not use update-alternatives for PHP
+__php_has_alternatives: false
+
+# Configuration paths (official PHP)
+# AUR paths are set dynamically in tasks
+__php_conf_dirs:
+  - '/etc/php/conf.d'
+__php_fpm_pool_dir: '/etc/php/php-fpm.d'
+__php_fpm_listen_default: '/run/php-fpm/php-fpm.sock'
+
+# FPM pool defaults
+__php_fpm_default_user: 'http'
+__php_fpm_default_group: 'http'

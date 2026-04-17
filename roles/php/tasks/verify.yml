@@ -1,0 +1,11 @@
+---
+- name: Verify | Check default PHP version
+  ansible.builtin.command:
+    cmd: php --version
+  register: __php_verify_default
+  changed_when: false
+  check_mode: false
+
+- name: Verify | Display default PHP version
+  ansible.builtin.debug:
+    msg: 'Default PHP: {{ __php_verify_default.stdout_lines[0] }}'

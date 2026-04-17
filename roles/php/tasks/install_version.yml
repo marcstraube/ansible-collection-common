@@ -1,0 +1,53 @@
+---
+- name: Install Version | Set version facts
+  ansible.builtin.set_fact:
+    __php_ver: '{{ __php_version_item.version }}'
+    __php_ver_compact: "{{ __php_version_item.version | replace('.', '') }}"
+    __php_use_aur: false
+
+# Reset Arch patterns to official repo defaults (overridden by set_fact in previous AUR iterations)
+- name: Install Version | Reset Arch package patterns
+  ansible.builtin.set_fact:
+    __php_cli_package: 'php'
+    __php_fpm_package: 'php-fpm'
+    __php_extension_prefix: 'php-'
+    __php_fpm_service: 'php-fpm'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_ver == __php_arch_current_version
+
+# Override for AUR versions (non-current PHP on Arch)
+- name: Install Version | Set Arch AUR package patterns
+  ansible.builtin.set_fact:
+    __php_cli_package: 'php{{ __php_ver_compact }}'
+    __php_fpm_package: 'php{{ __php_ver_compact }}-fpm'
+    __php_extension_prefix: 'php{{ __php_ver_compact }}-'
+    __php_fpm_service: 'php{{ __php_ver_compact }}-fpm'
+    __php_use_aur: true
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_ver != __php_arch_current_version
+
+- name: Install Version | Build package list
+  ansible.builtin.set_fact:
+    __php_version_packages: >-
+      {{ [__php_cli_package] +
+         ((__php_version_item.fpm | default(true) | bool) | ternary([__php_fpm_package], [])) +
+         (__php_version_item.extensions | default([]) |
+          map('regex_replace', '^(.*)$', __php_extension_prefix + '\1') | list) }}
+
+- name: Install Version | PHP packages
+  ansible.builtin.package:
+    name: '{{ __php_version_packages }}'
+    state: present
+  when: not (__php_use_aur | bool)
+
+- name: Install Version | PHP packages from AUR (Arch)
+  become: true
+  become_user: aur_builder
+  kewlfft.aur.aur:
+    name: '{{ __php_version_packages }}'
+    state: present
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_use_aur | bool
