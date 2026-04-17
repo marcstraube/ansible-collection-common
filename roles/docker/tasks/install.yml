@@ -1,0 +1,81 @@
+---
+- name: Install | Ensure apt prerequisites
+  ansible.builtin.package:
+    name:
+      - 'ca-certificates'
+      - 'python3-debian'
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install | Add Docker apt repository
+  ansible.builtin.deb822_repository:
+    name: docker-ce
+    types: deb
+    uris: '{{ __docker_repo_url }}'
+    suites: '{{ ansible_facts["distribution_release"] }}'
+    components: stable
+    signed_by: '{{ __docker_gpg_url }}'
+    state: present
+  register: __docker_apt_repo
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install | Update apt cache after repo change
+  ansible.builtin.apt:
+    update_cache: true
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - __docker_apt_repo is changed
+
+#
+# Repository Setup (RedHat)
+#
+
+- name: Install | Add Docker CE repository
+  ansible.builtin.command:
+    cmd: >-
+      dnf config-manager --add-repo
+      {{ __docker_repo_url }}/{{ 'fedora' if ansible_facts['distribution'] == 'Fedora'
+         else 'rhel' if ansible_facts['distribution'] == 'RedHat'
+         else 'centos' }}/docker-ce.repo
+  args:
+    creates: '/etc/yum.repos.d/docker-ce.repo'
+  when: ansible_facts['os_family'] == 'RedHat'
+
+#
+# Package Installation
+#
+
+- name: Install | Docker packages
+  ansible.builtin.package:
+    name: '{{ __docker_packages }}'
+    state: present
+
+- name: Install | Docker Compose plugin
+  ansible.builtin.package:
+    name: '{{ __docker_compose_package }}'
+    state: present
+  when: docker_compose_enabled | bool
+
+- name: Install | Docker Buildx plugin
+  ansible.builtin.package:
+    name: '{{ __docker_buildx_package }}'
+    state: present
+  when: docker_buildx_enabled | bool
+
+#
+# Directory and Group Setup
+#
+
+- name: Install | Ensure config directory exists
+  ansible.builtin.file:
+    path: '{{ __docker_config_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install | Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+    system: true

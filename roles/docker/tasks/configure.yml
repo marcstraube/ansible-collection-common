@@ -1,0 +1,19 @@
+---
+- name: Configure | Deploy daemon configuration
+  ansible.builtin.template:
+    src: daemon.json.j2
+    dest: '{{ __docker_config_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 'Restart Docker'
+
+- name: Configure | Add users to docker group
+  ansible.builtin.user:
+    name: '{{ item }}'
+    groups: docker
+    append: true
+  loop: '{{ docker_users }}'
+  loop_control:
+    label: '{{ item }}'
+  when: docker_users | length > 0

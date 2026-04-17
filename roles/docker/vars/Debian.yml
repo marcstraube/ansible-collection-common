@@ -1,0 +1,11 @@
+---
+__docker_packages:
+  - 'docker-ce'
+  - 'docker-ce-cli'
+  - 'containerd.io'
+
+__docker_compose_package: 'docker-compose-plugin'
+__docker_buildx_package: 'docker-buildx-plugin'
+
+__docker_repo_url: 'https://download.docker.com/linux/{{ ansible_facts["distribution"] | lower }}'
+__docker_gpg_url: 'https://download.docker.com/linux/{{ ansible_facts["distribution"] | lower }}/gpg'

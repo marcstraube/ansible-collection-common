@@ -1,0 +1,46 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - docker
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: docker_enabled | bool
+  tags:
+    - docker
+    - docker:install
+
+- name: Main | Include BTRFS tasks
+  ansible.builtin.include_tasks:
+    file: btrfs.yml
+    apply:
+      tags:
+        - docker
+        - docker:install
+  when: docker_enabled | bool
+  tags:
+    - docker
+    - docker:install
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: docker_enabled | bool
+  tags:
+    - docker
+    - docker:configure
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  when: docker_enabled | bool
+  tags:
+    - docker
+    - docker:service

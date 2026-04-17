@@ -1,0 +1,178 @@
+---
+#
+# Role Control
+#
+
+# Enable the docker role
+docker_enabled: true
+
+# Enable and start the docker service
+docker_service_enabled: true
+
+#
+# Installation
+#
+
+# Install Docker Compose plugin
+docker_compose_enabled: true
+
+# Install Docker Buildx plugin
+docker_buildx_enabled: true
+
+#
+# Docker Users
+#
+
+# Users to add to the docker group
+docker_users: []
+# Example:
+#   - 'johndoe'
+#   - 'developer'
+
+#
+# Daemon Configuration — Storage
+#
+
+# Docker data root directory
+docker_data_root: '/var/lib/docker'
+
+# Storage driver (overlay2, btrfs, zfs, vfs)
+docker_storage_driver: 'overlay2'
+
+# Storage driver options (list of key=value strings)
+docker_storage_opts: []
+# Example:
+#   - 'overlay2.override_kernel_check=true'
+
+#
+# Daemon Configuration — Logging
+#
+
+# Default log driver (journald, json-file, syslog, local, none)
+docker_log_driver: 'journald'
+
+# Log driver options (dict of key: value)
+docker_log_opts: {}
+# Example:
+#   max-size: '10m'
+#   max-file: '3'
+
+# Daemon log level (debug, info, warn, error, fatal — empty = Docker default)
+docker_log_level: ''
+
+#
+# Daemon Configuration — Network
+#
+
+# Bridge IP CIDR (empty = Docker default 172.17.0.0/16)
+docker_bip: ''
+
+# Custom address pools for user-defined networks
+docker_default_address_pools: []
+# Example:
+#   - base: '10.10.0.0/16'
+#     size: 24
+
+# DNS servers for containers (empty = use host DNS)
+docker_dns: []
+
+# DNS search domains for containers
+docker_dns_search: []
+
+# Allow Docker to manage iptables/nftables rules (required for port publishing)
+docker_iptables: true
+
+# Enable IPv6 support
+docker_ipv6: false
+
+# Bridge MTU (0 = auto)
+docker_mtu: 0
+
+# Use userland proxy for loopback traffic
+docker_userland_proxy: true
+
+#
+# Daemon Configuration — Security
+#
+
+# Keep containers running during daemon restart
+docker_live_restore: true
+
+# Set no-new-privileges default for all containers
+docker_no_new_privileges: false
+
+# Enable SELinux support (RedHat only)
+docker_selinux_enabled: false
+
+# User namespace remapping (empty = disabled)
+docker_userns_remap: ''
+# Example: 'default' or 'johndoe:johndoe'
+
+# Allow inter-container communication on default bridge
+docker_icc: true
+
+#
+# Daemon Configuration — Registry
+#
+
+# Registry mirrors
+docker_registry_mirrors: []
+# Example:
+#   - 'https://mirror.gcr.io'
+
+# Allow insecure (HTTP) registries
+docker_insecure_registries: []
+# Example:
+#   - 'registry.local:5000'
+
+#
+# Daemon Configuration — Runtime
+#
+
+# Default OCI runtime
+docker_default_runtime: 'runc'
+
+# Run init process (tini) in containers
+docker_init: false
+
+# Default ulimits for containers
+docker_default_ulimits: {}
+# Example:
+#   nofile:
+#     soft: 65536
+#     hard: 65536
+
+# Graceful shutdown timeout in seconds (0 = Docker default)
+docker_shutdown_timeout: 0
+
+# Maximum concurrent image downloads
+docker_max_concurrent_downloads: 0
+
+# Maximum concurrent image uploads
+docker_max_concurrent_uploads: 0
+
+#
+# Daemon Configuration — Extra Options
+#
+
+# Free-form dict merged into daemon.json for settings not explicitly modeled
+docker_daemon_options: {}
+
+#
+# Systemd Integration
+#
+
+# Enable docker socket for on-demand activation
+docker_socket_enabled: true
+
+# Enable system prune timer
+docker_prune_enabled: false
+
+# Prune schedule (systemd OnCalendar format)
+docker_prune_schedule: 'weekly'
+
+# Prune all unused images (not just dangling)
+docker_prune_all: true
+
+# Prune volumes during system prune
+docker_prune_volumes: true

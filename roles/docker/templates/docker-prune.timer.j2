@@ -1,0 +1,14 @@
+{{ ansible_managed | comment }}
+#
+# Docker System Prune Timer
+
+[Unit]
+Description=Docker system prune timer
+
+[Timer]
+OnCalendar={{ docker_prune_schedule }}
+Persistent=true
+RandomizedDelaySec=3600
+
+[Install]
+WantedBy=timers.target
