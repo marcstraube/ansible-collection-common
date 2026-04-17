@@ -137,7 +137,14 @@ jobs:
       - name: Determine changed roles
         id: set-matrix
         run: |
-          ALL_PODMAN_ROLES="aide ansible avahi base chrony clamav editors energy_management fail2ban firejail firewalld fonts gnupg graphics logrotate lynis nodejs openssh package_management pam_hardening pki podman python restic rkhunter snmp sudo sysctl unbound users utils"
+          # Auto-detect podman roles from molecule driver config
+          ALL_PODMAN_ROLES=""
+          for f in roles/*/molecule/default/molecule.yml; do
+            if grep -q 'name: podman' "$f"; then
+              role=$(echo "$f" | cut -d/ -f2)
+              ALL_PODMAN_ROLES="$ALL_PODMAN_ROLES $role"
+            fi
+          done
 
           # Determine base commit for diff
           if [ "${{ github.event_name }}" = "pull_request" ]; then
