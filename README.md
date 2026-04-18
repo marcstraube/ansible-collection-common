@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/marcstraube/ansible-collection-common/workflows/CI/badge.svg)](https://github.com/marcstraube/ansible-collection-common/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Sponsor](https://img.shields.io/badge/sponsor-PayPal-blue.svg)](https://paypal.me/marcstraube)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/marcstraube)
 
 ## Description
 
@@ -148,6 +148,10 @@ molecule test
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+
+## Support
+
+If you find this collection useful, consider [supporting its development](https://github.com/sponsors/marcstraube).
 
 ## License
 
