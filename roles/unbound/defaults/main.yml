@@ -125,7 +125,7 @@ unbound_unwanted_reply_threshold: 10000
 
 # QNAME minimisation (privacy)
 unbound_qname_minimisation: true
-unbound_qname_minimisation_strict: true
+unbound_qname_minimisation_strict: false
 
 #
 # Privacy

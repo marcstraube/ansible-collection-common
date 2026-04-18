@@ -1,11 +1,3 @@
 ---
-__logrotate_packages:
-  - 'logrotate'
-
-__logrotate_timer_name: 'logrotate.timer'
-
-__logrotate_config_file: '/etc/logrotate.conf'
-__logrotate_config_dir: '/etc/logrotate.d'
-
 # Arch-specific taboo extensions for pacman backup files
 __logrotate_tabooext: '.pacorig .pacnew .pacsave'

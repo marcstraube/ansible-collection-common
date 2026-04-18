@@ -1,8 +1,2 @@
 ---
-__restic_packages:
-  - 'restic'
-
-__restic_binary_packages:
-  - 'bzip2'
-
 __restic_mail_package: 's-nail'

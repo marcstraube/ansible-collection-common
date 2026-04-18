@@ -4,6 +4,15 @@
   become: true
   gather_facts: true
 
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - unbound
+      Debian:
+        - unbound
+      RedHat:
+        - unbound
+
   tasks:
     - name: Prepare | Update package cache (Arch)
       community.general.pacman:
@@ -21,9 +30,9 @@
         update_cache: true
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Prepare | Pre-install unbound for binary detection
+    - name: Prepare | Install container dependencies
       ansible.builtin.package:
-        name: unbound
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
 
     - name: Prepare | Detect unbound binary path
