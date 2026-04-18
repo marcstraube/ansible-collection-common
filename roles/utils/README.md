@@ -1,13 +1,17 @@
 # marcstraube.common.utils
 
 Install common system utilities: process monitors, terminal multiplexers, file transfer
-tools, system info fetchers, and fun terminal toys.
+tools, file managers, system info fetchers, and fun terminal toys.
 
 ## Description
 
 This is an install-only role with no configuration or services. Each utility is gated by a
 boolean toggle and mapped to OS-specific package names. Unavailable packages (empty string
 in vars) are silently skipped.
+
+Terminal file managers (mc, vifm, ranger, nnn, lf) are managed here since they are useful
+on all host types including servers. For GUI file managers (Thunar, Dolphin, Nautilus, etc.),
+see `marcstraube.desktop.filemanagers`.
 
 ## Requirements
 
@@ -62,6 +66,16 @@ list with availability notes per OS.
 | Variable                       | Default | Description            |
 |--------------------------------|---------|------------------------|
 | `utils_transfer_rsync_enabled` | `true`  | Fast file copying tool |
+
+### File Managers
+
+| Variable                       | Default | Description                            |
+|--------------------------------|---------|----------------------------------------|
+| `utils_filemgr_mc_enabled`     | `true`  | Midnight Commander                     |
+| `utils_filemgr_vifm_enabled`   | `false` | Vi-like file manager                   |
+| `utils_filemgr_ranger_enabled` | `false` | Vi-like file manager (Arch/Debian/EL9) |
+| `utils_filemgr_nnn_enabled`    | `false` | Fast file manager (Arch/Debian/EL9)    |
+| `utils_filemgr_lf_enabled`     | `false` | Terminal file manager (Arch/Debian)    |
 
 ### Search Tools
 

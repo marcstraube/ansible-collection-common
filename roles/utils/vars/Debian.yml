@@ -23,6 +23,16 @@ __utils_mux_screen: 'screen'
 __utils_transfer_rsync: 'rsync'
 
 #
+# File Managers
+#
+
+__utils_filemgr_mc: 'mc'
+__utils_filemgr_vifm: 'vifm'
+__utils_filemgr_ranger: 'ranger'
+__utils_filemgr_nnn: 'nnn'
+__utils_filemgr_lf: 'lf'
+
+#
 # Search Tools
 #
 

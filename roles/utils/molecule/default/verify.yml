@@ -40,6 +40,22 @@
       register: _utils_rsync_pkg
       failed_when: _utils_rsync_pkg.changed
 
+    - name: Verify | Check mc package installed
+      ansible.builtin.package:
+        name: mc
+        state: present
+      check_mode: true
+      register: _utils_mc_pkg
+      failed_when: _utils_mc_pkg.changed
+
+    - name: Verify | Check vifm package installed
+      ansible.builtin.package:
+        name: vifm
+        state: present
+      check_mode: true
+      register: _utils_vifm_pkg
+      failed_when: _utils_vifm_pkg.changed
+
     - name: Verify | Set ripgrep package name
       ansible.builtin.set_fact:
         _utils_ripgrep_pkg_name: "{{ 'ripgrep' }}"
@@ -127,6 +143,20 @@
       register: _utils_rsync_bin
       changed_when: false
       failed_when: _utils_rsync_bin.rc != 0
+
+    - name: Verify | Check mc binary exists
+      ansible.builtin.command:
+        cmd: which mc
+      register: _utils_mc_bin
+      changed_when: false
+      failed_when: _utils_mc_bin.rc != 0
+
+    - name: Verify | Check vifm binary exists
+      ansible.builtin.command:
+        cmd: which vifm
+      register: _utils_vifm_bin
+      changed_when: false
+      failed_when: _utils_vifm_bin.rc != 0
 
     - name: Verify | Check fastfetch binary exists
       ansible.builtin.command:
@@ -252,6 +282,34 @@
         that:
           - _utils_figlet_test.stdout | length > 0
         fail_msg: figlet functional test failed
+
+    - name: Verify | Check mc version
+      ansible.builtin.command:
+        cmd: mc --version
+      environment:
+        TERM: xterm
+      register: _utils_mc_version
+      changed_when: false
+      failed_when: _utils_mc_version.rc != 0
+
+    - name: Verify | Assert mc version output
+      ansible.builtin.assert:
+        that:
+          - "'Midnight Commander' in _utils_mc_version.stdout"
+        fail_msg: mc version output unexpected
+
+    - name: Verify | Check vifm version
+      ansible.builtin.command:
+        cmd: vifm --version
+      register: _utils_vifm_version
+      changed_when: false
+      failed_when: _utils_vifm_version.rc != 0
+
+    - name: Verify | Assert vifm version output
+      ansible.builtin.assert:
+        that:
+          - "'Version:' in _utils_vifm_version.stdout"
+        fail_msg: vifm version output unexpected
 
     - name: Verify | Check rg version
       ansible.builtin.command:

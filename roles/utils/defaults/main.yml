@@ -68,6 +68,28 @@ utils_transfer_rsync_enabled: true
 # utils_transfer_rsync: {{ utils_transfer_rsync_enabled }}
 
 #
+# File Managers
+#
+
+# Midnight Commander (Norton Commander clone)
+utils_filemgr_mc_enabled: true
+
+# Vi-like file manager (vifm)
+utils_filemgr_vifm_enabled: false
+
+# Vi-like file manager with previews (ranger)
+# Not available on Rocky 10
+utils_filemgr_ranger_enabled: false
+
+# Fast terminal file manager (nnn)
+# Not available on Rocky 10
+utils_filemgr_nnn_enabled: false
+
+# Terminal file manager inspired by ranger (lf)
+# Not available on Rocky
+utils_filemgr_lf_enabled: false
+
+#
 # Search Tools
 #
 
