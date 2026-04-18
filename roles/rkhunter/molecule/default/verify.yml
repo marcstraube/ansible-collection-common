@@ -5,8 +5,12 @@
 
   tasks:
     #
-    # Load OS-Specific Variables
+    # Load Variables
     #
+
+    - name: Verify | Load common variables
+      ansible.builtin.include_vars:
+        file: '../../vars/main.yml'
 
     - name: Verify | Load OS-specific variables
       ansible.builtin.include_vars: '{{ item }}'
