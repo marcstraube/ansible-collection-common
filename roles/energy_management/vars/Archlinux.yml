@@ -1,40 +1,16 @@
 ---
-# Logind
-__energy_management_logind_service: 'systemd-logind.service'
-__energy_management_logind_config_dir: '/etc/systemd/logind.conf.d'
-__energy_management_logind_config_file: 'energy.conf'
-
-# Sleep
-__energy_management_sleep_config_dir: '/etc/systemd/sleep.conf.d'
-__energy_management_sleep_config_file: 'energy.conf'
-
+#
 # Power Profiles Daemon
+#
+
 __energy_management_ppd_packages:
   - 'power-profiles-daemon'
   - 'python-gobject'
 __energy_management_ppd_service: 'power-profiles-daemon.service'
 
-# TLP
-__energy_management_tlp_packages:
-  - 'tlp'
-  - 'tlp-rdw'
-__energy_management_tlp_service: 'tlp.service'
-__energy_management_tlp_config_file: '/etc/tlp.conf'
-__energy_management_tlp_mask_services:
-  - 'systemd-rfkill.service'
-  - 'systemd-rfkill.socket'
-
+#
 # Battery (tp_smapi for older ThinkPads)
+#
+
 __energy_management_tp_smapi_packages:
   - 'tp_smapi'
-__energy_management_battery_sysfs_path: '/sys/class/power_supply/BAT0'
-__energy_management_battery_start_file: 'charge_control_start_threshold'
-__energy_management_battery_stop_file: 'charge_control_end_threshold'
-__energy_management_tp_smapi_start_file: '/proc/acpi/ibm/battery/BAT0/start_charge_thresh'
-__energy_management_tp_smapi_stop_file: '/proc/acpi/ibm/battery/BAT0/stop_charge_thresh'
-
-# Backlight
-__energy_management_backlight_packages:
-  - 'brightnessctl'
-__energy_management_backlight_udev_rules_dir: '/etc/udev/rules.d'
-__energy_management_backlight_udev_rules_file: '90-backlight.rules'

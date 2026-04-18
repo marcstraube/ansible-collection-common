@@ -8,13 +8,7 @@ __podman_packages:
   - 'fuse-overlayfs'
   - 'passt'
 
-__podman_compose_package: 'podman-compose'
-__podman_docker_package: 'podman-docker'
 __podman_podlet_package: 'podlet'
 __podman_aur_packages:
   desktop:
     - podman-desktop-bin
-
-__podman_config_dir: '/etc/containers'
-__podman_socket_service: 'podman.socket'
-__podman_auto_update_timer: 'podman-auto-update.timer'

@@ -1,0 +1,4 @@
+---
+__lynis_timer_name: 'lynis-audit.timer'
+__lynis_service_name: 'lynis-audit.service'
+__lynis_config_dir: '/etc/lynis'

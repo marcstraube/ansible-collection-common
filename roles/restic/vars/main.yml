@@ -1,0 +1,6 @@
+---
+__restic_packages:
+  - 'restic'
+
+__restic_binary_packages:
+  - 'bzip2'
