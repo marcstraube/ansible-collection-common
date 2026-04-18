@@ -5,6 +5,8 @@
       - unattended-upgrades
       - apt-listchanges
     state: present
+  retries: 3
+  delay: 5
 
 - name: Unattended | Deploy unattended-upgrades config
   ansible.builtin.template:

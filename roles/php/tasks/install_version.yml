@@ -40,6 +40,8 @@
   ansible.builtin.package:
     name: '{{ __php_version_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: not (__php_use_aur | bool)
 
 - name: Install Version | PHP packages from AUR (Arch)
@@ -48,6 +50,8 @@
   kewlfft.aur.aur:
     name: '{{ __php_version_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_use_aur | bool

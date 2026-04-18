@@ -3,24 +3,32 @@
   ansible.builtin.package:
     name: '{{ __networkmanager_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: __networkmanager_packages | length > 0
 
 - name: Install | NetworkManager applet
   ansible.builtin.package:
     name: '{{ __networkmanager_applet_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: networkmanager_applet_enabled | bool
 
 - name: Install | VPN plugins
   ansible.builtin.package:
     name: '{{ networkmanager_vpn_plugins }}'
     state: present
+  retries: 3
+  delay: 5
   when: networkmanager_vpn_plugins | length > 0
 
 - name: Install | Optional dependencies
   ansible.builtin.package:
     name: '{{ item.name }}'
     state: present
+  retries: 3
+  delay: 5
   loop:
     - { name: curl, needed: "{{ networkmanager_timezone_enabled }}" }
     - { name: cifs-utils, needed: "{{ networkmanager_smb_shares | length > 0 }}" }

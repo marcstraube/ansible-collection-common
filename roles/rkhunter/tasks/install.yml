@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __rkhunter_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Ensure rkhunter directories exist
   ansible.builtin.file:

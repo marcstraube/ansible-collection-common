@@ -17,11 +17,15 @@
   ansible.builtin.package:
     name: '{{ [base_kernel] + base_kernel_extra_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Kernel | Install microcode package
   ansible.builtin.package:
     name: '{{ __base_microcode_package }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - __base_microcode_package is defined
     - __base_microcode_package | length > 0

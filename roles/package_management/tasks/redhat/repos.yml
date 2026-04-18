@@ -70,6 +70,8 @@
   ansible.builtin.rpm_key:
     key: "/etc/pki/rpm-gpg/RPM-GPG-KEY-{{ __distro }}-{{ __distro_ver }}"
     state: present
+  retries: 5
+  delay: 10
   when:
     - dnf_epel_enabled | bool
     - ansible_facts['distribution'] in ['Rocky', 'AlmaLinux']
@@ -78,6 +80,8 @@
   ansible.builtin.package:
     name: 'epel-release'
     state: present
+  retries: 3
+  delay: 5
   when:
     - dnf_epel_enabled | bool
     - ansible_facts['distribution'] != 'Fedora'
@@ -97,6 +101,8 @@
         name: "https://rpms.remirepo.net/enterprise/remi-release-{{ ansible_facts['distribution_major_version'] }}.rpm"
         state: present
         disable_gpg_check: true
+      retries: 5
+      delay: 10
       notify: 'dnf configuration changed'
 
     - name: Repos | Check current PHP module stream
@@ -132,6 +138,8 @@
       https://mirrors.rpmfusion.org/free/{{ __rpmfusion_distro }}/rpmfusion-free-release-{{ __distro_ver }}.noarch.rpm
     state: present
     disable_gpg_check: true
+  retries: 5
+  delay: 10
   when: dnf_rpmfusion_free_enabled | bool
   notify: 'dnf configuration changed'
 
@@ -150,6 +158,8 @@
       __distro_ver }}.noarch.rpm
     state: present
     disable_gpg_check: true
+  retries: 5
+  delay: 10
   when: dnf_rpmfusion_nonfree_enabled | bool
   notify: 'dnf configuration changed'
 
@@ -165,6 +175,8 @@
       https://www.elrepo.org/elrepo-release-{{ __distro_ver }}.el{{ __distro_ver }}.elrepo.noarch.rpm
     state: present
     disable_gpg_check: true
+  retries: 5
+  delay: 10
   when:
     - dnf_elrepo_enabled | bool
     - ansible_facts['distribution'] != 'Fedora'
@@ -183,6 +195,8 @@
       __distro_ver }}-x86_64/pgdg-redhat-repo-latest.noarch.rpm
     state: present
     disable_gpg_check: true
+  retries: 5
+  delay: 10
   when:
     - dnf_postgresql_repo_enabled | bool
     - ansible_facts['distribution'] != 'Fedora'
@@ -203,6 +217,8 @@
         gpgkey: 'https://rpm.grafana.com/gpg.key'
         gpgcheck: true
         enabled: true
+      retries: 5
+      delay: 10
       notify: 'dnf configuration changed'
 
 #
@@ -221,6 +237,8 @@
         gpgcheck: true
         enabled: true
         exclude: 'kubelet kubeadm kubectl cri-tools kubernetes-cni'
+      retries: 5
+      delay: 10
       notify: 'dnf configuration changed'
 
 #
@@ -257,6 +275,8 @@
     gpgkey: '{{ item.gpgkey | default(omit) }}'
     gpgcheck: '{{ item.gpgcheck | default(true) }}'
     enabled: '{{ item.enabled | default(true) }}'
+  retries: 5
+  delay: 10
   loop: '{{ dnf_custom_repos }}'
   loop_control:
     label: '{{ item.name }}'

@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: 'apt-file'
     state: present
+  retries: 3
+  delay: 5
   when: apt_apt_file_enabled | bool
   notify: 'apt-file installed'
 
@@ -10,6 +12,8 @@
   ansible.builtin.package:
     name: 'needrestart'
     state: present
+  retries: 3
+  delay: 5
   when: apt_needrestart_enabled | bool
 
 - name: Tools | Configure needrestart mode
@@ -26,10 +30,14 @@
   ansible.builtin.package:
     name: 'debsums'
     state: present
+  retries: 3
+  delay: 5
   when: apt_debsums_enabled | bool
 
 - name: Tools | Install debian-goodies
   ansible.builtin.package:
     name: 'debian-goodies'
     state: present
+  retries: 3
+  delay: 5
   when: apt_debian_goodies_enabled | bool

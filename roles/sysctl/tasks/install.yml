@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __sysctl_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Load br_netfilter module for Docker profile
   community.general.modprobe:

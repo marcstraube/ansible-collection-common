@@ -7,6 +7,8 @@
   loop: '{{ __aide_gpg_keys | default([]) }}'
   register: __aide_gpg_import
   changed_when: "'imported:' in __aide_gpg_import.stderr"
+  retries: 5
+  delay: 10
   when: __aide_aur | bool
 
 - name: Install | AIDE package (AUR)
@@ -15,12 +17,16 @@
   kewlfft.aur.aur:
     name: '{{ __aide_aur_packages.aide }}'
     state: present
+  retries: 3
+  delay: 5
   when: __aide_aur | bool
 
 - name: Install | AIDE package (official repos)
   ansible.builtin.package:
     name: '{{ __aide_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: not (__aide_aur | bool)
 
 - name: Install | Ensure AIDE directories exist

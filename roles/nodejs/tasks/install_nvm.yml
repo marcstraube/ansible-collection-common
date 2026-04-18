@@ -9,6 +9,8 @@
   ansible.builtin.package:
     name: '{{ __nodejs_nvm_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: ansible_facts['os_family'] == 'Archlinux'
 
 - name: Install NVM | Per-user install

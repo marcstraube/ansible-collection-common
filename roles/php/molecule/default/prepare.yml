@@ -9,11 +9,15 @@
       community.general.pacman:
         update_cache: true
         upgrade: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Archlinux'
 
     - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
         update_cache: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Prepare | Install Debian prerequisites
@@ -22,6 +26,8 @@
           - gnupg
           - ca-certificates
         state: present
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Prepare | Add Sury GPG key (Debian)
@@ -31,6 +37,8 @@
         owner: root
         group: root
         mode: '0644'
+      retries: 5
+      delay: 10
       when: ansible_facts['distribution'] == 'Debian'
 
     - name: Prepare | Add Sury repository (Debian)
@@ -40,22 +48,30 @@
           https://packages.sury.org/php/ {{ ansible_facts['distribution_release'] }} main
         state: present
         filename: 'php-sury'
+      retries: 5
+      delay: 10
       when: ansible_facts['distribution'] == 'Debian'
 
     - name: Prepare | Update apt cache after Sury (Debian)
       ansible.builtin.apt:
         update_cache: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
         update_cache: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
 
     - name: Prepare | Install EPEL (RedHat)
       ansible.builtin.dnf:
         name: epel-release
         state: present
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
 
     - name: Prepare | Install Remi repository (RedHat)
@@ -63,9 +79,13 @@
         name: "https://rpms.remirepo.net/enterprise/remi-release-{{ ansible_facts['distribution_major_version'] }}.rpm"
         state: present
         disable_gpg_check: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
 
     - name: Prepare | Update cache after repos (RedHat)
       ansible.builtin.dnf:
         update_cache: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'RedHat'

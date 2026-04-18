@@ -22,6 +22,8 @@
         owner: root
         group: root
         mode: '0644'
+      retries: 5
+      delay: 10
 
     - name: Neovim Binary | Extract to /usr/local
       ansible.builtin.unarchive:

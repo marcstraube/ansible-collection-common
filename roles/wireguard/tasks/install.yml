@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __wireguard_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Load WireGuard kernel module
   community.general.modprobe:

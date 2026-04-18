@@ -8,12 +8,16 @@
     name: '{{ __nodejs_prerequisite_packages }}'
     state: present
     update_cache: true
+  retries: 3
+  delay: 5
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Install NodeSource | Prerequisite packages (RedHat)
   ansible.builtin.package:
     name: '{{ __nodejs_prerequisite_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: ansible_facts['os_family'] == 'RedHat'
 
 #
@@ -27,6 +31,8 @@
     owner: root
     group: root
     mode: '0644'
+  retries: 5
+  delay: 10
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Install NodeSource | Add repository (Debian)
@@ -34,6 +40,8 @@
     repo: '{{ __nodejs_nodesource_repo }}'
     state: present
     filename: nodesource
+  retries: 5
+  delay: 10
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Install NodeSource | Node.js packages (Debian)
@@ -41,6 +49,8 @@
     name: '{{ __nodejs_packages }}'
     state: present
     update_cache: true
+  retries: 3
+  delay: 5
   when: ansible_facts['os_family'] == 'Debian'
 
 #
@@ -133,6 +143,8 @@
           ansible.builtin.package:
             name: nodejs
             state: present
+          retries: 3
+          delay: 5
 
     # --- Path B: AppStream doesn't have it, use NodeSource ---
 
@@ -155,11 +167,15 @@
             gpgcheck: true
             module_hotfixes: true
             priority: '9'
+          retries: 5
+          delay: 10
 
         - name: Install NodeSource | Node.js from NodeSource (RedHat < 10)
           ansible.builtin.package:
             name: '{{ __nodejs_packages }}'
             state: present
+          retries: 3
+          delay: 5
 
 # --- Rocky 10+: No modularity, use NodeSource directly ---
 
@@ -179,15 +195,21 @@
         gpgkey: '{{ __nodejs_nodesource_key_url }}'
         gpgcheck: true
         priority: '9'
+      retries: 5
+      delay: 10
 
     - name: Install NodeSource | Node.js from NodeSource (RedHat >= 10)
       ansible.builtin.package:
         name: '{{ __nodejs_packages }}'
         state: present
+      retries: 3
+      delay: 5
 
 # Ensure npm is always present (separate package on RedHat)
 - name: Install NodeSource | Ensure npm is installed (RedHat)
   ansible.builtin.package:
     name: npm
     state: present
+  retries: 3
+  delay: 5
   when: ansible_facts['os_family'] == 'RedHat'

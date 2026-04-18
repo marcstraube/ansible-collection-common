@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __lynis_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - lynis_install_method == 'package'
     - __lynis_packages | length > 0
@@ -11,6 +13,8 @@
   ansible.builtin.package:
     name: git
     state: present
+  retries: 3
+  delay: 5
   when: lynis_install_method == 'git'
 
 - name: Install | Clone lynis from GitHub
@@ -19,6 +23,8 @@
     dest: '{{ lynis_install_dir }}'
     version: '{{ lynis_version }}'
     update: true
+  retries: 5
+  delay: 10
   when: lynis_install_method == 'git'
 
 - name: Install | Create lynis symlink

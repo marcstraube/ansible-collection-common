@@ -21,28 +21,38 @@
       community.general.pacman:
         update_cache: true
         upgrade: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Archlinux'
 
     - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
         update_cache: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Prepare | Enable EPEL repository (RedHat)
       ansible.builtin.dnf:
         name: epel-release
         state: present
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
 
     - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
         update_cache: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
 
     - name: Prepare | Install container dependencies
       ansible.builtin.package:
         name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
+      retries: 3
+      delay: 5
 
     # ClamAV daemon may fail to start in containers without override
     - name: Prepare | Create systemd override directory for clamd (Arch)

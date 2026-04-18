@@ -21,6 +21,8 @@
   ansible.builtin.package:
     name: '{{ __energy_management_tlp_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: TLP | Deploy TLP configuration
   ansible.builtin.template:

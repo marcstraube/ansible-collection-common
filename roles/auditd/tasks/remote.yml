@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __auditd_remote_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: __auditd_remote_packages | length > 0
 
 - name: Remote | Configure audisp-remote

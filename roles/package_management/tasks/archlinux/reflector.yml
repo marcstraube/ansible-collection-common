@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: 'reflector'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Reflector | Deploy reflector.conf
   ansible.builtin.template:

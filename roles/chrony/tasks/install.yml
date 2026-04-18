@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __chrony_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Disable conflicting services
   ansible.builtin.systemd_service:

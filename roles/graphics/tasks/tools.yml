@@ -17,4 +17,6 @@
   ansible.builtin.package:
     name: '{{ __tools_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: __tools_packages | length > 0

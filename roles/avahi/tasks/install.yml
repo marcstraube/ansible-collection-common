@@ -3,9 +3,13 @@
   ansible.builtin.package:
     name: '{{ __avahi_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | NSS-mDNS packages
   ansible.builtin.package:
     name: '{{ __avahi_nss_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: avahi_nss_mdns_enabled | bool

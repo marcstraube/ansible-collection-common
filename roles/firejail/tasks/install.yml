@@ -3,4 +3,6 @@
   ansible.builtin.package:
     name: '{{ __firejail_packages }}'
     state: present
+  retries: 3
+  delay: 5
   notify: apply firecfg

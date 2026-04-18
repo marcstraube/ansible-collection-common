@@ -3,4 +3,6 @@
   ansible.builtin.package:
     name: '{{ __snmp_packages }}'
     state: present
+  retries: 3
+  delay: 5
   register: __snmp_install

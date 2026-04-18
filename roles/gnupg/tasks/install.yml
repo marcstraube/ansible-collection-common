@@ -3,15 +3,21 @@
   ansible.builtin.package:
     name: '{{ __gnupg_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Additional tools
   ansible.builtin.package:
     name: '{{ __gnupg_tools_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: gnupg_tools_enabled | default(true) | bool
 
 - name: Install | GUI packages
   ansible.builtin.package:
     name: '{{ __gnupg_gui_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: gnupg_gui_enabled | default(false) | bool
