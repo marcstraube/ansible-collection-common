@@ -17,6 +17,10 @@
     # File transfer
     utils_transfer_rsync_enabled: true
 
+    # File managers
+    utils_filemgr_mc_enabled: true
+    utils_filemgr_vifm_enabled: true
+
     # Search tools
     utils_search_ripgrep_enabled: true
     utils_search_fd_enabled: true

@@ -2,6 +2,13 @@
 # EL9 overrides for packages available via EPEL on EL9 but not on EL10
 
 #
+# File Managers
+#
+
+__utils_filemgr_ranger: 'ranger'
+__utils_filemgr_nnn: 'nnn'
+
+#
 # Fun Tools
 #
 
