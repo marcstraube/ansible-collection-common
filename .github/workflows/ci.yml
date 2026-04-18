@@ -253,6 +253,34 @@ jobs:
           ANSIBLE_FORCE_COLOR: '1'
 
   # =============================================================================
+  # CI GATE (single required check for branch protection)
+  # =============================================================================
+  ci-gate:
+    name: CI Gate
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [lint, markdown-lint, yaml-lint, build, molecule-compat, molecule-roles]
+    steps:
+      - name: Check required job results
+        run: |
+          # molecule-roles may be skipped when no roles changed
+          results=(
+            "${{ needs.lint.result }}"
+            "${{ needs.markdown-lint.result }}"
+            "${{ needs.yaml-lint.result }}"
+            "${{ needs.build.result }}"
+            "${{ needs.molecule-compat.result }}"
+            "${{ needs.molecule-roles.result }}"
+          )
+          for r in "${results[@]}"; do
+            if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
+              echo "::error::Required job failed or was cancelled: $r"
+              exit 1
+            fi
+          done
+          echo "All required jobs passed (or were skipped)."
+
+  # =============================================================================
   # BUILD (always runs)
   # =============================================================================
   build:
