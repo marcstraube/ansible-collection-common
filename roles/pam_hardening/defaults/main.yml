@@ -176,9 +176,9 @@ pam_limits_enabled: true
 pam_limits_maxlogins: 10
 
 # Maximum number of processes per user
-# Server:  1024 (restrictive, prevents fork bombs)
-# Desktop: 65536 (GUI sessions with browsers/IDEs need more threads)
-pam_limits_nproc: 1024
+# 65536 matches the kernel default — prevents PAM from cutting below it
+# Modern workloads (browsers, IDEs, databases, containers) need this headroom
+pam_limits_nproc: 65536
 
 # Core dump size limit in KB (0 = disabled, security best practice)
 pam_limits_core: 0
