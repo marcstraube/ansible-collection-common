@@ -5,6 +5,8 @@
       - 'ca-certificates'
       - 'python3-debian'
     state: present
+  retries: 3
+  delay: 5
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Install | Add Docker apt repository
@@ -16,12 +18,16 @@
     components: stable
     signed_by: '{{ __docker_gpg_url }}'
     state: present
+  retries: 5
+  delay: 10
   register: __docker_apt_repo
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Install | Update apt cache after repo change
   ansible.builtin.apt:
     update_cache: true
+  retries: 3
+  delay: 5
   when:
     - ansible_facts['os_family'] == 'Debian'
     - __docker_apt_repo is changed
@@ -49,17 +55,23 @@
   ansible.builtin.package:
     name: '{{ __docker_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Docker Compose plugin
   ansible.builtin.package:
     name: '{{ __docker_compose_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: docker_compose_enabled | bool
 
 - name: Install | Docker Buildx plugin
   ansible.builtin.package:
     name: '{{ __docker_buildx_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: docker_buildx_enabled | bool
 
 #

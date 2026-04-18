@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: 'base-devel'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Makepkg | Deploy makepkg.conf
   ansible.builtin.template:
@@ -17,18 +19,24 @@
   ansible.builtin.package:
     name: 'ccache'
     state: present
+  retries: 3
+  delay: 5
   when: makepkg_ccache_enabled | bool
 
 - name: Makepkg | Install sccache
   ansible.builtin.package:
     name: 'sccache'
     state: present
+  retries: 3
+  delay: 5
   when: makepkg_sccache_enabled | bool
 
 - name: Makepkg | Install distcc
   ansible.builtin.package:
     name: 'distcc'
     state: present
+  retries: 3
+  delay: 5
   when: makepkg_distcc_enabled | bool
 
 #

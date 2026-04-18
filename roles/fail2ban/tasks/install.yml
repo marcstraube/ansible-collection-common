@@ -3,3 +3,5 @@
   ansible.builtin.package:
     name: '{{ __fail2ban_packages }}'
     state: present
+  retries: 3
+  delay: 5

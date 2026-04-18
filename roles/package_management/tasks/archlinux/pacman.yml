@@ -18,6 +18,8 @@
   when: item.key_id is defined
   register: __package_management_gpg_import
   changed_when: "'imported' in __package_management_gpg_import.stdout"
+  retries: 5
+  delay: 10
   failed_when:
     - __package_management_gpg_import.rc != 0
     - "'already in keyring' not in __package_management_gpg_import.stderr"
@@ -62,6 +64,8 @@
   ansible.builtin.package:
     name: 'pacman-contrib'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Pacman | Configure paccache
   ansible.builtin.lineinfile:

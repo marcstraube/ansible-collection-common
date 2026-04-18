@@ -7,6 +7,8 @@
   ansible.builtin.package:
     name: '{{ __editors_nano_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: editors_nano_enabled | bool
 
 #
@@ -17,6 +19,8 @@
   ansible.builtin.package:
     name: '{{ __editors_vim_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: editors_vim_enabled | bool
 
 #
@@ -27,6 +31,8 @@
   ansible.builtin.package:
     name: '{{ __editors_neovim_package }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - editors_neovim_enabled | bool
     - not (editors_neovim_binary_enabled | default(false) | bool)

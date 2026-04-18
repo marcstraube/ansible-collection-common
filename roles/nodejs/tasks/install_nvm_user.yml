@@ -38,6 +38,8 @@
         mode: '0700'
         owner: '{{ __nodejs_nvm_user }}'
         group: '{{ __nodejs_nvm_user }}'
+      retries: 5
+      delay: 10
       register: __nodejs_nvm_script
 
     - name: Install NVM User | Run nvm install script

@@ -8,6 +8,8 @@
     repo: "deb http://deb.debian.org/debian {{ ansible_facts['distribution_release'] }}-backports main contrib non-free"
     state: present
     filename: 'backports'
+  retries: 5
+  delay: 10
   when:
     - apt_backports_enabled | bool
     - ansible_facts['distribution'] == 'Debian'
@@ -21,6 +23,8 @@
   ansible.builtin.apt_repository:
     repo: '{{ item }}'
     state: present
+  retries: 5
+  delay: 10
   loop: '{{ apt_ppas }}'
   when:
     - apt_ppas | length > 0
@@ -41,6 +45,8 @@
         owner: root
         group: root
         mode: '0644'
+      retries: 5
+      delay: 10
 
     - name: Repos | Add PostgreSQL repository
       ansible.builtin.apt_repository:
@@ -50,6 +56,8 @@
           {{ ansible_facts['distribution_release'] }}-pgdg main
         state: present
         filename: 'postgresql'
+      retries: 5
+      delay: 10
       notify: 'apt configuration changed'
 
 #
@@ -66,6 +74,8 @@
         owner: root
         group: root
         mode: '0644'
+      retries: 5
+      delay: 10
       when: ansible_facts['distribution'] == 'Debian'
 
     - name: Repos | Add PHP Sury repository (Debian)
@@ -75,6 +85,8 @@
           https://packages.sury.org/php/ {{ ansible_facts['distribution_release'] }} main
         state: present
         filename: 'php-sury'
+      retries: 5
+      delay: 10
       when: ansible_facts['distribution'] == 'Debian'
       notify: 'apt configuration changed'
 
@@ -82,6 +94,8 @@
       ansible.builtin.apt_repository:
         repo: 'ppa:ondrej/php'
         state: present
+      retries: 5
+      delay: 10
       when: ansible_facts['distribution'] == 'Ubuntu'
       notify: 'apt configuration changed'
 
@@ -99,6 +113,8 @@
         owner: root
         group: root
         mode: '0644'
+      retries: 5
+      delay: 10
 
     - name: Repos | Add Grafana repository
       ansible.builtin.apt_repository:
@@ -107,6 +123,8 @@
           https://apt.grafana.com stable main
         state: present
         filename: 'grafana'
+      retries: 5
+      delay: 10
       notify: 'apt configuration changed'
 
 #
@@ -123,6 +141,8 @@
         owner: root
         group: root
         mode: '0644'
+      retries: 5
+      delay: 10
 
     - name: Repos | Add Kubernetes repository
       ansible.builtin.apt_repository:
@@ -131,6 +151,8 @@
           https://pkgs.k8s.io/core:/stable:/v{{ apt_kubernetes_version }}/deb/ /
         state: present
         filename: 'kubernetes'
+      retries: 5
+      delay: 10
       notify: 'apt configuration changed'
 
 #
@@ -144,6 +166,8 @@
     owner: root
     group: root
     mode: '0644'
+  retries: 5
+  delay: 10
   loop: '{{ apt_custom_repos }}'
   loop_control:
     label: '{{ item.name }}'
@@ -156,6 +180,8 @@
     repo: '{{ item.repo }}'
     state: present
     filename: '{{ item.name }}'
+  retries: 5
+  delay: 10
   loop: '{{ apt_custom_repos }}'
   loop_control:
     label: '{{ item.name }}'

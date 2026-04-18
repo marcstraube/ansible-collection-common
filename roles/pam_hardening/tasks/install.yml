@@ -3,15 +3,21 @@
   ansible.builtin.package:
     name: '{{ __pam_hardening_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | libpwquality
   ansible.builtin.package:
     name: '{{ __pam_hardening_pwquality_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: pam_pwquality_enabled | bool
 
 - name: Install | Google Authenticator PAM module
   ansible.builtin.package:
     name: '{{ __pam_hardening_google_authenticator_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: pam_2fa_enabled | bool

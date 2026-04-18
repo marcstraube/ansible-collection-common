@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: 'dnf-utils'
     state: present
+  retries: 3
+  delay: 5
   when:
     - dnf_utils_enabled | bool
     - ansible_facts['distribution_major_version'] | int < 10
@@ -11,6 +13,8 @@
   ansible.builtin.package:
     name: 'yum-utils'
     state: present
+  retries: 3
+  delay: 5
   when:
     - dnf_needs_restarting_enabled | bool
     - ansible_facts['distribution_major_version'] | int < 10
@@ -21,12 +25,16 @@
       - rpm-build
       - rpmdevtools
     state: present
+  retries: 3
+  delay: 5
   when: dnf_rpmbuild_enabled | bool
 
 - name: Tools | Install mock for chroot building
   ansible.builtin.package:
     name: 'mock'
     state: present
+  retries: 3
+  delay: 5
   when: dnf_mock_enabled | bool
 
 - name: Tools | Add users to mock group

@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: 'dnf-automatic'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Automatic | Deploy dnf-automatic config
   ansible.builtin.template:

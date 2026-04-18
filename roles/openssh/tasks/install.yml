@@ -3,11 +3,15 @@
   ansible.builtin.package:
     name: '{{ __openssh_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | ssh-audit
   ansible.builtin.package:
     name: '{{ __openssh_ssh_audit_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: openssh_ssh_audit_enabled | bool
   # Package may not be available in all repositories
   failed_when: false
@@ -16,4 +20,6 @@
   ansible.builtin.package:
     name: '{{ openssh_askpass_package | default(__openssh_askpass_package) }}'
     state: present
+  retries: 3
+  delay: 5
   when: openssh_askpass_enabled | bool

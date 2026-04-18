@@ -3,11 +3,15 @@
   ansible.builtin.package:
     name: '{{ __clamav_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | ClamAV milter packages
   ansible.builtin.package:
     name: '{{ __clamav_milter_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - clamav_milter_enabled | bool
     - __clamav_milter_packages | length > 0

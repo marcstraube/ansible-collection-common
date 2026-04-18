@@ -3,3 +3,5 @@
   ansible.builtin.package:
     name: '{{ __php_composer_package }}'
     state: present
+  retries: 3
+  delay: 5

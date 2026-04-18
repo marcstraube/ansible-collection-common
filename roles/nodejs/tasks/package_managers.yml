@@ -4,6 +4,8 @@
     name: pnpm
     global: true
     state: present
+  retries: 3
+  delay: 5
   environment: >-
     {{
       {'HTTP_PROXY': nodejs_npm_proxy, 'HTTPS_PROXY': nodejs_npm_proxy}
@@ -17,6 +19,8 @@
     name: yarn
     global: true
     state: present
+  retries: 3
+  delay: 5
   environment: >-
     {{
       {'HTTP_PROXY': nodejs_npm_proxy, 'HTTPS_PROXY': nodejs_npm_proxy}

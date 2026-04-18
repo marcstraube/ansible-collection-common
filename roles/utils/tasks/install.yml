@@ -50,6 +50,8 @@
   ansible.builtin.package:
     name: '{{ __utils_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: __utils_packages | length > 0
 
 #
@@ -85,6 +87,8 @@
   kewlfft.aur.aur:
     name: '{{ __utils_aur_install_list }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __utils_aur_install_list | default([]) | length > 0

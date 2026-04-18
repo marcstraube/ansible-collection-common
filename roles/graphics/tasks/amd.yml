@@ -15,4 +15,6 @@
   ansible.builtin.package:
     name: '{{ __amd_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: __amd_packages | length > 0

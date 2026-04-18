@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __fonts_fontconfig_package }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Build base font package list
   ansible.builtin.set_fact:
@@ -52,5 +54,7 @@
   ansible.builtin.package:
     name: '{{ __fonts_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: __fonts_packages | length > 0
   notify: Rebuild font cache

@@ -3,29 +3,39 @@
   ansible.builtin.package:
     name: '{{ __hardware_tokens_ccid_package }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | FIDO2 packages
   ansible.builtin.package:
     name: '{{ __hardware_tokens_fido2_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: hardware_tokens_fido2_enabled | bool
 
 - name: Install | Smartcard packages
   ansible.builtin.package:
     name: '{{ __hardware_tokens_smartcard_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: hardware_tokens_smartcard_enabled | bool
 
 - name: Install | OpenSC
   ansible.builtin.package:
     name: '{{ __hardware_tokens_opensc_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: hardware_tokens_opensc_enabled | bool
 
 - name: Install | NitroKey packages
   ansible.builtin.package:
     name: '{{ __hardware_tokens_nitrokey_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - hardware_tokens_nitrokey_enabled | bool
     - __hardware_tokens_nitrokey_packages | length > 0
@@ -34,6 +44,8 @@
   ansible.builtin.package:
     name: '{{ __hardware_tokens_nitrokey_app_package }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - hardware_tokens_nitrokey_enabled | bool
     - hardware_tokens_nitrokey_app_enabled | bool
@@ -43,12 +55,16 @@
   ansible.builtin.package:
     name: '{{ __hardware_tokens_yubikey_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: hardware_tokens_yubikey_enabled | bool
 
 - name: Install | YubiKey Manager
   ansible.builtin.package:
     name: '{{ __hardware_tokens_yubikey_manager_package }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - hardware_tokens_yubikey_enabled | bool
     - hardware_tokens_yubikey_manager_enabled | bool
@@ -58,4 +74,6 @@
   ansible.builtin.package:
     name: '{{ __hardware_tokens_pam_u2f_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: hardware_tokens_pam_u2f_enabled | bool

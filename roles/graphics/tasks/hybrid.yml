@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __graphics_hybrid_switcheroo }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - graphics_hybrid_switcheroo_enabled | bool
     - __graphics_hybrid_switcheroo | length > 0
@@ -21,6 +23,8 @@
   ansible.builtin.package:
     name: '{{ __graphics_hybrid_prime_run }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - graphics_hybrid_prime_run_enabled | bool
     - __graphics_hybrid_prime_run | length > 0

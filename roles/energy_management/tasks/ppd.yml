@@ -22,6 +22,8 @@
   ansible.builtin.package:
     name: '{{ __energy_management_ppd_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: PPD | Enable and start PPD service
   ansible.builtin.systemd_service:

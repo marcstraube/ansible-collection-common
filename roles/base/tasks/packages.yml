@@ -9,15 +9,21 @@
   ansible.builtin.package:
     name: '{{ base_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Packages | Install dialog
   ansible.builtin.package:
     name: '{{ __base_dialog_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: base_dialog_enabled | bool
 
 - name: Packages | Install extra packages
   ansible.builtin.package:
     name: '{{ base_extra_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when: base_extra_packages | length > 0

@@ -7,6 +7,8 @@
   ansible.builtin.package:
     name: '{{ __energy_management_tp_smapi_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - energy_management_battery_tp_smapi_enabled | bool
     - __energy_management_tp_smapi_packages | length > 0

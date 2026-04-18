@@ -5,6 +5,8 @@
       - git
       - base-devel
     state: present
+  retries: 3
+  delay: 5
 
 - name: AUR | Create builder group
   ansible.builtin.group:

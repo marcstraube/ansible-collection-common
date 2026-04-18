@@ -3,12 +3,16 @@
   ansible.builtin.package:
     name: 'rebuild-detector'
     state: present
+  retries: 3
+  delay: 5
   when: pacman_rebuild_detector_enabled | bool
 
 - name: Tools | Install pkgfile
   ansible.builtin.package:
     name: 'pkgfile'
     state: present
+  retries: 3
+  delay: 5
   when: pacman_pkgfile_enabled | bool
   notify: 'pkgfile installed'
 
@@ -25,6 +29,8 @@
     name: 'informant'
     use: '{{ aur_helper }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - pacman_informant_enabled | bool
     - aur_helper | length > 0

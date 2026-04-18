@@ -40,6 +40,8 @@
   ansible.builtin.package:
     name: '{{ __nvidia_packages }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - __nvidia_packages | length > 0
     - not (graphics_nvidia_legacy_version | length > 0 and __graphics_nvidia_legacy_aur | default(false))

@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __unbound_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Ensure config directory exists
   ansible.builtin.file:
@@ -27,6 +29,8 @@
     owner: '{{ __unbound_user }}'
     group: '{{ __unbound_group }}'
     mode: '0644'
+  retries: 5
+  delay: 10
   when: unbound_root_hints_update_enabled | bool
 
 - name: Install | Deploy root hints update systemd service

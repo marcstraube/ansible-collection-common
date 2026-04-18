@@ -9,17 +9,23 @@
       community.general.pacman:
         update_cache: true
         upgrade: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Archlinux'
 
     - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
         update_cache: true
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Prepare | Install GRUB (Arch)
       ansible.builtin.package:
         name: grub
         state: present
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Archlinux'
 
     - name: Prepare | Create GRUB default config (Arch)

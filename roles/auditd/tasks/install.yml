@@ -3,6 +3,8 @@
   ansible.builtin.package:
     name: '{{ __auditd_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Ensure audit log directory exists
   ansible.builtin.file:

@@ -3,29 +3,39 @@
   ansible.builtin.package:
     name: '{{ __podman_packages }}'
     state: present
+  retries: 3
+  delay: 5
 
 - name: Install | Additional tools
   ansible.builtin.package:
     name: '{{ podman_tools }}'
     state: present
+  retries: 3
+  delay: 5
   when: podman_tools | length > 0
 
 - name: Install | Podman-compose
   ansible.builtin.package:
     name: '{{ __podman_compose_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: podman_compose_enabled | bool
 
 - name: Install | Podman-docker compatibility
   ansible.builtin.package:
     name: '{{ __podman_docker_package }}'
     state: present
+  retries: 3
+  delay: 5
   when: podman_docker_enabled | bool
 
 - name: Install | Podlet
   ansible.builtin.package:
     name: '{{ __podman_podlet_package }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - podman_podlet_enabled | bool
     - __podman_podlet_package | length > 0
@@ -36,6 +46,8 @@
   kewlfft.aur.aur:
     name: '{{ __podman_aur_packages.desktop }}'
     state: present
+  retries: 3
+  delay: 5
   when:
     - podman_desktop_enabled | bool
     - ansible_facts['os_family'] == 'Archlinux'
