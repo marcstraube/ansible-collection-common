@@ -36,6 +36,7 @@ repos:
         name: Markdown Lint
         language_version: '22.22.0'
         args: [--config=.markdownlint.yml]
+        exclude: '^CHANGELOG\.md$'
 
   # =============================================================================
   # GENERAL
