@@ -2,6 +2,20 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [1.2.0](https://github.com/marcstraube/ansible-collection-common/compare/v1.1.0...v1.2.0) (2026-04-19)
+
+
+### Features
+
+* Add network retry logic to all transient tasks ([#36](https://github.com/marcstraube/ansible-collection-common/issues/36)) ([4c23ddf](https://github.com/marcstraube/ansible-collection-common/commit/4c23ddfa91af40f22801572300addde97904f84d))
+* **utils:** Add CLI file managers category ([#35](https://github.com/marcstraube/ansible-collection-common/issues/35)) ([69faeb4](https://github.com/marcstraube/ansible-collection-common/commit/69faeb42ce324bb856b1d191f0db85342b76b137))
+* **utils:** Enable fd and fastfetch by default ([#37](https://github.com/marcstraube/ansible-collection-common/issues/37)) ([0656cec](https://github.com/marcstraube/ansible-collection-common/commit/0656cec447b934a57d6f013e2fa1c7bc41380d99))
+
+
+### Bug Fixes
+
+* Repair CI failures and add molecule gate job ([#33](https://github.com/marcstraube/ansible-collection-common/issues/33)) ([8152d97](https://github.com/marcstraube/ansible-collection-common/commit/8152d97c387fd50cca9580d465a277b780ad5f28))
+
 ## [1.1.0](https://github.com/marcstraube/ansible-collection-common/compare/v1.0.1...v1.1.0) (2026-04-17)
 
 
