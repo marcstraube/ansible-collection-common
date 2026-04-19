@@ -100,7 +100,7 @@ utils_search_ripgrep_enabled: false
 # utils_search_ripgrep: {{ utils_search_ripgrep_enabled }}
 
 # Install fd (fast find replacement)
-utils_search_fd_enabled: false
+utils_search_fd_enabled: true
 
 # DEPRECATED: Use utils_search_fd_enabled instead (removed in v2.0.0)
 # utils_search_fd: {{ utils_search_fd_enabled }}
@@ -110,7 +110,7 @@ utils_search_fd_enabled: false
 #
 
 # Fast system information tool written in C (fastfetch)
-utils_fetch_fastfetch_enabled: false
+utils_fetch_fastfetch_enabled: true
 
 # DEPRECATED: Use utils_fetch_fastfetch_enabled instead (removed in v2.0.0)
 # utils_fetch_fastfetch: {{ utils_fetch_fastfetch_enabled }}
