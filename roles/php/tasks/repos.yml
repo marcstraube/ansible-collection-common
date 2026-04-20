@@ -1,0 +1,62 @@
+---
+#
+# Sury PHP Repository (Debian)
+#
+
+- name: Repos | Ensure apt prerequisites
+  ansible.builtin.package:
+    name:
+      - 'ca-certificates'
+      - 'python3-debian'
+    state: present
+  retries: 3
+  delay: 5
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Repos | Add Sury PHP repository (Debian)
+  ansible.builtin.deb822_repository:
+    name: php-sury
+    types: deb
+    uris: '{{ __php_sury_repo_uris }}'
+    suites: '{{ __php_sury_repo_suites }}'
+    components: '{{ __php_sury_repo_components }}'
+    signed_by: '{{ __php_sury_gpg_url }}'
+    state: present
+  retries: 5
+  delay: 10
+  register: __php_sury_repo
+  when: ansible_facts['distribution'] == 'Debian'
+
+- name: Repos | Add Sury PHP PPA (Ubuntu)
+  ansible.builtin.apt_repository:
+    repo: 'ppa:ondrej/php'
+    state: present
+  retries: 5
+  delay: 10
+  register: __php_sury_ppa
+  when: ansible_facts['distribution'] == 'Ubuntu'
+
+- name: Repos | Update apt cache after repo change
+  ansible.builtin.apt:
+    update_cache: true
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - (__php_sury_repo is changed) or (__php_sury_ppa is changed)
+
+#
+# Cleanup legacy repo format
+#
+
+- name: Repos | Remove legacy Sury sources list file
+  ansible.builtin.file:
+    path: '/etc/apt/sources.list.d/php-sury.list'
+    state: absent
+  when: ansible_facts['distribution'] == 'Debian'
+
+- name: Repos | Remove legacy Sury GPG keyring
+  ansible.builtin.file:
+    path: '/etc/apt/keyrings/php-sury.gpg'
+    state: absent
+  when: ansible_facts['distribution'] == 'Debian'

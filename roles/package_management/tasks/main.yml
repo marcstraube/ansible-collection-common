@@ -99,6 +99,17 @@
   tags:
     - package-management
 
+- name: Main | Warn about deprecated apt_sury_enabled
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: apt_sury_enabled is deprecated and will be removed in v2.0.0.
+      Use the marcstraube.common.php role for Sury PHP repository management.
+  when:
+    - package_management_enabled | bool
+    - apt_sury_enabled | bool
+  tags:
+    - package-management
+
 - name: Main | Warn about deprecated dnf_remi_php_version
   ansible.builtin.debug:
     msg: >-
