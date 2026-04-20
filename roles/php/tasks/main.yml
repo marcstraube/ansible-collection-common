@@ -24,6 +24,14 @@
   tags:
     - php
 
+- name: Main | Import repository tasks
+  ansible.builtin.import_tasks:
+    file: repos.yml
+  when: php_enabled | bool
+  tags:
+    - php
+    - php:install
+
 - name: Main | Import install tasks
   ansible.builtin.import_tasks:
     file: install.yml

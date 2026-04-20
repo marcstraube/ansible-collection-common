@@ -17,12 +17,9 @@ and full FPM pool templates.
 
 - ansible-core >= 2.17
 - Collections: `community.general`, `kewlfft.aur` (Arch only)
-- **Debian/Ubuntu**: Sury repository enabled via `package_management`
-  (`apt_sury_enabled: true`)
-- **RHEL/Rocky**: Remi repository enabled via `package_management`
-  (`dnf_remi_enabled: true`)
-- **RHEL/Rocky**: EPEL repository enabled for Composer
-  (`dnf_epel_enabled: true`)
+- **Debian/Ubuntu**: Sury PHP repository is set up automatically by this role
+- **RHEL/Rocky**: Remi + EPEL repository via `package_management`
+  (`dnf_remi_enabled: true`, `dnf_epel_enabled: true`)
 
 ## Supported Platforms
 

@@ -551,7 +551,7 @@ apt_docker_repo_enabled: false
 # PostgreSQL PGDG repository
 apt_postgresql_repo_enabled: false
 
-# Sury repository (PHP, Apache2, nginx — deb.sury.org for Debian, PPA for Ubuntu)
+# DEPRECATED: Use marcstraube.common.php role instead (removed in v2.0.0)
 apt_sury_enabled: false
 
 # Grafana repository

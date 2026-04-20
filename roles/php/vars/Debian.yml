@@ -18,3 +18,9 @@ __php_fpm_listen_default: '/run/php/php{{ __php_ver }}-fpm.sock'
 # FPM pool defaults
 __php_fpm_default_user: 'www-data'
 __php_fpm_default_group: 'www-data'
+
+# Sury repository
+__php_sury_gpg_url: 'https://packages.sury.org/php/apt.gpg'
+__php_sury_repo_uris: 'https://packages.sury.org/php/'
+__php_sury_repo_suites: '{{ ansible_facts["distribution_release"] }}'
+__php_sury_repo_components: 'main'
