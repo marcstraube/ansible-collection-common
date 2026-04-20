@@ -7,7 +7,7 @@
 ## Description
 
 Shared Ansible roles for multi-OS infrastructure management.
-37 roles covering base system, security, networking, package management,
+39 roles covering base system, security, networking, package management,
 user management, editors, and more.
 
 ## Supported Platforms
@@ -42,6 +42,7 @@ user management, editors, and more.
 | ---------------------- | ---------------------------------------------- |
 | **package_management** | pacman, APT, DNF, AUR helper (paru), reflector |
 | **nodejs**             | Node.js and NVM                                |
+| **php**                | PHP interpreter and extensions                 |
 | **python**             | Python interpreter and tools                   |
 | **ansible**            | Ansible, Molecule and linting tools            |
 
@@ -86,7 +87,8 @@ user management, editors, and more.
 | ------------- | ------------------------ |
 | **chrony**    | NTP time synchronization |
 | **logrotate** | Log rotation             |
-| **podman**    | Container runtime        |
+| **docker**    | Docker container runtime |
+| **podman**    | Podman container runtime |
 | **snmp**      | SNMP monitoring agent    |
 | **restic**    | Backup with restic       |
 
