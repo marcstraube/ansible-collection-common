@@ -12,7 +12,9 @@ repos:
     hooks:
       - id: ansible-lint
         name: Ansible Lint
-        files: \.(yaml|yml)$
+        always_run: false
+        pass_filenames: true
+        types: [yaml]
         args:
           - --profile=production
 
