@@ -89,9 +89,27 @@ overrides if needed.
 | `podman_default_ulimits`      | `{nofile: ...}` | Default ulimits                  |
 | `podman_default_pids_limit`   | `2048`          | PID limit per container          |
 | `podman_log_driver`           | `journald`      | Container log driver             |
-| `podman_userns_mode`          | `auto`          | User namespace mode              |
+| `podman_userns_mode`          | `auto`          | User namespace mode (see below)  |
 | `podman_label`                | `true`          | SELinux/MAC container separation |
 | `podman_seccomp_enabled`      | `true`          | Enable seccomp profile           |
+
+### User Namespace Modes (`podman_userns_mode`)
+
+Controls UID/GID mapping between host and containers via `userns` in
+`containers.conf`. Available modes:
+
+| Mode      | Description                                                        |
+|-----------|--------------------------------------------------------------------|
+| `auto`    | Automatic UID remapping per container — best isolation (default)   |
+| `host`    | No remapping — container root = host root (or host user for rootless) |
+| `keep-id` | Map host UID into container (rootless only)                        |
+| `nomap`   | Do not map additional UIDs into the user namespace                 |
+
+**When to override per container:** Some images (e.g., Uptime Kuma) run `chown`
+in their entrypoint, which fails under `auto` because container root is mapped
+to a high subuid on the host. These containers need `--userns=host` at runtime,
+passed via Quadlet or `podman run`. The system-wide default should remain `auto`
+for security — override only per container where required.
 
 ### Systemd Integration
 
