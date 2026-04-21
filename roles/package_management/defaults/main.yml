@@ -515,16 +515,6 @@ apt_backports_enabled: false
 # Example: ['ppa:ondrej/php', 'ppa:graphics-drivers/ppa']
 apt_ppas: []
 
-# PostgreSQL PGDG repository
-apt_postgresql_repo_enabled: false
-
-# Grafana repository
-apt_grafana_repo_enabled: false
-
-# Kubernetes repository
-apt_kubernetes_repo_enabled: false
-apt_kubernetes_version: '1.29'
-
 # Custom repositories
 # Example:
 #   apt_custom_repos:
@@ -634,16 +624,6 @@ dnf_rpmfusion_nonfree_enabled: false
 
 # Enable ELRepo (kernels, hardware drivers)
 dnf_elrepo_enabled: false
-
-# PostgreSQL PGDG repository
-dnf_postgresql_repo_enabled: false
-
-# Grafana repository
-dnf_grafana_repo_enabled: false
-
-# Kubernetes repository
-dnf_kubernetes_repo_enabled: false
-dnf_kubernetes_version: '1.29'
 
 # COPR repositories to enable
 # Example: ['kwizart/fedy', 'atim/lazygit']

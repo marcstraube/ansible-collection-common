@@ -132,11 +132,6 @@ overrides if needed.
 | Variable                          | Default | Description                           |
 |-----------------------------------|---------|---------------------------------------|
 | `apt_backports_enabled`           | `false` | Enable Debian Backports               |
-| `apt_docker_repo_enabled`         | `false` | Docker CE repository                  |
-| `apt_postgresql_repo_enabled`     | `false` | PostgreSQL PGDG repository            |
-| `apt_sury_enabled`                | `false` | Sury repository (PHP, Apache2, nginx) |
-| `apt_grafana_repo_enabled`        | `false` | Grafana repository                    |
-| `apt_kubernetes_repo_enabled`     | `false` | Kubernetes repository                 |
 | `apt_custom_repos`                | `[]`    | Custom repository definitions         |
 
 ### RHEL/Rocky - DNF
@@ -164,7 +159,6 @@ overrides if needed.
 | `dnf_rpmfusion_free_enabled`      | `false` | Enable RPM Fusion Free                      |
 | `dnf_rpmfusion_nonfree_enabled`   | `false` | Enable RPM Fusion Nonfree                   |
 | `dnf_elrepo_enabled`              | `false` | Enable ELRepo                               |
-| `dnf_docker_repo_enabled`         | `false` | Docker CE repository                        |
 | `dnf_copr_repos`                  | `[]`    | COPR repositories                           |
 | `dnf_custom_repos`                | `[]`    | Custom repository definitions               |
 
