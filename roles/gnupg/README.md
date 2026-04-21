@@ -124,7 +124,7 @@ overrides if needed.
 | Variable                 | Default     | Description                                         |
 |--------------------------|-------------|-----------------------------------------------------|
 | `gnupg_users`            | `[]`        | Users to configure GnuPG for (username, mode, etc.) |
-| `gnupg_user_config_mode` | `'managed'` | Default config mode (managed, initial, disabled)    |
+| `gnupg_user_config_mode` | `'initial'` | Default config mode (managed, initial, disabled)    |
 
 ## Tags
 

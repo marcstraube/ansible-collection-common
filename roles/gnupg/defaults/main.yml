@@ -216,4 +216,4 @@ gnupg_users: []
 
 # Default config mode when user entry has no 'mode' key
 # Options: managed, initial, disabled
-gnupg_user_config_mode: 'managed'
+gnupg_user_config_mode: 'initial'

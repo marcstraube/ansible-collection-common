@@ -78,7 +78,7 @@ the full list of options:
 | Variable                    | Default     | Description                                |
 |-----------------------------|-------------|--------------------------------------------|
 | `editors_users`             | `[]`        | Per-user editor config entries             |
-| `editors_user_config_mode`  | `'managed'` | Default mode when user entry has no 'mode' |
+| `editors_user_config_mode`  | `'initial'` | Default mode when user entry has no 'mode' |
 | `editors_user_config_merge` | `true`      | Default config_merge behavior              |
 
 ## Tags
