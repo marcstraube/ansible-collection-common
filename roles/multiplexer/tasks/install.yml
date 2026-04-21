@@ -1,0 +1,26 @@
+---
+#
+# tmux
+#
+
+- name: Install | tmux
+  ansible.builtin.package:
+    name: '{{ __multiplexer_tmux_package }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: multiplexer_tmux_enabled | bool
+
+#
+# zellij
+#
+
+- name: Install | zellij
+  ansible.builtin.package:
+    name: '{{ __multiplexer_zellij_package }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - multiplexer_zellij_enabled | bool
+    - __multiplexer_zellij_package | length > 0

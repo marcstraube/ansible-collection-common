@@ -72,6 +72,14 @@
         - utils
       when: utils_enabled | default(true) | bool
 
+    - name: Base System | Include multiplexer role
+      ansible.builtin.include_role:
+        name: marcstraube.common.multiplexer
+      tags:
+        - base-system
+        - multiplexer
+      when: multiplexer_enabled | default(true) | bool
+
     - name: Base System | Include chrony role
       ansible.builtin.include_role:
         name: marcstraube.common.chrony

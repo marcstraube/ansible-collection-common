@@ -1,0 +1,9 @@
+---
+- name: Tmux | Deploy global configuration
+  ansible.builtin.template:
+    src: tmux.conf.j2
+    dest: '{{ __multiplexer_tmux_config_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true

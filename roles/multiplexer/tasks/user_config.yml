@@ -1,0 +1,121 @@
+---
+# Called once per user from users.yml loop.
+# Variable: __multiplexer_user (the current multiplexer_users entry)
+
+- name: User Config | Get user info
+  ansible.builtin.getent:
+    database: passwd
+    key: '{{ __multiplexer_user.username }}'
+
+- name: User Config | Set user facts
+  ansible.builtin.set_fact:
+    __multiplexer_user_home: '{{ getent_passwd[__multiplexer_user.username][4] }}'
+    __multiplexer_user_group: '{{ getent_passwd[__multiplexer_user.username][2] }}'
+    __multiplexer_user_merge: >-
+      {{ __multiplexer_user.config_merge
+         | default(multiplexer_user_config_merge) | bool }}
+    __multiplexer_user_tpm: >-
+      {{ __multiplexer_user.tpm_enabled
+         | default(multiplexer_user_tpm_enabled) | bool }}
+
+#
+# tmux
+#
+
+- name: User Config | Build effective tmux config
+  ansible.builtin.set_fact:
+    __multiplexer_user_tmux_config: >-
+      {{ (multiplexer_tmux_config | combine(__multiplexer_user.tmux_config))
+         if __multiplexer_user_merge
+         else __multiplexer_user.tmux_config }}
+  when:
+    - multiplexer_tmux_enabled | bool
+    - __multiplexer_user.tmux_config is defined
+
+- name: User Config | Ensure tmux config directory
+  ansible.builtin.file:
+    path: '{{ __multiplexer_user_home }}/.config/tmux'
+    state: directory
+    owner: '{{ __multiplexer_user.username }}'
+    group: '{{ __multiplexer_user_group }}'
+    mode: '0755'
+  when:
+    - multiplexer_tmux_enabled | bool
+    - __multiplexer_user.tmux_config is defined or __multiplexer_user_tpm
+
+- name: User Config | Deploy tmux config
+  ansible.builtin.template:
+    src: tmux.conf.j2
+    dest: '{{ __multiplexer_user_home }}/.config/tmux/tmux.conf'
+    owner: '{{ __multiplexer_user.username }}'
+    group: '{{ __multiplexer_user_group }}'
+    mode: '0644'
+  vars:
+    multiplexer_tmux_config: '{{ __multiplexer_user_tmux_config }}'
+    __multiplexer_user_tpm_enabled: '{{ __multiplexer_user_tpm }}'
+  when:
+    - multiplexer_tmux_enabled | bool
+    - __multiplexer_user.tmux_config is defined
+
+- name: User Config | Ensure TPM directory
+  ansible.builtin.file:
+    path: '{{ __multiplexer_user_home }}/.tmux/plugins/tpm'
+    state: directory
+    owner: '{{ __multiplexer_user.username }}'
+    group: '{{ __multiplexer_user_group }}'
+    mode: '0755'
+  when:
+    - multiplexer_tmux_enabled | bool
+    - __multiplexer_user_tpm
+
+- name: User Config | Clone TPM
+  ansible.builtin.git:
+    repo: 'https://github.com/tmux-plugins/tpm'
+    dest: '{{ __multiplexer_user_home }}/.tmux/plugins/tpm'
+    version: 'master'
+    depth: 1
+  become: true
+  become_user: '{{ __multiplexer_user.username }}'
+  retries: 5
+  delay: 10
+  when:
+    - multiplexer_tmux_enabled | bool
+    - __multiplexer_user_tpm
+
+#
+# zellij
+#
+
+- name: User Config | Build effective zellij config
+  ansible.builtin.set_fact:
+    __multiplexer_user_zellij_config: >-
+      {{ (multiplexer_zellij_config | combine(__multiplexer_user.zellij_config))
+         if __multiplexer_user_merge
+         else __multiplexer_user.zellij_config }}
+  when:
+    - multiplexer_zellij_enabled | bool
+    - __multiplexer_user.zellij_config is defined
+
+- name: User Config | Ensure zellij config directory
+  ansible.builtin.file:
+    path: '{{ __multiplexer_user_home }}/.config/zellij'
+    state: directory
+    owner: '{{ __multiplexer_user.username }}'
+    group: '{{ __multiplexer_user_group }}'
+    mode: '0755'
+  when:
+    - multiplexer_zellij_enabled | bool
+    - __multiplexer_user.zellij_config is defined
+
+- name: User Config | Deploy zellij config
+  ansible.builtin.template:
+    src: config.kdl.j2
+    dest: '{{ __multiplexer_user_home }}/.config/zellij/config.kdl'
+    owner: '{{ __multiplexer_user.username }}'
+    group: '{{ __multiplexer_user_group }}'
+    mode: '0644'
+  vars:
+    multiplexer_zellij_config: '{{ __multiplexer_user_zellij_config }}'
+  when:
+    - multiplexer_zellij_enabled | bool
+    - __multiplexer_user.zellij_config is defined

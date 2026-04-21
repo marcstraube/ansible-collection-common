@@ -1,0 +1,68 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - multiplexer
+
+- name: Main | Handle deprecated utils variables
+  ansible.builtin.set_fact:
+    multiplexer_tmux_enabled: >-
+      {{ utils_mux_tmux_enabled | default(multiplexer_tmux_enabled) | bool }}
+    multiplexer_zellij_enabled: >-
+      {{ utils_mux_zellij_enabled | default(multiplexer_zellij_enabled) | bool }}
+  when:
+    - multiplexer_enabled | bool
+    - >-
+      utils_mux_tmux_enabled is defined
+      or utils_mux_zellij_enabled is defined
+  tags:
+    - multiplexer
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: multiplexer_enabled | bool
+  tags:
+    - multiplexer
+    - multiplexer:install
+
+- name: Main | Import tmux configuration tasks
+  ansible.builtin.import_tasks: tmux.yml
+  when:
+    - multiplexer_enabled | bool
+    - multiplexer_tmux_enabled | bool
+    - multiplexer_tmux_config_enabled | bool
+  tags:
+    - multiplexer
+    - multiplexer:tmux
+
+- name: Main | Import zellij configuration tasks
+  ansible.builtin.import_tasks: zellij.yml
+  when:
+    - multiplexer_enabled | bool
+    - multiplexer_zellij_enabled | bool
+    - multiplexer_zellij_config_enabled | bool
+  tags:
+    - multiplexer
+    - multiplexer:zellij
+
+- name: Main | Include per-user config tasks
+  ansible.builtin.include_tasks:
+    file: users.yml
+    apply:
+      tags:
+        - multiplexer
+        - multiplexer:users
+  when:
+    - multiplexer_enabled | bool
+    - multiplexer_users | length > 0
+  tags:
+    - multiplexer
+    - multiplexer:users

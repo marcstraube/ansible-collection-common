@@ -1,0 +1,233 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Check tmux package is installed
+      ansible.builtin.package:
+        name: tmux
+        state: present
+      check_mode: true
+      register: __verify_tmux_pkg
+      failed_when: __verify_tmux_pkg.changed
+
+    - name: Verify | Check zellij package is installed (Arch only)
+      ansible.builtin.package:
+        name: zellij
+        state: present
+      check_mode: true
+      register: __verify_zellij_pkg
+      failed_when: __verify_zellij_pkg.changed
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Binary Verification
+    #
+
+    - name: Verify | Check tmux binary exists
+      ansible.builtin.command: tmux -V
+      register: __verify_tmux_version
+      changed_when: false
+
+    - name: Verify | Assert tmux version output
+      ansible.builtin.assert:
+        that:
+          - "'tmux' in __verify_tmux_version.stdout"
+
+    - name: Verify | Check zellij binary exists (Arch only)
+      ansible.builtin.command: zellij --version
+      register: __verify_zellij_version
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert zellij version output (Arch only)
+      ansible.builtin.assert:
+        that:
+          - "'zellij' in __verify_zellij_version.stdout"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Global Configuration Files
+    #
+
+    - name: Verify | Check global tmux config exists
+      ansible.builtin.stat:
+        path: /etc/tmux.conf
+      register: __verify_tmux_conf
+
+    - name: Verify | Assert global tmux config exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - __verify_tmux_conf.stat.exists
+          - __verify_tmux_conf.stat.mode == '0644'
+          - __verify_tmux_conf.stat.pw_name == 'root'
+
+    - name: Verify | Check global zellij config directory (Arch only)
+      ansible.builtin.stat:
+        path: /etc/zellij
+      register: __verify_zellij_conf_dir
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert global zellij config directory (Arch only)
+      ansible.builtin.assert:
+        that:
+          - __verify_zellij_conf_dir.stat.exists
+          - __verify_zellij_conf_dir.stat.isdir
+          - __verify_zellij_conf_dir.stat.mode == '0755'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check global zellij config exists (Arch only)
+      ansible.builtin.stat:
+        path: /etc/zellij/config.kdl
+      register: __verify_zellij_conf
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert global zellij config permissions (Arch only)
+      ansible.builtin.assert:
+        that:
+          - __verify_zellij_conf.stat.exists
+          - __verify_zellij_conf.stat.mode == '0644'
+          - __verify_zellij_conf.stat.pw_name == 'root'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Global Configuration Content
+    #
+
+    - name: Verify | Read global tmux config
+      ansible.builtin.slurp:
+        src: /etc/tmux.conf
+      register: __verify_tmux_content
+
+    - name: Verify | Assert global tmux config content
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (__verify_tmux_content.content | b64decode)"
+          - "'set -g mouse on' in (__verify_tmux_content.content | b64decode)"
+          - "'prefix C-a' in (__verify_tmux_content.content | b64decode)"
+          - "'base-index 1' in (__verify_tmux_content.content | b64decode)"
+          - "'history-limit 10000' in (__verify_tmux_content.content | b64decode)"
+          - "'escape-time 10' in (__verify_tmux_content.content | b64decode)"
+          - "'default-terminal' in (__verify_tmux_content.content | b64decode)"
+          - "'renumber-windows on' in (__verify_tmux_content.content | b64decode)"
+
+    - name: Verify | Assert global tmux config has no TPM
+      ansible.builtin.assert:
+        that:
+          - "'tpm' not in (__verify_tmux_content.content | b64decode)"
+
+    - name: Verify | Read global zellij config (Arch only)
+      ansible.builtin.slurp:
+        src: /etc/zellij/config.kdl
+      register: __verify_zellij_content
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert global zellij config content (Arch only)
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (__verify_zellij_content.content | b64decode)"
+          - "'theme' in (__verify_zellij_content.content | b64decode)"
+          - "'mouse_mode true' in (__verify_zellij_content.content | b64decode)"
+          - "'pane_frames true' in (__verify_zellij_content.content | b64decode)"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Per-User Configuration — Managed User (testuser)
+    #
+
+    - name: Verify | Check testuser tmux config directory exists
+      ansible.builtin.stat:
+        path: /home/testuser/.config/tmux
+      register: __verify_testuser_tmux_dir
+
+    - name: Verify | Assert testuser tmux config directory
+      ansible.builtin.assert:
+        that:
+          - __verify_testuser_tmux_dir.stat.exists
+          - __verify_testuser_tmux_dir.stat.isdir
+          - __verify_testuser_tmux_dir.stat.mode == '0755'
+
+    - name: Verify | Check testuser tmux config exists
+      ansible.builtin.stat:
+        path: /home/testuser/.config/tmux/tmux.conf
+      register: __verify_testuser_tmux_conf
+
+    - name: Verify | Assert testuser tmux config
+      ansible.builtin.assert:
+        that:
+          - __verify_testuser_tmux_conf.stat.exists
+          - __verify_testuser_tmux_conf.stat.mode == '0644'
+          - __verify_testuser_tmux_conf.stat.pw_name == 'testuser'
+
+    - name: Verify | Read testuser tmux config
+      ansible.builtin.slurp:
+        src: /home/testuser/.config/tmux/tmux.conf
+      register: __verify_testuser_tmux_content
+
+    - name: Verify | Assert testuser tmux config has merged content with overrides
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (__verify_testuser_tmux_content.content | b64decode)"
+          - "'prefix C-b' in (__verify_testuser_tmux_content.content | b64decode)"
+          - "'set -g mouse on' not in (__verify_testuser_tmux_content.content | b64decode)"
+          - "'base-index 1' in (__verify_testuser_tmux_content.content | b64decode)"
+
+    - name: Verify | Assert testuser tmux config has no TPM
+      ansible.builtin.assert:
+        that:
+          - "'tpm' not in (__verify_testuser_tmux_content.content | b64decode)"
+
+    - name: Verify | Check testuser zellij config exists (Arch only)
+      ansible.builtin.stat:
+        path: /home/testuser/.config/zellij/config.kdl
+      register: __verify_testuser_zellij_conf
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert testuser zellij config (Arch only)
+      ansible.builtin.assert:
+        that:
+          - __verify_testuser_zellij_conf.stat.exists
+          - __verify_testuser_zellij_conf.stat.mode == '0644'
+          - __verify_testuser_zellij_conf.stat.pw_name == 'testuser'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Read testuser zellij config (Arch only)
+      ansible.builtin.slurp:
+        src: /home/testuser/.config/zellij/config.kdl
+      register: __verify_testuser_zellij_content
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert testuser zellij config has override (Arch only)
+      ansible.builtin.assert:
+        that:
+          - "'catppuccin' in (__verify_testuser_zellij_content.content | b64decode)"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Per-User Configuration — Disabled User (disableduser)
+    #
+
+    - name: Verify | Check disableduser has no tmux config
+      ansible.builtin.stat:
+        path: /home/disableduser/.config/tmux/tmux.conf
+      register: __verify_disabled_tmux
+
+    - name: Verify | Assert disableduser has no tmux config
+      ansible.builtin.assert:
+        that:
+          - not __verify_disabled_tmux.stat.exists
+
+    - name: Verify | Check disableduser has no zellij config
+      ansible.builtin.stat:
+        path: /home/disableduser/.config/zellij/config.kdl
+      register: __verify_disabled_zellij
+
+    - name: Verify | Assert disableduser has no zellij config
+      ansible.builtin.assert:
+        that:
+          - not __verify_disabled_zellij.stat.exists

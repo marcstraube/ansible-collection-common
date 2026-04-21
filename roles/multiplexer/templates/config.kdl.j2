@@ -1,0 +1,24 @@
+{{ ansible_managed | comment('c') }}
+// zellij Configuration
+
+{% if multiplexer_zellij_config.theme | default('') | length > 0 %}
+theme "{{ multiplexer_zellij_config.theme }}"
+{% endif %}
+{% if multiplexer_zellij_config.default_layout | default('') | length > 0 %}
+default_layout "{{ multiplexer_zellij_config.default_layout }}"
+{% endif %}
+{% if multiplexer_zellij_config.mouse_mode is defined %}
+mouse_mode {{ multiplexer_zellij_config.mouse_mode | lower }}
+{% endif %}
+{% if multiplexer_zellij_config.simplified_ui is defined %}
+simplified_ui {{ multiplexer_zellij_config.simplified_ui | lower }}
+{% endif %}
+{% if multiplexer_zellij_config.pane_frames is defined %}
+pane_frames {{ multiplexer_zellij_config.pane_frames | lower }}
+{% endif %}
+{% if multiplexer_zellij_config.copy_on_select is defined %}
+copy_on_select {{ multiplexer_zellij_config.copy_on_select | lower }}
+{% endif %}
+{% if multiplexer_zellij_config.scrollback_editor | default('') | length > 0 %}
+scrollback_editor "{{ multiplexer_zellij_config.scrollback_editor }}"
+{% endif %}
