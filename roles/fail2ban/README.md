@@ -199,6 +199,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [Fail2ban](https://www.fail2ban.org/) — Intrusion prevention framework
+- [Fail2ban on GitHub](https://github.com/fail2ban/fail2ban) — Source code and issue tracker
+
 ## License
 
 MIT

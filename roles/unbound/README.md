@@ -131,6 +131,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - The blocklist feature downloads hosts-format blocklists and converts them to unbound
   `local-zone` entries.
 
+## References
+
+- [Unbound](https://nlnetlabs.nl/projects/unbound/about/) — validating, recursive, and caching DNS resolver
+- [Unbound documentation](https://unbound.docs.nlnetlabs.nl/) — official Unbound documentation
+
 ## License
 
 MIT

@@ -209,6 +209,11 @@ SSH uses a built-in fail2ban filter. The `marcstraube.common.fail2ban` role
 manages the sshd jail centrally via `fail2ban_sshd_enabled`. No fail2ban
 configuration is needed in this role.
 
+## References
+
+- [OpenSSH](https://www.openssh.com/) — secure shell connectivity tools
+- [sshd_config(5)](https://man.openbsd.org/sshd_config) — OpenSSH daemon configuration reference
+
 ## License
 
 MIT

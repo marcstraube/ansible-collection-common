@@ -178,6 +178,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [chrony](https://chrony-project.org/) — Versatile NTP implementation
+- [chrony.conf(5)](https://chrony-project.org/doc/4.6/chrony.conf.html) — chrony configuration file reference
+
 ## License
 
 MIT

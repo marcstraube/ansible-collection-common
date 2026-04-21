@@ -188,6 +188,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - Other roles (apparmor, plymouth) append their own kernel parameters using the
   same `lineinfile` pattern on `GRUB_CMDLINE_LINUX_DEFAULT`.
 
+## References
+
+- [systemd](https://www.freedesktop.org/wiki/Software/systemd/) — System and service manager
+- [locale.conf(5)](https://man7.org/linux/man-pages/man5/locale.conf.5.html) — Locale configuration man page
+
 ## License
 
 MIT

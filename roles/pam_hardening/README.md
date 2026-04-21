@@ -109,6 +109,11 @@ Rocky uses `authselect` for PAM stack management. This role enables features
 via `authselect enable-feature` and deploys configuration files in
 `/etc/security/` which are not managed by authselect.
 
+## References
+
+- [Linux-PAM](https://github.com/linux-pam/linux-pam) — Pluggable Authentication Modules project
+- [pam.conf(5)](https://man7.org/linux/man-pages/man5/pam.conf.5.html) — PAM configuration file reference
+
 ## License
 
 MIT

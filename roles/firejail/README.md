@@ -88,6 +88,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [Firejail](https://firejail.wordpress.com/) — SUID sandbox program
+- [Firejail on GitHub](https://github.com/netblue30/firejail) — Source code and issue tracker
+
 ## License
 
 MIT

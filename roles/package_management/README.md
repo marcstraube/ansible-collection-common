@@ -202,6 +202,13 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - `dnf-plugins-core`, `dnf-utils`, `yum-utils` are automatically skipped (removed in dnf5)
 - `fastestmirror` is built into dnf5 (no plugin needed, config option still works)
 
+## References
+
+- [Pacman](https://wiki.archlinux.org/title/Pacman) — Arch Linux package manager
+- [Makepkg](https://wiki.archlinux.org/title/Makepkg) — Arch Linux package build utility
+- [APT Configuration](https://wiki.debian.org/AptConfiguration) — Debian package manager configuration
+- [DNF Documentation](https://dnf.readthedocs.io/) — Red Hat package manager
+
 ## License
 
 MIT

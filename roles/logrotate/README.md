@@ -140,6 +140,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - Arch Linux adds `.pacorig`, `.pacnew`, `.pacsave` to tabooext automatically via OS vars.
 - journald log management is handled by the `marcstraube.common.base` role, not here.
 
+## References
+
+- [logrotate on GitHub](https://github.com/logrotate/logrotate) — Source code and issue tracker
+- [logrotate(8) man page](https://man7.org/linux/man-pages/man8/logrotate.8.html) — command reference
+
 ## License
 
 MIT

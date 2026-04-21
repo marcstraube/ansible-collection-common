@@ -171,6 +171,11 @@ removes the other. This role does NOT use the standard ternary service manage
 pattern for PPD/TLP because the switch actively removes the competing service
 and its packages, rather than simply toggling a single service.
 
+## References
+
+- [TLP](https://linrunner.de/tlp/) — Advanced power management for Linux
+- [power-profiles-daemon](https://gitlab.freedesktop.org/upower/power-profiles-daemon) — System-wide power profile management
+
 ## License
 
 MIT

@@ -156,6 +156,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9
 - BTRFS: NoCOW attribute is set on `/var/lib/rkhunter/db` when on BTRFS filesystem
 - Rocky Linux 10 / EL 10 is not supported (rkhunter not available in EPEL 10)
 
+## References
+
+- [rkhunter](https://rkhunter.sourceforge.net/) — rootkit, backdoor, and local exploit scanner
+- [rkhunter Project](https://sourceforge.net/projects/rkhunter/) — SourceForge project page and downloads
+
 ## License
 
 MIT

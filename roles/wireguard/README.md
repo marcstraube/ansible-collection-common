@@ -135,6 +135,11 @@ molecule test
 
 Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [WireGuard](https://www.wireguard.com/) — fast, modern, secure VPN tunnel
+- [WireGuard Quickstart](https://www.wireguard.com/quickstart/) — installation and setup guide
+
 ## License
 
 MIT

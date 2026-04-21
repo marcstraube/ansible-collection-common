@@ -98,12 +98,12 @@ overrides if needed.
 Controls UID/GID mapping between host and containers via `userns` in
 `containers.conf`. Available modes:
 
-| Mode      | Description                                                        |
-|-----------|--------------------------------------------------------------------|
-| `auto`    | Automatic UID remapping per container — best isolation (default)   |
-| `host`    | No remapping — container root = host root (or host user for rootless) |
-| `keep-id` | Map host UID into container (rootless only)                        |
-| `nomap`   | Do not map additional UIDs into the user namespace                 |
+| Mode      | Description                                                     |
+|-----------|-----------------------------------------------------------------|
+| `auto`    | Automatic UID remapping per container, best isolation (default) |
+| `host`    | No remapping, container root = host root (or host user)         |
+| `keep-id` | Map host UID into container (rootless only)                     |
+| `nomap`   | Do not map additional UIDs into the user namespace              |
 
 **When to override per container:** Some images (e.g., Uptime Kuma) run `chown`
 in their entrypoint, which fails under `auto` because container root is mapped
@@ -153,6 +153,11 @@ molecule test
 ```
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+## References
+
+- [Podman](https://podman.io/) — daemonless container engine
+- [Podman Documentation](https://docs.podman.io/) — official documentation and tutorials
 
 ## License
 

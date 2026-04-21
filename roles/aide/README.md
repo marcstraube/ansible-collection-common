@@ -157,6 +157,11 @@ AIDE 0.16 (EL 9) and 0.18+ (everything else) differ in configuration directives:
 The role handles this automatically via `vars/RedHat-9.yml` (0.16 overrides) and
 `vars/RedHat.yml` (0.18 defaults for all other RHEL-family distros).
 
+## References
+
+- [AIDE](https://aide.github.io/) — Advanced Intrusion Detection Environment project page
+- [AIDE on GitHub](https://github.com/aide/aide) — Source code and issue tracker
+
 ## License
 
 MIT

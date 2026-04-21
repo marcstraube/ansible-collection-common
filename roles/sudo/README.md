@@ -113,6 +113,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [sudo](https://www.sudo.ws/) — official sudo project site
+- [sudoers(5)](https://www.sudo.ws/docs/man/sudoers.man/) — sudoers file format and configuration reference
+
 ## License
 
 MIT

@@ -77,6 +77,12 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [Ansible Documentation](https://docs.ansible.com/) — Official Ansible documentation
+- [Molecule](https://ansible.readthedocs.io/projects/molecule/) — Ansible testing framework documentation
+- [ansible-lint](https://ansible.readthedocs.io/projects/lint/) — Ansible linting tool documentation
+
 ## License
 
 MIT

@@ -133,6 +133,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - Lynis is not a daemon — no AppArmor, fail2ban, or firewall integration needed
 - EL 10: lynis is not available in EPEL 10; the role uses git install (`lynis_install_method: 'git'`)
 
+## References
+
+- [Lynis](https://cisofy.com/lynis/) — Security auditing tool for Linux systems
+- [Lynis on GitHub](https://github.com/CISOfy/lynis) — Source code and issue tracker
+
 ## License
 
 MIT

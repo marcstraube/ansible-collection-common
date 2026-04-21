@@ -143,6 +143,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [fontconfig](https://www.freedesktop.org/wiki/Software/fontconfig/) — Font configuration and customization library
+- [Nerd Fonts](https://www.nerdfonts.com/) — Developer-targeted patched fonts with icon glyphs
+
 ## License
 
 MIT

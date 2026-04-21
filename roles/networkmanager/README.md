@@ -319,6 +319,11 @@ Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 | `pre-down.d/30-umount-smb.sh`   | `pre-down`  | Graceful SMB unmount                         |
 | `pre-down.d/30-umount-sshfs.sh` | `pre-down`  | Graceful SSHFS unmount                       |
 
+## References
+
+- [NetworkManager](https://networkmanager.dev/) — network configuration daemon
+- [NetworkManager API Reference](https://networkmanager.dev/docs/api/latest/) — D-Bus API and configuration documentation
+
 ## License
 
 MIT

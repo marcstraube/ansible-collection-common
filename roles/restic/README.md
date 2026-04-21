@@ -164,6 +164,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [restic](https://restic.net/) — fast, secure, efficient backup program
+- [restic Documentation](https://restic.readthedocs.io/) — official documentation and usage guide
+
 ## License
 
 MIT
