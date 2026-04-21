@@ -23,4 +23,4 @@
       tags:
         - backup
         - restic
-      when: restic_enabled | default(false) | bool
+      when: restic_enabled | default(true) | bool
