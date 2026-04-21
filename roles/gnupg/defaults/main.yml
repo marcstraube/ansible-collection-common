@@ -13,14 +13,8 @@ gnupg_enabled: true
 # Enable GUI tools install (seahorse, etc.)
 gnupg_gui_enabled: false
 
-# DEPRECATED: Use gnupg_gui_enabled instead (removed in v2.0.0)
-# gnupg_install_gui: {{ gnupg_gui_enabled }}
-
 # Enable additional CLI tools install (hopenpgp-tools, paperkey)
 gnupg_tools_enabled: true
-
-# DEPRECATED: Use gnupg_tools_enabled instead (removed in v2.0.0)
-# gnupg_install_tools: {{ gnupg_tools_enabled }}
 
 #
 # GPG Configuration (gpg.conf)
@@ -91,9 +85,6 @@ gnupg_agent_max_cache_ttl_ssh: 7200         # Maximum: 2 hours
 
 # Enable SSH support via GPG agent
 gnupg_agent_ssh_enabled: false
-
-# DEPRECATED: Use gnupg_agent_ssh_enabled instead (removed in v2.0.0)
-# gnupg_agent_enable_ssh: {{ gnupg_agent_ssh_enabled }}
 
 # Pinentry program (auto-detected from OS default if empty)
 # Options: pinentry-curses, pinentry-tty, pinentry-gtk-2, pinentry-qt, pinentry-gnome3

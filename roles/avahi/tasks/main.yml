@@ -1,12 +1,4 @@
 ---
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    avahi_nss_mdns_enabled: >-
-      {{ avahi_nss_mdns | default(avahi_nss_mdns_enabled) | bool }}
-  when: avahi_nss_mdns is defined
-  tags:
-    - avahi
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:

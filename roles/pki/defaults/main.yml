@@ -13,9 +13,6 @@ pki_enabled: true
 # Enable system-wide OpenSSL configuration
 pki_system_config_enabled: true
 
-# DEPRECATED: Use pki_system_config_enabled instead (removed in v2.0.0)
-# pki_configure_system: {{ pki_system_config_enabled }}
-
 # Minimum TLS version (system-wide default)
 pki_min_protocol: 'TLSv1.2'
 
@@ -30,9 +27,6 @@ pki_ciphersuites_tls13: 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS
 
 # Enable disabling of legacy/insecure algorithms
 pki_disable_legacy_enabled: true
-
-# DEPRECATED: Use pki_disable_legacy_enabled instead (removed in v2.0.0)
-# pki_disable_legacy: {{ pki_disable_legacy_enabled }}
 
 # RHEL/Rocky crypto-policy (only used on RHEL-based systems)
 pki_crypto_policy: 'DEFAULT'
@@ -177,9 +171,6 @@ pki_csr_dir: '/etc/ssl/csr'
 
 # Enable directory creation
 pki_create_dirs_enabled: true
-
-# DEPRECATED: Use pki_create_dirs_enabled instead (removed in v2.0.0)
-# pki_create_dirs: {{ pki_create_dirs_enabled }}
 
 # Private directory permissions
 pki_private_dir_mode: '0700'

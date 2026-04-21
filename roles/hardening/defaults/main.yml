@@ -62,9 +62,6 @@ hardening_kernel_settings:
 # Value 3 is a Debian/Arch kernel patch — not upstream, treated as 2 on RHEL kernels
 hardening_kernel_perf_event_paranoid_enabled: true
 
-# DEPRECATED: Use hardening_kernel_perf_event_paranoid_enabled instead (removed in v2.0.0)
-# hardening_kernel_perf_event_paranoid: {{ hardening_kernel_perf_event_paranoid_enabled }}
-
 # io_uring restriction level (kernel 6.6+ required)
 # 0=open, 1=unprivileged blocked, 2=all blocked
 # Set to 0 if PostgreSQL or other io_uring consumers are in use
@@ -125,6 +122,3 @@ hardening_fs_mounts:
 
 # Enable /var/tmp bind mount to /tmp (inherits /tmp mount options)
 hardening_fs_vartmp_bind_enabled: true
-
-# DEPRECATED: Use hardening_fs_vartmp_bind_enabled instead (removed in v2.0.0)
-# hardening_fs_vartmp_bind: {{ hardening_fs_vartmp_bind_enabled }}

@@ -89,11 +89,6 @@ See `defaults/main.yml` for all scan, heuristic, bytecode, and structured data d
 | `clamav_postfix_integration_enabled` | `false` | Add postfix user to clamav group |
 | `clamav_rspamd_integration_enabled`  | `false` | Socket accessible by rspamd      |
 
-**Deprecated** (removed in v2.0.0):
-
-- `clamav_postfix_integration` -- use `clamav_postfix_integration_enabled` instead
-- `clamav_rspamd_integration` -- use `clamav_rspamd_integration_enabled` instead
-
 ### Firewall
 
 | Variable                   | Default    | Description                |

@@ -499,14 +499,8 @@ clamav_milter_whitelist_hosts: []
 # Add postfix user to clamav group for socket access
 clamav_postfix_integration_enabled: false
 
-# DEPRECATED: Use clamav_postfix_integration_enabled instead (removed in v2.0.0)
-# clamav_postfix_integration: {{ clamav_postfix_integration_enabled }}
-
 # Ensure clamd socket is accessible by rspamd
 clamav_rspamd_integration_enabled: false
-
-# DEPRECATED: Use clamav_rspamd_integration_enabled instead (removed in v2.0.0)
-# clamav_rspamd_integration: {{ clamav_rspamd_integration_enabled }}
 
 #
 # Firewall (firewalld integration)

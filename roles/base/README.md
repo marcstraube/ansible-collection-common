@@ -187,8 +187,6 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - **NTP**: Disabled by default -- use the dedicated `chrony` role for NTP.
 - Other roles (apparmor, plymouth) append their own kernel parameters using the
   same `lineinfile` pattern on `GRUB_CMDLINE_LINUX_DEFAULT`.
-- **Deprecated**: `base_dialog` renamed to `base_dialog_enabled` in v1.x.
-  Old variable accepted as fallback, removed in v2.0.0.
 
 ## License
 

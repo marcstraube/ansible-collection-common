@@ -209,17 +209,6 @@ SSH uses a built-in fail2ban filter. The `marcstraube.common.fail2ban` role
 manages the sshd jail centrally via `fail2ban_sshd_enabled`. No fail2ban
 configuration is needed in this role.
 
-### Deprecated Variables (v1.0.0 -> v2.0.0)
-
-| Old Variable                            | New Variable                                    | Notes             |
-|-----------------------------------------|-------------------------------------------------|-------------------|
-| `openssh_server_enabled`                | `openssh_enabled`                               | Role-level toggle |
-| `openssh_server_state`                  | `openssh_service_enabled`                       | Ternary pattern   |
-| `openssh_server_harden_moduli`          | `openssh_server_harden_moduli_enabled`          | Boolean suffix    |
-| `openssh_install_ssh_audit`             | `openssh_ssh_audit_enabled`                     | Boolean suffix    |
-| `openssh_agent_global_service`          | `openssh_agent_global_service_enabled`          | Boolean suffix    |
-| `openssh_server_generate_sshfp_records` | `openssh_server_generate_sshfp_records_enabled` | Boolean suffix    |
-
 ## License
 
 MIT

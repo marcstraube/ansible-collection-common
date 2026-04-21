@@ -12,29 +12,6 @@
   tags:
     - wireguard
 
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    wireguard_server_mode_enabled: >-
-      {{ wireguard_server_mode | default(wireguard_server_mode_enabled) | bool }}
-    wireguard_ip_forward_enabled: >-
-      {{ wireguard_ip_forward | default(wireguard_ip_forward_enabled) | bool }}
-    wireguard_client_mode_enabled: >-
-      {{ wireguard_client_mode | default(wireguard_client_mode_enabled) | bool }}
-    wireguard_generate_keys_enabled: >-
-      {{ wireguard_generate_keys | default(wireguard_generate_keys_enabled) | bool }}
-    wireguard_saveconfig_enabled: >-
-      {{ wireguard_saveconfig | default(wireguard_saveconfig_enabled) | bool }}
-  when:
-    - wireguard_enabled | bool
-    - >-
-      wireguard_server_mode is defined or
-      wireguard_ip_forward is defined or
-      wireguard_client_mode is defined or
-      wireguard_generate_keys is defined or
-      wireguard_saveconfig is defined
-  tags:
-    - wireguard
-
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: wireguard_enabled | bool

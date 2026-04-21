@@ -13,51 +13,28 @@ utils_enabled: true
 # Interactive process viewer (htop)
 utils_monitor_htop_enabled: true
 
-# DEPRECATED: Use utils_monitor_htop_enabled instead (removed in v2.0.0)
-# utils_monitor_htop: {{ utils_monitor_htop_enabled }}
-
 # Modern resource monitor with TUI (btop++)
 utils_monitor_btop_enabled: false
-
-# DEPRECATED: Use utils_monitor_btop_enabled instead (removed in v2.0.0)
-# utils_monitor_btop: {{ utils_monitor_btop_enabled }}
 
 # System monitor with historical data (bottom)
 utils_monitor_bottom_enabled: false
 
-# DEPRECATED: Use utils_monitor_bottom_enabled instead (removed in v2.0.0)
-# utils_monitor_bottom: {{ utils_monitor_bottom_enabled }}
-
 # Advanced system & process monitor with logging (atop)
 utils_monitor_atop_enabled: false
-
-# DEPRECATED: Use utils_monitor_atop_enabled instead (removed in v2.0.0)
-# utils_monitor_atop: {{ utils_monitor_atop_enabled }}
 
 #
 # Terminal Multiplexers
 #
 
-# DEPRECATED: Use multiplexer role instead (removed in v2.0.0)
 # Terminal multiplexer (tmux)
 utils_mux_tmux_enabled: true
 
-# DEPRECATED: Use utils_mux_tmux_enabled instead (removed in v2.0.0)
-# utils_mux_tmux: {{ utils_mux_tmux_enabled }}
-
-# DEPRECATED: Use multiplexer role instead (removed in v2.0.0)
 # Modern terminal multiplexer written in Rust (zellij)
 # Not available on Debian or Rocky
 utils_mux_zellij_enabled: false
 
-# DEPRECATED: Use utils_mux_zellij_enabled instead (removed in v2.0.0)
-# utils_mux_zellij: {{ utils_mux_zellij_enabled }}
-
 # GNU Screen terminal multiplexer
 utils_mux_screen_enabled: false
-
-# DEPRECATED: Use utils_mux_screen_enabled instead (removed in v2.0.0)
-# utils_mux_screen: {{ utils_mux_screen_enabled }}
 
 #
 # File Transfer
@@ -65,9 +42,6 @@ utils_mux_screen_enabled: false
 
 # Fast file copying tool (rsync)
 utils_transfer_rsync_enabled: true
-
-# DEPRECATED: Use utils_transfer_rsync_enabled instead (removed in v2.0.0)
-# utils_transfer_rsync: {{ utils_transfer_rsync_enabled }}
 
 #
 # File Managers
@@ -98,14 +72,8 @@ utils_filemgr_lf_enabled: false
 # Install ripgrep (fast grep replacement)
 utils_search_ripgrep_enabled: false
 
-# DEPRECATED: Use utils_search_ripgrep_enabled instead (removed in v2.0.0)
-# utils_search_ripgrep: {{ utils_search_ripgrep_enabled }}
-
 # Install fd (fast find replacement)
 utils_search_fd_enabled: true
-
-# DEPRECATED: Use utils_search_fd_enabled instead (removed in v2.0.0)
-# utils_search_fd: {{ utils_search_fd_enabled }}
 
 #
 # System Info (Fetch Tools)
@@ -114,29 +82,17 @@ utils_search_fd_enabled: true
 # Fast system information tool written in C (fastfetch)
 utils_fetch_fastfetch_enabled: true
 
-# DEPRECATED: Use utils_fetch_fastfetch_enabled instead (removed in v2.0.0)
-# utils_fetch_fastfetch: {{ utils_fetch_fastfetch_enabled }}
-
 # Maintained neofetch fork with pride flag support (hyfetch)
 # Available on Arch and Debian only
 utils_fetch_hyfetch_enabled: false
-
-# DEPRECATED: Use utils_fetch_hyfetch_enabled instead (removed in v2.0.0)
-# utils_fetch_hyfetch: {{ utils_fetch_hyfetch_enabled }}
 
 # Customizable system info script (archey4)
 # Arch: AUR only
 utils_fetch_archey4_enabled: false
 
-# DEPRECATED: Use utils_fetch_archey4_enabled instead (removed in v2.0.0)
-# utils_fetch_archey4: {{ utils_fetch_archey4_enabled }}
-
 # CPU architecture fetching tool (cpufetch)
 # Arch only
 utils_fetch_cpufetch_enabled: false
-
-# DEPRECATED: Use utils_fetch_cpufetch_enabled instead (removed in v2.0.0)
-# utils_fetch_cpufetch: {{ utils_fetch_cpufetch_enabled }}
 
 #
 # Fun Tools (ASCII Art & Terminal Entertainment)
@@ -145,113 +101,62 @@ utils_fetch_cpufetch_enabled: false
 # Configurable talking cow (cowsay)
 utils_fun_cowsay_enabled: false
 
-# DEPRECATED: Use utils_fun_cowsay_enabled instead (removed in v2.0.0)
-# utils_fun_cowsay: {{ utils_fun_cowsay_enabled }}
-
 # Random fortune cookies (fortune-mod)
 utils_fun_fortune_enabled: false
-
-# DEPRECATED: Use utils_fun_fortune_enabled instead (removed in v2.0.0)
-# utils_fun_fortune: {{ utils_fun_fortune_enabled }}
 
 # Rainbow text colorizer (lolcat)
 # Not available on Rocky
 utils_fun_lolcat_enabled: false
 
-# DEPRECATED: Use utils_fun_lolcat_enabled instead (removed in v2.0.0)
-# utils_fun_lolcat: {{ utils_fun_lolcat_enabled }}
-
 # Pony version of cowsay (ponysay)
 # Not available on Rocky
 utils_fun_ponysay_enabled: false
 
-# DEPRECATED: Use utils_fun_ponysay_enabled instead (removed in v2.0.0)
-# utils_fun_ponysay: {{ utils_fun_ponysay_enabled }}
-
 # Display large text banners (figlet)
 utils_fun_figlet_enabled: false
-
-# DEPRECATED: Use utils_fun_figlet_enabled instead (removed in v2.0.0)
-# utils_fun_figlet: {{ utils_fun_figlet_enabled }}
 
 # Display large colored text (toilet)
 utils_fun_toilet_enabled: false
 
-# DEPRECATED: Use utils_fun_toilet_enabled instead (removed in v2.0.0)
-# utils_fun_toilet: {{ utils_fun_toilet_enabled }}
-
 # Steam locomotive animation (sl)
 utils_fun_sl_enabled: false
-
-# DEPRECATED: Use utils_fun_sl_enabled instead (removed in v2.0.0)
-# utils_fun_sl: {{ utils_fun_sl_enabled }}
 
 # Terminal Matrix screensaver (cmatrix)
 # Not available on Rocky 10
 utils_fun_cmatrix_enabled: false
 
-# DEPRECATED: Use utils_fun_cmatrix_enabled instead (removed in v2.0.0)
-# utils_fun_cmatrix: {{ utils_fun_cmatrix_enabled }}
-
 # Bonsai tree generator (cbonsai)
 # Arch: AUR only. Not available on Rocky 10
 utils_fun_cbonsai_enabled: false
-
-# DEPRECATED: Use utils_fun_cbonsai_enabled instead (removed in v2.0.0)
-# utils_fun_cbonsai: {{ utils_fun_cbonsai_enabled }}
 
 # ASCII aquarium animation (asciiquarium)
 # Not available on Rocky 10
 utils_fun_asciiquarium_enabled: false
 
-# DEPRECATED: Use utils_fun_asciiquarium_enabled instead (removed in v2.0.0)
-# utils_fun_asciiquarium: {{ utils_fun_asciiquarium_enabled }}
-
 # Terminal Nyan Cat animation (nyancat)
 # Not available on Rocky 10
 utils_fun_nyancat_enabled: false
-
-# DEPRECATED: Use utils_fun_nyancat_enabled instead (removed in v2.0.0)
-# utils_fun_nyancat: {{ utils_fun_nyancat_enabled }}
 
 # Recreate the "decrypting text" effect from Sneakers (no-more-secrets)
 # Arch: AUR only. Not available on Rocky 10
 utils_fun_no_more_secrets_enabled: false
 
-# DEPRECATED: Use utils_fun_no_more_secrets_enabled instead (removed in v2.0.0)
-# utils_fun_no_more_secrets: {{ utils_fun_no_more_secrets_enabled }}
-
 # Digital clock for the terminal (tty-clock)
 # Arch: AUR only. Not available on Rocky 10
 utils_fun_tty_clock_enabled: false
-
-# DEPRECATED: Use utils_fun_tty_clock_enabled instead (removed in v2.0.0)
-# utils_fun_tty_clock: {{ utils_fun_tty_clock_enabled }}
 
 # Animated pipes screensaver (pipes.sh)
 # Arch: AUR only. Not available on Debian or Rocky
 utils_fun_pipes_enabled: false
 
-# DEPRECATED: Use utils_fun_pipes_enabled instead (removed in v2.0.0)
-# utils_fun_pipes: {{ utils_fun_pipes_enabled }}
-
 # Pokemon color scripts for the terminal (pokemon-colorscripts)
 # Arch: AUR only. Not available on Debian or Rocky
 utils_fun_pokemon_colorscripts_enabled: false
-
-# DEPRECATED: Use utils_fun_pokemon_colorscripts_enabled instead (removed in v2.0.0)
-# utils_fun_pokemon_colorscripts: {{ utils_fun_pokemon_colorscripts_enabled }}
 
 # Pokemon version of cowsay (pokemonsay)
 # Arch: AUR only. Not available on Debian or Rocky
 utils_fun_pokemonsay_enabled: false
 
-# DEPRECATED: Use utils_fun_pokemonsay_enabled instead (removed in v2.0.0)
-# utils_fun_pokemonsay: {{ utils_fun_pokemonsay_enabled }}
-
 # Fake Hollywood hacker terminal (hollywood)
 # Not available on Rocky
 utils_fun_hollywood_enabled: false
-
-# DEPRECATED: Use utils_fun_hollywood_enabled instead (removed in v2.0.0)
-# utils_fun_hollywood: {{ utils_fun_hollywood_enabled }}

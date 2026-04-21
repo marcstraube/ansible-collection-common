@@ -12,16 +12,6 @@
   tags:
     - always
 
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    base_dialog_enabled: >-
-      {{ base_dialog | default(base_dialog_enabled) | bool }}
-  when:
-    - base_enabled | bool
-    - base_dialog is defined
-  tags:
-    - always
-
 - name: Main | Import hostname tasks
   ansible.builtin.import_tasks: hostname.yml
   when: base_enabled | bool

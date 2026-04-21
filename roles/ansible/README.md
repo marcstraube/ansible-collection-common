@@ -51,14 +51,6 @@ overrides if needed.
 | `ansible_tools_lint_enabled`     | `true`     | Enable linting tools install                       |
 | `ansible_tools_extra_plugins`    | `[]`       | Extra pipx-injected plugins (Debian/RedHat)        |
 
-### Deprecated Variables (removed in v2.0.0)
-
-| Old Variable                     | New Variable                     |
-|----------------------------------|----------------------------------|
-| `ansible_tools_install_ansible`  | `ansible_tools_ansible_enabled`  |
-| `ansible_tools_install_molecule` | `ansible_tools_molecule_enabled` |
-| `ansible_tools_install_lint`     | `ansible_tools_lint_enabled`     |
-
 ## Tags
 
 | Tag             | Scope          |

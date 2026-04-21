@@ -155,11 +155,6 @@ audit logs.
 | `auditd_syslog_facility`       | `LOG_LOCAL6` | Syslog facility      |
 | `auditd_syslog_priority`       | `LOG_INFO`   | Syslog priority      |
 
-**Deprecated variables** (removed in v2.0.0):
-
-- `auditd_remote_logging` -- use `auditd_remote_logging_enabled`
-- `auditd_plugin_syslog` -- use `auditd_plugin_syslog_enabled`
-
 ## Tags
 
 | Tag                | Scope                 |

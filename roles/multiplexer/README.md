@@ -103,16 +103,6 @@ User entry options:
 | `tmux_config`    | Per-user tmux config overrides                            |
 | `zellij_config`  | Per-user zellij config overrides                          |
 
-### Deprecated Variables
-
-The following variables from the `utils` role are accepted for backwards
-compatibility and will be removed in v2.0.0:
-
-| Old Variable (utils)          | New Variable (multiplexer)      |
-|-------------------------------|---------------------------------|
-| `utils_mux_tmux_enabled`      | `multiplexer_tmux_enabled`      |
-| `utils_mux_zellij_enabled`    | `multiplexer_zellij_enabled`    |
-
 ## Tags
 
 | Tag                   | Scope                        |

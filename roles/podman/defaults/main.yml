@@ -255,17 +255,3 @@ podman_prune_all: true
 
 # Prune volumes during system prune
 podman_prune_volumes: true
-
-#
-# Deprecated Variables
-#
-# Removed in v2.0.0. Use the new variable names above.
-
-# DEPRECATED: Use podman_docker_alias_enabled instead (removed in v2.0.0)
-# podman_docker_alias: {{ podman_docker_alias_enabled }}
-
-# DEPRECATED: Use podman_docker_socket_symlink_enabled instead (removed in v2.0.0)
-# podman_docker_socket_symlink: {{ podman_docker_socket_symlink_enabled }}
-
-# DEPRECATED: Removed — BTRFS is auto-detected (removed in v2.0.0)
-# podman_btrfs_enabled: true

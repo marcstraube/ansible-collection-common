@@ -38,9 +38,6 @@ fail2ban_maxretry: 5
 # Enable progressive ban times
 fail2ban_bantime_increment_enabled: false
 
-# DEPRECATED: Use fail2ban_bantime_increment_enabled instead (removed in v2.0.0)
-# fail2ban_bantime_increment: {{ fail2ban_bantime_increment_enabled }}
-
 # Ban time multiplier
 fail2ban_bantime_factor: 2
 
@@ -52,9 +49,6 @@ fail2ban_bantime_maxtime: '5w'
 
 # Count bans across all jails
 fail2ban_bantime_overalljails_enabled: false
-
-# DEPRECATED: Use fail2ban_bantime_overalljails_enabled instead (removed in v2.0.0)
-# fail2ban_bantime_overalljails: {{ fail2ban_bantime_overalljails_enabled }}
 
 #
 # Ban Action

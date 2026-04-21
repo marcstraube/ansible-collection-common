@@ -12,17 +12,6 @@
   tags:
     - energy
 
-# Deprecation: energy_management_battery_tp_smapi -> energy_management_battery_tp_smapi_enabled
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    energy_management_battery_tp_smapi_enabled: >-
-      {{ energy_management_battery_tp_smapi | default(energy_management_battery_tp_smapi_enabled) | bool }}
-  when:
-    - energy_management_enabled | bool
-    - energy_management_battery_tp_smapi is defined
-  tags:
-    - energy
-
 - name: Main | Include logind tasks
   ansible.builtin.include_tasks:
     file: logind.yml

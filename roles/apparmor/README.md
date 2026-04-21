@@ -77,11 +77,6 @@ needed.
 | `apparmor_extra_profiles_enabled` | `true`  | Install apparmor-profiles-extra                      |
 | `apparmor_notify_enabled`         | `true`  | Install apparmor-notify                              |
 
-**Deprecated variables** (removed in v2.0.0):
-
-- `apparmor_extra_profiles` -- use `apparmor_extra_profiles_enabled`
-- `apparmor_notify_package` -- use `apparmor_notify_enabled`
-
 ## Tags
 
 | Tag                 | Scope                     |

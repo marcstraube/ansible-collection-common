@@ -141,15 +141,6 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
-## Notes
-
-### Deprecation Notice
-
-All boolean toggle variables have been renamed to use the `_enabled` suffix (e.g.,
-`utils_monitor_htop` is now `utils_monitor_htop_enabled`). The old variable names still
-work during the deprecation period but will be removed in v2.0.0. Update your inventory
-and playbook variables to the new names.
-
 ## License
 
 MIT

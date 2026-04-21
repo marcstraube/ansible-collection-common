@@ -13,20 +13,11 @@ editors_enabled: true
 # Enable nano editor
 editors_nano_enabled: true
 
-# DEPRECATED: Use editors_nano_enabled instead (removed in v2.0.0)
-# editors_nano: {{ editors_nano_enabled }}
-
 # Enable vim editor
 editors_vim_enabled: true
 
-# DEPRECATED: Use editors_vim_enabled instead (removed in v2.0.0)
-# editors_vim: {{ editors_vim_enabled }}
-
 # Enable neovim editor
 editors_neovim_enabled: true
-
-# DEPRECATED: Use editors_neovim_enabled instead (removed in v2.0.0)
-# editors_neovim: {{ editors_neovim_enabled }}
 
 # Default editor (for EDITOR/VISUAL env vars via /etc/profile.d/editor.sh)
 # Options: nano, vim, nvim
@@ -40,20 +31,11 @@ editors_default: 'nvim'
 # Enable global nano configuration deployment
 editors_nano_config_enabled: true
 
-# DEPRECATED: Use editors_nano_config_enabled instead (removed in v2.0.0)
-# editors_nano_config_manage: {{ editors_nano_config_enabled }}
-
 # Enable global vim configuration deployment
 editors_vim_config_enabled: true
 
-# DEPRECATED: Use editors_vim_config_enabled instead (removed in v2.0.0)
-# editors_vim_config_manage: {{ editors_vim_config_enabled }}
-
 # Enable global neovim configuration deployment
 editors_neovim_config_enabled: true
-
-# DEPRECATED: Use editors_neovim_config_enabled instead (removed in v2.0.0)
-# editors_neovim_config_manage: {{ editors_neovim_config_enabled }}
 
 #
 # Neovim Binary Install (RedHat only)
@@ -63,9 +45,6 @@ editors_neovim_config_enabled: true
 
 # Enable neovim binary install from GitHub releases
 editors_neovim_binary_enabled: false
-
-# DEPRECATED: Use editors_neovim_binary_enabled instead (removed in v2.0.0)
-# editors_neovim_binary_install: {{ editors_neovim_binary_enabled }}
 
 # Neovim release version to install
 editors_neovim_version: 'v0.12.1'

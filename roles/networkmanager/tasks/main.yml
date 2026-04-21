@@ -12,21 +12,6 @@
   tags:
     - networkmanager
 
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    networkmanager_applet_enabled: >-
-      {{ networkmanager_install_applet | default(networkmanager_applet_enabled) | bool }}
-    networkmanager_timezone_enabled: >-
-      {{ networkmanager_configure_timezone | default(networkmanager_timezone_enabled) | bool }}
-    networkmanager_polkit_enabled: >-
-      {{ networkmanager_polkit | default(networkmanager_polkit_enabled) | bool }}
-  when: >-
-    networkmanager_install_applet is defined or
-    networkmanager_configure_timezone is defined or
-    networkmanager_polkit is defined
-  tags:
-    - networkmanager
-
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: networkmanager_enabled | bool

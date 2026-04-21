@@ -151,9 +151,6 @@ energy_management_battery_stop_threshold: 80
 # Enable tp_smapi for older ThinkPads (T530 and earlier)
 energy_management_battery_tp_smapi_enabled: false
 
-# DEPRECATED: Use energy_management_battery_tp_smapi_enabled instead (removed in v2.0.0)
-# energy_management_battery_tp_smapi: {{ energy_management_battery_tp_smapi_enabled }}
-
 #
 # Backlight (Laptop Only)
 #

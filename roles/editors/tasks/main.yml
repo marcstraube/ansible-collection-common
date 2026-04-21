@@ -12,35 +12,6 @@
   tags:
     - editors
 
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    editors_nano_enabled: >-
-      {{ editors_nano | default(editors_nano_enabled) | bool }}
-    editors_vim_enabled: >-
-      {{ editors_vim | default(editors_vim_enabled) | bool }}
-    editors_neovim_enabled: >-
-      {{ editors_neovim | default(editors_neovim_enabled) | bool }}
-    editors_nano_config_enabled: >-
-      {{ editors_nano_config_manage | default(editors_nano_config_enabled) | bool }}
-    editors_vim_config_enabled: >-
-      {{ editors_vim_config_manage | default(editors_vim_config_enabled) | bool }}
-    editors_neovim_config_enabled: >-
-      {{ editors_neovim_config_manage | default(editors_neovim_config_enabled) | bool }}
-    editors_neovim_binary_enabled: >-
-      {{ editors_neovim_binary_install | default(editors_neovim_binary_enabled) | bool }}
-  when:
-    - editors_enabled | bool
-    - >-
-      editors_nano is defined
-      or editors_vim is defined
-      or editors_neovim is defined
-      or editors_nano_config_manage is defined
-      or editors_vim_config_manage is defined
-      or editors_neovim_config_manage is defined
-      or editors_neovim_binary_install is defined
-  tags:
-    - editors
-
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: editors_enabled | bool
