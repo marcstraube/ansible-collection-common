@@ -1,43 +1,67 @@
 ---
 # =============================================================================
-# Networking Playbook
+# Networking Playbook (DEPRECATED)
 # =============================================================================
-# Network configuration, DNS, VPN, and monitoring.
+# DEPRECATED: This playbook will be removed in v2.0.0.
+# Networking roles have moved to marcstraube.common.base (networkmanager,
+# unbound, avahi, snmp) and marcstraube.common.security (wireguard).
 #
 # Usage:
-#   ansible-playbook marcstraube.common.networking -i inventory/
+#   ansible-playbook marcstraube.common.base -i inventory/
 #
 # Configure roles via inventory variables (group_vars/host_vars).
 # See each role's defaults/main.yml for available variables.
 # =============================================================================
 
-- name: Configure Networking
+- name: Configure Networking (DEPRECATED — use marcstraube.common.base)
   hosts: all
   become: true
   gather_facts: true
 
   tasks:
-    - name: Include networkmanager role
+    - name: Deprecation warning
+      ansible.builtin.debug:
+        msg: >-
+          DEPRECATED: marcstraube.common.networking will be removed in v2.0.0.
+          Networking roles have moved to marcstraube.common.base (networkmanager,
+          unbound, avahi, snmp) and marcstraube.common.security (wireguard).
+
+    - name: Networking | Include networkmanager role
       ansible.builtin.include_role:
         name: marcstraube.common.networkmanager
+      tags:
+        - networking
+        - networkmanager
       when: networkmanager_enabled | default(false) | bool
 
-    - name: Include unbound role
+    - name: Networking | Include unbound role
       ansible.builtin.include_role:
         name: marcstraube.common.unbound
+      tags:
+        - networking
+        - unbound
       when: unbound_enabled | default(false) | bool
 
-    - name: Include avahi role
+    - name: Networking | Include avahi role
       ansible.builtin.include_role:
         name: marcstraube.common.avahi
+      tags:
+        - networking
+        - avahi
       when: avahi_enabled | default(false) | bool
 
-    - name: Include wireguard role
+    - name: Networking | Include wireguard role
       ansible.builtin.include_role:
         name: marcstraube.common.wireguard
+      tags:
+        - networking
+        - wireguard
       when: wireguard_enabled | default(false) | bool
 
-    - name: Include snmp role
+    - name: Networking | Include snmp role
       ansible.builtin.include_role:
         name: marcstraube.common.snmp
+      tags:
+        - networking
+        - snmp
       when: snmp_enabled | default(false) | bool
