@@ -183,65 +183,6 @@
   notify: 'dnf configuration changed'
 
 #
-# PostgreSQL PGDG
-#
-
-- name: Repos | Install PostgreSQL repository
-  vars:
-    __distro_ver: "{{ ansible_facts['distribution_major_version'] }}"
-  ansible.builtin.dnf:
-    name: >-
-      https://download.postgresql.org/pub/repos/yum/reporpms/EL-{{
-      __distro_ver }}-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-    state: present
-    disable_gpg_check: true
-  retries: 5
-  delay: 10
-  when:
-    - dnf_postgresql_repo_enabled | bool
-    - ansible_facts['distribution'] != 'Fedora'
-  notify: 'dnf configuration changed'
-
-#
-# Grafana
-#
-
-- name: Repos | Setup Grafana repository
-  when: dnf_grafana_repo_enabled | bool
-  block:
-    - name: Repos | Add Grafana repository
-      ansible.builtin.yum_repository:
-        name: grafana
-        description: Grafana OSS
-        baseurl: 'https://rpm.grafana.com'
-        gpgkey: 'https://rpm.grafana.com/gpg.key'
-        gpgcheck: true
-        enabled: true
-      retries: 5
-      delay: 10
-      notify: 'dnf configuration changed'
-
-#
-# Kubernetes
-#
-
-- name: Repos | Setup Kubernetes repository
-  when: dnf_kubernetes_repo_enabled | bool
-  block:
-    - name: Repos | Add Kubernetes repository
-      ansible.builtin.yum_repository:
-        name: kubernetes
-        description: Kubernetes
-        baseurl: "https://pkgs.k8s.io/core:/stable:/v{{ dnf_kubernetes_version }}/rpm/"
-        gpgkey: "https://pkgs.k8s.io/core:/stable:/v{{ dnf_kubernetes_version }}/rpm/repodata/repomd.xml.key"
-        gpgcheck: true
-        enabled: true
-        exclude: 'kubelet kubeadm kubectl cri-tools kubernetes-cni'
-      retries: 5
-      delay: 10
-      notify: 'dnf configuration changed'
-
-#
 # COPR Repositories
 #
 
