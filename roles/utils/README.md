@@ -141,6 +141,12 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [btop](https://github.com/aristocratos/btop) — modern resource monitor for the terminal
+- [ripgrep](https://github.com/BurntSushi/ripgrep) — fast recursive grep alternative
+- [fd](https://github.com/sharkdp/fd) — fast find alternative
+
 ## License
 
 MIT

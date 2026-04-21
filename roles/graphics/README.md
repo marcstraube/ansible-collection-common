@@ -142,6 +142,12 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - **Debian Trixie**: Legacy 470xx driver has been dropped.
 - **RHEL/Rocky**: Requires RPM Fusion repositories for proprietary NVIDIA drivers.
 
+## References
+
+- [Intel graphics - ArchWiki](https://wiki.archlinux.org/title/Intel_graphics) — Intel GPU driver setup and configuration
+- [AMDGPU - ArchWiki](https://wiki.archlinux.org/title/AMDGPU) — AMD GPU driver setup and configuration
+- [NVIDIA - ArchWiki](https://wiki.archlinux.org/title/NVIDIA) — NVIDIA GPU driver setup and configuration
+
 ## License
 
 MIT

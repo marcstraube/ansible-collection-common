@@ -216,6 +216,11 @@ Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - **`max_log_file_action: exec`**: Only available in audit >= 4.0.3.
 - **`space_left_action: halt`**: Deprecated in latest 4.x releases.
 
+## References
+
+- [audit-userspace](https://github.com/linux-audit/audit-userspace) — Linux Audit userspace tools source code
+- [auditd(8)](https://man7.org/linux/man-pages/man8/auditd.8.html) — Linux Audit daemon man page
+
 ## License
 
 MIT

@@ -128,6 +128,12 @@ editors_neovim_binary_enabled: true
 editors_neovim_version: 'v0.10.4'
 ```
 
+## References
+
+- [nano](https://www.nano-editor.org/) — GNU nano text editor
+- [Vim](https://www.vim.org/) — Vi IMproved text editor
+- [Neovim](https://neovim.io/) — Hyperextensible Vim-based text editor
+
 ## License
 
 MIT

@@ -145,6 +145,11 @@ Configure them via the base role's bootloader variables:
 | `page_alloc.shuffle=1`     | Randomize page allocator free lists                           |
 | `iommu=force`              | Force IOMMU isolation (5-15% I/O cost, skip in VMs)           |
 
+## References
+
+- [CIS Benchmark](https://www.cisecurity.org/benchmark/distribution_independent_linux) — hardening guidelines
+- [DISA STIGs](https://www.stig.dod.mil/) — Security Technical Implementation Guides
+
 ## License
 
 MIT

@@ -132,6 +132,12 @@ Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9
 - **Rocky 9/10**: YubiKey Manager (ykman) not in repos, use pipx if needed. NitroKey
   App not available. Uses `plugdev` group.
 
+## References
+
+- [Yubico Developers](https://developers.yubico.com/) — YubiKey developer documentation and tools
+- [Nitrokey Documentation](https://www.nitrokey.com/documentation) — Nitrokey setup and usage guides
+- [FIDO2 - FIDO Alliance](https://fidoalliance.org/fido2/) — FIDO2 authentication standard specification
+
 ## License
 
 MIT

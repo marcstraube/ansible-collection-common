@@ -123,6 +123,11 @@ On RedHat-family systems with `nodesource` method, the role:
 3. If AppStream has it: enables the stream and installs from AppStream
 4. If not: disables the module, adds the NodeSource repository, and installs
 
+## References
+
+- [Node.js](https://nodejs.org/) — JavaScript runtime
+- [NodeSource Distributions](https://github.com/nodesource/distributions) — Node.js binary distribution repositories
+
 ## License
 
 MIT

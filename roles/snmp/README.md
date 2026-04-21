@@ -163,6 +163,11 @@ in `ExecStart`. This role deploys a systemd override to remove that, allowing
 AppArmor enforcement is available on Arch Linux and Debian (not RedHat/Rocky
 which uses SELinux). Enable with `snmp_apparmor_enabled: true`.
 
+## References
+
+- [Net-SNMP](https://www.net-snmp.org/) — SNMP protocol suite for network monitoring
+- [snmpd.conf(5)](https://www.net-snmp.org/docs/man/snmpd.conf.5.html) — Net-SNMP agent configuration reference
+
 ## License
 
 MIT

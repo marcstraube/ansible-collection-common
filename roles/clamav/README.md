@@ -178,6 +178,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 The role sets NoCOW (`chattr +C`) on the database directory (`/var/lib/clamav`)
 when running on BTRFS to reduce copy-on-write overhead from frequent database updates.
 
+## References
+
+- [ClamAV](https://www.clamav.net/) — Open source antivirus engine
+- [ClamAV Documentation](https://docs.clamav.net/) — Official documentation and configuration guides
+
 ## License
 
 MIT

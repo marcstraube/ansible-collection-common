@@ -182,6 +182,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - Profile images use AccountsService and optionally `~/.face` symlinks for DM compatibility
 - Exclusive mode only affects regular users (UID 1000-59999), never system accounts
 
+## References
+
+- [useradd(8)](https://man7.org/linux/man-pages/man8/useradd.8.html) — user account creation man page
+- [login.defs(5)](https://man7.org/linux/man-pages/man5/login.defs.5.html) — shadow password suite configuration
+
 ## License
 
 MIT

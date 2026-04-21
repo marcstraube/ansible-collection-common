@@ -174,6 +174,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - **`rlimit-nproc`**: Intentionally omitted from the config template. Upstream removed
   the default due to container UID namespace sharing issues.
 
+## References
+
+- [Avahi](https://avahi.org/) — mDNS/DNS-SD service discovery suite
+- [Avahi on GitHub](https://github.com/avahi/avahi) — Source code and issue tracker
+
 ## License
 
 MIT

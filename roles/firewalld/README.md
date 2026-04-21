@@ -178,6 +178,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [firewalld](https://firewalld.org/) — Dynamically managed firewall with network zones
+- [firewalld Documentation](https://firewalld.org/documentation/) — Official documentation
+
 ## License
 
 MIT

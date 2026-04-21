@@ -235,6 +235,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [OpenSSL Documentation](https://www.openssl.org/docs/) — cryptography and TLS toolkit
+- [Transport Layer Security (ArchWiki)](https://wiki.archlinux.org/title/Transport_Layer_Security)
+
 ## License
 
 MIT

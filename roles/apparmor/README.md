@@ -153,6 +153,11 @@ The service role knows its own binary path (OS-specific) and runs `aa-enforce`
 internally. This avoids centralizing OS-specific binary paths in the AppArmor
 role.
 
+## References
+
+- [AppArmor](https://apparmor.net/) — Application security framework for Linux
+- [AppArmor Wiki](https://gitlab.com/apparmor/apparmor/-/wikis/home) — Documentation and community wiki
+
 ## License
 
 MIT

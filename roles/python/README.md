@@ -78,6 +78,11 @@ On Rocky 9, the system pipx from EPEL (1.2.1) is too old for
 venv at `/opt/pipx-bootstrap/`. Downstream roles should use the bootstrap
 path on EL 9.
 
+## References
+
+- [Python](https://www.python.org/) — programming language
+- [pipx](https://pipx.pypa.io/) — install and run Python applications in isolated environments
+
 ## License
 
 MIT

@@ -174,6 +174,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [GnuPG](https://gnupg.org/) — The GNU Privacy Guard
+- [GnuPG Manual](https://gnupg.org/documentation/manuals/gnupg/) — Official documentation
+
 ## License
 
 MIT

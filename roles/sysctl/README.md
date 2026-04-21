@@ -114,6 +114,11 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## References
+
+- [Linux sysctl documentation](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/) — kernel parameter reference
+- [sysctl(8)](https://man7.org/linux/man-pages/man8/sysctl.8.html) — sysctl command man page
+
 ## License
 
 MIT
