@@ -128,9 +128,6 @@ networkmanager_ifupdown_managed: false
 # Package names are OS-specific (see vars/).
 networkmanager_applet_enabled: false
 
-# DEPRECATED: Use networkmanager_applet_enabled instead (removed in v2.0.0)
-# networkmanager_install_applet: {{ networkmanager_applet_enabled }}
-
 # VPN plugin packages to install.
 # Use OS-native package names (e.g. networkmanager-openvpn on Arch,
 # NetworkManager-openvpn on Rocky, network-manager-openvpn on Debian).
@@ -168,9 +165,6 @@ networkmanager_connections:
 # Deploy a dispatcher script that sets the system timezone
 # based on IP address using ipapi.co.
 networkmanager_timezone_enabled: false
-
-# DEPRECATED: Use networkmanager_timezone_enabled instead (removed in v2.0.0)
-# networkmanager_configure_timezone: {{ networkmanager_timezone_enabled }}
 
 # VPN Auto-Connect
 
@@ -259,9 +253,6 @@ networkmanager_dhcp_send_hostname_ipv6: true
 # without authentication. Useful for desktops where UWSM or other session
 # managers may prevent proper polkit session tracking.
 networkmanager_polkit_enabled: false
-
-# DEPRECATED: Use networkmanager_polkit_enabled instead (removed in v2.0.0)
-# networkmanager_polkit: {{ networkmanager_polkit_enabled }}
 
 # Group allowed to manage NetworkManager without authentication
 networkmanager_polkit_group: 'wheel'

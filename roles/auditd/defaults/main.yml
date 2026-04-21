@@ -107,12 +107,6 @@ auditd_nist_enabled: true
 # Enable STIG rules
 auditd_stig_enabled: true
 
-# DEPRECATED: Use auditd_*_enabled instead (removed in v2.0.0)
-# auditd_pci_dss: {{ auditd_pci_dss_enabled }}
-# auditd_hipaa: {{ auditd_hipaa_enabled }}
-# auditd_nist: {{ auditd_nist_enabled }}
-# auditd_stig: {{ auditd_stig_enabled }}
-
 #
 # System Call Rules
 #
@@ -156,21 +150,6 @@ auditd_actions_enabled: true
 # Monitor kernel modules
 auditd_modules_enabled: true
 
-# DEPRECATED: Use auditd_<rule>_enabled instead (removed in v2.0.0)
-# auditd_time_change: {{ auditd_time_change_enabled }}
-# auditd_identity_change: {{ auditd_identity_change_enabled }}
-# auditd_network_change: {{ auditd_network_change_enabled }}
-# auditd_system_locale: {{ auditd_system_locale_enabled }}
-# auditd_mac_policy: {{ auditd_mac_policy_enabled }}
-# auditd_logins: {{ auditd_logins_enabled }}
-# auditd_session: {{ auditd_session_enabled }}
-# auditd_perm_mod: {{ auditd_perm_mod_enabled }}
-# auditd_access: {{ auditd_access_enabled }}
-# auditd_delete: {{ auditd_delete_enabled }}
-# auditd_scope: {{ auditd_scope_enabled }}
-# auditd_actions: {{ auditd_actions_enabled }}
-# auditd_modules: {{ auditd_modules_enabled }}
-
 #
 # File Watches
 #
@@ -201,9 +180,6 @@ auditd_custom_watches: []
 
 # Enable remote logging (send logs to remote server)
 auditd_remote_logging_enabled: false
-
-# DEPRECATED: Use auditd_remote_logging_enabled instead (removed in v2.0.0)
-# auditd_remote_logging: {{ auditd_remote_logging_enabled }}
 
 # Remote server (hostname or IP)
 auditd_remote_server: ''
@@ -287,9 +263,6 @@ auditd_email_address: 'root'
 
 # Enable syslog plugin
 auditd_plugin_syslog_enabled: true
-
-# DEPRECATED: Use auditd_plugin_syslog_enabled instead (removed in v2.0.0)
-# auditd_plugin_syslog: {{ auditd_plugin_syslog_enabled }}
 
 # Syslog facility: LOG_LOCAL0-LOG_LOCAL7, LOG_AUTH, LOG_AUTHPRIV, LOG_DAEMON, LOG_SYSLOG, LOG_USER
 auditd_syslog_facility: 'LOG_LOCAL6'

@@ -1,14 +1,4 @@
 ---
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    unbound_root_hints_update_enabled: >-
-      {{ unbound_root_hints_update | default(unbound_root_hints_update_enabled) | bool }}
-    unbound_remote_control_enabled: >-
-      {{ unbound_remote_control | default(unbound_remote_control_enabled) | bool }}
-  when: unbound_root_hints_update is defined or unbound_remote_control is defined
-  tags:
-    - unbound
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:

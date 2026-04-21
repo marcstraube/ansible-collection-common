@@ -207,8 +207,6 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 - `dnf-plugins-core`, `dnf-utils`, `yum-utils` are automatically skipped (removed in dnf5)
 - `fastestmirror` is built into dnf5 (no plugin needed, config option still works)
-- Remi PHP module streams are deprecated — use `marcstraube.common.php` role instead
-  (`dnf_remi_php_version` removed in v2.0.0)
 
 ## License
 

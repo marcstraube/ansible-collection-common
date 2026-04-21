@@ -13,15 +13,9 @@ multiplexer_enabled: true
 # Enable tmux terminal multiplexer
 multiplexer_tmux_enabled: true
 
-# DEPRECATED: Use multiplexer_tmux_enabled instead (removed in v2.0.0)
-# utils_mux_tmux_enabled: {{ multiplexer_tmux_enabled }}
-
 # Enable zellij terminal multiplexer
 # Not available on Debian or Rocky
 multiplexer_zellij_enabled: false
-
-# DEPRECATED: Use multiplexer_zellij_enabled instead (removed in v2.0.0)
-# utils_mux_zellij_enabled: {{ multiplexer_zellij_enabled }}
 
 #
 # Global Configuration

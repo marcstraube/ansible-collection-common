@@ -12,22 +12,6 @@
   tags:
     - fail2ban
 
-- name: Main | Handle deprecated fail2ban_bantime_increment variable
-  ansible.builtin.set_fact:
-    fail2ban_bantime_increment_enabled: >-
-      {{ fail2ban_bantime_increment | default(fail2ban_bantime_increment_enabled) | bool }}
-  when: fail2ban_bantime_increment is defined
-  tags:
-    - fail2ban
-
-- name: Main | Handle deprecated fail2ban_bantime_overalljails variable
-  ansible.builtin.set_fact:
-    fail2ban_bantime_overalljails_enabled: >-
-      {{ fail2ban_bantime_overalljails | default(fail2ban_bantime_overalljails_enabled) | bool }}
-  when: fail2ban_bantime_overalljails is defined
-  tags:
-    - fail2ban
-
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: fail2ban_enabled | bool

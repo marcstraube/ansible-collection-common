@@ -81,20 +81,6 @@ the full list of options:
 | `editors_user_config_mode`  | `'managed'` | Default mode when user entry has no 'mode' |
 | `editors_user_config_merge` | `true`      | Default config_merge behavior              |
 
-### Deprecated Variables
-
-The following variables are deprecated and will be removed in v2.0.0:
-
-| Old Variable                    | New Variable                    |
-|---------------------------------|---------------------------------|
-| `editors_nano`                  | `editors_nano_enabled`          |
-| `editors_vim`                   | `editors_vim_enabled`           |
-| `editors_neovim`                | `editors_neovim_enabled`        |
-| `editors_nano_config_manage`    | `editors_nano_config_enabled`   |
-| `editors_vim_config_manage`     | `editors_vim_config_enabled`    |
-| `editors_neovim_config_manage`  | `editors_neovim_config_enabled` |
-| `editors_neovim_binary_install` | `editors_neovim_binary_enabled` |
-
 ## Tags
 
 | Tag                   | Scope                           |

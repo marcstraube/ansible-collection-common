@@ -117,9 +117,6 @@ avahi_rlimit_stack: 8388608
 # Enable nss-mdns for .local hostname resolution
 avahi_nss_mdns_enabled: true
 
-# DEPRECATED: Use avahi_nss_mdns_enabled instead (removed in v2.0.0)
-# avahi_nss_mdns: {{ avahi_nss_mdns_enabled }}
-
 # nsswitch.conf hosts line — customize for environments with SSSD, Winbind, etc.
 avahi_nsswitch_hosts: >-
   hosts: mymachines mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] files myhostname dns

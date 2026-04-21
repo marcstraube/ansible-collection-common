@@ -153,9 +153,6 @@ base_systemd_boot_editor: false
 # Install dialog (TUI menus and input boxes)
 base_dialog_enabled: true
 
-# DEPRECATED: Use base_dialog_enabled instead (removed in v2.0.0)
-# base_dialog: {{ base_dialog_enabled }}
-
 # Essential system packages (OS-specific defaults from vars/)
 base_packages: '{{ __base_default_packages | default([]) }}'
 

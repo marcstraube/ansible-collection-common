@@ -102,15 +102,6 @@ pacman_multilib_enabled: false
 # Enable multilib-testing
 pacman_multilib_testing_enabled: false
 
-# DEPRECATED: Use pacman_testing_repos_enabled instead (removed in v2.0.0)
-# pacman_testing_repos: {{ pacman_testing_repos_enabled }}
-
-# DEPRECATED: Use pacman_multilib_enabled instead (removed in v2.0.0)
-# pacman_multilib: {{ pacman_multilib_enabled }}
-
-# DEPRECATED: Use pacman_multilib_testing_enabled instead (removed in v2.0.0)
-# pacman_multilib_testing: {{ pacman_multilib_testing_enabled }}
-
 # Custom repositories
 # Example:
 #   pacman_custom_repositories:
@@ -246,15 +237,6 @@ makepkg_ccache_enabled: false
 
 # Use sccache for Rust compilation caching
 makepkg_sccache_enabled: false
-
-# DEPRECATED: Use makepkg_distcc_enabled instead (removed in v2.0.0)
-# makepkg_distcc: {{ makepkg_distcc_enabled }}
-
-# DEPRECATED: Use makepkg_ccache_enabled instead (removed in v2.0.0)
-# makepkg_ccache: {{ makepkg_ccache_enabled }}
-
-# DEPRECATED: Use makepkg_sccache_enabled instead (removed in v2.0.0)
-# makepkg_sccache: {{ makepkg_sccache_enabled }}
 
 # Run check() function in PKGBUILDs
 makepkg_check: true
@@ -459,9 +441,6 @@ paru_file_manager: ''
 # Enable paccache timer for automatic cleanup
 paccache_timer_enabled: true
 
-# DEPRECATED: Use paccache_timer_enabled instead (removed in v2.0.0)
-# paccache_enabled: {{ paccache_timer_enabled }}
-
 # Paccache arguments
 # -r: remove, -k: keep versions, -u: uninstalled only
 # Examples:
@@ -482,15 +461,6 @@ pacman_pkgfile_enabled: true
 
 # Install informant for Arch news (blocks upgrades until news is read)
 pacman_informant_enabled: false
-
-# DEPRECATED: Use pacman_rebuild_detector_enabled instead (removed in v2.0.0)
-# pacman_install_rebuild_detector: {{ pacman_rebuild_detector_enabled }}
-
-# DEPRECATED: Use pacman_pkgfile_enabled instead (removed in v2.0.0)
-# pacman_install_pkgfile: {{ pacman_pkgfile_enabled }}
-
-# DEPRECATED: Use pacman_informant_enabled instead (removed in v2.0.0)
-# pacman_install_informant: {{ pacman_informant_enabled }}
 
 #
 # APT - General Options
@@ -545,14 +515,8 @@ apt_backports_enabled: false
 # Example: ['ppa:ondrej/php', 'ppa:graphics-drivers/ppa']
 apt_ppas: []
 
-# DEPRECATED: Use marcstraube.common.docker role instead (removed in v2.0.0)
-apt_docker_repo_enabled: false
-
 # PostgreSQL PGDG repository
 apt_postgresql_repo_enabled: false
-
-# DEPRECATED: Use marcstraube.common.php role instead (removed in v2.0.0)
-apt_sury_enabled: false
 
 # Grafana repository
 apt_grafana_repo_enabled: false
@@ -560,24 +524,6 @@ apt_grafana_repo_enabled: false
 # Kubernetes repository
 apt_kubernetes_repo_enabled: false
 apt_kubernetes_version: '1.29'
-
-# DEPRECATED: Use apt_docker_repo_enabled instead (removed in v2.0.0)
-# apt_docker_repo: {{ apt_docker_repo_enabled }}
-
-# DEPRECATED: Use apt_postgresql_repo_enabled instead (removed in v2.0.0)
-# apt_postgresql_repo: {{ apt_postgresql_repo_enabled }}
-
-# DEPRECATED: Use apt_sury_enabled instead (removed in v2.0.0)
-# apt_php_sury_repo: {{ apt_sury_enabled }}
-
-# DEPRECATED: Use apt_sury_enabled instead (removed in v2.0.0)
-# apt_php_sury_repo_enabled: {{ apt_sury_enabled }}
-
-# DEPRECATED: Use apt_grafana_repo_enabled instead (removed in v2.0.0)
-# apt_grafana_repo: {{ apt_grafana_repo_enabled }}
-
-# DEPRECATED: Use apt_kubernetes_repo_enabled instead (removed in v2.0.0)
-# apt_kubernetes_repo: {{ apt_kubernetes_repo_enabled }}
 
 # Custom repositories
 # Example:
@@ -593,9 +539,6 @@ apt_custom_repos: []
 
 # Enable unattended-upgrades
 apt_unattended_upgrades_enabled: false
-
-# DEPRECATED: Use apt_unattended_upgrades_enabled instead (removed in v2.0.0)
-# apt_unattended_upgrades: {{ apt_unattended_upgrades_enabled }}
 
 # Origins to auto-upgrade (default: security only)
 apt_unattended_origins:
@@ -635,18 +578,6 @@ apt_debsums_enabled: false
 # Install debian-goodies (checkrestart, etc.)
 apt_debian_goodies_enabled: true
 
-# DEPRECATED: Use apt_apt_file_enabled instead (removed in v2.0.0)
-# apt_install_apt_file: {{ apt_apt_file_enabled }}
-
-# DEPRECATED: Use apt_needrestart_enabled instead (removed in v2.0.0)
-# apt_install_needrestart: {{ apt_needrestart_enabled }}
-
-# DEPRECATED: Use apt_debsums_enabled instead (removed in v2.0.0)
-# apt_install_debsums: {{ apt_debsums_enabled }}
-
-# DEPRECATED: Use apt_debian_goodies_enabled instead (removed in v2.0.0)
-# apt_install_debian_goodies: {{ apt_debian_goodies_enabled }}
-
 #
 # DNF - General Options
 #
@@ -662,9 +593,6 @@ dnf_keepcache: false
 
 # Enable makecache timer
 dnf_makecache_timer_enabled: true
-
-# DEPRECATED: Use dnf_makecache_timer_enabled instead (removed in v2.0.0)
-# dnf_makecache_timer: {{ dnf_makecache_timer_enabled }}
 
 # Default answer for yes/no questions
 dnf_defaultyes: true
@@ -698,9 +626,6 @@ dnf_epel_enabled: true
 # Enable Remi repository (PHP, MariaDB)
 dnf_remi_enabled: false
 
-# DEPRECATED: Use marcstraube.common.php role instead (removed in v2.0.0)
-dnf_remi_php_version: ''
-
 # Enable RPM Fusion Free
 dnf_rpmfusion_free_enabled: false
 
@@ -709,9 +634,6 @@ dnf_rpmfusion_nonfree_enabled: false
 
 # Enable ELRepo (kernels, hardware drivers)
 dnf_elrepo_enabled: false
-
-# DEPRECATED: Use marcstraube.common.docker role instead (removed in v2.0.0)
-dnf_docker_repo_enabled: false
 
 # PostgreSQL PGDG repository
 dnf_postgresql_repo_enabled: false
@@ -722,24 +644,6 @@ dnf_grafana_repo_enabled: false
 # Kubernetes repository
 dnf_kubernetes_repo_enabled: false
 dnf_kubernetes_version: '1.29'
-
-# DEPRECATED: Use dnf_rpmfusion_free_enabled instead (removed in v2.0.0)
-# dnf_rpmfusion_free: {{ dnf_rpmfusion_free_enabled }}
-
-# DEPRECATED: Use dnf_rpmfusion_nonfree_enabled instead (removed in v2.0.0)
-# dnf_rpmfusion_nonfree: {{ dnf_rpmfusion_nonfree_enabled }}
-
-# DEPRECATED: Use dnf_docker_repo_enabled instead (removed in v2.0.0)
-# dnf_docker_repo: {{ dnf_docker_repo_enabled }}
-
-# DEPRECATED: Use dnf_postgresql_repo_enabled instead (removed in v2.0.0)
-# dnf_postgresql_repo: {{ dnf_postgresql_repo_enabled }}
-
-# DEPRECATED: Use dnf_grafana_repo_enabled instead (removed in v2.0.0)
-# dnf_grafana_repo: {{ dnf_grafana_repo_enabled }}
-
-# DEPRECATED: Use dnf_kubernetes_repo_enabled instead (removed in v2.0.0)
-# dnf_kubernetes_repo: {{ dnf_kubernetes_repo_enabled }}
 
 # COPR repositories to enable
 # Example: ['kwizart/fedy', 'atim/lazygit']
@@ -791,18 +695,6 @@ dnf_rpmbuild_enabled: false
 
 # Install mock for chroot building
 dnf_mock_enabled: false
-
-# DEPRECATED: Use dnf_utils_enabled instead (removed in v2.0.0)
-# dnf_install_utils: {{ dnf_utils_enabled }}
-
-# DEPRECATED: Use dnf_needs_restarting_enabled instead (removed in v2.0.0)
-# dnf_install_needs_restarting: {{ dnf_needs_restarting_enabled }}
-
-# DEPRECATED: Use dnf_rpmbuild_enabled instead (removed in v2.0.0)
-# dnf_install_rpmbuild: {{ dnf_rpmbuild_enabled }}
-
-# DEPRECATED: Use dnf_mock_enabled instead (removed in v2.0.0)
-# dnf_install_mock: {{ dnf_mock_enabled }}
 
 # Users to add to mock group
 dnf_mock_users: []

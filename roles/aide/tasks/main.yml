@@ -16,41 +16,6 @@
   tags:
     - aide
 
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    aide_monitor_binaries_enabled: >-
-      {{ aide_monitor_binaries | default(aide_monitor_binaries_enabled) | bool }}
-    aide_monitor_libraries_enabled: >-
-      {{ aide_monitor_libraries | default(aide_monitor_libraries_enabled) | bool }}
-    aide_monitor_boot_enabled: >-
-      {{ aide_monitor_boot | default(aide_monitor_boot_enabled) | bool }}
-    aide_monitor_configs_enabled: >-
-      {{ aide_monitor_configs | default(aide_monitor_configs_enabled) | bool }}
-    aide_monitor_system_dirs_enabled: >-
-      {{ aide_monitor_system_dirs | default(aide_monitor_system_dirs_enabled) | bool }}
-    aide_monitor_home_dirs_enabled: >-
-      {{ aide_monitor_home_dirs | default(aide_monitor_home_dirs_enabled) | bool }}
-    aide_monitor_logs_enabled: >-
-      {{ aide_monitor_logs | default(aide_monitor_logs_enabled) | bool }}
-    aide_init_db_enabled: >-
-      {{ aide_init_db | default(aide_init_db_enabled) | bool }}
-    aide_force_init_enabled: >-
-      {{ aide_force_init | default(aide_force_init_enabled) | bool }}
-  when:
-    - aide_enabled | bool
-    - >-
-      aide_monitor_binaries is defined or
-      aide_monitor_libraries is defined or
-      aide_monitor_boot is defined or
-      aide_monitor_configs is defined or
-      aide_monitor_system_dirs is defined or
-      aide_monitor_home_dirs is defined or
-      aide_monitor_logs is defined or
-      aide_init_db is defined or
-      aide_force_init is defined
-  tags:
-    - aide
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:

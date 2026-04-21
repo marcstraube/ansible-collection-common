@@ -12,30 +12,6 @@
   tags:
     - pki
 
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    pki_system_config_enabled: >-
-      {{ pki_configure_system | default(pki_system_config_enabled) | bool }}
-  when: pki_configure_system is defined
-  tags:
-    - pki
-
-- name: Main | Handle deprecated pki_disable_legacy variable
-  ansible.builtin.set_fact:
-    pki_disable_legacy_enabled: >-
-      {{ pki_disable_legacy | default(pki_disable_legacy_enabled) | bool }}
-  when: pki_disable_legacy is defined
-  tags:
-    - pki
-
-- name: Main | Handle deprecated pki_create_dirs variable
-  ansible.builtin.set_fact:
-    pki_create_dirs_enabled: >-
-      {{ pki_create_dirs | default(pki_create_dirs_enabled) | bool }}
-  when: pki_create_dirs is defined
-  tags:
-    - pki
-
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: pki_enabled | bool

@@ -76,11 +76,5 @@ apparmor_utils_enabled: true
 # Install apparmor-profiles-extra (broader profile coverage)
 apparmor_extra_profiles_enabled: true
 
-# DEPRECATED: Use apparmor_extra_profiles_enabled instead (removed in v2.0.0)
-# apparmor_extra_profiles: {{ apparmor_extra_profiles_enabled }}
-
 # Install apparmor-notify (desktop denial notifications)
 apparmor_notify_enabled: true
-
-# DEPRECATED: Use apparmor_notify_enabled instead (removed in v2.0.0)
-# apparmor_notify_package: {{ apparmor_notify_enabled }}

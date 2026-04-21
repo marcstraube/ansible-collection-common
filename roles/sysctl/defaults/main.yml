@@ -22,32 +22,17 @@ sysctl_parameters: {}
 # Enable security hardening profile (CIS benchmark recommended)
 sysctl_profile_security_enabled: true
 
-# DEPRECATED: Use sysctl_profile_security_enabled instead (removed in v2.0.0)
-# sysctl_profile_security: {{ sysctl_profile_security_enabled }}
-
 # Enable network performance profile (high-traffic servers)
 sysctl_profile_network_performance_enabled: false
-
-# DEPRECATED: Use sysctl_profile_network_performance_enabled instead (removed in v2.0.0)
-# sysctl_profile_network_performance: {{ sysctl_profile_network_performance_enabled }}
 
 # Enable database server profile (PostgreSQL, MariaDB)
 sysctl_profile_database_enabled: false
 
-# DEPRECATED: Use sysctl_profile_database_enabled instead (removed in v2.0.0)
-# sysctl_profile_database: {{ sysctl_profile_database_enabled }}
-
 # Enable web server profile (nginx, Apache)
 sysctl_profile_webserver_enabled: false
 
-# DEPRECATED: Use sysctl_profile_webserver_enabled instead (removed in v2.0.0)
-# sysctl_profile_webserver: {{ sysctl_profile_webserver_enabled }}
-
 # Enable Docker/container host profile
 sysctl_profile_docker_enabled: false
-
-# DEPRECATED: Use sysctl_profile_docker_enabled instead (removed in v2.0.0)
-# sysctl_profile_docker: {{ sysctl_profile_docker_enabled }}
 
 #
 # Security Profile Parameters

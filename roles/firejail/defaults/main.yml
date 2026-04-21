@@ -31,9 +31,6 @@ firejail_config:
 # Requires AppArmor enabled and firejail-default profile loaded
 firejail_apparmor_enabled: false
 
-# DEPRECATED: Use firejail_apparmor_enabled instead (removed in v2.0.0)
-# firejail_apparmor: {{ firejail_apparmor_enabled }}
-
 # Global profile overrides (/etc/firejail/globals.local)
 # List of directives applied to ALL sandboxed applications
 firejail_globals: []
@@ -64,6 +61,3 @@ firejail_profiles: {}
 
 # Enable pacman hook to re-run firecfg after package installs/upgrades
 firejail_pacman_hook_enabled: true
-
-# DEPRECATED: Use firejail_pacman_hook_enabled instead (removed in v2.0.0)
-# firejail_pacman_hook: {{ firejail_pacman_hook_enabled }}

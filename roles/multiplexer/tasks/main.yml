@@ -12,20 +12,6 @@
   tags:
     - multiplexer
 
-- name: Main | Handle deprecated utils variables
-  ansible.builtin.set_fact:
-    multiplexer_tmux_enabled: >-
-      {{ utils_mux_tmux_enabled | default(multiplexer_tmux_enabled) | bool }}
-    multiplexer_zellij_enabled: >-
-      {{ utils_mux_zellij_enabled | default(multiplexer_zellij_enabled) | bool }}
-  when:
-    - multiplexer_enabled | bool
-    - >-
-      utils_mux_tmux_enabled is defined
-      or utils_mux_zellij_enabled is defined
-  tags:
-    - multiplexer
-
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: multiplexer_enabled | bool

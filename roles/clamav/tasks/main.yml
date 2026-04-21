@@ -12,22 +12,6 @@
   tags:
     - clamav
 
-- name: Main | Handle deprecated clamav_postfix_integration variable
-  ansible.builtin.set_fact:
-    clamav_postfix_integration_enabled: >-
-      {{ clamav_postfix_integration | default(clamav_postfix_integration_enabled) | bool }}
-  when: clamav_postfix_integration is defined
-  tags:
-    - clamav
-
-- name: Main | Handle deprecated clamav_rspamd_integration variable
-  ansible.builtin.set_fact:
-    clamav_rspamd_integration_enabled: >-
-      {{ clamav_rspamd_integration | default(clamav_rspamd_integration_enabled) | bool }}
-  when: clamav_rspamd_integration is defined
-  tags:
-    - clamav
-
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: clamav_enabled | bool

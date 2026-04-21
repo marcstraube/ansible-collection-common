@@ -13,26 +13,6 @@
   tags:
     - apparmor
 
-- name: Main | Handle deprecated apparmor_extra_profiles variable
-  ansible.builtin.set_fact:
-    apparmor_extra_profiles_enabled: >-
-      {{ apparmor_extra_profiles | default(apparmor_extra_profiles_enabled) | bool }}
-  when:
-    - apparmor_enabled | bool
-    - apparmor_extra_profiles is defined
-  tags:
-    - apparmor
-
-- name: Main | Handle deprecated apparmor_notify_package variable
-  ansible.builtin.set_fact:
-    apparmor_notify_enabled: >-
-      {{ apparmor_notify_package | default(apparmor_notify_enabled) | bool }}
-  when:
-    - apparmor_enabled | bool
-    - apparmor_notify_package is defined
-  tags:
-    - apparmor
-
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: apparmor_enabled | bool

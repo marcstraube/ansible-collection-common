@@ -87,18 +87,6 @@ in inventory:
 
 See `defaults/main.yml` for the full parameter sets.
 
-### Deprecated Variables
-
-The following variables are deprecated and will be removed in v2.0.0:
-
-| Old Variable                         | New Variable                                 |
-|--------------------------------------|----------------------------------------------|
-| `sysctl_profile_security`            | `sysctl_profile_security_enabled`            |
-| `sysctl_profile_network_performance` | `sysctl_profile_network_performance_enabled` |
-| `sysctl_profile_database`            | `sysctl_profile_database_enabled`            |
-| `sysctl_profile_webserver`           | `sysctl_profile_webserver_enabled`           |
-| `sysctl_profile_docker`              | `sysctl_profile_docker_enabled`              |
-
 ## Tags
 
 | Tag                | Scope                    |

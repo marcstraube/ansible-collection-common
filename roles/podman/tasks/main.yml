@@ -1,14 +1,4 @@
 ---
-- name: Main | Handle deprecated variables
-  ansible.builtin.set_fact:
-    podman_docker_alias_enabled: >-
-      {{ podman_docker_alias | default(podman_docker_alias_enabled) | bool }}
-    podman_docker_socket_symlink_enabled: >-
-      {{ podman_docker_socket_symlink | default(podman_docker_socket_symlink_enabled) | bool }}
-  when:
-    - podman_enabled | bool
-    - podman_docker_alias is defined or podman_docker_socket_symlink is defined
-
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:

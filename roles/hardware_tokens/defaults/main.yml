@@ -13,32 +13,17 @@ hardware_tokens_enabled: true
 # Enable NitroKey support (udev rules + packages)
 hardware_tokens_nitrokey_enabled: true
 
-# DEPRECATED: Use hardware_tokens_nitrokey_enabled instead (removed in v2.0.0)
-# hardware_tokens_nitrokey: {{ hardware_tokens_nitrokey_enabled }}
-
 # Enable NitroKey App GUI (Arch Linux only, not available on Debian/RHEL)
 hardware_tokens_nitrokey_app_enabled: false
-
-# DEPRECATED: Use hardware_tokens_nitrokey_app_enabled instead (removed in v2.0.0)
-# hardware_tokens_nitrokey_app: {{ hardware_tokens_nitrokey_app_enabled }}
 
 # Enable YubiKey support (udev rules + packages)
 hardware_tokens_yubikey_enabled: true
 
-# DEPRECATED: Use hardware_tokens_yubikey_enabled instead (removed in v2.0.0)
-# hardware_tokens_yubikey: {{ hardware_tokens_yubikey_enabled }}
-
 # Enable YubiKey Manager CLI (Arch + Debian only, not in Rocky repos)
 hardware_tokens_yubikey_manager_enabled: false
 
-# DEPRECATED: Use hardware_tokens_yubikey_manager_enabled instead (removed in v2.0.0)
-# hardware_tokens_yubikey_manager: {{ hardware_tokens_yubikey_manager_enabled }}
-
 # Enable generic FIDO2/U2F support (udev rules + libfido2 + fido2-tools)
 hardware_tokens_fido2_enabled: true
-
-# DEPRECATED: Use hardware_tokens_fido2_enabled instead (removed in v2.0.0)
-# hardware_tokens_fido2: {{ hardware_tokens_fido2_enabled }}
 
 #
 # Smartcard / PKCS#11
@@ -47,21 +32,11 @@ hardware_tokens_fido2_enabled: true
 # Enable smartcard diagnostics (pcsc-tools)
 hardware_tokens_smartcard_enabled: true
 
-# DEPRECATED: Use hardware_tokens_smartcard_enabled instead (removed in v2.0.0)
-# hardware_tokens_smartcard: {{ hardware_tokens_smartcard_enabled }}
-
 # Enable OpenSC for PKCS#11 smartcard access
 hardware_tokens_opensc_enabled: true
 
-# DEPRECATED: Use hardware_tokens_opensc_enabled instead (removed in v2.0.0)
-# hardware_tokens_opensc: {{ hardware_tokens_opensc_enabled }}
-
 # Enable PC/SC daemon socket for smartcard communication
 hardware_tokens_pcscd_socket_enabled: true
-
-# DEPRECATED: Use hardware_tokens_pcscd_socket_enabled instead (removed in v2.0.0)
-# hardware_tokens_pcscd: {{ hardware_tokens_pcscd_socket_enabled }}
-# hardware_tokens_pcscd_enabled: {{ hardware_tokens_pcscd_socket_enabled }}
 
 #
 # PAM / Login
@@ -69,9 +44,6 @@ hardware_tokens_pcscd_socket_enabled: true
 
 # Enable PAM U2F module for login
 hardware_tokens_pam_u2f_enabled: false
-
-# DEPRECATED: Use hardware_tokens_pam_u2f_enabled instead (removed in v2.0.0)
-# hardware_tokens_pam_u2f: {{ hardware_tokens_pam_u2f_enabled }}
 
 # PAM U2F authentication mode: '2fa' or 'passwordless'
 #   2fa:          User password + token touch (auth required, after pam_unix)
@@ -81,22 +53,13 @@ hardware_tokens_pam_u2f_mode: '2fa'
 # Enable FIDO2 PIN verification for passwordless mode
 hardware_tokens_pam_u2f_pin_enabled: true
 
-# DEPRECATED: Use hardware_tokens_pam_u2f_pin_enabled instead (removed in v2.0.0)
-# hardware_tokens_pam_u2f_pin: {{ hardware_tokens_pam_u2f_pin_enabled }}
-
 # Allow login for users without registered keys (nouserok)
 hardware_tokens_pam_u2f_nouserok_enabled: true
-
-# DEPRECATED: Use hardware_tokens_pam_u2f_nouserok_enabled instead (removed in v2.0.0)
-# hardware_tokens_pam_u2f_nouserok: {{ hardware_tokens_pam_u2f_nouserok_enabled }}
 
 # Configure system-wide PAM auth instead of per-service
 # When true, modifies system-auth (Arch/RHEL) or common-auth (Debian)
 # When false, modifies individual service files from pam_u2f_services list
 hardware_tokens_pam_u2f_system_auth_enabled: false
-
-# DEPRECATED: Use hardware_tokens_pam_u2f_system_auth_enabled instead (removed in v2.0.0)
-# hardware_tokens_pam_u2f_system_auth: {{ hardware_tokens_pam_u2f_system_auth_enabled }}
 
 # PAM services to configure (only when pam_u2f_system_auth_enabled is false)
 # SDDM does not support pam_u2f — do not add 'sddm' here
@@ -121,18 +84,12 @@ hardware_tokens_pam_u2f_config:
 # Enable udev rules deployment for device access
 hardware_tokens_udev_rules_enabled: true
 
-# DEPRECATED: Use hardware_tokens_udev_rules_enabled instead (removed in v2.0.0)
-# hardware_tokens_udev_rules: {{ hardware_tokens_udev_rules_enabled }}
-
 #
 # Lock on Removal
 #
 
 # Enable auto-lock screen when hardware token is removed
 hardware_tokens_lock_on_removal_enabled: false
-
-# DEPRECATED: Use hardware_tokens_lock_on_removal_enabled instead (removed in v2.0.0)
-# hardware_tokens_lock_on_removal: {{ hardware_tokens_lock_on_removal_enabled }}
 
 # Device vendor/product IDs that trigger lock on removal
 hardware_tokens_lock_on_removal_devices:

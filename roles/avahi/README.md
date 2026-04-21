@@ -173,8 +173,6 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
   `usr.sbin.avahi-daemon` is shipped by the AppArmor packages, not by Avahi itself.
 - **`rlimit-nproc`**: Intentionally omitted from the config template. Upstream removed
   the default due to container UID namespace sharing issues.
-- **Deprecation**: `avahi_nss_mdns` has been renamed to `avahi_nss_mdns_enabled`.
-  The old variable name is accepted as a fallback and will be removed in v2.0.0.
 
 ## License
 

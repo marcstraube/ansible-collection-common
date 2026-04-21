@@ -39,14 +39,8 @@ wireguard_dns:
 # Enable server mode (IP forwarding, firewalld masquerade)
 wireguard_server_mode_enabled: true
 
-# DEPRECATED: Use wireguard_server_mode_enabled instead (removed in v2.0.0)
-# wireguard_server_mode: {{ wireguard_server_mode_enabled }}
-
 # Enable IP forwarding
 wireguard_ip_forward_enabled: true
-
-# DEPRECATED: Use wireguard_ip_forward_enabled instead (removed in v2.0.0)
-# wireguard_ip_forward: {{ wireguard_ip_forward_enabled }}
 
 #
 # Peers
@@ -75,9 +69,6 @@ wireguard_peers: []
 
 # Enable client mode
 wireguard_client_mode_enabled: false
-
-# DEPRECATED: Use wireguard_client_mode_enabled instead (removed in v2.0.0)
-# wireguard_client_mode: {{ wireguard_client_mode_enabled }}
 
 # Server endpoint (IP:Port)
 wireguard_client_endpoint: ''
@@ -114,9 +105,6 @@ wireguard_config_dir: '/etc/wireguard'
 
 # Auto-generate WireGuard keys if not provided
 wireguard_generate_keys_enabled: true
-
-# DEPRECATED: Use wireguard_generate_keys_enabled instead (removed in v2.0.0)
-# wireguard_generate_keys: {{ wireguard_generate_keys_enabled }}
 
 # File permissions for configuration files
 wireguard_config_mode: '0600'
@@ -156,9 +144,6 @@ wireguard_postdown: []
 
 # Save runtime config on shutdown (wg-quick SaveConfig directive)
 wireguard_saveconfig_enabled: false
-
-# DEPRECATED: Use wireguard_saveconfig_enabled instead (removed in v2.0.0)
-# wireguard_saveconfig: {{ wireguard_saveconfig_enabled }}
 
 #
 # Firewall Mark

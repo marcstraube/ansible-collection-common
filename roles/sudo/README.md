@@ -113,18 +113,6 @@ molecule test
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
-## Notes
-
-### Deprecated Variables (removed in v2.0.0)
-
-| Old Variable           | New Variable                   |
-|------------------------|--------------------------------|
-| `sudo_wheel_group`     | `sudo_wheel_group_enabled`     |
-| `sudo_purge_sudoers_d` | `sudo_purge_sudoers_d_enabled` |
-
-The old variable names still work as a fallback but will be removed in v2.0.0.
-Update your inventory and playbook variables to use the new names.
-
 ## License
 
 MIT

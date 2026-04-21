@@ -221,9 +221,6 @@ unbound_logfile: ''
 unbound_root_hints_update_enabled: true
 unbound_root_hints_file: '/var/lib/unbound/root.hints'
 
-# DEPRECATED: Use unbound_root_hints_update_enabled instead (removed in v2.0.0)
-# unbound_root_hints_update: {{ unbound_root_hints_update_enabled }}
-
 #
 # Remote Control
 #
@@ -231,9 +228,6 @@ unbound_root_hints_file: '/var/lib/unbound/root.hints'
 # Enable unbound-control (required for reload, stats queries)
 unbound_remote_control_enabled: true
 unbound_control_interface: '/run/unbound/control'
-
-# DEPRECATED: Use unbound_remote_control_enabled instead (removed in v2.0.0)
-# unbound_remote_control: {{ unbound_remote_control_enabled }}
 
 #
 # Advanced

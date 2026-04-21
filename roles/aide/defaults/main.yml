@@ -54,15 +54,6 @@ aide_monitor_home_dirs_enabled: true
 # Monitor log files
 aide_monitor_logs_enabled: false
 
-# DEPRECATED: Use aide_monitor_*_enabled instead (removed in v2.0.0)
-# aide_monitor_binaries: {{ aide_monitor_binaries_enabled }}
-# aide_monitor_libraries: {{ aide_monitor_libraries_enabled }}
-# aide_monitor_boot: {{ aide_monitor_boot_enabled }}
-# aide_monitor_configs: {{ aide_monitor_configs_enabled }}
-# aide_monitor_system_dirs: {{ aide_monitor_system_dirs_enabled }}
-# aide_monitor_home_dirs: {{ aide_monitor_home_dirs_enabled }}
-# aide_monitor_logs: {{ aide_monitor_logs_enabled }}
-
 #
 # Custom Rules
 #
@@ -116,14 +107,8 @@ aide_email_on_change_only: true
 # Initialize database on first run
 aide_init_db_enabled: true
 
-# DEPRECATED: Use aide_init_db_enabled instead (removed in v2.0.0)
-# aide_init_db: {{ aide_init_db_enabled }}
-
 # Force database re-initialization
 aide_force_init_enabled: false
-
-# DEPRECATED: Use aide_force_init_enabled instead (removed in v2.0.0)
-# aide_force_init: {{ aide_force_init_enabled }}
 
 #
 # Logging
