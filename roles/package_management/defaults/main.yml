@@ -184,7 +184,7 @@ makepkg_users: []
 #     packager: 'John Doe <john@example.com>'
 
 # Default mode when user entry has no 'mode' key
-makepkg_user_config_mode: 'managed'
+makepkg_user_config_mode: 'initial'
 
 #
 # Makepkg - Compiler Flags

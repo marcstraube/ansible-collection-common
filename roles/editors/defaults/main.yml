@@ -135,7 +135,7 @@ editors_vim_config:
 editors_users: []
 
 # Default mode when user entry has no 'mode' key
-editors_user_config_mode: 'managed'
+editors_user_config_mode: 'initial'
 
 # Default config_merge: true = global | combine(user), false = user only
 editors_user_config_merge: true
