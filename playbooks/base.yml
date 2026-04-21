@@ -1,0 +1,195 @@
+---
+# =============================================================================
+# Base System Playbook
+# =============================================================================
+# Foundation system configuration for all hosts.
+# All roles default to enabled — disable per host/group via inventory.
+#
+# Usage:
+#   ansible-playbook marcstraube.common.base -i inventory/
+#   ansible-playbook marcstraube.common.base -i inventory/ --tags chrony
+#
+# Configure roles via inventory variables (group_vars/host_vars).
+# See each role's defaults/main.yml for available variables.
+# =============================================================================
+
+- name: Base System Configuration
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Base | Include package_management role
+      ansible.builtin.include_role:
+        name: marcstraube.common.package_management
+      tags:
+        - base
+        - package-management
+      when: package_management_enabled | default(true) | bool
+
+    - name: Base | Include python role
+      ansible.builtin.include_role:
+        name: marcstraube.common.python
+      tags:
+        - base
+        - python
+      when: python_enabled | default(true) | bool
+
+    - name: Base | Include nodejs role
+      ansible.builtin.include_role:
+        name: marcstraube.common.nodejs
+      tags:
+        - base
+        - nodejs
+      when: nodejs_enabled | default(true) | bool
+
+    - name: Base | Include chrony role
+      ansible.builtin.include_role:
+        name: marcstraube.common.chrony
+      tags:
+        - base
+        - chrony
+      when: chrony_enabled | default(true) | bool
+
+    - name: Base | Include logrotate role
+      ansible.builtin.include_role:
+        name: marcstraube.common.logrotate
+      tags:
+        - base
+        - logrotate
+      when: logrotate_enabled | default(true) | bool
+
+    - name: Base | Include sudo role
+      ansible.builtin.include_role:
+        name: marcstraube.common.sudo
+      tags:
+        - base
+        - sudo
+      when: sudo_enabled | default(true) | bool
+
+    - name: Base | Include users role
+      ansible.builtin.include_role:
+        name: marcstraube.common.users
+      tags:
+        - base
+        - users
+      when: users_enabled | default(true) | bool
+
+    - name: Base | Include editors role
+      ansible.builtin.include_role:
+        name: marcstraube.common.editors
+      tags:
+        - base
+        - editors
+      when: editors_enabled | default(true) | bool
+
+    - name: Base | Include base role
+      ansible.builtin.include_role:
+        name: marcstraube.common.base
+      tags:
+        - base
+      when: base_enabled | default(true) | bool
+
+    - name: Base | Include networkmanager role
+      ansible.builtin.include_role:
+        name: marcstraube.common.networkmanager
+      tags:
+        - base
+        - networkmanager
+      when: networkmanager_enabled | default(true) | bool
+
+    - name: Base | Include avahi role
+      ansible.builtin.include_role:
+        name: marcstraube.common.avahi
+      tags:
+        - base
+        - avahi
+      when: avahi_enabled | default(true) | bool
+
+    - name: Base | Include unbound role
+      ansible.builtin.include_role:
+        name: marcstraube.common.unbound
+      tags:
+        - base
+        - unbound
+      when: unbound_enabled | default(true) | bool
+
+    - name: Base | Include snmp role
+      ansible.builtin.include_role:
+        name: marcstraube.common.snmp
+      tags:
+        - base
+        - snmp
+      when: snmp_enabled | default(true) | bool
+
+    - name: Base | Include utils role
+      ansible.builtin.include_role:
+        name: marcstraube.common.utils
+      tags:
+        - base
+        - utils
+      when: utils_enabled | default(true) | bool
+
+    - name: Base | Include fonts role
+      ansible.builtin.include_role:
+        name: marcstraube.common.fonts
+      tags:
+        - base
+        - fonts
+      when: fonts_enabled | default(true) | bool
+
+    - name: Base | Include graphics role
+      ansible.builtin.include_role:
+        name: marcstraube.common.graphics
+      tags:
+        - base
+        - graphics
+      when: graphics_enabled | default(true) | bool
+
+    - name: Base | Include energy_management role
+      ansible.builtin.include_role:
+        name: marcstraube.common.energy_management
+      tags:
+        - base
+        - energy-management
+      when: energy_management_enabled | default(true) | bool
+
+    - name: Base | Include gnupg role
+      ansible.builtin.include_role:
+        name: marcstraube.common.gnupg
+      tags:
+        - base
+        - gnupg
+      when: gnupg_enabled | default(true) | bool
+
+    - name: Base | Include docker role
+      ansible.builtin.include_role:
+        name: marcstraube.common.docker
+      tags:
+        - base
+        - docker
+      when: docker_enabled | default(true) | bool
+
+    - name: Base | Include podman role
+      ansible.builtin.include_role:
+        name: marcstraube.common.podman
+      tags:
+        - base
+        - podman
+      when: podman_enabled | default(true) | bool
+
+    - name: Base | Include php role
+      ansible.builtin.include_role:
+        name: marcstraube.common.php
+      tags:
+        - base
+        - php
+      when: php_enabled | default(true) | bool
+
+    - name: Base | Include ansible role
+      ansible.builtin.include_role:
+        name: marcstraube.common.ansible
+      tags:
+        - base
+        - ansible-tools
+      when: ansible_enabled | default(true) | bool
