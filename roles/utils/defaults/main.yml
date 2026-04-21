@@ -38,12 +38,14 @@ utils_monitor_atop_enabled: false
 # Terminal Multiplexers
 #
 
+# DEPRECATED: Use multiplexer role instead (removed in v2.0.0)
 # Terminal multiplexer (tmux)
 utils_mux_tmux_enabled: true
 
 # DEPRECATED: Use utils_mux_tmux_enabled instead (removed in v2.0.0)
 # utils_mux_tmux: {{ utils_mux_tmux_enabled }}
 
+# DEPRECATED: Use multiplexer role instead (removed in v2.0.0)
 # Modern terminal multiplexer written in Rust (zellij)
 # Not available on Debian or Rocky
 utils_mux_zellij_enabled: false

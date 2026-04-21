@@ -1,0 +1,122 @@
+---
+#
+# Role Control
+#
+
+# Enable the multiplexer role
+multiplexer_enabled: true
+
+#
+# Multiplexers
+#
+
+# Enable tmux terminal multiplexer
+multiplexer_tmux_enabled: true
+
+# DEPRECATED: Use multiplexer_tmux_enabled instead (removed in v2.0.0)
+# utils_mux_tmux_enabled: {{ multiplexer_tmux_enabled }}
+
+# Enable zellij terminal multiplexer
+# Not available on Debian or Rocky
+multiplexer_zellij_enabled: false
+
+# DEPRECATED: Use multiplexer_zellij_enabled instead (removed in v2.0.0)
+# utils_mux_zellij_enabled: {{ multiplexer_zellij_enabled }}
+
+#
+# Global Configuration
+#
+# Set to false to skip deploying global config (e.g. when using own dotfiles)
+
+# Enable global tmux configuration deployment
+multiplexer_tmux_config_enabled: true
+
+# Enable global zellij configuration deployment
+multiplexer_zellij_config_enabled: true
+
+#
+# tmux Configuration
+#
+
+# tmux settings
+multiplexer_tmux_config:
+  # Use Ctrl-a as prefix (screen-style)
+  prefix: 'C-a'
+  # Enable mouse support
+  mouse: true
+  # Start window numbering at 1
+  base_index: 1
+  # Start pane numbering at 1
+  pane_base_index: 1
+  # Increase scrollback buffer
+  history_limit: 10000
+  # Reduce escape time for faster command sequences
+  escape_time: 10
+  # Enable 256 color support
+  default_terminal: 'tmux-256color'
+  # Renumber windows when one is closed
+  renumber_windows: true
+
+#
+# zellij Configuration
+#
+
+# zellij settings (KDL format)
+multiplexer_zellij_config:
+  # Theme (default, catppuccin, etc.)
+  theme: 'default'
+  # Default layout
+  default_layout: 'default'
+  # Enable mouse mode
+  mouse_mode: true
+  # Simplified UI (hide help bar)
+  simplified_ui: false
+  # Pane frames
+  pane_frames: true
+  # Copy on select
+  copy_on_select: true
+  # Scrollback editor
+  scrollback_editor: ''
+
+#
+# Per-User Configuration
+#
+# Per-user multiplexer config deployment. Each entry controls which multiplexer
+# configs are deployed to the user's home directory.
+#
+# Mode controls deployment behavior:
+#   managed  — deploy config on every run (Ansible owns the file)
+#   initial  — deploy only when user is newly created (user owns after that)
+#   disabled — skip per-user config deployment entirely
+#
+# config_merge controls how user config relates to global defaults:
+#   true  — merge: multiplexer_<mux>_config | combine(user.<mux>_config)
+#   false — standalone: only user.<mux>_config is used
+#
+# tpm_enabled controls TPM (tmux Plugin Manager) installation:
+#   true  — clone TPM to ~/.tmux/plugins/tpm and add run line to tmux.conf
+#   false — no plugin manager
+#
+# Example:
+#   multiplexer_users:
+#     - username: 'johndoe'
+#       mode: 'managed'
+#       config_merge: true
+#       tpm_enabled: true
+#       tmux_config:
+#         prefix: 'C-b'
+#         mouse: false
+#       zellij_config:
+#         theme: 'catppuccin'
+#     - username: 'guest'
+#       mode: 'disabled'
+multiplexer_users: []
+
+# Default mode when user entry has no 'mode' key
+multiplexer_user_config_mode: 'initial'
+
+# Default config_merge: true = global | combine(user), false = user only
+multiplexer_user_config_merge: true
+
+# Default TPM setting for per-user tmux config
+multiplexer_user_tpm_enabled: false

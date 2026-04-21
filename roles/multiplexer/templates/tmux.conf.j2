@@ -1,0 +1,47 @@
+{{ ansible_managed | comment }}
+# tmux Configuration
+
+{% if multiplexer_tmux_config.prefix | default('') | length > 0 %}
+# Prefix key
+unbind C-b
+set-option -g prefix {{ multiplexer_tmux_config.prefix }}
+bind-key {{ multiplexer_tmux_config.prefix }} send-prefix
+{% endif %}
+{% if multiplexer_tmux_config.mouse | default(true) %}
+
+# Mouse support
+set -g mouse on
+{% endif %}
+{% if multiplexer_tmux_config.base_index is defined %}
+
+# Window and pane numbering
+set -g base-index {{ multiplexer_tmux_config.base_index }}
+{% endif %}
+{% if multiplexer_tmux_config.pane_base_index is defined %}
+setw -g pane-base-index {{ multiplexer_tmux_config.pane_base_index }}
+{% endif %}
+{% if multiplexer_tmux_config.history_limit is defined %}
+
+# Scrollback buffer
+set -g history-limit {{ multiplexer_tmux_config.history_limit }}
+{% endif %}
+{% if multiplexer_tmux_config.escape_time is defined %}
+
+# Escape time
+set -sg escape-time {{ multiplexer_tmux_config.escape_time }}
+{% endif %}
+{% if multiplexer_tmux_config.default_terminal | default('') | length > 0 %}
+
+# Terminal type
+set -g default-terminal "{{ multiplexer_tmux_config.default_terminal }}"
+{% endif %}
+{% if multiplexer_tmux_config.renumber_windows | default(false) %}
+
+# Renumber windows
+set -g renumber-windows on
+{% endif %}
+{% if __multiplexer_user_tpm_enabled | default(false) | bool %}
+
+# TPM (tmux Plugin Manager)
+run '~/.tmux/plugins/tpm/tpm'
+{% endif %}

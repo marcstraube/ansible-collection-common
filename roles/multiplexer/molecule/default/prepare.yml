@@ -1,0 +1,35 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Install git for TPM tests
+      ansible.builtin.package:
+        name: git
+        state: present
+      retries: 3
+      delay: 5

@@ -7,7 +7,7 @@
 ## Description
 
 Shared Ansible roles for multi-OS infrastructure management.
-39 roles covering base system, security, networking, package management,
+40 roles covering base system, security, networking, package management,
 user management, editors, and more.
 
 ## Supported Platforms
@@ -25,16 +25,17 @@ user management, editors, and more.
 
 ### Base System
 
-| Role                  | Description                                           |
-| --------------------- | ----------------------------------------------------- |
-| **base**              | Hostname, timezone, locale, kernel, systemd           |
-| **users**             | User/group management with SSH keys                   |
-| **sudo**              | Sudo configuration                                    |
-| **editors**           | Text editors (nano, vim, neovim) with per-user config |
-| **utils**             | CLI utilities and monitoring tools                    |
-| **fonts**             | System and Nerd Fonts                                 |
-| **energy_management** | Power management (logind, PPD/TLP/tuned)              |
-| **graphics**          | GPU drivers (Intel, NVIDIA, AMD)                      |
+| Role                  | Description                                               |
+| --------------------- | --------------------------------------------------------- |
+| **base**              | Hostname, timezone, locale, kernel, systemd               |
+| **users**             | User/group management with SSH keys                       |
+| **sudo**              | Sudo configuration                                        |
+| **editors**           | Text editors (nano, vim, neovim) with per-user config     |
+| **multiplexer**       | Terminal multiplexers (tmux, zellij) with per-user config |
+| **utils**             | CLI utilities and monitoring tools                        |
+| **fonts**             | System and Nerd Fonts                                     |
+| **energy_management** | Power management (logind, PPD/TLP/tuned)                  |
+| **graphics**          | GPU drivers (Intel, NVIDIA, AMD)                          |
 
 ### Package Management
 

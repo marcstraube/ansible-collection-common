@@ -1,0 +1,17 @@
+---
+- name: Zellij | Ensure global config directory
+  ansible.builtin.file:
+    path: '{{ __multiplexer_zellij_config_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Zellij | Deploy global configuration
+  ansible.builtin.template:
+    src: config.kdl.j2
+    dest: '{{ __multiplexer_zellij_config_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true

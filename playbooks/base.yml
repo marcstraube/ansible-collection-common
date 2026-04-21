@@ -130,6 +130,14 @@
         - utils
       when: utils_enabled | default(true) | bool
 
+    - name: Base | Include multiplexer role
+      ansible.builtin.include_role:
+        name: marcstraube.common.multiplexer
+      tags:
+        - base
+        - multiplexer
+      when: multiplexer_enabled | default(true) | bool
+
     - name: Base | Include fonts role
       ansible.builtin.include_role:
         name: marcstraube.common.fonts

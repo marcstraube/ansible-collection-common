@@ -1,0 +1,8 @@
+---
+__multiplexer_tmux_package: 'tmux'
+__multiplexer_zellij_package: ''
+
+# Config paths
+__multiplexer_tmux_config_file: '/etc/tmux.conf'
+__multiplexer_zellij_config_dir: '/etc/zellij'
+__multiplexer_zellij_config_file: '/etc/zellij/config.kdl'
