@@ -1,4 +1,4 @@
-# Ansible Role: marcstraube.common.apparmor
+# marcstraube.common.apparmor
 
 ## Description
 

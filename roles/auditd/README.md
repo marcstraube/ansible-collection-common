@@ -1,4 +1,4 @@
-# Ansible Role: marcstraube.common.auditd
+# marcstraube.common.auditd
 
 ## Description
 

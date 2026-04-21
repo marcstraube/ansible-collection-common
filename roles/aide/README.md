@@ -1,4 +1,4 @@
-# Ansible Role: marcstraube.common.aide
+# marcstraube.common.aide
 
 ## Description
 
