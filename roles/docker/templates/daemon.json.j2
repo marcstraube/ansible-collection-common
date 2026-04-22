@@ -1,5 +1,4 @@
 {% set daemon = {} %}
-{% set _ = daemon.update({"_ansible_managed": ansible_managed}) %}
 {% set _ = daemon.update({"data-root": docker_data_root}) %}
 {% set _ = daemon.update({"storage-driver": docker_storage_driver}) %}
 {% if docker_storage_opts | length > 0 %}

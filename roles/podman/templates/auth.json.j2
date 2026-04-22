@@ -1,5 +1,4 @@
 {
-  "_ansible_managed": "{{ ansible_managed }}",
   "auths": {
 {% for auth in podman_registries_auth %}
     "{{ auth.registry }}": {
