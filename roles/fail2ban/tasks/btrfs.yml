@@ -67,8 +67,6 @@
   ansible.builtin.command:
     cmd: chattr +C /var/lib/fail2ban
   changed_when: true
-  # chattr may fail in containers without filesystem support
-  failed_when: false
   when:
     - __fail2ban_db_is_btrfs | bool
     - "'C' not in (__fail2ban_db_lsattr.stdout | default(''))"
@@ -82,6 +80,18 @@
   # stat may fail if directory does not exist yet
   failed_when: false
   when: fail2ban_logtarget is not search('SYSLOG|SYSTEMD|STDOUT|STDERR')
+
+- name: BTRFS | Ensure fail2ban log file exists for NoCOW
+  ansible.builtin.copy:
+    content: ''
+    dest: '{{ fail2ban_logtarget }}'
+    force: false
+    owner: root
+    group: root
+    mode: '0640'
+  when:
+    - fail2ban_logtarget is not search('SYSLOG|SYSTEMD|STDOUT|STDERR')
+    - __fail2ban_log_fstype.stdout | default('') == 'btrfs'
 
 - name: BTRFS | Set NoCOW attribute on fail2ban log file
   ansible.builtin.command:

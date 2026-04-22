@@ -68,8 +68,6 @@
   ansible.builtin.command:
     cmd: chattr +C {{ podman_storage_root }}
   changed_when: true
-  # chattr may fail in containers without filesystem support
-  failed_when: false
   when:
     - __podman_is_btrfs | bool
     - "'C' not in (__podman_lsattr.stdout | default(''))"

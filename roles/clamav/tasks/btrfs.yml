@@ -56,7 +56,5 @@
 - name: BTRFS | Set NoCOW attribute on ClamAV database directory
   ansible.builtin.command:
     cmd: chattr +C {{ clamav_database_directory }}
-  register: __clamav_chattr
-  changed_when: __clamav_chattr.rc == 0
-  failed_when: false
+  changed_when: true
   when: __clamav_is_btrfs | bool

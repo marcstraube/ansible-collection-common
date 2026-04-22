@@ -58,8 +58,5 @@
 - name: BTRFS | Set NoCOW attribute on AIDE database directory
   ansible.builtin.command:
     cmd: chattr +C {{ aide_database | dirname }}
-  register: __aide_chattr
-  changed_when: __aide_chattr.rc == 0
-  # chattr +C may fail in containers or on non-BTRFS filesystems
-  failed_when: false
+  changed_when: true
   when: __aide_is_btrfs | bool
