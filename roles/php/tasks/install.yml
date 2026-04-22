@@ -13,6 +13,46 @@
       {{ (__php_arch_repo_info.stdout | regex_search('Version\s*:\s*(\d+)\.(\d+)', '\1', '\2')) | join('.') }}
   when: ansible_facts['os_family'] == 'Archlinux'
 
+- name: Install | Detect current Debian PHP version
+  ansible.builtin.shell:
+    cmd: set -o pipefail && apt-cache show php | grep -m1 '^Depends:' | grep -oP 'php\K\d+\.\d+'
+    executable: /bin/bash
+  register: __php_debian_repo_info
+  changed_when: false
+  check_mode: false
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install | Set Debian current PHP version fact
+  ansible.builtin.set_fact:
+    __php_debian_current_version: '{{ __php_debian_repo_info.stdout | trim }}'
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - __php_debian_repo_info.stdout | default('') | trim | length > 0
+
+- name: Install | Detect current RedHat PHP version
+  ansible.builtin.shell:
+    cmd: set -o pipefail && dnf info php-cli 2>/dev/null | grep -m1 '^Version' | grep -oP '\d+\.\d+'
+    executable: /bin/bash
+  register: __php_redhat_repo_info
+  changed_when: false
+  check_mode: false
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Install | Set RedHat current PHP version fact
+  ansible.builtin.set_fact:
+    __php_redhat_current_version: '{{ __php_redhat_repo_info.stdout | trim }}'
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __php_redhat_repo_info.stdout | default('') | trim | length > 0
+
+- name: Install | Set unified system PHP version fact
+  ansible.builtin.set_fact:
+    __php_system_version: >-
+      {{ __php_arch_current_version
+         | default(__php_debian_current_version
+         | default(__php_redhat_current_version
+         | default('8.4'))) }}
+
 - name: Install | PHP versions
   ansible.builtin.include_tasks:
     file: install_version.yml

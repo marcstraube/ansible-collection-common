@@ -1,8 +1,15 @@
 ---
+- name: Service Version | Resolve auto version to system default
+  ansible.builtin.set_fact:
+    __php_resolved_version: >-
+      {{ (__php_service_item.version == 'auto')
+         | ternary(__php_system_version, __php_service_item.version) }}
+  when: __php_service_item.fpm | default(true) | bool
+
 - name: Service Version | Set version facts
   ansible.builtin.set_fact:
-    __php_ver: '{{ __php_service_item.version }}'
-    __php_ver_compact: "{{ __php_service_item.version | replace('.', '') }}"
+    __php_ver: '{{ __php_resolved_version }}'
+    __php_ver_compact: "{{ __php_resolved_version | replace('.', '') }}"
   when: __php_service_item.fpm | default(true) | bool
 
 # Reset Arch service name to official default
@@ -12,7 +19,7 @@
   when:
     - __php_service_item.fpm | default(true) | bool
     - ansible_facts['os_family'] == 'Archlinux'
-    - __php_ver == (__php_arch_current_version | default(''))
+    - __php_ver == __php_system_version
 
 # Override for AUR versions
 - name: Service Version | Set Arch AUR service name
@@ -21,7 +28,7 @@
   when:
     - __php_service_item.fpm | default(true) | bool
     - ansible_facts['os_family'] == 'Archlinux'
-    - __php_ver != (__php_arch_current_version | default(''))
+    - __php_ver != __php_system_version
 
 - name: Service Version | Manage PHP-FPM
   ansible.builtin.systemd_service:

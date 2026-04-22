@@ -40,12 +40,13 @@ php_fpm_enabled: true
 #       fpm_pool:
 #         pm_max_children: 50
 php_versions:
-  - version: '8.4'
+  - version: 'auto'
     extensions: []
     fpm: true
 
 # Default PHP version for CLI (update-alternatives on Debian, symlinks on RHEL/Arch)
-php_default_version: '8.4'
+# Use 'auto' to match the system-provided PHP version.
+php_default_version: 'auto'
 
 #
 # PHP Configuration (php.ini)
