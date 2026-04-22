@@ -10,6 +10,17 @@
   failed_when: false
   when: restic_log_to_file | bool
 
+- name: BTRFS | Ensure log directory exists for NoCOW
+  ansible.builtin.file:
+    path: '{{ restic_log_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  when:
+    - restic_log_to_file | bool
+    - __restic_log_fstype.stdout | default('') == 'btrfs'
+
 - name: BTRFS | Set NoCOW on log directory
   ansible.builtin.command:
     cmd: 'chattr +C {{ restic_log_dir }}'

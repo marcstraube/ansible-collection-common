@@ -55,11 +55,8 @@
         mode: '0700'
         state: directory
 
-# failed_when: false — chattr +C may fail on non-BTRFS or already-set directories
 - name: BTRFS | Set NoCOW attribute on audit log directory
   ansible.builtin.command:
     cmd: chattr +C {{ auditd_log_file | dirname }}
-  register: __auditd_chattr
-  changed_when: __auditd_chattr.rc == 0
-  failed_when: false
+  changed_when: true
   when: __auditd_is_btrfs | bool

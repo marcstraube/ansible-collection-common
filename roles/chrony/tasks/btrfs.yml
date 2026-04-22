@@ -7,6 +7,14 @@
   changed_when: false
   failed_when: false
 
+- name: BTRFS | Ensure log directory exists for NoCOW
+  ansible.builtin.file:
+    path: '{{ chrony_log_dir }}'
+    state: directory
+    mode: '0750'
+  when:
+    - __chrony_log_fstype.stdout | default('') == 'btrfs'
+
 - name: BTRFS | Set NoCOW attribute on log directory
   ansible.builtin.command:
     cmd: chattr +C {{ chrony_log_dir }}
