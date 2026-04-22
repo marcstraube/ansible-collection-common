@@ -72,10 +72,12 @@ jobs:
   # MOLECULE FORWARD-COMPATIBILITY (ansible-core 2.20, representative subset)
   # Tests a diverse subset of roles on latest ansible-core to catch
   # deprecations and breaking changes early.
+  # Only runs on push to main — not needed for every PR.
   # =============================================================================
   molecule-compat:
     name: Compat ${{ matrix.role }} (ansible-2.20)
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     needs: [lint, markdown-lint, yaml-lint]
     strategy:
       fail-fast: false
