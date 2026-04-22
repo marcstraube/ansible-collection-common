@@ -22,13 +22,21 @@
   delay: 5
   when: podman_compose_enabled | bool
 
+- name: Install | Check if real Docker binary exists
+  ansible.builtin.stat:
+    path: /usr/bin/docker
+  register: __podman_docker_bin
+
 - name: Install | Podman-docker compatibility
   ansible.builtin.package:
     name: '{{ __podman_docker_package }}'
     state: present
   retries: 3
   delay: 5
-  when: podman_docker_enabled | bool
+  when:
+    - podman_docker_enabled | bool
+    - not (docker_enabled | default(false) | bool)
+    - not (__podman_docker_bin.stat.exists and not __podman_docker_bin.stat.islnk)
 
 - name: Install | Podlet
   ansible.builtin.package:
