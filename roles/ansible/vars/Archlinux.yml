@@ -9,8 +9,9 @@ __ansible_tools_aur_packages:
   # Requires --nocheck due to upstream test bug
   molecule:
     - molecule-plugins
-  podman:
-    - python-podman
+
+__ansible_tools_podman_packages:
+  - 'python-podman'
 
 __ansible_tools_docker_packages:
   - 'python-docker'
