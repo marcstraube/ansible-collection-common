@@ -40,12 +40,9 @@
         - ansible_tools_molecule_enabled | bool
         - ansible_tools_container_driver in ['podman', 'docker']
 
-    - name: Install | Podman Python bindings from AUR (Arch)
-      become: true
-      become_user: 'aur_builder'
-      kewlfft.aur.aur:
-        name: '{{ __ansible_tools_aur_packages.podman }}'
-        use: 'makepkg'
+    - name: Install | Podman Python bindings (Arch)
+      ansible.builtin.package:
+        name: '{{ __ansible_tools_podman_packages }}'
         state: present
       retries: 3
       delay: 5
