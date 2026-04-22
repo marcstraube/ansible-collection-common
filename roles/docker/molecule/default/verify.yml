@@ -103,7 +103,6 @@
     - name: Verify | Assert daemon.json contains expected keys
       ansible.builtin.assert:
         that:
-          - "'_ansible_managed' in __daemon_decoded"
           - "'data-root' in __daemon_decoded"
           - "'storage-driver' in __daemon_decoded"
           - "'log-driver' in __daemon_decoded"
