@@ -114,7 +114,7 @@
 
 - name: Kernel | Re-sign boot files (HSM)
   ansible.builtin.command:
-    cmd: /usr/local/bin/secureboot-hsm-sign.sh
+    cmd: /usr/local/bin/secureboot-hsm-sign.sh --all
   changed_when: true
   when:
     - ansible_facts['os_family'] == 'Archlinux'
