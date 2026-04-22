@@ -1,8 +1,14 @@
 ---
+- name: Configure Version | Resolve auto version to system default
+  ansible.builtin.set_fact:
+    __php_resolved_version: >-
+      {{ (__php_config_item.version == 'auto')
+         | ternary(__php_system_version, __php_config_item.version) }}
+
 - name: Configure Version | Set version facts
   ansible.builtin.set_fact:
-    __php_ver: '{{ __php_config_item.version }}'
-    __php_ver_compact: "{{ __php_config_item.version | replace('.', '') }}"
+    __php_ver: '{{ __php_resolved_version }}'
+    __php_ver_compact: "{{ __php_resolved_version | replace('.', '') }}"
     __php_ini: '{{ __php_config_item.ini | default({}) }}'
     __php_pool: '{{ __php_config_item.fpm_pool | default({}) }}'
 
@@ -15,7 +21,7 @@
     __php_fpm_listen_default: '/run/php-fpm/php-fpm.sock'
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - __php_ver == __php_arch_current_version
+    - __php_ver == __php_system_version
 
 # Override for AUR versions
 - name: Configure Version | Set Arch AUR config paths
@@ -27,7 +33,7 @@
     __php_fpm_service: 'php{{ __php_ver_compact }}-fpm'
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - __php_ver != __php_arch_current_version
+    - __php_ver != __php_system_version
 
 - name: Configure Version | Set effective listen socket
   ansible.builtin.set_fact:

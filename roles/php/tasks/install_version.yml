@@ -1,8 +1,14 @@
 ---
+- name: Install Version | Resolve auto version to system default
+  ansible.builtin.set_fact:
+    __php_resolved_version: >-
+      {{ (__php_version_item.version == 'auto')
+         | ternary(__php_system_version, __php_version_item.version) }}
+
 - name: Install Version | Set version facts
   ansible.builtin.set_fact:
-    __php_ver: '{{ __php_version_item.version }}'
-    __php_ver_compact: "{{ __php_version_item.version | replace('.', '') }}"
+    __php_ver: '{{ __php_resolved_version }}'
+    __php_ver_compact: "{{ __php_resolved_version | replace('.', '') }}"
     __php_use_aur: false
 
 # Reset Arch patterns to official repo defaults (overridden by set_fact in previous AUR iterations)
@@ -14,7 +20,7 @@
     __php_fpm_service: 'php-fpm'
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - __php_ver == __php_arch_current_version
+    - __php_ver == __php_system_version
 
 # Override for AUR versions (non-current PHP on Arch)
 - name: Install Version | Set Arch AUR package patterns
@@ -26,15 +32,20 @@
     __php_use_aur: true
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - __php_ver != __php_arch_current_version
+    - __php_ver != __php_system_version
 
 - name: Install Version | Build package list
   ansible.builtin.set_fact:
     __php_version_packages: >-
       {{ [__php_cli_package] +
          ((__php_version_item.fpm | default(true) | bool) | ternary([__php_fpm_package], [])) +
-         (__php_version_item.extensions | default([]) |
-          map('regex_replace', '^(.*)$', __php_extension_prefix + '\1') | list) }}
+         (_mapped | reject('equalto', '') | list) +
+         (_unmapped | map('regex_replace', '^(.*)$', __php_extension_prefix + '\1') | list) }}
+  vars:
+    _map: "{{ __php_extension_map | default({}) }}"
+    _exts: "{{ __php_version_item.extensions | default([]) }}"
+    _mapped: "{{ _exts | select('in', _map) | map('extract', _map) | list }}"
+    _unmapped: "{{ _exts | reject('in', _map) | list }}"
 
 - name: Install Version | PHP packages
   ansible.builtin.package:

@@ -1,8 +1,14 @@
 ---
+- name: Default Version | Resolve auto version to system default
+  ansible.builtin.set_fact:
+    __php_resolved_default: >-
+      {{ (php_default_version == 'auto')
+         | ternary(__php_system_version, php_default_version) }}
+
 - name: Default Version | Set version facts
   ansible.builtin.set_fact:
-    __php_default_ver: '{{ php_default_version }}'
-    __php_default_ver_compact: "{{ php_default_version | replace('.', '') }}"
+    __php_default_ver: '{{ __php_resolved_default }}'
+    __php_default_ver_compact: "{{ __php_resolved_default | replace('.', '') }}"
 
 - name: Default Version | Set default PHP via update-alternatives (Debian)
   community.general.alternatives:
@@ -30,7 +36,7 @@
     group: root
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - __php_default_ver != (__php_arch_current_version | default(''))
+    - __php_default_ver != __php_system_version
 
 - name: Default Version | Remove stale default PHP symlink (Arch official)
   ansible.builtin.file:
@@ -38,4 +44,4 @@
     state: absent
   when:
     - ansible_facts['os_family'] == 'Archlinux'
-    - __php_default_ver == (__php_arch_current_version | default(''))
+    - __php_default_ver == __php_system_version
