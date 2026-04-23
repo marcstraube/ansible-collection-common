@@ -130,7 +130,7 @@
 
     - name: Verify | Check WireGuard service status
       ansible.builtin.systemd_service:
-        name: '{{ __wireguard_service_name }}'
+        name: 'wg-quick@wg0'
       register: __wireguard_svc_check
 
     - name: Verify | Assert WireGuard service is active and enabled
