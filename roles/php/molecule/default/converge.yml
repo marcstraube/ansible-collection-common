@@ -6,40 +6,31 @@
   vars:
     php_enabled: true
     php_versions:
-      - version: '8.4'
+      - version: 'auto'
         extensions:
           - curl
           - mbstring
         fpm: true
-    php_default_version: '8.4'
+    php_default_version: 'auto'
     php_composer_enabled: true
 
   pre_tasks:
-    # Arch repos track current PHP — detect and use that version
-    - name: Converge | Detect current Arch PHP version
-      ansible.builtin.command:
-        cmd: pacman -Si php
-      register: __converge_arch_php_info
-      changed_when: false
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Converge | Extract Arch PHP version
+    # Multi-version: add second PHP version on Debian/RedHat
+    # Arch multi-version requires AUR and cannot be tested in containers
+    - name: Converge | Enable multi-version (Debian/RedHat)
       ansible.builtin.set_fact:
-        __converge_arch_php_ver: >-
-          {{ (__converge_arch_php_info.stdout
-              | regex_search('Version\s*:\s*(\d+)\.(\d+)', '\1', '\2'))
-              | join('.') }}
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Converge | Set Arch PHP version
-      ansible.builtin.set_fact:
-        # Arch builds curl/mbstring into the base php package
         php_versions:
-          - version: '{{ __converge_arch_php_ver }}'
-            extensions: []
+          - version: 'auto'
+            extensions:
+              - curl
+              - mbstring
             fpm: true
-        php_default_version: '{{ __converge_arch_php_ver }}'
-      when: ansible_facts['os_family'] == 'Archlinux'
+          - version: '8.3'
+            extensions:
+              - curl
+              - mbstring
+            fpm: true
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
 
   tasks:
     - name: Converge | Include php role  # noqa: role-name[path]

@@ -44,19 +44,3 @@
   when:
     - ansible_facts['os_family'] == 'Debian'
     - (__php_sury_repo is changed) or (__php_sury_ppa is changed)
-
-#
-# Cleanup legacy repo format
-#
-
-- name: Repos | Remove legacy Sury sources list file
-  ansible.builtin.file:
-    path: '/etc/apt/sources.list.d/php-sury.list'
-    state: absent
-  when: ansible_facts['distribution'] == 'Debian'
-
-- name: Repos | Remove legacy Sury GPG keyring
-  ansible.builtin.file:
-    path: '/etc/apt/keyrings/php-sury.gpg'
-    state: absent
-  when: ansible_facts['distribution'] == 'Debian'
