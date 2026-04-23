@@ -3,9 +3,9 @@
 {{ ansible_managed | comment }}
 
 # This script automatically mounts SMB shares based on the active NetworkManager connection.
-# It checks if the current active network connection (Ethernet, Wi-Fi, or WireGuard) is a
-# dependency for any defined SMB share.
-# Shares that depend on legacy VPN connections are excluded and handled by the VPN-specific mount script.
+# It checks if the current active network connection (Ethernet or Wi-Fi) is a dependency
+# for any defined SMB share. WireGuard interface dependencies are checked via systemctl.
+# Shares that depend on VPN connections are excluded and handled by the VPN-specific mount script.
 # Each share is mounted per user into their home directory.
 
 # NM_UUID is provided by NetworkManager dispatcher.
@@ -13,7 +13,7 @@ LOG_PREFIX="NM-SMB-Mount"
 
 {% set uuid_map = {} -%}
 {% set vpn_connection_names = [] -%}
-{% for conn_type in ['ethernet', 'wifi', 'wireguard'] -%}
+{% for conn_type in ['ethernet', 'wifi'] -%}
   {% if network_connections_data[conn_type] is defined -%}
     {% for conn_name, conn_details in network_connections_data[conn_type].items() -%}
       {% if conn_details.uuid is defined -%}
@@ -36,6 +36,7 @@ if [ "$2" = "up" ]; then
   {% for share in networkmanager_smb_shares %}
     {% if share.depends_on is defined and share.depends_on | length > 0 %}
       {% set dependency_uuids_for_this_share = [] %}
+      {% set dependency_wg_interfaces = [] %}
       {% set ns = namespace(has_vpn_dependency=false) %}
 
       {% for dependency_name in share.depends_on %}
@@ -43,12 +44,27 @@ if [ "$2" = "up" ]; then
           {% set ns.has_vpn_dependency = true %}
         {% elif uuid_map[dependency_name] is defined %}
           {% set _ = dependency_uuids_for_this_share.append(uuid_map[dependency_name]) %}
+        {% else %}
+          {% set _ = dependency_wg_interfaces.append(dependency_name) %}
         {% endif %}
       {% endfor %}
 
-      {% if not ns.has_vpn_dependency and dependency_uuids_for_this_share | length > 0 %}
-  # Check if the current NM_UUID matches any of the share's network connection dependencies
+      {% if not ns.has_vpn_dependency and (dependency_uuids_for_this_share | length > 0 or dependency_wg_interfaces | length > 0) %}
+  # Check if any dependency is satisfied for share '{{ share.name }}'
+  SHOULD_MOUNT="false"
+        {% if dependency_uuids_for_this_share | length > 0 %}
+  # NM connection dependencies
   if {% for uuid in dependency_uuids_for_this_share %}[ "$NM_UUID" = "{{ uuid }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
+    SHOULD_MOUNT="true"
+  fi
+        {% endif %}
+        {% if dependency_wg_interfaces | length > 0 %}
+  # WireGuard interface dependencies (managed by wg-quick/systemd)
+  if {% for iface in dependency_wg_interfaces %}systemctl is-active --quiet "wg-quick@{{ iface }}.service"{% if not loop.last %} || {% endif %}{% endfor %}; then
+    SHOULD_MOUNT="true"
+  fi
+        {% endif %}
+  if [ "$SHOULD_MOUNT" = "true" ]; then
         {% for smb_user in share.users %}
           {% set user_home = user_homes[smb_user.name] | default('/home/' + smb_user.name) %}
           {% set mount_point = user_home + '/' + share.mount_subpath %}
@@ -59,7 +75,7 @@ if [ "$2" = "up" ]; then
           {% endfor %}
     # Mount for user {{ smb_user.name }}
     if ! mountpoint -q "{{ mount_point }}"; then
-      echo "$LOG_PREFIX: Current connection (UUID: $NM_UUID) is a dependency for share '{{ share.name }}'. Mounting {{ mount_point }} for {{ smb_user.name }}"
+      echo "$LOG_PREFIX: Dependency satisfied for share '{{ share.name }}'. Mounting {{ mount_point }} for {{ smb_user.name }}"
       mkdir -p "{{ mount_point }}"
       mount -t cifs -o {{ opts | join(',') }} {{ share.src }} "{{ mount_point }}"
     else

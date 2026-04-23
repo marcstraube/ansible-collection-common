@@ -11,7 +11,7 @@ LOG_PREFIX="NM-VPN-SMB-Mount"
 
 {% set id_map = {} -%}
 {% if network_connections_data is defined -%}
-  {% for conn_type in ['ethernet', 'wifi', 'wireguard'] -%}
+  {% for conn_type in ['ethernet', 'wifi'] -%}
     {% if network_connections_data[conn_type] is defined -%}
       {% for conn_name, conn_details in network_connections_data[conn_type].items() -%}
         {% if conn_details.uuid is defined -%}

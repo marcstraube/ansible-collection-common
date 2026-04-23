@@ -11,6 +11,10 @@
     state: restarted
   when: networkmanager_service_enabled | bool
 
+- name: Reload systemd daemon
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
 - name: Restart polkitd
   ansible.builtin.systemd_service:
     name: '{{ __networkmanager_polkit_service }}'

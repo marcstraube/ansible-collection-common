@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   author: Marc Straube
-  description: Configure WireGuard VPN server and client
+  description: Configure WireGuard VPN tunnels with multi-interface support
   license: MIT
   min_ansible_version: '2.17'
 

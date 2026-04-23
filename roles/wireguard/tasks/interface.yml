@@ -1,0 +1,46 @@
+---
+- name: Interface | Include keys tasks
+  ansible.builtin.include_tasks:
+    file: keys.yml
+    apply:
+      tags:
+        - wireguard
+        - wireguard:keys
+  when: __wireguard_iface.generate_keys | default(true) | bool
+  tags:
+    - wireguard
+    - wireguard:keys
+
+- name: Interface | Include configure tasks
+  ansible.builtin.include_tasks:
+    file: configure.yml
+    apply:
+      tags:
+        - wireguard
+        - wireguard:configure
+  tags:
+    - wireguard
+    - wireguard:configure
+
+- name: Interface | Include service tasks
+  ansible.builtin.include_tasks:
+    file: service.yml
+    apply:
+      tags:
+        - wireguard
+        - wireguard:service
+  tags:
+    - wireguard
+    - wireguard:service
+
+- name: Interface | Include firewall tasks
+  ansible.builtin.include_tasks:
+    file: firewall.yml
+    apply:
+      tags:
+        - wireguard
+        - wireguard:firewall
+  when: __wireguard_iface.firewalld_enabled | default(true) | bool
+  tags:
+    - wireguard
+    - wireguard:firewall

@@ -7,29 +7,29 @@
 
 - name: Firewall | Manage WireGuard port rule
   ansible.posix.firewalld:
-    port: '{{ wireguard_port }}/udp'
-    zone: '{{ wireguard_firewalld_zone }}'
+    port: '{{ __wireguard_iface.port | default(51820) }}/udp'
+    zone: '{{ __wireguard_iface.firewalld_zone | default("public") }}'
     permanent: true
     immediate: true
-    state: "{{ wireguard_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+    state: "{{ __wireguard_iface.firewalld_enabled | default(true) | bool | ternary('enabled', 'disabled') }}"
   when: __wireguard_firewalld_status.status.ActiveState | default('') == 'active'
 
 - name: Firewall | Manage WireGuard interface in trusted zone
   ansible.posix.firewalld:
-    interface: '{{ wireguard_interface }}'
+    interface: '{{ __wireguard_iface.name }}'
     zone: 'trusted'
     permanent: true
     immediate: true
-    state: "{{ wireguard_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+    state: "{{ __wireguard_iface.firewalld_enabled | default(true) | bool | ternary('enabled', 'disabled') }}"
   when: __wireguard_firewalld_status.status.ActiveState | default('') == 'active'
 
-- name: Firewall | Manage masquerading for server mode
+- name: Firewall | Manage masquerading
   ansible.posix.firewalld:
     masquerade: true
-    zone: '{{ wireguard_firewalld_zone }}'
+    zone: '{{ __wireguard_iface.firewalld_zone | default("public") }}'
     permanent: true
     immediate: true
-    state: "{{ wireguard_firewalld_enabled | bool | ternary('enabled', 'disabled') }}"
+    state: "{{ __wireguard_iface.firewalld_enabled | default(true) | bool | ternary('enabled', 'disabled') }}"
   when:
     - __wireguard_firewalld_status.status.ActiveState | default('') == 'active'
-    - wireguard_server_mode_enabled | bool
+    - __wireguard_iface.mode | default('server') == 'server'

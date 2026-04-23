@@ -69,17 +69,19 @@ provisioner:
         # Centralized test configuration variables
         wireguard_enabled: true
         wireguard_service_enabled: true
-        wireguard_interface: 'wg0'
-        wireguard_address: '10.100.0.1/24'
-        wireguard_port: 51820
-        wireguard_server_mode: true
-        wireguard_generate_keys: true
-        wireguard_firewalld_enabled: false
-        wireguard_peers:
-          - name: 'test-client'
-            public_key: 'DkI14ou7LuomS8yKwmPiBMslAt6g29+33GEA92doHXA='
-            allowed_ips: '10.100.0.2/32'
-            persistent_keepalive: 25
+        wireguard_interfaces:
+          - name: wg0
+            address: '10.100.0.1/24'
+            port: 51820
+            mode: server
+            ip_forward: true
+            generate_keys: true
+            firewalld_enabled: false
+            peers:
+              - name: 'test-client'
+                public_key: 'DkI14ou7LuomS8yKwmPiBMslAt6g29+33GEA92doHXA='
+                allowed_ips: '10.100.0.2/32'
+                persistent_keepalive: 25
 
   playbooks:
     create: create.yml

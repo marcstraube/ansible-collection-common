@@ -8,7 +8,7 @@ This role provides comprehensive NetworkManager management:
 
 - **Daemon configuration** via `/etc/NetworkManager/conf.d/00-ansible.conf` (DNS backend,
   logging, connectivity checking, WiFi power saving, MAC randomization, etc.)
-- **Connection profiles** (Ethernet, WiFi, WireGuard, VPN) via `community.general.nmcli`
+- **Connection profiles** (Ethernet, WiFi, VPN) via `community.general.nmcli`
 - **Dispatcher scripts** for automatic SMB/SSHFS mounting, VPN auto-connect, WiFi toggling,
   timezone detection
 - **Polkit rules** for unprivileged NetworkManager management
@@ -125,7 +125,6 @@ VPN plugin package names differ by OS:
 networkmanager_connections:
   ethernet: {}
   wifi: {}
-  wireguard: {}
   vpn: {}
 ```
 
@@ -162,23 +161,6 @@ networkmanager_connections:
       autoconnect: true
 ```
 
-#### WireGuard Connections
-
-```yaml
-networkmanager_connections:
-  wireguard:
-    "WG Tunnel":
-      ifname: "wg0"
-      addresses: ["10.0.0.2/24"]
-      dns: ["10.0.0.1"]
-      private_key: "{{ vault_wg_private_key }}"
-      peers:
-        - public_key: "PEER_PUBLIC_KEY"
-          endpoint: "vpn.example.com:51820"
-          allowed_ips: "0.0.0.0/0"
-          persistent_keepalive: 25
-```
-
 #### VPN Connections
 
 ```yaml
@@ -211,10 +193,10 @@ networkmanager_apply_global_dns: true    # enable global DNS application
 # Automatic timezone via ipapi.co
 networkmanager_timezone_enabled: false
 
-# VPN auto-connect on non-home networks
+# VPN auto-connect on non-home networks (via wg-quick/systemd)
 networkmanager_vpn_autoconnect:
   enabled: false
-  connection: ''           # WireGuard connection name
+  interface: ''            # WireGuard interface name (e.g., wg0)
   home_connections: []     # connections where VPN is not needed
 
 # SMB shares (per-user auto-mount)
@@ -308,7 +290,7 @@ Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 | Script                          | Trigger     | Purpose                                      |
 |---------------------------------|-------------|----------------------------------------------|
 | `09-timezone.sh`                | `up`        | Set timezone via IP geolocation              |
-| `20-vpn-autoconnect.sh`         | `up`/`down` | Auto-activate WireGuard on non-home networks |
+| `20-vpn-autoconnect.sh`         | `up`/`down` | Auto-activate WireGuard tunnel via systemctl |
 | `30-mount-smb.sh`               | `up`        | Mount SMB shares on connection up            |
 | `40-umount-smb.sh`              | `down`      | Unmount SMB shares on connection down        |
 | `30-mount-sshfs.sh`             | `up`        | Mount SSHFS shares                           |

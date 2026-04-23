@@ -6,162 +6,76 @@
 # Enable the wireguard role
 wireguard_enabled: true
 
-# Enable and start the WireGuard service
+# Enable and start WireGuard services (per interface)
 wireguard_service_enabled: true
 
 #
-# Interface Configuration
-#
-
-# Interface name (wg0, wg1, etc.)
-wireguard_interface: 'wg0'
-
-# Server's WireGuard IP address (CIDR notation)
-wireguard_address: '10.100.0.1/24'
-
-# IPv6 address (optional)
-wireguard_address_ipv6: ''
-
-# Listen port (UDP)
-wireguard_port: 51820
-
-# Private key (auto-generated if empty)
-wireguard_private_key: ''
-
-# DNS servers for clients
-wireguard_dns:
-  - '10.100.0.1'
-
-#
-# Server Mode
-#
-
-# Enable server mode (IP forwarding, firewalld masquerade)
-wireguard_server_mode_enabled: true
-
-# Enable IP forwarding
-wireguard_ip_forward_enabled: true
-
-#
-# Peers
-#
-
-# List of peer definitions
-wireguard_peers: []
-# Example:
-#   - name: 'laptop'
-#     public_key: 'abc123...'
-#     # Preshared key for additional security (optional)
-#     preshared_key: ''
-#     # Allowed IPs for this peer
-#     allowed_ips: '10.100.0.2/32'
-#     # Endpoint for site-to-site (optional)
-#     endpoint: ''
-#     # Persistent keepalive (seconds, 0 = disabled)
-#     persistent_keepalive: 25
-#     # Description/comment
-#     description: 'Work laptop'
-
-#
-# Client Mode
-#
-# When this host connects to another WireGuard server.
-
-# Enable client mode
-wireguard_client_mode_enabled: false
-
-# Server endpoint (IP:Port)
-wireguard_client_endpoint: ''
-
-# Server's public key
-wireguard_client_server_pubkey: ''
-
-# Preshared key (optional)
-wireguard_client_preshared_key: ''
-
-# Allowed IPs to route through VPN
-# Use '0.0.0.0/0, ::/0' for full tunnel
-wireguard_client_allowed_ips: '10.100.0.0/24'
-
-# Persistent keepalive (for NAT traversal)
-wireguard_client_persistent_keepalive: 25
-
-#
-# Firewall
-#
-
-# Enable firewalld integration
-wireguard_firewalld_enabled: true
-
-# Firewalld zone for WireGuard port
-wireguard_firewalld_zone: 'public'
-
-#
-# Key Management
+# Global Configuration
 #
 
 # Directory for storing keys and configuration
 wireguard_config_dir: '/etc/wireguard'
 
-# Auto-generate WireGuard keys if not provided
-wireguard_generate_keys_enabled: true
-
-# File permissions for configuration files
-wireguard_config_mode: '0600'
-
 #
-# Lifecycle Scripts
+# Interface Configuration
 #
-# Custom commands executed by wg-quick on tunnel up/down.
-# Use this for NAT/masquerade when not using firewalld, or any other
-# tunnel lifecycle hooks. %i expands to the interface name.
 
-# Commands run before interface up
-wireguard_preup: []
+# List of WireGuard interfaces to configure.
+# Each interface is a standalone tunnel managed by wg-quick/systemd.
+wireguard_interfaces: []
 # Example:
-#   - 'sysctl -w net.ipv4.conf.%i.rp_filter=2'
-
-# Commands run after interface up
-wireguard_postup: []
-# Example:
-#   - 'iptables -t nat -A POSTROUTING -s 10.100.0.0/24 -o eth0 -j MASQUERADE'
-#   - 'iptables -A FORWARD -i %i -j ACCEPT'
-
-# Commands run before interface down
-wireguard_predown: []
-# Example:
-#   - 'echo "Shutting down %i"'
-
-# Commands run after interface down
-wireguard_postdown: []
-# Example:
-#   - 'iptables -t nat -D POSTROUTING -s 10.100.0.0/24 -o eth0 -j MASQUERADE'
-#   - 'iptables -D FORWARD -i %i -j ACCEPT'
-
+#   - name: wg0
+#     # Server's WireGuard IP address (CIDR notation)
+#     address: '10.100.0.1/24'
+#     # IPv6 address (optional)
+#     address_ipv6: ''
+#     # Listen port (UDP)
+#     port: 51820
+#     # Private key (auto-generated if empty)
+#     private_key: ''
+#     # Interface mode: server (IP forwarding, masquerade) or client (DNS, keepalive)
+#     mode: server
 #
-# Save Config
+#     # Server mode: enable IP forwarding via sysctl
+#     ip_forward: true
 #
-
-# Save runtime config on shutdown (wg-quick SaveConfig directive)
-wireguard_saveconfig_enabled: false
-
+#     # Client mode: DNS servers written to wg.conf
+#     dns: []
 #
-# Firewall Mark
+#     # Peer definitions
+#     peers:
+#       - name: 'laptop'
+#         public_key: 'abc123...'
+#         # Allowed IPs for this peer
+#         allowed_ips: '10.100.0.2/32'
+#         # Preshared key for additional security (optional)
+#         preshared_key: ''
+#         # Endpoint for site-to-site or client mode (optional)
+#         endpoint: ''
+#         # Persistent keepalive (seconds, 0 = disabled)
+#         persistent_keepalive: 0
+#         # Description/comment
+#         description: 'Work laptop'
 #
-
-# Firewall mark for outgoing WireGuard packets (empty = disabled)
-wireguard_fwmark: ''
-
+#     # Firewalld integration (per interface)
+#     firewalld_enabled: true
+#     firewalld_zone: 'public'
 #
-# MTU
+#     # Lifecycle scripts (commands run by wg-quick, %i = interface name)
+#     preup: []
+#     postup: []
+#     predown: []
+#     postdown: []
 #
-
-# MTU for WireGuard interface (0 = auto)
-wireguard_mtu: 0
-
-#
-# Table
-#
-
-# Routing table (auto, off, or table number)
-wireguard_table: 'auto'
+#     # Auto-generate WireGuard keys if private_key is empty
+#     generate_keys: true
+#     # MTU (0 = auto)
+#     mtu: 0
+#     # Routing table (auto, off, or table number)
+#     table: 'auto'
+#     # Firewall mark for outgoing packets (empty = disabled)
+#     fwmark: ''
+#     # Save runtime config on shutdown
+#     saveconfig: false
+#     # File permissions for configuration file
+#     config_mode: '0600'

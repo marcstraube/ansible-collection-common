@@ -19,39 +19,16 @@
     - wireguard
     - wireguard:install
 
-- name: Main | Import keys tasks
-  ansible.builtin.import_tasks: keys.yml
-  when:
-    - wireguard_enabled | bool
-    - wireguard_generate_keys_enabled | bool
-  tags:
-    - wireguard
-    - wireguard:keys
-
-- name: Main | Import configure tasks
-  ansible.builtin.import_tasks: configure.yml
-  when: wireguard_enabled | bool
-  tags:
-    - wireguard
-    - wireguard:configure
-
-- name: Main | Import service tasks
-  ansible.builtin.import_tasks: service.yml
-  when: wireguard_enabled | bool
-  tags:
-    - wireguard
-    - wireguard:service
-
-- name: Main | Include firewall tasks
+- name: Main | Include per-interface tasks
   ansible.builtin.include_tasks:
-    file: firewall.yml
+    file: interface.yml
     apply:
       tags:
         - wireguard
-        - wireguard:firewall
-  when:
-    - wireguard_enabled | bool
-    - wireguard_firewalld_enabled | bool
+  loop: '{{ wireguard_interfaces }}'
+  loop_control:
+    loop_var: __wireguard_iface
+    label: '{{ __wireguard_iface.name }}'
+  when: wireguard_enabled | bool
   tags:
     - wireguard
-    - wireguard:firewall

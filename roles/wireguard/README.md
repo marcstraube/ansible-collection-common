@@ -1,12 +1,16 @@
 # marcstraube.common.wireguard
 
-Configure WireGuard VPN tunnels in server or client mode.
+Configure WireGuard VPN tunnels with multi-interface support.
 
 ## Description
 
-Manages WireGuard VPN interface configuration in server or client mode with
-automatic key generation, peer management, lifecycle scripts (pre/post up/down),
-IP forwarding via sysctl, firewalld integration, and systemd service management.
+Manages one or more WireGuard VPN interfaces per host, each in server or client
+mode. Features automatic key generation, peer management, lifecycle scripts
+(pre/post up/down), IP forwarding via sysctl, firewalld integration, and systemd
+service management via wg-quick.
+
+Each interface is independently configured and managed as a
+`wg-quick@<name>.service` systemd unit.
 
 ## Requirements
 
@@ -31,78 +35,136 @@ overrides if needed.
 
 ### Role Control
 
-| Variable                    | Default | Description                            |
-|-----------------------------|---------|----------------------------------------|
-| `wireguard_enabled`         | `true`  | Enable the wireguard role              |
-| `wireguard_service_enabled` | `true`  | Enable and start the WireGuard service |
+| Variable                    | Default            | Description                             |
+|-----------------------------|--------------------|-----------------------------------------|
+| `wireguard_enabled`         | `true`             | Enable the wireguard role               |
+| `wireguard_service_enabled` | `true`             | Enable and start services per interface |
+| `wireguard_config_dir`      | `'/etc/wireguard'` | Key/config directory                    |
 
 ### Interface Configuration
 
-| Variable                 | Default           | Description                           |
-|--------------------------|-------------------|---------------------------------------|
-| `wireguard_interface`    | `'wg0'`           | Interface name                        |
-| `wireguard_address`      | `'10.100.0.1/24'` | IPv4 address (CIDR)                   |
-| `wireguard_address_ipv6` | `''`              | IPv6 address (CIDR, optional)         |
-| `wireguard_port`         | `51820`           | Listen port (UDP)                     |
-| `wireguard_private_key`  | `''`              | Private key (auto-generated if empty) |
-| `wireguard_dns`          | `['10.100.0.1']`  | DNS servers (client mode)             |
-| `wireguard_mtu`          | `0`               | Interface MTU (0 = auto)              |
-| `wireguard_table`        | `'auto'`          | Routing table (auto, off, or number)  |
-| `wireguard_fwmark`       | `''`              | Firewall mark for outgoing packets    |
-| `wireguard_saveconfig`   | `false`           | Save runtime config on shutdown       |
+All interface settings are defined as a list of dicts in `wireguard_interfaces`.
 
-### Server Mode
+```yaml
+wireguard_interfaces:
+  - name: wg0
+    address: '10.100.0.1/24'
+    port: 51820
+    mode: server
+    ip_forward: true
+    peers:
+      - name: laptop
+        public_key: '{{ vault_wireguard_keys.wg0.peer_laptop_pubkey }}'
+        allowed_ips: '10.100.0.2/32'
+        persistent_keepalive: 25
+```
 
-| Variable                | Default | Description                 |
-|-------------------------|---------|-----------------------------|
-| `wireguard_server_mode` | `true`  | Enable server mode          |
-| `wireguard_ip_forward`  | `true`  | Enable IPv4/IPv6 forwarding |
+#### Per-Interface Keys
 
-### Peers
+| Key                  | Default      | Description                                      |
+|----------------------|--------------|--------------------------------------------------|
+| `name`               | **required** | Interface name (wg0, wg1, ...)                   |
+| `address`            | **required** | IPv4 address (CIDR notation)                     |
+| `address_ipv6`       | `''`         | IPv6 address (CIDR, optional)                    |
+| `port`               | `51820`      | Listen port (UDP)                                |
+| `private_key`        | `''`         | Private key (auto-generated if empty)            |
+| `mode`               | `'server'`   | Interface mode: `server` or `client`             |
+| `ip_forward`         | `true`       | Enable IP forwarding (server mode)               |
+| `dns`                | `[]`         | DNS servers written to wg.conf (client mode)     |
+| `peers`              | `[]`         | List of peer definitions (see below)             |
+| `firewalld_enabled`  | `true`       | Enable firewalld integration                     |
+| `firewalld_zone`     | `'public'`   | Firewalld zone for WireGuard port                |
+| `preup`              | `[]`         | Commands run before interface up                 |
+| `postup`             | `[]`         | Commands run after interface up                  |
+| `predown`            | `[]`         | Commands run before interface down               |
+| `postdown`           | `[]`         | Commands run after interface down                |
+| `generate_keys`      | `true`       | Auto-generate keys if private_key is empty       |
+| `mtu`                | `0`          | Interface MTU (0 = auto)                         |
+| `table`              | `'auto'`     | Routing table (auto, off, or number)             |
+| `fwmark`             | `''`         | Firewall mark for outgoing packets               |
+| `saveconfig`         | `false`      | Save runtime config on shutdown                  |
+| `config_mode`        | `'0600'`     | Config file permissions                          |
 
-| Variable          | Default | Description              |
-|-------------------|---------|--------------------------|
-| `wireguard_peers` | `[]`    | List of peer definitions |
+Use `%i` as placeholder for the interface name in lifecycle scripts.
 
-Each peer dict supports: `name`, `public_key`, `allowed_ips`, `preshared_key`,
-`endpoint`, `persistent_keepalive`, `description`.
+#### Peer Definition
 
-### Client Mode
+| Key                    | Default | Description                               |
+|------------------------|---------|-------------------------------------------|
+| `name`                 |         | Peer name (used as comment in config)     |
+| `public_key`           |         | Peer's public key                         |
+| `allowed_ips`          |         | Allowed IPs for this peer                 |
+| `preshared_key`        | `''`    | Preshared key for additional security     |
+| `endpoint`             | `''`    | Endpoint address (IP:Port)                |
+| `persistent_keepalive` | `0`     | Keepalive interval (seconds, 0 = off)     |
+| `description`          | `''`    | Description/comment                       |
 
-| Variable                                | Default           | Description                  |
-|-----------------------------------------|-------------------|------------------------------|
-| `wireguard_client_mode`                 | `false`           | Enable client mode           |
-| `wireguard_client_endpoint`             | `''`              | Server endpoint (IP:Port)    |
-| `wireguard_client_server_pubkey`        | `''`              | Server public key            |
-| `wireguard_client_preshared_key`        | `''`              | Preshared key (optional)     |
-| `wireguard_client_allowed_ips`          | `'10.100.0.0/24'` | Allowed IPs to route         |
-| `wireguard_client_persistent_keepalive` | `25`              | Keepalive interval (seconds) |
+### Server Mode Example
 
-### Lifecycle Scripts
+```yaml
+wireguard_interfaces:
+  - name: wg0
+    address: '10.100.0.1/24'
+    port: 51820
+    private_key: '{{ vault_wireguard_keys.wg0.private_key }}'
+    mode: server
+    ip_forward: true
+    peers:
+      - name: laptop
+        public_key: '{{ vault_wireguard_keys.wg0.peer_laptop_pubkey }}'
+        allowed_ips: '10.100.0.2/32'
+        persistent_keepalive: 25
+      - name: phone
+        public_key: '{{ vault_wireguard_keys.wg0.peer_phone_pubkey }}'
+        allowed_ips: '10.100.0.3/32'
+```
 
-| Variable             | Default | Description                        |
-|----------------------|---------|------------------------------------|
-| `wireguard_preup`    | `[]`    | Commands run before interface up   |
-| `wireguard_postup`   | `[]`    | Commands run after interface up    |
-| `wireguard_predown`  | `[]`    | Commands run before interface down |
-| `wireguard_postdown` | `[]`    | Commands run after interface down  |
+### Client Mode Example
 
-Use `%i` as placeholder for the interface name.
+```yaml
+wireguard_interfaces:
+  - name: wg0
+    address: '10.100.0.2/32'
+    port: 51820
+    private_key: '{{ vault_wireguard_keys.wg0.private_key }}'
+    mode: client
+    dns:
+      - '10.100.0.1'
+    peers:
+      - name: server
+        public_key: '{{ vault_wireguard_keys.wg0.server_pubkey }}'
+        endpoint: '{{ vault_wireguard_keys.wg0.server_endpoint }}'
+        allowed_ips: '10.100.0.0/24'
+        persistent_keepalive: 25
+```
 
-### Firewall
+### Multi-Interface Example
 
-| Variable                      | Default    | Description                       |
-|-------------------------------|------------|-----------------------------------|
-| `wireguard_firewalld_enabled` | `true`     | Enable firewalld integration      |
-| `wireguard_firewalld_zone`    | `'public'` | Firewalld zone for WireGuard port |
-
-### Key Management
-
-| Variable                  | Default            | Description                  |
-|---------------------------|--------------------|------------------------------|
-| `wireguard_config_dir`    | `'/etc/wireguard'` | Key/config directory         |
-| `wireguard_generate_keys` | `true`             | Auto-generate WireGuard keys |
-| `wireguard_config_mode`   | `'0600'`           | Config file permissions      |
+```yaml
+wireguard_interfaces:
+  - name: wg0
+    address: '10.100.0.1/24'
+    port: 51820
+    mode: server
+    ip_forward: true
+    peers:
+      - name: road-warrior
+        public_key: '{{ vault_wireguard_keys.wg0.peer_rw_pubkey }}'
+        allowed_ips: '10.100.0.2/32'
+  - name: wg1
+    address: '10.200.0.2/32'
+    port: 51821
+    mode: client
+    dns:
+      - '10.200.0.1'
+    firewalld_enabled: false
+    peers:
+      - name: corporate-vpn
+        public_key: '{{ vault_wireguard_keys.wg1.server_pubkey }}'
+        endpoint: '{{ vault_wireguard_keys.wg1.server_endpoint }}'
+        allowed_ips: '10.200.0.0/16'
+        persistent_keepalive: 25
+```
 
 ## Tags
 
