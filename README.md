@@ -7,7 +7,7 @@
 ## Description
 
 Shared Ansible roles for multi-OS infrastructure management.
-40 roles covering base system, security, networking, package management,
+41 roles covering base system, security, networking, package management,
 user management, editors, and more.
 
 ## Supported Platforms
@@ -51,6 +51,7 @@ user management, editors, and more.
 
 | Role               | Description                   |
 | ------------------ | ----------------------------- |
+| **resolved**       | systemd-resolved DNS resolver |
 | **networkmanager** | NetworkManager configuration  |
 | **firewalld**      | Firewall management           |
 | **wireguard**      | WireGuard VPN                 |

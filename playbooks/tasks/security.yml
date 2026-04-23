@@ -102,7 +102,7 @@
   when: firewalld_enabled | default(true) | bool
 
 #
-# PKI and Networking
+# PKI
 #
 
 - name: Security | Include pki role
@@ -116,18 +116,6 @@
     - security
     - pki
   when: pki_enabled | default(true) | bool
-
-- name: Security | Include wireguard role
-  ansible.builtin.include_role:
-    name: marcstraube.common.wireguard
-    apply:
-      tags:
-        - security
-        - wireguard
-  tags:
-    - security
-    - wireguard
-  when: wireguard_enabled | default(true) | bool
 
 #
 # Intrusion Prevention and Scanning

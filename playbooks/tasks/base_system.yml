@@ -117,6 +117,30 @@
     - editors
   when: editors_enabled | default(true) | bool
 
+- name: Base System | Include resolved role
+  ansible.builtin.include_role:
+    name: marcstraube.common.resolved
+    apply:
+      tags:
+        - base-system
+        - resolved
+  tags:
+    - base-system
+    - resolved
+  when: resolved_enabled | default(true) | bool
+
+- name: Base System | Include wireguard role
+  ansible.builtin.include_role:
+    name: marcstraube.common.wireguard
+    apply:
+      tags:
+        - base-system
+        - wireguard
+  tags:
+    - base-system
+    - wireguard
+  when: wireguard_enabled | default(true) | bool
+
 - name: Base System | Include networkmanager role
   ansible.builtin.include_role:
     name: marcstraube.common.networkmanager

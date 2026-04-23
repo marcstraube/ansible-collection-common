@@ -1,0 +1,10 @@
+---
+- name: Configure | Deploy resolved.conf
+  ansible.builtin.template:
+    src: resolved.conf.j2
+    dest: '{{ __resolved_config_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart systemd-resolved

@@ -197,10 +197,24 @@ molecule test
 
 Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
+## Notes
+
+- **DNS requires systemd-resolved**: When using `dns:` in client-mode
+  interfaces, wg-quick pushes DNS servers to systemd-resolved via the
+  `resolvconf` command. Enable the `marcstraube.common.resolved` role to
+  install the resolver and resolvconf wrapper. Without it, wg-quick will fail
+  with `resolvconf: command not found` or
+  `Could not activate remote peer 'org.freedesktop.resolve1'`.
+- On laptops where WireGuard tunnels are managed by NetworkManager dispatcher
+  scripts, set `wireguard_service_enabled: false` to prevent the systemd
+  service from auto-starting the tunnel.
+
 ## References
 
 - [WireGuard](https://www.wireguard.com/) — fast, modern, secure VPN tunnel
 - [WireGuard Quickstart](https://www.wireguard.com/quickstart/) — installation and setup guide
+- [marcstraube.common.resolved](../resolved/README.md) — DNS resolver required for wg-quick DNS
+- [marcstraube.common.networkmanager](../networkmanager/README.md) — NM dispatcher scripts for VPN auto-connect
 
 ## License
 

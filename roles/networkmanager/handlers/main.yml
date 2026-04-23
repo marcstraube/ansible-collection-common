@@ -10,6 +10,13 @@
     name: '{{ __networkmanager_service_name }}'
     state: restarted
   when: networkmanager_service_enabled | bool
+  notify: Wait for network recovery
+
+- name: Wait for network recovery
+  ansible.builtin.wait_for_connection:
+    delay: 5
+    timeout: 60
+  when: networkmanager_service_enabled | bool
 
 - name: Reload systemd daemon
   ansible.builtin.systemd_service:

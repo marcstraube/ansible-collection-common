@@ -1,0 +1,12 @@
+---
+- name: Reload systemd-resolved systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  failed_when: false
+  when: resolved_enabled | bool
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd_service:
+    name: '{{ __resolved_service_name }}'
+    state: restarted
+  when: resolved_service_enabled | bool
