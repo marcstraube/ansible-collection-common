@@ -1,0 +1,143 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    #
+    # Load OS-Specific Variables
+    #
+
+    - name: Verify | Load shared variables
+      ansible.builtin.include_vars:
+        file: '../../vars/main.yml'
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Check systemd-resolved package is installed
+      ansible.builtin.package:
+        name: '{{ __resolved_packages[0] }}'
+        state: present
+      check_mode: true
+      register: __resolved_pkg_check
+      failed_when: __resolved_pkg_check.changed
+      when: __resolved_packages | length > 0
+
+    #
+    # Service Verification
+    #
+
+    - name: Verify | Check systemd-resolved service status
+      ansible.builtin.systemd_service:
+        name: '{{ __resolved_service_name }}'
+      register: __resolved_svc_check
+
+    - name: Verify | Assert systemd-resolved service is active
+      ansible.builtin.assert:
+        that:
+          - __resolved_svc_check.status.ActiveState == 'active'
+          - __resolved_svc_check.status.UnitFileState == 'enabled'
+        fail_msg: "systemd-resolved service is not active or enabled"
+        success_msg: "systemd-resolved service is active and enabled"
+
+    #
+    # Configuration Verification
+    #
+
+    - name: Verify | Read resolved.conf
+      ansible.builtin.slurp:
+        src: '/etc/systemd/resolved.conf'
+      register: __resolved_config
+
+    - name: Verify | Assert resolved.conf contains Ansible managed header
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in __resolved_config.content | b64decode"
+        fail_msg: "resolved.conf missing Ansible managed header"
+        success_msg: "resolved.conf contains Ansible managed header"
+
+    - name: Verify | Assert resolved.conf contains DNS servers
+      ansible.builtin.assert:
+        that:
+          - "'DNS=9.9.9.9 149.112.112.112' in __resolved_config.content | b64decode"
+        fail_msg: "resolved.conf missing DNS servers"
+        success_msg: "resolved.conf contains configured DNS servers"
+
+    - name: Verify | Assert resolved.conf contains FallbackDNS
+      ansible.builtin.assert:
+        that:
+          - "'FallbackDNS=1.1.1.1' in __resolved_config.content | b64decode"
+        fail_msg: "resolved.conf missing FallbackDNS"
+        success_msg: "resolved.conf contains FallbackDNS"
+
+    - name: Verify | Assert resolved.conf contains DNSSEC setting
+      ansible.builtin.assert:
+        that:
+          - "'DNSSEC=allow-downgrade' in __resolved_config.content | b64decode"
+        fail_msg: "resolved.conf missing DNSSEC setting"
+        success_msg: "resolved.conf contains DNSSEC setting"
+
+    - name: Verify | Assert resolved.conf contains DNSOverTLS setting
+      ansible.builtin.assert:
+        that:
+          - "'DNSOverTLS=opportunistic' in __resolved_config.content | b64decode"
+        fail_msg: "resolved.conf missing DNSOverTLS setting"
+        success_msg: "resolved.conf contains DNSOverTLS setting"
+
+    - name: Verify | Assert resolved.conf contains routing domain
+      ansible.builtin.assert:
+        that:
+          - "'Domains=~example.com' in __resolved_config.content | b64decode"
+        fail_msg: "resolved.conf missing routing domain"
+        success_msg: "resolved.conf contains routing domain"
+
+    - name: Verify | Assert resolved.conf contains Cache setting
+      ansible.builtin.assert:
+        that:
+          - "'Cache=true' in __resolved_config.content | b64decode"
+        fail_msg: "resolved.conf missing Cache setting"
+        success_msg: "resolved.conf contains Cache setting"
+
+    - name: Verify | Check resolved.conf permissions
+      ansible.builtin.stat:
+        path: '/etc/systemd/resolved.conf'
+      register: __resolved_config_stat
+
+    - name: Verify | Assert resolved.conf permissions
+      ansible.builtin.assert:
+        that:
+          - __resolved_config_stat.stat.mode == '0644'
+          - __resolved_config_stat.stat.pw_name == 'root'
+          - __resolved_config_stat.stat.gr_name == 'root'
+        fail_msg: "resolved.conf has incorrect permissions"
+        success_msg: "resolved.conf has correct permissions (0644, root:root)"
+
+    #
+    # Functional Verification
+    #
+
+    - name: Verify | Check resolvectl status
+      ansible.builtin.command:
+        cmd: resolvectl status
+      changed_when: false
+      register: __resolved_resolvectl
+
+    - name: Verify | Assert resolvectl reports active
+      ansible.builtin.assert:
+        that:
+          - __resolved_resolvectl.rc == 0
+        fail_msg: "resolvectl status failed"
+        success_msg: "resolvectl status reports active"

@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    resolved_enabled: true
+    # Do not overwrite resolv.conf in containers — breaks DNS for package operations
+    resolved_manage_resolv_conf: false
+    resolved_dns:
+      - '9.9.9.9'
+      - '149.112.112.112'
+    resolved_fallback_dns:
+      - '1.1.1.1'
+    resolved_domains:
+      - '~example.com'
+    resolved_dnssec: 'allow-downgrade'
+    resolved_dns_over_tls: 'opportunistic'
+    resolved_cache: 'true'
+
+  tasks:
+    - name: Converge | Include resolved role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

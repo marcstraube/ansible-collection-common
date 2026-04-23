@@ -1,0 +1,7 @@
+---
+- name: Install | systemd-resolved packages
+  ansible.builtin.package:
+    name: '{{ __resolved_packages }}'
+    state: present
+  retries: 3
+  delay: 5

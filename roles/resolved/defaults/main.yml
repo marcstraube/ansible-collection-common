@@ -1,0 +1,89 @@
+---
+#
+# Role Control
+#
+
+# Enable the resolved role
+resolved_enabled: true
+
+# Enable and start the systemd-resolved service
+resolved_service_enabled: true
+
+#
+# DNS Servers
+#
+
+# DNS server addresses
+# Accepts IP addresses, optionally with port and SNI
+# (e.g., '9.9.9.9', '9.9.9.9#dns.quad9.net')
+resolved_dns: []
+
+# Fallback DNS servers (used when no other DNS info is available)
+resolved_fallback_dns: []
+
+# Search and routing domains
+# Prefix with '~' for routing-only domains (e.g., '~example.com')
+resolved_domains: []
+
+#
+# Resolution Protocols
+#
+
+# Link-Local Multicast Name Resolution
+# Values: true, false, resolve (resolve = accept but don't send)
+resolved_llmnr: ''
+
+# Multicast DNS (RFC 6762)
+# Values: true, false, resolve
+resolved_multicast_dns: ''
+
+# DNSSEC validation
+# Values: true, false, allow-downgrade
+resolved_dnssec: ''
+
+# DNS-over-TLS
+# Values: true, false, opportunistic
+resolved_dns_over_tls: ''
+
+#
+# Cache
+#
+
+# DNS response caching
+# Values: true, false, no-negative
+resolved_cache: ''
+
+# Cache responses from 127.0.0.1 and ::1
+resolved_cache_from_localhost: ''
+
+# Retain stale cache entries beyond their TTL (seconds)
+# Requires systemd 254+ (not available on EL9)
+resolved_stale_retention_sec: ''
+
+#
+# Stub Listener
+#
+
+# DNS stub listener on 127.0.0.53:53
+# Values: true, false, udp, tcp
+resolved_stub_listener: ''
+
+# Additional stub listener addresses
+resolved_stub_listener_extra: []
+
+#
+# Miscellaneous
+#
+
+# Read /etc/hosts for name resolution
+resolved_read_etc_hosts: ''
+
+# Forward single-label names to unicast DNS
+resolved_resolve_unicast_single_label: ''
+
+#
+# resolv.conf
+#
+
+# Manage /etc/resolv.conf symlink to resolved stub resolver
+resolved_manage_resolv_conf: true

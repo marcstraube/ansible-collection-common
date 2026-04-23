@@ -1,0 +1,3 @@
+---
+__resolved_service_name: 'systemd-resolved.service'
+__resolved_config_file: '/etc/systemd/resolved.conf'

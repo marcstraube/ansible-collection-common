@@ -1,0 +1,17 @@
+---
+- name: Service | Manage systemd-resolved service
+  ansible.builtin.systemd_service:
+    name: '{{ __resolved_service_name }}'
+    enabled: "{{ resolved_service_enabled | bool }}"
+    state: "{{ resolved_service_enabled | bool | ternary('started', 'stopped') }}"
+    daemon_reload: true
+
+- name: Service | Manage resolv.conf symlink
+  ansible.builtin.file:
+    src: '../run/systemd/resolve/stub-resolv.conf'
+    dest: '/etc/resolv.conf'
+    state: link
+    force: true
+  when:
+    - resolved_manage_resolv_conf | bool
+    - resolved_service_enabled | bool

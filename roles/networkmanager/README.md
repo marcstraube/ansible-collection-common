@@ -285,6 +285,19 @@ Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 ## Notes
 
+### Integration with systemd-resolved
+
+To use systemd-resolved as the DNS backend, enable the
+`marcstraube.common.resolved` role and set:
+
+```yaml
+networkmanager_dns: 'systemd-resolved'
+```
+
+NetworkManager will push DHCP-obtained DNS servers to resolved via D-Bus.
+The resolved role must run before the networkmanager role in the playbook
+(handled automatically by `base_system.yml`).
+
 ### Dispatcher Scripts
 
 | Script                          | Trigger     | Purpose                                      |
@@ -305,6 +318,8 @@ Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 - [NetworkManager](https://networkmanager.dev/) — network configuration daemon
 - [NetworkManager API Reference](https://networkmanager.dev/docs/api/latest/) — D-Bus API and configuration documentation
+- [marcstraube.common.resolved](../resolved/README.md) — systemd-resolved DNS resolver
+- [marcstraube.common.wireguard](../wireguard/README.md) — WireGuard VPN (managed by wg-quick, not NM)
 
 ## License
 

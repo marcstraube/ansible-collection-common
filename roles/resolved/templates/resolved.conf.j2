@@ -1,0 +1,47 @@
+{{ ansible_managed | comment }}
+
+[Resolve]
+{% if resolved_dns | length > 0 %}
+DNS={{ resolved_dns | join(' ') }}
+{% endif %}
+{% if resolved_fallback_dns | length > 0 %}
+FallbackDNS={{ resolved_fallback_dns | join(' ') }}
+{% endif %}
+{% if resolved_domains | length > 0 %}
+Domains={{ resolved_domains | join(' ') }}
+{% endif %}
+{% if resolved_llmnr | length > 0 %}
+LLMNR={{ resolved_llmnr }}
+{% endif %}
+{% if resolved_multicast_dns | length > 0 %}
+MulticastDNS={{ resolved_multicast_dns }}
+{% endif %}
+{% if resolved_dnssec | length > 0 %}
+DNSSEC={{ resolved_dnssec }}
+{% endif %}
+{% if resolved_dns_over_tls | length > 0 %}
+DNSOverTLS={{ resolved_dns_over_tls }}
+{% endif %}
+{% if resolved_cache | length > 0 %}
+Cache={{ resolved_cache }}
+{% endif %}
+{% if resolved_cache_from_localhost | length > 0 %}
+CacheFromLocalhost={{ resolved_cache_from_localhost }}
+{% endif %}
+{% if resolved_stale_retention_sec | length > 0 %}
+StaleRetentionSec={{ resolved_stale_retention_sec }}
+{% endif %}
+{% if resolved_stub_listener | length > 0 %}
+DNSStubListener={{ resolved_stub_listener }}
+{% endif %}
+{% if resolved_stub_listener_extra | length > 0 %}
+{% for addr in resolved_stub_listener_extra %}
+DNSStubListenerExtra={{ addr }}
+{% endfor %}
+{% endif %}
+{% if resolved_read_etc_hosts | length > 0 %}
+ReadEtcHosts={{ resolved_read_etc_hosts }}
+{% endif %}
+{% if resolved_resolve_unicast_single_label | length > 0 %}
+ResolveUnicastSingleLabel={{ resolved_resolve_unicast_single_label }}
+{% endif %}
