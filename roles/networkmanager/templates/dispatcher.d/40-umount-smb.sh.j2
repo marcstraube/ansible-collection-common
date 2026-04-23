@@ -4,7 +4,8 @@
 
 # This script attempts to unmount SMB shares when a network connection goes down (e.g., unexpected disconnect).
 # It ensures a share is only unmounted if none of its dependencies are active anymore.
-# Shares that depend on legacy VPN connections are excluded and handled by the VPN-specific umount script.
+# WireGuard interface dependencies are checked via systemctl.
+# Shares that depend on VPN connections are excluded and handled by the VPN-specific umount script.
 # Each share is unmounted per user from their home directory.
 
 # NM_UUID is provided by NetworkManager dispatcher.
@@ -12,7 +13,7 @@ LOG_PREFIX="NM-SMB-Unmount-Down"
 
 {% set id_map = {} -%}
 {% if network_connections_data is defined -%}
-  {% for conn_type in ['ethernet', 'wifi', 'wireguard'] -%}
+  {% for conn_type in ['ethernet', 'wifi'] -%}
     {% if network_connections_data[conn_type] is defined -%}
       {% for conn_name, conn_details in network_connections_data[conn_type].items() -%}
         {% if conn_details.uuid is defined -%}
@@ -31,7 +32,7 @@ LOG_PREFIX="NM-SMB-Unmount-Down"
 {% for user in users_list | default([]) -%}
   {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
 {% endfor -%}
-# Function to get all currently active connection IDs (UUIDs for base, names for VPNs)
+# Function to get all currently active NM connection IDs (UUIDs for base, names for VPNs)
 get_active_connection_ids() {
   nmcli -t -f UUID,TYPE,NAME connection show --active | while IFS=':' read -r uuid type name; do
     if [ "$type" = "vpn" ]; then
@@ -47,25 +48,33 @@ if [ "$2" = "down" ]; then
 {% if networkmanager_smb_shares is defined and networkmanager_smb_shares is not none and networkmanager_smb_shares | length > 0 %}
 
   {% for share in networkmanager_smb_shares %}
-    {% set resolved_dependencies = [] %}
+    {% set resolved_nm_dependencies = [] %}
+    {% set wg_interface_dependencies = [] %}
     {% for dependency_name in share.depends_on %}
       {% if id_map[dependency_name] is defined %}
-        {% set _ = resolved_dependencies.append(id_map[dependency_name]) %}
+        {% set _ = resolved_nm_dependencies.append(id_map[dependency_name]) %}
+      {% else %}
+        {% set _ = wg_interface_dependencies.append(dependency_name) %}
       {% endif %}
     {% endfor %}
 
-    {% if resolved_dependencies | length > 0 %}
+    {% if resolved_nm_dependencies | length > 0 or wg_interface_dependencies | length > 0 %}
       {% for smb_user in share.users %}
         {% set user_home = user_homes[smb_user.name] | default('/home/' + smb_user.name) %}
         {% set mount_point = user_home + '/' + share.mount_subpath %}
   # Check if the share is currently mounted for {{ smb_user.name }}
   if mountpoint -q "{{ mount_point }}"; then
     SHARE_STILL_NEEDED="false"
-        {% for dep_id in resolved_dependencies %}
-    # Check if this dependency is still active
+        {% for dep_id in resolved_nm_dependencies %}
+    # Check if NM dependency is still active
     if echo "$ACTIVE_IDS" | grep -q "^{{ dep_id }}$"; then
       SHARE_STILL_NEEDED="true"
-      break
+    fi
+        {% endfor %}
+        {% for iface in wg_interface_dependencies %}
+    # Check if WireGuard interface dependency is still active
+    if systemctl is-active --quiet "wg-quick@{{ iface }}.service"; then
+      SHARE_STILL_NEEDED="true"
     fi
         {% endfor %}
 

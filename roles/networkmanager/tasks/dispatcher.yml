@@ -232,6 +232,62 @@
     path: /etc/NetworkManager/dispatcher.d/50-vpn-smb-mount.sh
     state: absent
 
+- name: Dispatcher | Build list of WireGuard interface dependencies from SMB shares
+  ansible.builtin.set_fact:
+    __networkmanager_smb_wg_deps: >-
+      {{ networkmanager_smb_shares
+         | selectattr('depends_on', 'defined')
+         | map(attribute='depends_on') | flatten
+         | difference(
+             (all_network_connections.ethernet.keys() | list) +
+             (all_network_connections.wifi.keys() | list) +
+             (all_network_connections.vpn.keys() | list))
+         | unique | list }}
+  when: networkmanager_smb_shares | length > 0
+
+- name: Dispatcher | Ensure wg-quick systemd drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/system/wg-quick@.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: __networkmanager_smb_wg_deps | default([]) | length > 0
+
+- name: Dispatcher | Deploy wg-quick SMB mount systemd drop-in
+  ansible.builtin.template:
+    src: wg-quick-smb.conf.j2
+    dest: /etc/systemd/system/wg-quick@.service.d/smb-mount.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: __networkmanager_smb_wg_deps | default([]) | length > 0
+  notify: Reload systemd daemon
+
+- name: Dispatcher | Deploy WireGuard SMB mount script
+  ansible.builtin.template:
+    src: wireguard-smb-mount.sh.j2
+    dest: /usr/local/lib/wireguard-smb-mount.sh
+    owner: root
+    group: root
+    mode: '0755'
+  when: __networkmanager_smb_wg_deps | default([]) | length > 0
+  vars:
+    network_connections_data: "{{ all_network_connections }}"
+
+- name: Dispatcher | Remove wg-quick SMB mount systemd drop-in
+  ansible.builtin.file:
+    path: /etc/systemd/system/wg-quick@.service.d/smb-mount.conf
+    state: absent
+  when: __networkmanager_smb_wg_deps | default([]) | length == 0
+  notify: Reload systemd daemon
+
+- name: Dispatcher | Remove WireGuard SMB mount script
+  ansible.builtin.file:
+    path: /usr/local/lib/wireguard-smb-mount.sh
+    state: absent
+  when: __networkmanager_smb_wg_deps | default([]) | length == 0
+
 - name: Dispatcher | Ensure WiFi auto-toggle dispatcher script is installed
   ansible.builtin.template:
     src: dispatcher.d/99-wifi-auto-toggle.sh.j2

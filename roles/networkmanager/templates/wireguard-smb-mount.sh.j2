@@ -1,0 +1,90 @@
+#jinja2:lstrip_blocks: True
+#!/bin/sh
+{{ ansible_managed | comment }}
+
+# This script is called by wg-quick@.service via systemd drop-in.
+# It mounts/unmounts SMB shares that depend on WireGuard interfaces.
+# Arguments: <interface_name> up|down
+
+WG_INTERFACE="$1"
+ACTION="$2"
+LOG_PREFIX="WG-SMB-${ACTION}"
+
+{% set user_homes = {} -%}
+{% for user in users_list | default([]) -%}
+  {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
+{% endfor -%}
+{% set nm_connection_names = [] -%}
+{% if network_connections_data is defined -%}
+  {% for conn_type in ['ethernet', 'wifi'] -%}
+    {% if network_connections_data[conn_type] is defined -%}
+      {% for conn_name in network_connections_data[conn_type].keys() -%}
+        {% set _ = nm_connection_names.append(conn_name) -%}
+      {% endfor -%}
+    {% endif -%}
+  {% endfor -%}
+  {% if network_connections_data.vpn is defined -%}
+    {% for vpn_name in network_connections_data.vpn.keys() -%}
+      {% set _ = nm_connection_names.append(vpn_name) -%}
+    {% endfor -%}
+  {% endif -%}
+{% endif -%}
+{% if networkmanager_smb_shares is defined and networkmanager_smb_shares is not none and networkmanager_smb_shares | length > 0 %}
+if [ "$ACTION" = "up" ]; then
+  {% for share in networkmanager_smb_shares %}
+    {% set wg_interface_deps = [] %}
+    {% for dep_name in share.depends_on | default([]) %}
+      {% if dep_name not in nm_connection_names %}
+        {% set _ = wg_interface_deps.append(dep_name) %}
+      {% endif %}
+    {% endfor %}
+    {% if wg_interface_deps | length > 0 %}
+  # Check if this interface is a dependency for share '{{ share.name }}'
+  if {% for iface in wg_interface_deps %}[ "$WG_INTERFACE" = "{{ iface }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
+      {% for smb_user in share.users %}
+        {% set user_home = user_homes[smb_user.name] | default('/home/' + smb_user.name) %}
+        {% set mount_point = user_home + '/' + share.mount_subpath %}
+        {% set creds_path = user_home + '/' + networkmanager_smb_credentials_dir + '/' + share.credentials_name + '-credentials' %}
+        {% set opts = ['uid=$(id -u ' + smb_user.name + ')', 'gid=$(id -g ' + smb_user.name + ')', 'credentials=' + creds_path] %}
+        {% for key, value in (share.mount_options | default({})).items() %}
+          {% set _ = opts.append(key + '=' + value | string) %}
+        {% endfor %}
+    # Mount for user {{ smb_user.name }}
+    if ! mountpoint -q "{{ mount_point }}"; then
+      echo "$LOG_PREFIX: WireGuard interface ($WG_INTERFACE) is a dependency for share '{{ share.name }}'. Mounting {{ mount_point }} for {{ smb_user.name }}"
+      mkdir -p "{{ mount_point }}"
+      mount -t cifs -o {{ opts | join(',') }} {{ share.src }} "{{ mount_point }}"
+    else
+      echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ mount_point }}) already mounted for {{ smb_user.name }}."
+    fi
+      {% endfor %}
+  fi
+    {% endif %}
+  {% endfor %}
+fi
+
+if [ "$ACTION" = "down" ]; then
+  {% for share in networkmanager_smb_shares %}
+    {% set wg_interface_deps = [] %}
+    {% for dep_name in share.depends_on | default([]) %}
+      {% if dep_name not in nm_connection_names %}
+        {% set _ = wg_interface_deps.append(dep_name) %}
+      {% endif %}
+    {% endfor %}
+    {% if wg_interface_deps | length > 0 %}
+  # Check if this interface is a dependency for share '{{ share.name }}'
+  if {% for iface in wg_interface_deps %}[ "$WG_INTERFACE" = "{{ iface }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
+      {% for smb_user in share.users %}
+        {% set user_home = user_homes[smb_user.name] | default('/home/' + smb_user.name) %}
+        {% set mount_point = user_home + '/' + share.mount_subpath %}
+    # Unmount for user {{ smb_user.name }}
+    if mountpoint -q "{{ mount_point }}"; then
+      echo "$LOG_PREFIX: WireGuard interface ($WG_INTERFACE) went down. Unmounting share '{{ share.name }}' ({{ mount_point }}) for {{ smb_user.name }}."
+      umount -t cifs -l "{{ mount_point }}"
+    fi
+      {% endfor %}
+  fi
+    {% endif %}
+  {% endfor %}
+fi
+{% endif %}

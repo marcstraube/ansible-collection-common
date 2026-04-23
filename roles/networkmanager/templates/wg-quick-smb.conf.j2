@@ -1,0 +1,9 @@
+{{ ansible_managed | comment(decoration='# ') }}
+#
+# systemd drop-in for wg-quick@.service
+# Mounts/unmounts SMB shares when WireGuard tunnels start/stop.
+#
+
+[Service]
+ExecStartPost=/usr/local/lib/wireguard-smb-mount.sh %i up
+ExecStopPost=-/usr/local/lib/wireguard-smb-mount.sh %i down
