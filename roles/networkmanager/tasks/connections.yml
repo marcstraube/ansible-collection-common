@@ -226,93 +226,6 @@
   changed_when: true
   notify: Reload NetworkManager connections
 
-- name: Connections | Create placeholder for WireGuard connections
-  community.general.nmcli:
-    type: wireguard
-    conn_name: "{{ item.key }}"
-    ifname: "{{ item.value.ifname | default('wg0') }}"
-    state: present
-    autoconnect: false
-  loop: "{{ networkmanager_connections.wireguard | dict2items | default([]) }}"
-  loop_control:
-    label: "{{ item.key }}"
-  when:
-    - item.value.state | default("present") == "present"
-    - item.key not in __nm_existing_connections.stdout_lines | default([])
-
-- name: Connections | Configure NetworkManager WireGuard connections
-  community.general.nmcli:
-    type: wireguard
-    conn_name: "{{ item.key }}"
-    ifname: "{{ item.value.ifname | default('wg0') }}"
-    ip4: "{{ item.value.addresses | first | default(omit) }}"
-    dns4: "{{ item.value.dns | default(omit) }}"
-    autoconnect: "{{ item.value.autoconnect | default(false) }}"
-    never_default4: "{{ item.value.never_default4 | default(omit) }}"
-    method6: "{{ item.value.method6 | default('disabled') }}"
-    wireguard:
-      private-key: "{{ item.value.private_key }}"
-      peer-routes: true
-    state: "{{ item.value.state | default('present') }}"
-  loop: "{{ networkmanager_connections.wireguard | dict2items | default([]) }}"
-  loop_control:
-    label: "{{ item.key }}"
-  no_log: true
-  register: wireguard_connections_result
-
-- name: Connections | Query current WireGuard peer public keys
-  ansible.builtin.shell: |
-    set -o pipefail
-    nmcli -g wireguard.peers connection show "{{ item.key }}" \
-      | grep -oP '(?<=public-key=)[^ ,]+' | sort
-  args:
-    executable: /bin/bash
-  loop: "{{ networkmanager_connections.wireguard | dict2items | default([]) }}"
-  loop_control:
-    label: "{{ item.key }}"
-  when:
-    - item.value.state | default("present") == "present"
-    - item.value.peers is defined
-    - item.value.peers | length > 0
-  register: __networkmanager_current_wg_peers
-  changed_when: false
-  # nmcli may fail if NetworkManager is not running or no connections exist
-  failed_when: false
-
-- name: Connections | Configure WireGuard peers
-  ansible.builtin.shell: |
-    set -euo pipefail
-    {% for peer in item.item.value.peers %}
-    {% set pa = [peer.public_key] %}
-    {% if peer.endpoint is defined %}
-    {% set _ = pa.append('endpoint=' + peer.endpoint) %}
-    {% endif %}
-    {% if peer.allowed_ips is defined %}
-    {% set _ = pa.append('allowed-ips=' + peer.allowed_ips | replace(',', ';')) %}
-    {% endif %}
-    {% if peer.persistent_keepalive is defined %}
-    {% set _ = pa.append('persistent-keepalive=' + peer.persistent_keepalive | string) %}
-    {% endif %}
-    {% if peer.preshared_key is defined %}
-    {% set _ = pa.append('preshared-key=' + peer.preshared_key) %}
-    {% endif %}
-    nmcli connection modify "{{ item.item.key }}" \
-      {{ '' if loop.first else '+' }}wireguard.peers \
-      "{{ pa | join(' ') }}"
-    {% endfor %}
-  args:
-    executable: /bin/bash
-  loop: "{{ __networkmanager_current_wg_peers.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.key }}"
-  when:
-    - not item.skipped | default(false)
-    - item.item.value.peers | map(attribute='public_key') | sort | list
-      != item.stdout_lines | default([]) | sort | list
-  changed_when: true
-  no_log: true
-  notify: Reload NetworkManager connections
-
 - name: Connections | Ensure NetworkManager VPN connections exist
   community.general.nmcli:
     type: vpn
@@ -329,7 +242,6 @@
     all_network_connections:
       ethernet: {}
       wifi: {}
-      wireguard: {}
       vpn: {}
 
 - name: Connections | Get UUIDs for connections
@@ -341,8 +253,7 @@
   loop: >-
     {{
       (ethernet_connections_result.results | default([])) +
-      (wifi_connections_result.results | default([])) +
-      (wireguard_connections_result.results | default([]))
+      (wifi_connections_result.results | default([]))
     }}
   loop_control:
     label: "{{ item.item.key }}"
@@ -359,8 +270,7 @@
       {{
         all_uuids_with_type | default([]) + [
           item | combine({
-            'type': 'wireguard' if item.item.item.value.peers is defined
-                    else ('wifi' if item.item.item.value.ssid is defined else 'ethernet')
+            'type': 'wifi' if item.item.item.value.ssid is defined else 'ethernet'
           })
         ]
       }}

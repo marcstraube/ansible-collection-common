@@ -153,7 +153,6 @@ networkmanager_vpn_plugins: []
 networkmanager_connections:
   ethernet: {}
   wifi: {}
-  wireguard: {}
   vpn: {}
 
 #
@@ -168,11 +167,12 @@ networkmanager_timezone_enabled: false
 
 # VPN Auto-Connect
 
-# Activate a WireGuard connection on non-home networks via dispatcher script.
-# Set enabled: true and configure connection + home_connections to use.
+# Activate a WireGuard tunnel on non-home networks via dispatcher script.
+# The tunnel is managed by the wireguard role (wg-quick/systemd), not NM.
+# Set enabled: true and configure interface + home_connections to use.
 networkmanager_vpn_autoconnect:
   enabled: false
-  connection: ''           # NM WireGuard connection name to activate
+  interface: ''            # WireGuard interface name (e.g., wg0)
   home_connections: []     # Connection names where VPN is NOT needed
 
 # SMB Shares
