@@ -5,17 +5,3 @@
   # Container-safety for molecule
   failed_when: false
   when: wireguard_enabled | bool
-
-- name: Restart WireGuard
-  ansible.builtin.systemd_service:
-    name: '{{ __wireguard_service_name }}'
-    state: restarted
-  when: wireguard_service_enabled | bool
-
-- name: Reload WireGuard
-  ansible.builtin.command:
-    cmd: 'wg syncconf {{ wireguard_interface }} <(wg-quick strip {{ wireguard_interface }})'
-  args:
-    executable: /bin/bash
-  changed_when: true
-  when: wireguard_service_enabled | bool

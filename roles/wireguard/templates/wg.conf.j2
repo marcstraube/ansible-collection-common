@@ -1,57 +1,43 @@
 {{ ansible_managed | comment }}
 #
-# WireGuard Configuration: {{ wireguard_interface }}
+# WireGuard Configuration: {{ __wireguard_iface.name }}
 #
 
 [Interface]
-Address = {{ wireguard_address }}
-{% if wireguard_address_ipv6 | length > 0 %}
-Address = {{ wireguard_address_ipv6 }}
+Address = {{ __wireguard_iface.address }}
+{% if __wireguard_iface.address_ipv6 | default('') | length > 0 %}
+Address = {{ __wireguard_iface.address_ipv6 }}
 {% endif %}
 PrivateKey = {{ __wireguard_private_key }}
-ListenPort = {{ wireguard_port }}
-{% if wireguard_fwmark | length > 0 %}
-FwMark = {{ wireguard_fwmark }}
+ListenPort = {{ __wireguard_iface.port | default(51820) }}
+{% if __wireguard_iface.fwmark | default('') | length > 0 %}
+FwMark = {{ __wireguard_iface.fwmark }}
 {% endif %}
-{% if wireguard_mtu > 0 %}
-MTU = {{ wireguard_mtu }}
+{% if __wireguard_iface.mtu | default(0) | int > 0 %}
+MTU = {{ __wireguard_iface.mtu }}
 {% endif %}
-{% if wireguard_table != 'auto' %}
-Table = {{ wireguard_table }}
+{% if __wireguard_iface.table | default('auto') != 'auto' %}
+Table = {{ __wireguard_iface.table }}
 {% endif %}
-{% if wireguard_saveconfig_enabled | bool %}
+{% if __wireguard_iface.saveconfig | default(false) | bool %}
 SaveConfig = true
 {% endif %}
-{% if wireguard_dns | length > 0 and wireguard_client_mode_enabled | bool %}
-DNS = {{ wireguard_dns | join(', ') }}
+{% if __wireguard_iface.dns | default([]) | length > 0 and __wireguard_iface.mode | default('server') == 'client' %}
+DNS = {{ __wireguard_iface.dns | join(', ') }}
 {% endif %}
-{% for cmd in wireguard_preup %}
+{% for cmd in __wireguard_iface.preup | default([]) %}
 PreUp = {{ cmd }}
 {% endfor %}
-{% for cmd in wireguard_postup %}
+{% for cmd in __wireguard_iface.postup | default([]) %}
 PostUp = {{ cmd }}
 {% endfor %}
-{% for cmd in wireguard_predown %}
+{% for cmd in __wireguard_iface.predown | default([]) %}
 PreDown = {{ cmd }}
 {% endfor %}
-{% for cmd in wireguard_postdown %}
+{% for cmd in __wireguard_iface.postdown | default([]) %}
 PostDown = {{ cmd }}
 {% endfor %}
-{% if wireguard_client_mode_enabled | bool %}
-
-# Client configuration
-[Peer]
-PublicKey = {{ wireguard_client_server_pubkey }}
-{% if wireguard_client_preshared_key | length > 0 %}
-PresharedKey = {{ wireguard_client_preshared_key }}
-{% endif %}
-Endpoint = {{ wireguard_client_endpoint }}
-AllowedIPs = {{ wireguard_client_allowed_ips }}
-{% if wireguard_client_persistent_keepalive > 0 %}
-PersistentKeepalive = {{ wireguard_client_persistent_keepalive }}
-{% endif %}
-{% endif %}
-{% for peer in wireguard_peers %}
+{% for peer in __wireguard_iface.peers | default([]) %}
 
 # Peer: {{ peer.name }}{% if peer.description is defined %} - {{ peer.description }}{% endif %}
 
@@ -64,7 +50,7 @@ AllowedIPs = {{ peer.allowed_ips }}
 {% if peer.endpoint is defined and peer.endpoint | length > 0 %}
 Endpoint = {{ peer.endpoint }}
 {% endif %}
-{% if peer.persistent_keepalive is defined and peer.persistent_keepalive > 0 %}
+{% if peer.persistent_keepalive is defined and peer.persistent_keepalive | int > 0 %}
 PersistentKeepalive = {{ peer.persistent_keepalive }}
 {% endif %}
 {% endfor %}
