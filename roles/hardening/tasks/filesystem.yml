@@ -3,6 +3,33 @@
 # chicken-and-egg problem where mounting /tmp destroys the Ansible
 # module payload that was extracted there.
 
+# Auto-detect /tmp mount type to avoid breaking non-tmpfs mounts
+# (e.g. BTRFS subvolumes with their own security options)
+- name: Filesystem | Detect current /tmp mount
+  ansible.builtin.command:
+    cmd: findmnt -n -o TARGET,FSTYPE /tmp
+  register: __hardening_tmp_findmnt
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Filesystem | Parse /tmp mount info
+  ansible.builtin.set_fact:
+    __hardening_tmp_is_separate: >-
+      {{ __hardening_tmp_findmnt.rc == 0 and
+         (__hardening_tmp_findmnt.stdout.split()[0] | default('')) == '/tmp' }}
+    __hardening_tmp_fstype: >-
+      {{ __hardening_tmp_findmnt.stdout.split()[1] | default('')
+         if __hardening_tmp_findmnt.rc == 0 else '' }}
+
+- name: Filesystem | Skip /tmp if already mounted as non-tmpfs
+  ansible.builtin.set_fact:
+    hardening_fs_mounts: >-
+      {{ hardening_fs_mounts | rejectattr('path', 'equalto', '/tmp') | list }}
+  when:
+    - __hardening_tmp_is_separate | bool
+    - __hardening_tmp_fstype not in ['tmpfs', '']
+
 - name: Filesystem | Configure mount entries in fstab
   ansible.posix.mount:
     path: '{{ item.path }}'

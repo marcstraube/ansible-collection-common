@@ -38,7 +38,7 @@ Vagrant.configure("2") do |config|
 
   if platform.empty? || platform == "hardening-rocky-9"
     config.vm.define "hardening-rocky-9" do |node|
-      node.vm.box = "rockylinux/9"
+      node.vm.box = "bento/rockylinux-9"
       node.vm.hostname = "hardening-rocky-9"
       node.vm.network "forwarded_port", guest: 22, host: 2224, id: "ssh", auto_correct: false
 
