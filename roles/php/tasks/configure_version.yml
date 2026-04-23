@@ -19,6 +19,7 @@
       - '/etc/php/conf.d'
     __php_fpm_pool_dir: '/etc/php/php-fpm.d'
     __php_fpm_listen_default: '/run/php-fpm/php-fpm.sock'
+    __php_fpm_service: 'php-fpm'
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_ver == __php_system_version
