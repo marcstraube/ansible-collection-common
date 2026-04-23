@@ -5,149 +5,280 @@
 
   tasks:
     #
-    # PHP CLI Verification
+    # Detect system PHP version (mirrors role logic)
     #
 
-    - name: Verify | Check PHP is installed
+    - name: Verify | Detect system PHP version (Arch)
+      ansible.builtin.command:
+        cmd: pacman -Si php
+      register: __verify_arch_info
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Set system version fact (Arch)
+      ansible.builtin.set_fact:
+        __verify_system_ver: >-
+          {{ (__verify_arch_info.stdout
+              | regex_search('Version\s*:\s*(\d+)\.(\d+)', '\1', '\2'))
+              | join('.') }}
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Detect system PHP version (Debian)
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          apt-cache show php | grep -m1 '^Depends:' | grep -oP 'php\K\d+\.\d+'
+        executable: /bin/bash
+      register: __verify_debian_info
+      changed_when: false
+      failed_when: __verify_debian_info.stdout | default('') | trim | length == 0
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Set system version fact (Debian)
+      ansible.builtin.set_fact:
+        __verify_system_ver: '{{ __verify_debian_info.stdout | trim }}'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Detect system PHP version (RedHat)
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          dnf info php-cli 2>/dev/null | grep -m1 '^Version' | grep -oP '\d+\.\d+'
+        executable: /bin/bash
+      register: __verify_redhat_info
+      changed_when: false
+      failed_when: __verify_redhat_info.stdout | default('') | trim | length == 0
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Set system version fact (RedHat)
+      ansible.builtin.set_fact:
+        __verify_system_ver: '{{ __verify_redhat_info.stdout | trim }}'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Set compact version fact
+      ansible.builtin.set_fact:
+        __verify_system_ver_compact: "{{ __verify_system_ver | replace('.', '') }}"
+
+    #
+    # PHP CLI — auto version resolves correctly
+    #
+
+    - name: Verify | Check PHP CLI
       ansible.builtin.command: php --version
-      register: php_version_check
+      register: __verify_php_cli
       changed_when: false
-      failed_when: php_version_check.rc != 0
+      failed_when: __verify_php_cli.rc != 0
 
-    - name: Verify | Assert PHP version output
+    - name: Verify | Assert auto version matches system PHP
       ansible.builtin.assert:
         that:
-          - "php_version_check.stdout is match('^PHP [0-9]+\\.[0-9]+\\.[0-9]+')"
-        fail_msg: "PHP version output unexpected: {{ php_version_check.stdout }}"
+          - __verify_php_cli.stdout is match('^PHP ' + __verify_system_ver)
+        fail_msg: >-
+          Expected PHP {{ __verify_system_ver }},
+          got {{ __verify_php_cli.stdout_lines[0] }}
 
     #
-    # PHP-FPM Verification
-    #
-
-    - name: Verify | Get FPM service name (Debian)
-      ansible.builtin.set_fact:
-        __verify_fpm_service: 'php8.4-fpm'
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Verify | Get FPM service name (RedHat)
-      ansible.builtin.set_fact:
-        __verify_fpm_service: 'php84-php-fpm'
-      when: ansible_facts['os_family'] == 'RedHat'
-
-    - name: Verify | Get FPM service name (Arch)
-      ansible.builtin.set_fact:
-        __verify_fpm_service: 'php-fpm'
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Verify | Check PHP-FPM service is running
-      ansible.builtin.systemd_service:
-        name: '{{ __verify_fpm_service }}'
-      register: fpm_service_status
-
-    - name: Verify | Assert PHP-FPM is active and enabled
-      ansible.builtin.assert:
-        that:
-          - fpm_service_status.status.ActiveState == 'active'
-          - fpm_service_status.status.UnitFileState == 'enabled'
-        fail_msg: "PHP-FPM service not active/enabled: {{ fpm_service_status.status.ActiveState }}"
-
-    #
-    # Configuration Verification
-    #
-
-    - name: Verify | Get php.ini drop-in path (Debian)
-      ansible.builtin.set_fact:
-        __verify_ini_path: '/etc/php/8.4/fpm/conf.d/99-ansible.ini'
-        __verify_pool_path: '/etc/php/8.4/fpm/pool.d/www.conf'
-      when: ansible_facts['os_family'] == 'Debian'
-
-    - name: Verify | Get php.ini drop-in path (RedHat)
-      ansible.builtin.set_fact:
-        __verify_ini_path: '/etc/opt/remi/php84/php.d/99-ansible.ini'
-        __verify_pool_path: '/etc/opt/remi/php84/php-fpm.d/www.conf'
-      when: ansible_facts['os_family'] == 'RedHat'
-
-    - name: Verify | Get php.ini drop-in path (Arch)
-      ansible.builtin.set_fact:
-        __verify_ini_path: '/etc/php/conf.d/99-ansible.ini'
-        __verify_pool_path: '/etc/php/php-fpm.d/www.conf'
-      when: ansible_facts['os_family'] == 'Archlinux'
-
-    - name: Verify | Check php.ini drop-in exists
-      ansible.builtin.stat:
-        path: '{{ __verify_ini_path }}'
-      register: ini_dropin_stat
-
-    - name: Verify | Assert php.ini drop-in deployed
-      ansible.builtin.assert:
-        that:
-          - ini_dropin_stat.stat.exists
-        fail_msg: "php.ini drop-in not found at {{ __verify_ini_path }}"
-
-    - name: Verify | Check php.ini drop-in content
-      ansible.builtin.command: cat {{ __verify_ini_path }}
-      register: ini_dropin_content
-      changed_when: false
-
-    - name: Verify | Assert php.ini drop-in contains expected settings
-      ansible.builtin.assert:
-        that:
-          - "'memory_limit = 128M' in ini_dropin_content.stdout"
-          - "'date.timezone = UTC' in ini_dropin_content.stdout"
-        fail_msg: "php.ini drop-in content unexpected"
-
-    - name: Verify | Check www.conf exists
-      ansible.builtin.stat:
-        path: '{{ __verify_pool_path }}'
-      register: pool_conf_stat
-
-    - name: Verify | Assert www.conf deployed
-      ansible.builtin.assert:
-        that:
-          - pool_conf_stat.stat.exists
-        fail_msg: "www.conf not found at {{ __verify_pool_path }}"
-
-    - name: Verify | Check www.conf content
-      ansible.builtin.command: cat {{ __verify_pool_path }}
-      register: pool_conf_content
-      changed_when: false
-
-    - name: Verify | Assert www.conf contains expected settings
-      ansible.builtin.assert:
-        that:
-          - "'[www]' in pool_conf_content.stdout"
-          - "'pm = dynamic' in pool_conf_content.stdout"
-          - "'pm.max_children = 5' in pool_conf_content.stdout"
-        fail_msg: "www.conf content unexpected"
-
-    #
-    # Extension Verification
+    # Extension mapping — built-in extensions loaded without packages (Arch)
     #
 
     - name: Verify | Check loaded PHP modules
       ansible.builtin.command: php -m
-      register: php_modules_check
+      register: __verify_php_modules
       changed_when: false
 
-    - name: Verify | Assert curl and mbstring extensions
+    - name: Verify | Assert curl and mbstring loaded
       ansible.builtin.assert:
         that:
-          - "'curl' in php_modules_check.stdout"
-          - "'mbstring' in php_modules_check.stdout"
-        fail_msg: "Expected extensions not loaded: {{ php_modules_check.stdout }}"
+          - "'curl' in __verify_php_modules.stdout"
+          - "'mbstring' in __verify_php_modules.stdout"
+        fail_msg: "Expected extensions not loaded"
 
     #
-    # Composer Verification
+    # FPM service — auto version
     #
 
-    - name: Verify | Check Composer is installed
+    - name: Verify | Set auto FPM service name (Arch)
+      ansible.builtin.set_fact:
+        __verify_auto_fpm: 'php-fpm'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Set auto FPM service name (Debian)
+      ansible.builtin.set_fact:
+        __verify_auto_fpm: 'php{{ __verify_system_ver }}-fpm'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Set auto FPM service name (RedHat)
+      ansible.builtin.set_fact:
+        __verify_auto_fpm: 'php{{ __verify_system_ver_compact }}-php-fpm'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Check auto FPM service
+      ansible.builtin.systemd_service:
+        name: '{{ __verify_auto_fpm }}'
+      register: __verify_auto_fpm_status
+
+    - name: Verify | Assert auto FPM is active and enabled
+      ansible.builtin.assert:
+        that:
+          - __verify_auto_fpm_status.status.ActiveState == 'active'
+          - __verify_auto_fpm_status.status.UnitFileState == 'enabled'
+        fail_msg: >-
+          {{ __verify_auto_fpm }} not active/enabled:
+          {{ __verify_auto_fpm_status.status.ActiveState }}
+
+    #
+    # FPM service — second version (Debian/RedHat only)
+    #
+
+    - name: Verify | Set second FPM service name (Debian)
+      ansible.builtin.set_fact:
+        __verify_second_fpm: 'php8.3-fpm'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Set second FPM service name (RedHat)
+      ansible.builtin.set_fact:
+        __verify_second_fpm: 'php83-php-fpm'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Check second FPM service
+      ansible.builtin.systemd_service:
+        name: '{{ __verify_second_fpm }}'
+      register: __verify_second_fpm_status
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Assert second FPM is active and enabled
+      ansible.builtin.assert:
+        that:
+          - __verify_second_fpm_status.status.ActiveState == 'active'
+          - __verify_second_fpm_status.status.UnitFileState == 'enabled'
+        fail_msg: >-
+          {{ __verify_second_fpm }} not active/enabled:
+          {{ __verify_second_fpm_status.status.ActiveState }}
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    #
+    # Configuration — auto version
+    #
+
+    - name: Verify | Set auto config paths (Arch)
+      ansible.builtin.set_fact:
+        __verify_auto_ini: '/etc/php/conf.d/99-ansible.ini'
+        __verify_auto_pool: '/etc/php/php-fpm.d/www.conf'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Set auto config paths (Debian)
+      ansible.builtin.set_fact:
+        __verify_auto_ini: '/etc/php/{{ __verify_system_ver }}/fpm/conf.d/99-ansible.ini'
+        __verify_auto_pool: '/etc/php/{{ __verify_system_ver }}/fpm/pool.d/www.conf'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Set auto config paths (RedHat)
+      ansible.builtin.set_fact:
+        __verify_auto_ini: '/etc/opt/remi/php{{ __verify_system_ver_compact }}/php.d/99-ansible.ini'
+        __verify_auto_pool: '/etc/opt/remi/php{{ __verify_system_ver_compact }}/php-fpm.d/www.conf'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Check auto php.ini drop-in exists
+      ansible.builtin.stat:
+        path: '{{ __verify_auto_ini }}'
+      register: __verify_auto_ini_stat
+
+    - name: Verify | Assert auto php.ini drop-in deployed
+      ansible.builtin.assert:
+        that:
+          - __verify_auto_ini_stat.stat.exists
+        fail_msg: "php.ini drop-in not found at {{ __verify_auto_ini }}"
+
+    - name: Verify | Check auto php.ini content
+      ansible.builtin.slurp:
+        src: '{{ __verify_auto_ini }}'
+      register: __verify_auto_ini_content
+
+    - name: Verify | Assert auto php.ini settings
+      ansible.builtin.assert:
+        that:
+          - "'memory_limit = 128M' in (__verify_auto_ini_content.content | b64decode)"
+          - "'date.timezone = UTC' in (__verify_auto_ini_content.content | b64decode)"
+        fail_msg: "php.ini drop-in content unexpected"
+
+    - name: Verify | Check auto www.conf exists
+      ansible.builtin.stat:
+        path: '{{ __verify_auto_pool }}'
+      register: __verify_auto_pool_stat
+
+    - name: Verify | Assert auto www.conf deployed
+      ansible.builtin.assert:
+        that:
+          - __verify_auto_pool_stat.stat.exists
+        fail_msg: "www.conf not found at {{ __verify_auto_pool }}"
+
+    - name: Verify | Check auto www.conf content
+      ansible.builtin.slurp:
+        src: '{{ __verify_auto_pool }}'
+      register: __verify_auto_pool_content
+
+    - name: Verify | Assert auto www.conf settings
+      ansible.builtin.assert:
+        that:
+          - "'[www]' in (__verify_auto_pool_content.content | b64decode)"
+          - "'pm = dynamic' in (__verify_auto_pool_content.content | b64decode)"
+          - "'pm.max_children = 5' in (__verify_auto_pool_content.content | b64decode)"
+        fail_msg: "www.conf content unexpected"
+
+    #
+    # Configuration — second version (Debian/RedHat only)
+    #
+
+    - name: Verify | Set second config paths (Debian)
+      ansible.builtin.set_fact:
+        __verify_second_ini: '/etc/php/8.3/fpm/conf.d/99-ansible.ini'
+        __verify_second_pool: '/etc/php/8.3/fpm/pool.d/www.conf'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Set second config paths (RedHat)
+      ansible.builtin.set_fact:
+        __verify_second_ini: '/etc/opt/remi/php83/php.d/99-ansible.ini'
+        __verify_second_pool: '/etc/opt/remi/php83/php-fpm.d/www.conf'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Check second php.ini drop-in exists
+      ansible.builtin.stat:
+        path: '{{ __verify_second_ini }}'
+      register: __verify_second_ini_stat
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Assert second php.ini deployed
+      ansible.builtin.assert:
+        that:
+          - __verify_second_ini_stat.stat.exists
+        fail_msg: "Second version php.ini not found at {{ __verify_second_ini }}"
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Check second www.conf exists
+      ansible.builtin.stat:
+        path: '{{ __verify_second_pool }}'
+      register: __verify_second_pool_stat
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Assert second www.conf deployed
+      ansible.builtin.assert:
+        that:
+          - __verify_second_pool_stat.stat.exists
+        fail_msg: "Second version www.conf not found at {{ __verify_second_pool }}"
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    #
+    # Composer
+    #
+
+    - name: Verify | Check Composer
       ansible.builtin.command: composer --version
-      register: composer_version_check
+      register: __verify_composer
       changed_when: false
-      failed_when: composer_version_check.rc != 0
+      failed_when: __verify_composer.rc != 0
 
-    - name: Verify | Assert Composer version output
+    - name: Verify | Assert Composer installed
       ansible.builtin.assert:
         that:
-          - "'Composer' in composer_version_check.stdout"
-        fail_msg: "Composer version output unexpected: {{ composer_version_check.stdout }}"
+          - "'Composer' in __verify_composer.stdout"
+        fail_msg: "Composer not found: {{ __verify_composer.stdout }}"

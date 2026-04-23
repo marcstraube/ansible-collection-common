@@ -20,6 +20,7 @@
   register: __php_debian_repo_info
   changed_when: false
   check_mode: false
+  failed_when: __php_debian_repo_info.stdout | default('') | trim | length == 0
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Install | Set Debian current PHP version fact
@@ -36,6 +37,7 @@
   register: __php_redhat_repo_info
   changed_when: false
   check_mode: false
+  failed_when: __php_redhat_repo_info.stdout | default('') | trim | length == 0
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: Install | Set RedHat current PHP version fact
