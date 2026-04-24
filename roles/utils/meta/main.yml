@@ -2,8 +2,8 @@
 galaxy_info:
   author: Marc Straube
   description: >-
-    Install common system utilities (monitors, multiplexers,
-    file transfer, system info, fun terminal tools)
+    Install common system utilities (monitors, file transfer,
+    file managers, system info, fun terminal tools)
   license: MIT
   min_ansible_version: '2.17'
 
@@ -21,7 +21,6 @@ galaxy_info:
   galaxy_tags:
     - utils
     - htop
-    - tmux
     - rsync
     - fastfetch
     - system

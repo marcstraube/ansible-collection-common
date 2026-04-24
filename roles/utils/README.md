@@ -1,7 +1,7 @@
 # marcstraube.common.utils
 
-Install common system utilities: process monitors, terminal multiplexers, file transfer
-tools, file managers, system info fetchers, and fun terminal toys.
+Install common system utilities: process monitors, file transfer tools, file managers,
+system info fetchers, and fun terminal toys.
 
 ## Description
 
@@ -52,14 +52,6 @@ list with availability notes per OS.
 | `utils_monitor_btop_enabled`   | `false` | Modern resource monitor (btop++)      |
 | `utils_monitor_bottom_enabled` | `false` | System monitor (Arch only)            |
 | `utils_monitor_atop_enabled`   | `false` | Advanced process monitor with logging |
-
-### Terminal Multiplexers
-
-| Variable                   | Default | Description                        |
-|----------------------------|---------|------------------------------------|
-| `utils_mux_tmux_enabled`   | `true`  | Terminal multiplexer               |
-| `utils_mux_zellij_enabled` | `false` | Rust-based multiplexer (Arch only) |
-| `utils_mux_screen_enabled` | `false` | GNU Screen                         |
 
 ### File Transfer
 

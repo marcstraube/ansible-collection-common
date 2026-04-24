@@ -10,10 +10,6 @@
     utils_monitor_htop_enabled: true
     utils_monitor_btop_enabled: true
 
-    # Multiplexers
-    utils_mux_tmux_enabled: true
-    utils_mux_screen_enabled: false
-
     # File transfer
     utils_transfer_rsync_enabled: true
 
