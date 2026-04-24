@@ -2,6 +2,8 @@
 # EL 9 uses old emoji package name and lacks some EPEL 10 coding fonts.
 # Overrides RedHat.yml defaults.
 
+__fonts_fontconfig_package: 'fontconfig'
+
 __fonts_dejavu_package: 'dejavu-sans-fonts'
 __fonts_liberation_package: 'liberation-fonts'
 __fonts_noto_package: 'google-noto-sans-fonts'
