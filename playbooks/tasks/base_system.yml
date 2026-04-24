@@ -3,11 +3,20 @@
 # Base System Tasks
 # =============================================================================
 # Task file for base system configuration — single source of truth.
-# Imported by playbooks/base_system.yml (standalone) and infra playbooks.
+# Imported by playbooks/base.yml (standalone) and infra playbooks.
 #
 # All roles default to enabled — disable per host/group via inventory.
 # See each role's defaults/main.yml for available variables.
+#
+# Tag scheme:
+#   base-system   All roles in this file
+#   security      Security roles only (sysctl through hardware_tokens)
+#   <role-name>   Individual role (e.g., firewalld, docker)
 # =============================================================================
+
+#
+# Core System
+#
 
 - name: Base System | Include package_management role
   ansible.builtin.include_role:
@@ -56,6 +65,112 @@
     - base-system
     - sudo
   when: sudo_enabled | default(true) | bool
+
+#
+# Security Foundation
+#
+
+- name: Base System | Include sysctl role
+  ansible.builtin.include_role:
+    name: marcstraube.common.sysctl
+    apply:
+      tags:
+        - base-system
+        - security
+        - sysctl
+  tags:
+    - base-system
+    - security
+    - sysctl
+  when: sysctl_enabled | default(true) | bool
+
+- name: Base System | Include pam_hardening role
+  ansible.builtin.include_role:
+    name: marcstraube.common.pam_hardening
+    apply:
+      tags:
+        - base-system
+        - security
+        - pam-hardening
+  tags:
+    - base-system
+    - security
+    - pam-hardening
+  when: pam_hardening_enabled | default(true) | bool
+
+- name: Base System | Include openssh role
+  ansible.builtin.include_role:
+    name: marcstraube.common.openssh
+    apply:
+      tags:
+        - base-system
+        - security
+        - openssh
+  tags:
+    - base-system
+    - security
+    - openssh
+  when: openssh_enabled | default(true) | bool
+
+- name: Base System | Include hardening role
+  ansible.builtin.include_role:
+    name: marcstraube.common.hardening
+    apply:
+      tags:
+        - base-system
+        - security
+        - hardening
+  tags:
+    - base-system
+    - security
+    - hardening
+  when: hardening_enabled | default(true) | bool
+
+- name: Base System | Include apparmor role
+  ansible.builtin.include_role:
+    name: marcstraube.common.apparmor
+    apply:
+      tags:
+        - base-system
+        - security
+        - apparmor
+  tags:
+    - base-system
+    - security
+    - apparmor
+  when: apparmor_enabled | default(true) | bool
+
+- name: Base System | Include firejail role
+  ansible.builtin.include_role:
+    name: marcstraube.common.firejail
+    apply:
+      tags:
+        - base-system
+        - security
+        - firejail
+  tags:
+    - base-system
+    - security
+    - firejail
+  when: firejail_enabled | default(true) | bool
+
+- name: Base System | Include firewalld role
+  ansible.builtin.include_role:
+    name: marcstraube.common.firewalld
+    apply:
+      tags:
+        - base-system
+        - security
+        - firewalld
+  tags:
+    - base-system
+    - security
+    - firewalld
+  when: firewalld_enabled | default(true) | bool
+
+#
+# Languages & Tools
+#
 
 - name: Base System | Include python role
   ansible.builtin.include_role:
@@ -116,6 +231,10 @@
     - base-system
     - editors
   when: editors_enabled | default(true) | bool
+
+#
+# Networking
+#
 
 - name: Base System | Include resolved role
   ansible.builtin.include_role:
@@ -188,6 +307,10 @@
     - base-system
     - snmp
   when: snmp_enabled | default(true) | bool
+
+#
+# Applications
+#
 
 - name: Base System | Include utils role
   ansible.builtin.include_role:
@@ -308,3 +431,136 @@
     - base-system
     - ansible-tools
   when: ansible_enabled | default(true) | bool
+
+#
+# Security Scanning & Extras
+#
+
+- name: Base System | Include pki role
+  ansible.builtin.include_role:
+    name: marcstraube.common.pki
+    apply:
+      tags:
+        - base-system
+        - security
+        - pki
+  tags:
+    - base-system
+    - security
+    - pki
+  when: pki_enabled | default(true) | bool
+
+- name: Base System | Include fail2ban role
+  ansible.builtin.include_role:
+    name: marcstraube.common.fail2ban
+    apply:
+      tags:
+        - base-system
+        - security
+        - fail2ban
+  tags:
+    - base-system
+    - security
+    - fail2ban
+  when: fail2ban_enabled | default(true) | bool
+
+- name: Base System | Include clamav role
+  ansible.builtin.include_role:
+    name: marcstraube.common.clamav
+    apply:
+      tags:
+        - base-system
+        - security
+        - clamav
+  tags:
+    - base-system
+    - security
+    - clamav
+  when: clamav_enabled | default(true) | bool
+
+- name: Base System | Include auditd role
+  ansible.builtin.include_role:
+    name: marcstraube.common.auditd
+    apply:
+      tags:
+        - base-system
+        - security
+        - auditd
+  tags:
+    - base-system
+    - security
+    - auditd
+  when: auditd_enabled | default(true) | bool
+
+- name: Base System | Include aide role
+  ansible.builtin.include_role:
+    name: marcstraube.common.aide
+    apply:
+      tags:
+        - base-system
+        - security
+        - aide
+  tags:
+    - base-system
+    - security
+    - aide
+  when: aide_enabled | default(true) | bool
+
+- name: Base System | Include rkhunter role
+  ansible.builtin.include_role:
+    name: marcstraube.common.rkhunter
+    apply:
+      tags:
+        - base-system
+        - security
+        - rkhunter
+  tags:
+    - base-system
+    - security
+    - rkhunter
+  when: rkhunter_enabled | default(true) | bool
+
+- name: Base System | Include lynis role
+  ansible.builtin.include_role:
+    name: marcstraube.common.lynis
+    apply:
+      tags:
+        - base-system
+        - security
+        - lynis
+  tags:
+    - base-system
+    - security
+    - lynis
+  when: lynis_enabled | default(true) | bool
+
+- name: Base System | Include hardware_tokens role
+  ansible.builtin.include_role:
+    name: marcstraube.common.hardware_tokens
+    apply:
+      tags:
+        - base-system
+        - security
+        - hardware-tokens
+  tags:
+    - base-system
+    - security
+    - hardware-tokens
+  when: hardware_tokens_enabled | default(true) | bool
+
+#
+# Backup (explicit only — tagged 'never')
+#
+
+- name: Base System | Include restic role
+  ansible.builtin.include_role:
+    name: marcstraube.common.restic
+    apply:
+      tags:
+        - backup
+        - restic
+  tags:
+    - backup
+    - restic
+    - never
+  when: restic_enabled | default(true) | bool
