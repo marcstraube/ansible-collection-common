@@ -1,5 +1,12 @@
 ---
-# EL9 overrides for packages available via EPEL on EL9 but not on EL10
+# EL 9 — EPEL provides additional packages not available on EL 10
+# Complements vars/main.yml (shared variables)
+
+#
+# System Monitors
+#
+
+__utils_monitor_bottom: ''
 
 #
 # File Managers
@@ -7,14 +14,32 @@
 
 __utils_filemgr_ranger: 'ranger'
 __utils_filemgr_nnn: 'nnn'
+__utils_filemgr_lf: ''
+
+#
+# Search Tools
+#
+
+__utils_search_fd: 'fd-find'
+
+#
+# System Info (Fetch Tools)
+#
+
+__utils_fetch_hyfetch: ''
+__utils_fetch_cpufetch: ''
 
 #
 # Fun Tools
 #
 
+__utils_fun_cowsay: 'cowsay'
+__utils_fun_lolcat: ''
+__utils_fun_ponysay: ''
 __utils_fun_cmatrix: 'cmatrix'
 __utils_fun_cbonsai: 'cbonsai'
 __utils_fun_asciiquarium: 'asciiquarium'
 __utils_fun_nyancat: 'nyancat'
 __utils_fun_no_more_secrets: 'no-more-secrets'
 __utils_fun_tty_clock: 'tty-clock'
+__utils_fun_hollywood: ''

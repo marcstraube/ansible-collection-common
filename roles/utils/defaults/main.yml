@@ -23,20 +23,6 @@ utils_monitor_bottom_enabled: false
 utils_monitor_atop_enabled: false
 
 #
-# Terminal Multiplexers
-#
-
-# Terminal multiplexer (tmux)
-utils_mux_tmux_enabled: true
-
-# Modern terminal multiplexer written in Rust (zellij)
-# Not available on Debian or Rocky
-utils_mux_zellij_enabled: false
-
-# GNU Screen terminal multiplexer
-utils_mux_screen_enabled: false
-
-#
 # File Transfer
 #
 

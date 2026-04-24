@@ -1,33 +1,16 @@
 ---
+# Arch Linux — complements vars/main.yml (shared variables)
+
 #
 # System Monitors
 #
 
-__utils_monitor_htop: 'htop'
-__utils_monitor_btop: 'btop'
 __utils_monitor_bottom: 'bottom'
-__utils_monitor_atop: 'atop'
-
-#
-# Terminal Multiplexers
-#
-
-__utils_mux_tmux: 'tmux'
-__utils_mux_zellij: 'zellij'
-__utils_mux_screen: 'screen'
-
-#
-# File Transfer
-#
-
-__utils_transfer_rsync: 'rsync'
 
 #
 # File Managers
 #
 
-__utils_filemgr_mc: 'mc'
-__utils_filemgr_vifm: 'vifm'
 __utils_filemgr_ranger: 'ranger'
 __utils_filemgr_nnn: 'nnn'
 __utils_filemgr_lf: 'lf'
@@ -36,16 +19,13 @@ __utils_filemgr_lf: 'lf'
 # Search Tools
 #
 
-__utils_search_ripgrep: 'ripgrep'
 __utils_search_fd: 'fd'
 
 #
 # System Info (Fetch Tools)
 #
 
-__utils_fetch_fastfetch: 'fastfetch'
 __utils_fetch_hyfetch: 'hyfetch'
-__utils_fetch_archey4: ''
 __utils_fetch_cpufetch: 'cpufetch'
 
 #
@@ -53,21 +33,14 @@ __utils_fetch_cpufetch: 'cpufetch'
 #
 
 __utils_fun_cowsay: 'cowsay'
-__utils_fun_fortune: 'fortune-mod'
 __utils_fun_lolcat: 'lolcat'
 __utils_fun_ponysay: 'ponysay'
-__utils_fun_figlet: 'figlet'
-__utils_fun_toilet: 'toilet'
-__utils_fun_sl: 'sl'
 __utils_fun_cmatrix: 'cmatrix'
 __utils_fun_cbonsai: ''
 __utils_fun_asciiquarium: 'asciiquarium'
 __utils_fun_nyancat: 'nyancat'
 __utils_fun_no_more_secrets: ''
 __utils_fun_tty_clock: ''
-__utils_fun_pipes: ''
-__utils_fun_pokemon_colorscripts: ''
-__utils_fun_pokemonsay: ''
 __utils_fun_hollywood: ''
 
 #

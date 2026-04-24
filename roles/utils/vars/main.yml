@@ -1,0 +1,49 @@
+---
+# Shared variables — identical across all supported platforms.
+# OS-specific overrides live in Archlinux.yml, Debian.yml, RedHat.yml, RedHat-9.yml.
+
+#
+# System Monitors
+#
+
+__utils_monitor_htop: 'htop'
+__utils_monitor_btop: 'btop'
+__utils_monitor_atop: 'atop'
+
+#
+# File Transfer
+#
+
+__utils_transfer_rsync: 'rsync'
+
+#
+# File Managers
+#
+
+__utils_filemgr_mc: 'mc'
+__utils_filemgr_vifm: 'vifm'
+
+#
+# Search Tools
+#
+
+__utils_search_ripgrep: 'ripgrep'
+
+#
+# System Info (Fetch Tools)
+#
+
+__utils_fetch_fastfetch: 'fastfetch'
+__utils_fetch_archey4: ''
+
+#
+# Fun Tools
+#
+
+__utils_fun_fortune: 'fortune-mod'
+__utils_fun_figlet: 'figlet'
+__utils_fun_toilet: 'toilet'
+__utils_fun_sl: 'sl'
+__utils_fun_pipes: ''
+__utils_fun_pokemon_colorscripts: ''
+__utils_fun_pokemonsay: ''
