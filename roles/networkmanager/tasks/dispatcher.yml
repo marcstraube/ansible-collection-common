@@ -290,8 +290,8 @@
 
 - name: Dispatcher | Ensure WiFi auto-toggle dispatcher script is installed
   ansible.builtin.template:
-    src: dispatcher.d/99-wifi-auto-toggle.sh.j2
-    dest: /etc/NetworkManager/dispatcher.d/99-wifi-auto-toggle.sh
+    src: dispatcher.d/10-wifi-auto-toggle.sh.j2
+    dest: /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
     owner: root
     group: root
     mode: '0755'
@@ -303,7 +303,7 @@
 
 - name: Dispatcher | Ensure WiFi auto-toggle dispatcher script is removed
   ansible.builtin.file:
-    path: /etc/NetworkManager/dispatcher.d/99-wifi-auto-toggle.sh
+    path: /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
     state: absent
   when: not ((networkmanager_connections.ethernet | dict2items |
     selectattr('value.toggle_wifi', 'defined') | selectattr('value.toggle_wifi')) |

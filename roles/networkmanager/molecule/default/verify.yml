@@ -341,7 +341,7 @@
 
     - name: Verify | Check WiFi toggle dispatcher script exists
       ansible.builtin.stat:
-        path: /etc/NetworkManager/dispatcher.d/99-wifi-auto-toggle.sh
+        path: /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
       register: wifi_toggle_script
       when: wifi_toggle_configured | bool
 

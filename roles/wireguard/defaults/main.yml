@@ -33,7 +33,10 @@ wireguard_interfaces: []
 #     port: 51820
 #     # Private key (auto-generated if empty)
 #     private_key: ''
-#     # Interface mode: server (IP forwarding, masquerade) or client (DNS, keepalive)
+#     # Interface mode:
+#     #   server  - wg-quick/systemd, IP forwarding, masquerade (servers)
+#     #   client  - wg-quick/systemd, DNS, keepalive (legacy)
+#     #   nm      - NetworkManager-managed connection (laptops/desktops)
 #     mode: server
 #
 #     # Server mode: enable IP forwarding via sysctl

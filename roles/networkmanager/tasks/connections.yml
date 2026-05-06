@@ -26,6 +26,7 @@
     type: ethernet
     conn_name: "{{ item.key }}"
     ifname: "{{ item.value.ifname | default(omit) }}"
+    mac: "{{ item.value.mac | default(omit) }}"
     ip4: "{{ item.value.ip4 | default(omit) }}"
     gw4: "{{ item.value.gw4 | default(omit) }}"
     gw4_ignore_auto: "{{ item.value.gw4_ignore_auto | default(omit) }}"
@@ -161,6 +162,37 @@
   loop_control:
     label: "{{ item.key }}"
   register: wifi_connections_result
+
+- name: Connections | Check current WiFi cloned-mac-address
+  ansible.builtin.shell: |
+    set -o pipefail
+    nmcli -t -f 802-11-wireless.cloned-mac-address connection show "{{ item.key }}" | cut -d: -f2
+  args:
+    executable: /bin/bash
+  loop: "{{ networkmanager_connections.wifi | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - item.value.state | default("present") == "present"
+    - item.value.mac is defined
+  register: current_wifi_cloned_mac
+  changed_when: false
+  failed_when: false
+
+- name: Connections | Set WiFi cloned-mac-address
+  ansible.builtin.command:
+    cmd: >-
+      nmcli connection modify "{{ item.item.key }}"
+      802-11-wireless.cloned-mac-address
+      "{{ item.item.value.mac }}"
+  loop: "{{ current_wifi_cloned_mac.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - not item.skipped | default(false)
+    - item.stdout | trim != item.item.value.mac
+  changed_when: true
+  notify: Reload NetworkManager connections
 
 - name: Connections | Check current ipv4.dhcp-send-hostname for connections
   ansible.builtin.shell: |

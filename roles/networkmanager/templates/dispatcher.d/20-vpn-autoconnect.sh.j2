@@ -4,12 +4,11 @@
 
 # This script automatically activates a WireGuard VPN tunnel when connecting
 # to a non-home network, and deactivates it when the base connection drops.
-# The tunnel is managed by wg-quick/systemd, not NetworkManager.
-# This ensures laptops always have VPN connectivity when roaming.
+# The tunnel is managed as a NetworkManager WireGuard connection.
 
 LOG_PREFIX="NM-VPN-Autoconnect"
 WG_INTERFACE="{{ networkmanager_vpn_autoconnect.interface }}"
-WG_SERVICE="wg-quick@${WG_INTERFACE}.service"
+WG_CONNECTION="WireGuard ${WG_INTERFACE}"
 
 {% set uuid_map = {} %}
 {# Build UUID map for home connections that should NOT trigger VPN #}
@@ -30,11 +29,18 @@ WG_SERVICE="wg-quick@${WG_INTERFACE}.service"
   {% endif %}
 {% endfor %}
 
+# Only react to ethernet and wifi interfaces, skip loopback/bridge/docker/wg/etc.
+case "$1" in
+  lo|docker*|br-*|veth*|wg*|p2p-*)
+    exit 0
+    ;;
+esac
+
 if [ "$2" = "up" ]; then
 {% if home_uuids | length > 0 %}
 
   # Skip if on a home network connection (VPN not needed)
-  if {% for uuid in home_uuids %}[ "$NM_UUID" = "{{ uuid }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
+  if {% for uuid in home_uuids %}[ "$CONNECTION_UUID" = "{{ uuid }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
     echo "$LOG_PREFIX: On home network ($CONNECTION_ID). VPN not needed."
     exit 0
   fi
@@ -43,22 +49,22 @@ if [ "$2" = "up" ]; then
   # Wait briefly for connection to stabilize
   sleep 2
 
-  # Check if WireGuard tunnel is already active
-  if systemctl is-active --quiet "$WG_SERVICE"; then
-    echo "$LOG_PREFIX: WireGuard tunnel ($WG_INTERFACE) already active."
+  # Check if WireGuard connection is already active
+  if nmcli -t -f NAME connection show --active | grep -q "^${WG_CONNECTION}$"; then
+    echo "$LOG_PREFIX: WireGuard connection ($WG_CONNECTION) already active."
     exit 0
   fi
 
-  echo "$LOG_PREFIX: Non-home network detected ($CONNECTION_ID). Activating WireGuard tunnel ($WG_INTERFACE)."
-  systemctl start "$WG_SERVICE" 2>&1 | while read -r line; do
+  echo "$LOG_PREFIX: Non-home network detected ($CONNECTION_ID). Activating $WG_CONNECTION."
+  nmcli connection up "$WG_CONNECTION" 2>&1 | while read -r line; do
     echo "$LOG_PREFIX: $line"
   done
 fi
 
 if [ "$2" = "down" ]; then
-  # Deactivate WireGuard tunnel when the base connection drops
-  if systemctl is-active --quiet "$WG_SERVICE"; then
-    echo "$LOG_PREFIX: Base connection ($CONNECTION_ID) went down. Deactivating WireGuard tunnel ($WG_INTERFACE)."
-    systemctl stop "$WG_SERVICE" 2>/dev/null
+  # Deactivate WireGuard connection when the base connection drops
+  if nmcli -t -f NAME connection show --active | grep -q "^${WG_CONNECTION}$"; then
+    echo "$LOG_PREFIX: Base connection ($CONNECTION_ID) went down. Deactivating $WG_CONNECTION."
+    nmcli connection down "$WG_CONNECTION" 2>/dev/null
   fi
 fi

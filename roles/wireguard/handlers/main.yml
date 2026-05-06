@@ -5,3 +5,9 @@
   # Container-safety for molecule
   failed_when: false
   when: wireguard_enabled | bool
+
+- name: Reload NetworkManager connections
+  ansible.builtin.command:
+    cmd: nmcli connection reload
+  changed_when: false
+  when: wireguard_enabled | bool

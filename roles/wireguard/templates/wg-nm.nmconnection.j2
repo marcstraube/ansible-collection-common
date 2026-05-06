@@ -1,0 +1,65 @@
+#jinja2:lstrip_blocks: True
+# {{ ansible_managed }}
+#
+# NetworkManager WireGuard connection profile
+# Deployed by the wireguard role (mode: nm)
+
+[connection]
+id=WireGuard {{ __wireguard_iface.name }}
+type=wireguard
+interface-name={{ __wireguard_iface.name }}
+autoconnect={{ __wireguard_iface.nm_autoconnect | default(false) | string | lower }}
+
+[wireguard]
+private-key={{ __wireguard_private_key }}
+{% if __wireguard_iface.port | default(0) | int > 0 %}
+listen-port={{ __wireguard_iface.port }}
+{% endif %}
+peer-routes=true
+{% set all_allowed = __wireguard_iface.peers | map(attribute='allowed_ips') | join(',') %}
+{% if '0.0.0.0/0' in all_allowed %}
+ip4-auto-default-route=true
+{% endif %}
+{% if '::/0' in all_allowed %}
+ip6-auto-default-route=true
+{% endif %}
+
+{% for peer in __wireguard_iface.peers %}
+[wireguard-peer.{{ peer.public_key }}]
+{% if peer.endpoint is defined and peer.endpoint | length > 0 %}
+endpoint={{ peer.endpoint }}
+{% endif %}
+allowed-ips={{ peer.allowed_ips | replace(',', ';') }};
+{% if peer.persistent_keepalive | default(0) | int > 0 %}
+persistent-keepalive={{ peer.persistent_keepalive }}
+{% endif %}
+{% if peer.preshared_key is defined and peer.preshared_key | length > 0 %}
+preshared-key={{ peer.preshared_key }}
+preshared-key-flags=0
+{% endif %}
+
+{% endfor %}
+[ipv4]
+{% set addr = __wireguard_iface.address %}
+address1={{ addr }}
+method=manual
+{% if __wireguard_iface.dns is defined and __wireguard_iface.dns | length > 0 %}
+dns={{ __wireguard_iface.dns | first | replace(',', ';') }};
+{% endif %}
+{% if __wireguard_iface.dns_search is defined and __wireguard_iface.dns_search | length > 0 %}
+dns-search={{ __wireguard_iface.dns_search | join(';') }};
+{% endif %}
+{% if __wireguard_iface.dns_priority is defined %}
+dns-priority={{ __wireguard_iface.dns_priority }}
+{% endif %}
+{% if __wireguard_iface.never_default | default(false) | bool %}
+never-default=true
+{% endif %}
+
+[ipv6]
+{% if __wireguard_iface.address_ipv6 | default('') | length > 0 %}
+address1={{ __wireguard_iface.address_ipv6 }}
+method=manual
+{% else %}
+method=disabled
+{% endif %}
