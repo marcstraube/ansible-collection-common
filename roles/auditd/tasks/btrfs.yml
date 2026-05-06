@@ -55,8 +55,18 @@
         mode: '0700'
         state: directory
 
+- name: BTRFS | Check NoCOW attribute on audit log directory
+  ansible.builtin.command:
+    cmd: lsattr -d {{ auditd_log_file | dirname }}
+  register: __auditd_lsattr
+  changed_when: false
+  failed_when: false
+  when: __auditd_is_btrfs | bool
+
 - name: BTRFS | Set NoCOW attribute on audit log directory
   ansible.builtin.command:
     cmd: chattr +C {{ auditd_log_file | dirname }}
   changed_when: true
-  when: __auditd_is_btrfs | bool
+  when:
+    - __auditd_is_btrfs | bool
+    - "'C' not in (__auditd_lsattr.stdout | default(''))"

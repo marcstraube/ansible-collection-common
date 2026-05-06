@@ -18,8 +18,18 @@
     mode: '0750'
   when: __lynis_report_fstype.stdout | default('') == 'btrfs'
 
+- name: BTRFS | Check NoCOW attribute on report directory
+  ansible.builtin.command:
+    cmd: lsattr -d {{ lynis_report_dir }}
+  register: __lynis_lsattr
+  changed_when: false
+  failed_when: false
+  when: __lynis_report_fstype.stdout | default('') == 'btrfs'
+
 - name: BTRFS | Set NoCOW attribute on report directory
   ansible.builtin.command:
     cmd: chattr +C {{ lynis_report_dir }}
-  when: __lynis_report_fstype.stdout | default('') == 'btrfs'
-  changed_when: false
+  changed_when: true
+  when:
+    - __lynis_report_fstype.stdout | default('') == 'btrfs'
+    - "'C' not in (__lynis_lsattr.stdout | default(''))"
