@@ -10,6 +10,13 @@
     name: '{{ __docker_service_name }}'
     enabled: "{{ docker_service_enabled | bool }}"
     state: "{{ docker_service_enabled | bool | ternary('started', 'stopped') }}"
+  register: __docker_service_result
+
+- name: Service | Wait for connection after Docker start  # noqa: no-handler
+  ansible.builtin.wait_for_connection:
+    delay: 5
+    timeout: 60
+  when: __docker_service_result.changed
 
 - name: Service | Deploy system prune timer
   ansible.builtin.template:
