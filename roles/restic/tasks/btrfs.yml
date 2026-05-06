@@ -21,10 +21,21 @@
     - restic_log_to_file | bool
     - __restic_log_fstype.stdout | default('') == 'btrfs'
 
-- name: BTRFS | Set NoCOW on log directory
+- name: BTRFS | Check NoCOW attribute on log directory
   ansible.builtin.command:
-    cmd: 'chattr +C {{ restic_log_dir }}'
+    cmd: 'lsattr -d {{ restic_log_dir }}'
+  register: __restic_lsattr
+  changed_when: false
+  failed_when: false
   when:
     - restic_log_to_file | bool
     - __restic_log_fstype.stdout | default('') == 'btrfs'
-  changed_when: false
+
+- name: BTRFS | Set NoCOW on log directory
+  ansible.builtin.command:
+    cmd: 'chattr +C {{ restic_log_dir }}'
+  changed_when: true
+  when:
+    - restic_log_to_file | bool
+    - __restic_log_fstype.stdout | default('') == 'btrfs'
+    - "'C' not in (__restic_lsattr.stdout | default(''))"

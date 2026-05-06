@@ -55,8 +55,18 @@
         mode: '0700'
         state: directory
 
+- name: BTRFS | Check NoCOW attribute on AIDE database directory
+  ansible.builtin.command:
+    cmd: lsattr -d {{ aide_database | dirname }}
+  register: __aide_lsattr
+  changed_when: false
+  failed_when: false
+  when: __aide_is_btrfs | bool
+
 - name: BTRFS | Set NoCOW attribute on AIDE database directory
   ansible.builtin.command:
     cmd: chattr +C {{ aide_database | dirname }}
   changed_when: true
-  when: __aide_is_btrfs | bool
+  when:
+    - __aide_is_btrfs | bool
+    - "'C' not in (__aide_lsattr.stdout | default(''))"
