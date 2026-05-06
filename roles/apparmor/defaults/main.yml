@@ -25,7 +25,6 @@ apparmor_securityfs: '/sys/kernel/security'
 
 # Profiles to put in enforce mode (list of binary paths)
 apparmor_enforce_profiles:
-  - '/usr/sbin/tcpdump'
   - '/usr/bin/man'
 
 # Profiles to put in complain mode
