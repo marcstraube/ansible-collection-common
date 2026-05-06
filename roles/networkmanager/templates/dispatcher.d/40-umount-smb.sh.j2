@@ -8,7 +8,7 @@
 # Shares that depend on VPN connections are excluded and handled by the VPN-specific umount script.
 # Each share is unmounted per user from their home directory.
 
-# NM_UUID is provided by NetworkManager dispatcher.
+# CONNECTION_UUID is provided by NetworkManager dispatcher.
 LOG_PREFIX="NM-SMB-Unmount-Down"
 
 {% set id_map = {} -%}

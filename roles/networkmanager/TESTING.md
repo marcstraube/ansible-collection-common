@@ -181,7 +181,7 @@ ls -la /etc/NetworkManager/dispatcher.d/
 cat /etc/NetworkManager/dispatcher.d/30-mount-smb.sh
 
 # Check if WiFi toggle script is working
-cat /etc/NetworkManager/dispatcher.d/99-wifi-auto-toggle.sh
+cat /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
 
 # View Ansible-managed daemon configuration
 cat /etc/NetworkManager/conf.d/00-ansible.conf

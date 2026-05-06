@@ -11,6 +11,18 @@
     - wireguard
     - wireguard:keys
 
+- name: Interface | Include NM connection tasks
+  ansible.builtin.include_tasks:
+    file: nm.yml
+    apply:
+      tags:
+        - wireguard
+        - wireguard:configure
+  when: __wireguard_iface.mode | default('server') == 'nm'
+  tags:
+    - wireguard
+    - wireguard:configure
+
 - name: Interface | Include configure tasks
   ansible.builtin.include_tasks:
     file: configure.yml
@@ -18,6 +30,7 @@
       tags:
         - wireguard
         - wireguard:configure
+  when: __wireguard_iface.mode | default('server') != 'nm'
   tags:
     - wireguard
     - wireguard:configure
@@ -29,6 +42,7 @@
       tags:
         - wireguard
         - wireguard:service
+  when: __wireguard_iface.mode | default('server') != 'nm'
   tags:
     - wireguard
     - wireguard:service
@@ -40,7 +54,9 @@
       tags:
         - wireguard
         - wireguard:firewall
-  when: __wireguard_iface.firewalld_enabled | default(true) | bool
+  when:
+    - __wireguard_iface.mode | default('server') != 'nm'
+    - __wireguard_iface.firewalld_enabled | default(true) | bool
   tags:
     - wireguard
     - wireguard:firewall

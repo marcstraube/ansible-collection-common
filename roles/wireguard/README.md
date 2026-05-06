@@ -4,13 +4,18 @@ Configure WireGuard VPN tunnels with multi-interface support.
 
 ## Description
 
-Manages one or more WireGuard VPN interfaces per host, each in server or client
-mode. Features automatic key generation, peer management, lifecycle scripts
-(pre/post up/down), IP forwarding via sysctl, firewalld integration, and systemd
-service management via wg-quick.
+Manages one or more WireGuard VPN interfaces per host. Supports three modes:
 
-Each interface is independently configured and managed as a
-`wg-quick@<name>.service` systemd unit.
+- **server** — wg-quick/systemd, IP forwarding, masquerade (servers)
+- **client** — wg-quick/systemd, DNS, keepalive (legacy client mode)
+- **nm** — NetworkManager-managed connection (laptops/desktops)
+
+Features automatic key generation, peer management, firewalld integration,
+and lifecycle scripts (server/client modes).
+
+Server/client mode interfaces are managed as `wg-quick@<name>.service` systemd
+units. NM mode deploys a `.nmconnection` keyfile — NetworkManager handles routing,
+DNS, and connection lifecycle.
 
 ## Requirements
 
@@ -68,9 +73,13 @@ wireguard_interfaces:
 | `address_ipv6`       | `''`         | IPv6 address (CIDR, optional)                    |
 | `port`               | `51820`      | Listen port (UDP)                                |
 | `private_key`        | `''`         | Private key (auto-generated if empty)            |
-| `mode`               | `'server'`   | Interface mode: `server` or `client`             |
+| `mode`               | `'server'`   | Interface mode: `server`, `client`, or `nm`      |
 | `ip_forward`         | `true`       | Enable IP forwarding (server mode)               |
-| `dns`                | `[]`         | DNS servers written to wg.conf (client mode)     |
+| `dns`                | `[]`         | DNS servers (client/nm mode)                     |
+| `dns_search`         | `[]`         | DNS routing domains (nm mode, use `~` prefix)    |
+| `dns_priority`       |              | DNS priority for systemd-resolved (nm mode)      |
+| `never_default`      | `false`      | Prevent default route via tunnel (nm mode)       |
+| `nm_autoconnect`     | `false`      | Auto-activate NM connection at boot (nm mode)    |
 | `peers`              | `[]`         | List of peer definitions (see below)             |
 | `firewalld_enabled`  | `true`       | Enable firewalld integration                     |
 | `firewalld_zone`     | `'public'`   | Firewalld zone for WireGuard port                |
@@ -137,6 +146,40 @@ wireguard_interfaces:
         allowed_ips: '10.100.0.0/24'
         persistent_keepalive: 25
 ```
+
+### NM Mode Example (Laptops/Desktops)
+
+```yaml
+wireguard_interfaces:
+  - name: wg0
+    mode: nm
+    address: '10.100.0.2/24'
+    private_key: '{{ vault_wireguard_keys.wg0.private_key }}'
+    dns:
+      - '10.100.0.1'
+    dns_search:
+      - '~example.com'
+    never_default: true
+    firewalld_enabled: false
+    peers:
+      - name: server
+        public_key: '{{ vault_wireguard_keys.wg0.server_pubkey }}'
+        endpoint: 'vpn.example.com:51820'
+        allowed_ips: '10.100.0.0/24,192.168.1.0/24'
+        preshared_key: '{{ vault_wireguard_keys.wg0.preshared_key }}'
+        persistent_keepalive: 25
+```
+
+NM mode deploys a `.nmconnection` profile with `autoconnect=false`. Use the
+`networkmanager_vpn_autoconnect` dispatcher to activate the tunnel automatically
+on non-home networks (see the `networkmanager` role).
+
+Key differences from client mode:
+
+- No wg-quick service — NetworkManager manages the interface
+- DNS routing domains (`~` prefix) integrate with systemd-resolved
+- `never_default: true` prevents full-tunnel routing (split-tunnel)
+- `ip4-auto-default-route` handles policy routing for full-tunnel if needed
 
 ### Multi-Interface Example
 

@@ -193,7 +193,7 @@ networkmanager_apply_global_dns: true    # enable global DNS application
 # Automatic timezone via ipapi.co
 networkmanager_timezone_enabled: false
 
-# VPN auto-connect on non-home networks (via wg-quick/systemd)
+# VPN auto-connect on non-home networks (NM-managed WireGuard connection)
 networkmanager_vpn_autoconnect:
   enabled: false
   interface: ''            # WireGuard interface name (e.g., wg0)
@@ -303,14 +303,14 @@ The resolved role must run before the networkmanager role in the playbook
 | Script                          | Trigger     | Purpose                                      |
 |---------------------------------|-------------|----------------------------------------------|
 | `09-timezone.sh`                | `up`        | Set timezone via IP geolocation              |
-| `20-vpn-autoconnect.sh`         | `up`/`down` | Auto-activate WireGuard tunnel via systemctl |
+| `20-vpn-autoconnect.sh`         | `up`/`down` | Auto-activate WireGuard NM connection        |
 | `30-mount-smb.sh`               | `up`        | Mount SMB shares on connection up            |
 | `40-umount-smb.sh`              | `down`      | Unmount SMB shares on connection down        |
 | `30-mount-sshfs.sh`             | `up`        | Mount SSHFS shares                           |
 | `40-umount-sshfs.sh`            | `down`      | Unmount SSHFS shares                         |
 | `50-vpn-mount-smb.sh`           | `vpn-up`    | Mount SMB shares on VPN connect              |
 | `60-vpn-umount-smb.sh`          | `vpn-down`  | Unmount SMB shares on VPN disconnect         |
-| `99-wifi-auto-toggle.sh`        | `up`/`down` | Disable WiFi when ethernet connected         |
+| `10-wifi-auto-toggle.sh`        | `up`/`down` | Disable WiFi when ethernet connected         |
 | `pre-down.d/30-umount-smb.sh`   | `pre-down`  | Graceful SMB unmount                         |
 | `pre-down.d/30-umount-sshfs.sh` | `pre-down`  | Graceful SSHFS unmount                       |
 

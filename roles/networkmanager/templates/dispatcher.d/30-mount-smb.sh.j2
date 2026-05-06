@@ -8,7 +8,7 @@
 # Shares that depend on VPN connections are excluded and handled by the VPN-specific mount script.
 # Each share is mounted per user into their home directory.
 
-# NM_UUID is provided by NetworkManager dispatcher.
+# CONNECTION_UUID is provided by NetworkManager dispatcher.
 LOG_PREFIX="NM-SMB-Mount"
 
 {% set uuid_map = {} -%}
@@ -54,7 +54,7 @@ if [ "$2" = "up" ]; then
   SHOULD_MOUNT="false"
         {% if dependency_uuids_for_this_share | length > 0 %}
   # NM connection dependencies
-  if {% for uuid in dependency_uuids_for_this_share %}[ "$NM_UUID" = "{{ uuid }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
+  if {% for uuid in dependency_uuids_for_this_share %}[ "$CONNECTION_UUID" = "{{ uuid }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
     SHOULD_MOUNT="true"
   fi
         {% endif %}

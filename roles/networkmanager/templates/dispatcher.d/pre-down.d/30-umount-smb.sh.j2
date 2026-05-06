@@ -6,7 +6,7 @@
 # It ensures a share is only unmounted if none of its dependencies are active anymore.
 # Each share is unmounted per user from their home directory.
 
-# NM_UUID is provided by NetworkManager dispatcher.
+# CONNECTION_UUID is provided by NetworkManager dispatcher.
 LOG_PREFIX="NM-SMB-Unmount-PreDown"
 
 {% set id_map = {} -%}

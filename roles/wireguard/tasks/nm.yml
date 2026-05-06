@@ -1,0 +1,20 @@
+---
+# Deploy WireGuard as a NetworkManager-managed connection (mode: nm).
+# The .nmconnection keyfile includes peers (not supported by community.general.nmcli).
+# NM handles routing, DNS, and connection lifecycle.
+
+- name: NM | Deploy connection profile
+  ansible.builtin.template:
+    src: wg-nm.nmconnection.j2
+    dest: '/etc/NetworkManager/system-connections/WireGuard {{ __wireguard_iface.name }}.nmconnection'
+    owner: root
+    group: root
+    mode: '0600'
+  notify: Reload NetworkManager connections
+
+- name: NM | Ensure wg-quick service is stopped and disabled
+  ansible.builtin.systemd_service:
+    name: 'wg-quick@{{ __wireguard_iface.name }}.service'
+    state: stopped
+    enabled: false
+  failed_when: false
