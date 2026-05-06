@@ -31,6 +31,23 @@
 # Enforce Profiles
 #
 
+# Install extra profiles from /usr/share/apparmor/extra-profiles/ if not
+# already present in /etc/apparmor.d/. Profile filenames use dots instead
+# of slashes (e.g., /usr/sbin/tcpdump → usr.sbin.tcpdump).
+- name: Profiles | Install extra profiles for enforce list
+  ansible.builtin.copy:
+    src: '/usr/share/apparmor/extra-profiles/{{ item | regex_replace("^/", "") | replace("/", ".") }}'
+    dest: '/etc/apparmor.d/{{ item | regex_replace("^/", "") | replace("/", ".") }}'
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0644'
+    force: false
+  loop: '{{ apparmor_enforce_profiles }}'
+  register: __apparmor_extra_installed
+  failed_when: false
+  notify: Reload AppArmor
+
 # failed_when: false — profile may not exist on system (user-provided list)
 - name: Profiles | Set profiles to enforce mode
   ansible.builtin.command:
