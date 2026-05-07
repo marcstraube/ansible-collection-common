@@ -18,9 +18,9 @@
     - aide_init_db_enabled | bool
     - not aide_db_check.stat.exists or aide_force_init_enabled | bool
   register: aide_init
-  changed_when: aide_init.rc == 0
-  async: 3600
-  poll: 10
+  changed_when: aide_init.rc | default(1) == 0
+  async: 7200
+  poll: 30
 
 - name: Database | Move new database to production  # noqa: no-handler
   ansible.builtin.command:

@@ -71,6 +71,9 @@ LOG = >
 !/var/spool
 !/var/lib/aide
 
+# BTRFS snapshots (snapper)
+!/.snapshots
+
 # OS-specific exclusions
 {% for path in __aide_os_exclude_paths | default([]) %}
 !/{{ path | regex_replace('^/', '') }}
