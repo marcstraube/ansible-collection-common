@@ -1,0 +1,27 @@
+---
+# =============================================================================
+# System Update Tasks
+# =============================================================================
+# Pre-task file for full system upgrade before package operations.
+# Imported by collection standalone playbooks as pre_tasks.
+#
+# Scope: Arch Linux only.
+# Rolling release requires a full upgrade before any package install to
+# prevent partial-upgrade failures and missing packages on mirrors.
+#
+# EL/Debian are intentionally not handled here — those updates should be
+# performed deliberately, not as a side-effect of a configuration run.
+#
+# Tag scheme:
+#   system-update   This task file
+#   maintenance     Shared with other maintenance tasks
+# =============================================================================
+
+- name: System Update | Arch Linux full upgrade
+  community.general.pacman:
+    update_cache: true
+    upgrade: true
+  when: ansible_facts['os_family'] == 'Archlinux'
+  tags:
+    - system-update
+    - maintenance

@@ -18,6 +18,11 @@
   become: true
   gather_facts: true
 
+  pre_tasks:
+    - name: Base System | Import system update tasks
+      ansible.builtin.import_tasks:
+        file: tasks/system_update.yml
+
   tasks:
     - name: Base System | Import base system tasks
       ansible.builtin.import_tasks:
