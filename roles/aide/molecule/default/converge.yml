@@ -11,7 +11,7 @@
     aide_monitor_libraries: true
     aide_monitor_configs: true
     aide_monitor_boot: true
-    aide_monitor_home_dirs: true
+    aide_monitor_home_dirs_enabled: false
     aide_custom_rules:
       - path: '/opt/test'
         rule: 'R+sha512'

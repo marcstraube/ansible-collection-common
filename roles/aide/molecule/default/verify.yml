@@ -107,12 +107,12 @@
         fail_msg: "Custom monitoring rule not found in config"
         success_msg: "Custom monitoring rule configured correctly"
 
-    - name: Verify | Assert /home monitoring is configured
+    - name: Verify | Assert /home monitoring is not enabled by default
       ansible.builtin.assert:
         that:
-          - "'/home NORMAL' in aide_config_decoded"
-        fail_msg: "/home monitoring rule not found in config"
-        success_msg: "/home monitoring rule configured correctly"
+          - "'/home NORMAL' not in aide_config_decoded"
+        fail_msg: "/home monitoring should not be enabled by default"
+        success_msg: "/home monitoring correctly disabled by default"
 
     #
     # Database Verification
