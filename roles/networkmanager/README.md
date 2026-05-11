@@ -144,7 +144,6 @@ networkmanager_connections:
       routes4: ["10.0.0.0/8 192.168.1.254"]
       route_metric4: 100
       dhcp_send_hostname_ipv4: false    # per-connection override
-      toggle_wifi: true                 # disable WiFi when connected
       vpn: ["Company VPN"]             # auto-connect VPN via connection.secondaries
 ```
 
@@ -253,7 +252,6 @@ networkmanager_unmanaged_devices:
             "Office":
               ifname: "eth0"
               autoconnect: true
-              toggle_wifi: true
               vpn: ["Company VPN"]
           wifi:
             "Home WiFi":

@@ -288,23 +288,13 @@
     state: absent
   when: __networkmanager_smb_wg_deps | default([]) | length == 0
 
-- name: Dispatcher | Ensure WiFi auto-toggle dispatcher script is installed
-  ansible.builtin.template:
-    src: dispatcher.d/10-wifi-auto-toggle.sh.j2
-    dest: /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
-    owner: root
-    group: root
-    mode: '0755'
-  when: (networkmanager_connections.ethernet | dict2items |
-    selectattr('value.toggle_wifi', 'defined') | selectattr('value.toggle_wifi')) |
-    list | length > 0
-  vars:
-    network_connections_data: "{{ all_network_connections }}"
-
+# The WiFi auto-toggle dispatcher (formerly enabled via `toggle_wifi: true`
+# on an ethernet connection) has been removed. It conflicted with
+# systemd-rfkill state persistence and was unnecessary on hosts using
+# `rp_filter=2` (loose mode), where ETH + WiFi on the same subnet
+# coexist without DNS/routing issues. The task below cleans up the
+# script on hosts upgrading from an earlier role version.
 - name: Dispatcher | Ensure WiFi auto-toggle dispatcher script is removed
   ansible.builtin.file:
     path: /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
     state: absent
-  when: not ((networkmanager_connections.ethernet | dict2items |
-    selectattr('value.toggle_wifi', 'defined') | selectattr('value.toggle_wifi')) |
-    list | length > 0)
