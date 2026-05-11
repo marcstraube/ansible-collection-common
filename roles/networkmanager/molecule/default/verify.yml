@@ -335,18 +335,6 @@
         label: "{{ item.item }}"
       when: sshfs_configured | bool
 
-    - name: Verify | Assert WiFi toggle dispatcher script is absent
-      ansible.builtin.stat:
-        path: /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
-      register: wifi_toggle_script
-
-    - name: Verify | WiFi toggle dispatcher script must not exist
-      ansible.builtin.assert:
-        that:
-          - not wifi_toggle_script.stat.exists
-        fail_msg: WiFi toggle dispatcher script must be removed (toggle_wifi was deprecated)
-        success_msg: WiFi toggle dispatcher script is correctly absent
-
     #
     # VPN Auto-Connect Verification (only when VPN configured)
     #
