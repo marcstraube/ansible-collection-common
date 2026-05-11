@@ -11,7 +11,7 @@
   community.general.nmcli:
     type: ethernet
     conn_name: "{{ item.key }}"
-    ifname: "{{ item.value.ifname }}"
+    ifname: "{{ item.value.ifname | default(omit) }}"
     state: present
     autoconnect: false
   loop: "{{ networkmanager_connections.ethernet | dict2items | default([]) }}"
