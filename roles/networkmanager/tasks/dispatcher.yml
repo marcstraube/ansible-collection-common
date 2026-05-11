@@ -287,14 +287,3 @@
     path: /usr/local/lib/wireguard-smb-mount.sh
     state: absent
   when: __networkmanager_smb_wg_deps | default([]) | length == 0
-
-# The WiFi auto-toggle dispatcher (formerly enabled via `toggle_wifi: true`
-# on an ethernet connection) has been removed. It conflicted with
-# systemd-rfkill state persistence and was unnecessary on hosts using
-# `rp_filter=2` (loose mode), where ETH + WiFi on the same subnet
-# coexist without DNS/routing issues. The task below cleans up the
-# script on hosts upgrading from an earlier role version.
-- name: Dispatcher | Ensure WiFi auto-toggle dispatcher script is removed
-  ansible.builtin.file:
-    path: /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
-    state: absent
