@@ -50,7 +50,6 @@ provisioner:
               autoconnect: false
               dhcp_send_hostname_ipv4: true
               dhcp_send_hostname_ipv6: true
-              toggle_wifi: true
               vpn:
                 - Test VPN Company
             'Home Ethernet':

@@ -225,7 +225,6 @@ test_networkmanager_connections:
       ifname: eth1
       ip4: 192.168.1.10/24
       dhcp_send_hostname_ipv4: true
-      toggle_wifi: true
       vpn:
         - Test VPN Company
   wifi:

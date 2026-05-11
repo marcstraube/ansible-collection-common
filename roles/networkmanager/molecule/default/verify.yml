@@ -292,10 +292,6 @@
       ansible.builtin.set_fact:
         smb_configured: "{{ test_networkmanager_smb_shares | default([]) | length > 0 }}"
         sshfs_configured: "{{ test_networkmanager_sshfs_shares | default([]) | length > 0 }}"
-        wifi_toggle_configured: >-
-          {{ test_networkmanager_connections.ethernet | dict2items |
-          selectattr('value.toggle_wifi', 'defined') |
-          selectattr('value.toggle_wifi') | list | length > 0 }}
 
     - name: Verify | Check SMB dispatcher scripts exist
       ansible.builtin.stat:
@@ -339,20 +335,17 @@
         label: "{{ item.item }}"
       when: sshfs_configured | bool
 
-    - name: Verify | Check WiFi toggle dispatcher script exists
+    - name: Verify | Assert WiFi toggle dispatcher script is absent
       ansible.builtin.stat:
         path: /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
       register: wifi_toggle_script
-      when: wifi_toggle_configured | bool
 
-    - name: Verify | Assert WiFi toggle dispatcher script
+    - name: Verify | WiFi toggle dispatcher script must not exist
       ansible.builtin.assert:
         that:
-          - wifi_toggle_script.stat.exists
-          - wifi_toggle_script.stat.mode == "0755"
-        fail_msg: WiFi toggle dispatcher script does not exist or is not executable
-        success_msg: WiFi toggle dispatcher script exists and is executable
-      when: wifi_toggle_configured | bool
+          - not wifi_toggle_script.stat.exists
+        fail_msg: WiFi toggle dispatcher script must be removed (toggle_wifi was deprecated)
+        success_msg: WiFi toggle dispatcher script is correctly absent
 
     #
     # VPN Auto-Connect Verification (only when VPN configured)
