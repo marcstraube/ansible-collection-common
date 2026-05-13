@@ -1,0 +1,45 @@
+---
+- name: Cleanup | Check whether firejail binary is present
+  ansible.builtin.stat:
+    path: /usr/bin/firejail
+  register: __firejail_bin
+
+# firecfg --clean removes /usr/local/bin/<app> symlinks pointing to firejail.
+# Skipped if firejail is not installed (clean state already).
+- name: Cleanup | Remove firecfg symlinks
+  ansible.builtin.command:
+    cmd: firecfg --clean
+  changed_when: true
+  when: __firejail_bin.stat.exists
+
+- name: Cleanup | Remove pacman hook (Arch)
+  ansible.builtin.file:
+    path: /etc/pacman.d/hooks/firejail-firecfg.hook
+    state: absent
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Cleanup | Remove globals.local
+  ansible.builtin.file:
+    path: '{{ __firejail_config_dir }}/globals.local'
+    state: absent
+
+# Removes role-managed *.local overrides only — both OS-defaults and user-defined.
+- name: Cleanup | Remove role-managed profile overrides
+  ansible.builtin.file:
+    path: '{{ __firejail_profiles_dir }}/{{ item.key }}.local'
+    state: absent
+  loop: >-
+    {{ (__firejail_profiles_os | default({}))
+       | combine(firejail_profiles)
+       | dict2items }}
+  when: ((__firejail_profiles_os | default({})) | combine(firejail_profiles)) | length > 0
+
+- name: Cleanup | Remove firejail package
+  ansible.builtin.package:
+    name: '{{ __firejail_packages }}'
+    state: absent
+  when:
+    - firejail_remove_package | bool
+    - __firejail_bin.stat.exists
+  retries: 3
+  delay: 5

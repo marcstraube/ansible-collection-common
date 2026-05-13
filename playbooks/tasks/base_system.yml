@@ -152,7 +152,8 @@
     - base-system
     - security
     - firejail
-  when: firejail_enabled | default(true) | bool
+  # Always include — the role dispatches install/configure (enabled=true) or
+  # cleanup (enabled=false) internally based on firejail_enabled.
 
 - name: Base System | Include firewalld role
   ansible.builtin.include_role:
