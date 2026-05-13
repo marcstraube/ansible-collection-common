@@ -1,0 +1,71 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Load role variables
+      ansible.builtin.include_vars: '{{ playbook_dir }}/../../vars/main.yml'
+
+    #
+    # Package Removal
+    #
+
+    - name: Verify | Check firejail binary is gone
+      ansible.builtin.stat:
+        path: /usr/bin/firejail
+      register: __firejail_bin
+      failed_when: __firejail_bin.stat.exists
+
+    - name: Verify | Check firejail package is absent
+      ansible.builtin.package:
+        name: '{{ __firejail_packages }}'
+        state: absent
+      check_mode: true
+      register: __firejail_pkg
+      failed_when: __firejail_pkg is changed
+
+    #
+    # Symlink Cleanup
+    #
+    # firecfg --clean removes /usr/local/bin/<app> symlinks pointing at firejail.
+    # After cleanup the /usr/local/bin should be free of firejail symlinks.
+
+    - name: Verify | List /usr/local/bin entries
+      ansible.builtin.find:
+        paths: /usr/local/bin
+        file_type: link
+      register: __local_links
+
+    - name: Verify | Assert no symlinks point to firejail
+      ansible.builtin.assert:
+        that:
+          - __local_links.files | selectattr('lnk_source', 'equalto', '/usr/bin/firejail') | list | length == 0
+        fail_msg: '/usr/local/bin still contains firejail symlinks after cleanup'
+
+    #
+    # Configuration File Cleanup
+    #
+
+    - name: Verify | Check globals.local is gone
+      ansible.builtin.stat:
+        path: /etc/firejail/globals.local
+      register: __globals_local
+      failed_when: __globals_local.stat.exists
+
+    - name: Verify | Check firefox.local profile override is gone
+      ansible.builtin.stat:
+        path: /etc/firejail/firefox.local
+      register: __firefox_local
+      failed_when: __firefox_local.stat.exists
+
+    #
+    # Pacman Hook (Arch only)
+    #
+
+    - name: Verify | Check pacman hook is gone (Arch)
+      ansible.builtin.stat:
+        path: /etc/pacman.d/hooks/firejail-firecfg.hook
+      register: __pacman_hook
+      failed_when: __pacman_hook.stat.exists
+      when: ansible_facts['os_family'] == 'Archlinux'

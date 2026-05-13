@@ -1,0 +1,63 @@
+---
+# Two-step prepare:
+#   1. Standard package-cache + EPEL setup (mirrors default scenario)
+#   2. Install + configure firejail with the role enabled, so converge can
+#      assert that the cleanup path removes everything idempotently.
+
+- name: Prepare | Refresh caches
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Enable EPEL repository (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Prepare | Pre-install firejail via role
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    firejail_enabled: true
+    firejail_exclude:
+      - 'keepassxc'
+    firejail_globals:
+      - 'blacklist ${HOME}/.ssh'
+    firejail_profiles:
+      firefox:
+        - 'whitelist ${HOME}/.mozilla'
+        - 'private-tmp'
+    firejail_pacman_hook_enabled: true
+
+  tasks:
+    - name: Prepare | Include firejail role with enabled=true  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

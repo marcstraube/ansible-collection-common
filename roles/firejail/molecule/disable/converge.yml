@@ -1,0 +1,19 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    firejail_enabled: false
+    # Mirror the prepare-stage vars so cleanup knows which profile overrides
+    # were managed by the role and removes them.
+    firejail_profiles:
+      firefox:
+        - 'whitelist ${HOME}/.mozilla'
+        - 'private-tmp'
+    firejail_remove_package: true
+
+  tasks:
+    - name: Converge | Include firejail role with enabled=false  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
