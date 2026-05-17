@@ -295,6 +295,8 @@
   changed_when: false
   # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
+  # Read-only lookup, must run under --check so downstream templates have UUIDs.
+  check_mode: false
 
 - name: Connections | Add type to UUID results
   ansible.builtin.set_fact:
@@ -346,6 +348,8 @@
   changed_when: false
   # nmcli may fail if NetworkManager is not running or no connections exist
   failed_when: false
+  # Read-only lookup, must run under --check so downstream templates have UUIDs.
+  check_mode: false
 
 - name: Connections | Collect VPN connection details
   ansible.builtin.set_fact:

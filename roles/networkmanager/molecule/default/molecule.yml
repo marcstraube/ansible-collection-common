@@ -129,6 +129,21 @@ provisioner:
               - name: vagrant
                 smb_username: testuser
                 smb_password: testpass
+          - name: WireGuard Only Share
+            src: //wg-internal.corp/wg
+            mount_subpath: wg/data
+            credentials_name: wg-corp
+            mount_options:
+              iocharset: utf8
+            depends_on:
+              - wg0
+            users:
+              - name: vagrant
+                smb_username: testuser
+                smb_password: testpass
+
+        test_wireguard_interfaces:
+          - name: wg0
 
         test_networkmanager_sshfs_shares:
           - name: Remote Dev Server

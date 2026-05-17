@@ -11,23 +11,25 @@
 # CONNECTION_UUID is provided by NetworkManager dispatcher.
 LOG_PREFIX="NM-SMB-Unmount-Down"
 
+{# Classification sources: configured inventory data (always present). #}
+{% set _nm_base_names = ((networkmanager_connections.ethernet | default({})).keys() | list)
+                        + ((networkmanager_connections.wifi | default({})).keys() | list) -%}
+{% set _vpn_names = (networkmanager_connections.vpn | default({})).keys() | list -%}
+{% set _wg_names = __networkmanager_wg_interface_names | default([]) -%}
+{# id_map: NM connection → UUID, VPN → name (matches get_active_connection_ids output). #}
 {% set id_map = {} -%}
-{% if network_connections_data is defined -%}
-  {% for conn_type in ['ethernet', 'wifi'] -%}
-    {% if network_connections_data[conn_type] is defined -%}
-      {% for conn_name, conn_details in network_connections_data[conn_type].items() -%}
-        {% if conn_details.uuid is defined -%}
-          {% set _ = id_map.update({conn_name: conn_details.uuid}) -%}
-        {% endif -%}
-      {% endfor -%}
-    {% endif -%}
-  {% endfor -%}
-  {% if network_connections_data.vpn is defined -%}
-    {% for vpn_name, vpn_details in network_connections_data.vpn.items() -%}
-      {% set _ = id_map.update({vpn_name: vpn_name}) -%}
+{% for conn_type in ['ethernet', 'wifi'] -%}
+  {% if network_connections_data[conn_type] is defined -%}
+    {% for conn_name, conn_details in network_connections_data[conn_type].items() -%}
+      {% if conn_details.uuid is defined and conn_details.uuid | length > 0 -%}
+        {% set _ = id_map.update({conn_name: conn_details.uuid}) -%}
+      {% endif -%}
     {% endfor -%}
   {% endif -%}
-{% endif -%}
+{% endfor -%}
+{% for vpn_name in _vpn_names -%}
+  {% set _ = id_map.update({vpn_name: vpn_name}) -%}
+{% endfor -%}
 {% set user_homes = {} -%}
 {% for user in users_list | default([]) -%}
   {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
@@ -51,10 +53,17 @@ if [ "$2" = "down" ]; then
     {% set resolved_nm_dependencies = [] %}
     {% set wg_interface_dependencies = [] %}
     {% for dependency_name in share.depends_on %}
-      {% if id_map[dependency_name] is defined %}
+      {% if dependency_name in _vpn_names %}
+        {% set _ = resolved_nm_dependencies.append(dependency_name) %}
+      {% elif dependency_name in _nm_base_names %}
+        {% if dependency_name not in id_map %}
+          {{ undef('NM connection "' ~ dependency_name ~ '" is configured but no UUID was collected. Investigate connections enumeration (see issue #121).') }}
+        {% endif %}
         {% set _ = resolved_nm_dependencies.append(id_map[dependency_name]) %}
-      {% else %}
+      {% elif dependency_name in _wg_names %}
         {% set _ = wg_interface_dependencies.append(dependency_name) %}
+      {% else %}
+        {{ undef('Unknown depends_on "' ~ dependency_name ~ '" for share "' ~ share.name ~ '". Must be a key in networkmanager_connections.{ethernet,wifi,vpn} or a name in wireguard_interfaces.') }}
       {% endif %}
     {% endfor %}
 
@@ -72,8 +81,8 @@ if [ "$2" = "down" ]; then
     fi
         {% endfor %}
         {% for iface in wg_interface_dependencies %}
-    # Check if WireGuard interface dependency is still active
-    if systemctl is-active --quiet "wg-quick@{{ iface }}.service"; then
+    # Check if WireGuard interface dependency is still active (works for both nm and wg-quick modes)
+    if [ -d "/sys/class/net/{{ iface }}" ]; then
       SHARE_STILL_NEEDED="true"
     fi
         {% endfor %}

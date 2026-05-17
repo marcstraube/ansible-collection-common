@@ -14,28 +14,22 @@ LOG_PREFIX="WG-SMB-${ACTION}"
 {% for user in users_list | default([]) -%}
   {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
 {% endfor -%}
-{% set nm_connection_names = [] -%}
-{% if network_connections_data is defined -%}
-  {% for conn_type in ['ethernet', 'wifi'] -%}
-    {% if network_connections_data[conn_type] is defined -%}
-      {% for conn_name in network_connections_data[conn_type].keys() -%}
-        {% set _ = nm_connection_names.append(conn_name) -%}
-      {% endfor -%}
-    {% endif -%}
-  {% endfor -%}
-  {% if network_connections_data.vpn is defined -%}
-    {% for vpn_name in network_connections_data.vpn.keys() -%}
-      {% set _ = nm_connection_names.append(vpn_name) -%}
-    {% endfor -%}
-  {% endif -%}
-{% endif -%}
+{# Classification sources: configured inventory data (always present). #}
+{% set _nm_base_names = ((networkmanager_connections.ethernet | default({})).keys() | list)
+                        + ((networkmanager_connections.wifi | default({})).keys() | list) -%}
+{% set _vpn_names = (networkmanager_connections.vpn | default({})).keys() | list -%}
+{% set _wg_names = __networkmanager_wg_interface_names | default([]) -%}
 {% if networkmanager_smb_shares is defined and networkmanager_smb_shares is not none and networkmanager_smb_shares | length > 0 %}
 if [ "$ACTION" = "up" ]; then
   {% for share in networkmanager_smb_shares %}
     {% set wg_interface_deps = [] %}
     {% for dep_name in share.depends_on | default([]) %}
-      {% if dep_name not in nm_connection_names %}
+      {% if dep_name in _wg_names %}
         {% set _ = wg_interface_deps.append(dep_name) %}
+      {% elif dep_name in _vpn_names or dep_name in _nm_base_names %}
+        {# Non-WG dependencies are handled by the NM dispatcher scripts. #}
+      {% else %}
+        {{ undef('Unknown depends_on "' ~ dep_name ~ '" for share "' ~ share.name ~ '". Must be a key in networkmanager_connections.{ethernet,wifi,vpn} or a name in wireguard_interfaces.') }}
       {% endif %}
     {% endfor %}
     {% if wg_interface_deps | length > 0 %}
@@ -67,8 +61,12 @@ if [ "$ACTION" = "down" ]; then
   {% for share in networkmanager_smb_shares %}
     {% set wg_interface_deps = [] %}
     {% for dep_name in share.depends_on | default([]) %}
-      {% if dep_name not in nm_connection_names %}
+      {% if dep_name in _wg_names %}
         {% set _ = wg_interface_deps.append(dep_name) %}
+      {% elif dep_name in _vpn_names or dep_name in _nm_base_names %}
+        {# Non-WG dependencies are handled by the NM dispatcher scripts. #}
+      {% else %}
+        {{ undef('Unknown depends_on "' ~ dep_name ~ '" for share "' ~ share.name ~ '". Must be a key in networkmanager_connections.{ethernet,wifi,vpn} or a name in wireguard_interfaces.') }}
       {% endif %}
     {% endfor %}
     {% if wg_interface_deps | length > 0 %}
