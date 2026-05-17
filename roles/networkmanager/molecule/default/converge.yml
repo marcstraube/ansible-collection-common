@@ -15,6 +15,7 @@
     networkmanager_connections: "{{ test_networkmanager_connections }}"
     networkmanager_smb_shares: "{{ test_networkmanager_smb_shares | default([]) }}"
     networkmanager_sshfs_shares: "{{ test_networkmanager_sshfs_shares | default([]) }}"
+    wireguard_interfaces: "{{ test_wireguard_interfaces | default([]) }}"
     users_list: "{{ test_users_list }}"
     networkmanager_unmanaged_devices: "{{ test_networkmanager_unmanaged_devices }}"
     networkmanager_polkit_enabled: "{{ test_networkmanager_polkit_enabled }}"

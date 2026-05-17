@@ -9,23 +9,11 @@
 # NM_VPN_NAME is provided by NetworkManager dispatcher for VPN events.
 LOG_PREFIX="NM-VPN-SMB-Mount"
 
-{% set id_map = {} -%}
-{% if network_connections_data is defined -%}
-  {% for conn_type in ['ethernet', 'wifi'] -%}
-    {% if network_connections_data[conn_type] is defined -%}
-      {% for conn_name, conn_details in network_connections_data[conn_type].items() -%}
-        {% if conn_details.uuid is defined -%}
-          {% set _ = id_map.update({conn_name: conn_details.uuid}) -%}
-        {% endif -%}
-      {% endfor -%}
-    {% endif -%}
-  {% endfor -%}
-  {% if network_connections_data.vpn is defined -%}
-    {% for vpn_name, vpn_details in network_connections_data.vpn.items() -%}
-      {% set _ = id_map.update({vpn_name: vpn_name}) -%}
-    {% endfor -%}
-  {% endif -%}
-{% endif -%}
+{# Classification sources: configured inventory data (always present). #}
+{% set _nm_base_names = ((networkmanager_connections.ethernet | default({})).keys() | list)
+                        + ((networkmanager_connections.wifi | default({})).keys() | list) -%}
+{% set _vpn_names = (networkmanager_connections.vpn | default({})).keys() | list -%}
+{% set _wg_names = __networkmanager_wg_interface_names | default([]) -%}
 {% set user_homes = {} -%}
 {% for user in users_list | default([]) -%}
   {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
@@ -36,8 +24,12 @@ if [ "$2" = "vpn-up" ]; then
     {% set dependency_vpn_names_for_this_share = [] %}
 
     {% for dependency_name in share.depends_on %}
-      {% if id_map[dependency_name] is defined and id_map[dependency_name] == dependency_name %}
-        {% set _ = dependency_vpn_names_for_this_share.append(id_map[dependency_name]) %}
+      {% if dependency_name in _vpn_names %}
+        {% set _ = dependency_vpn_names_for_this_share.append(dependency_name) %}
+      {% elif dependency_name in _nm_base_names or dependency_name in _wg_names %}
+        {# NM/WG dependencies are handled by other dispatcher scripts. #}
+      {% else %}
+        {{ undef('Unknown depends_on "' ~ dependency_name ~ '" for share "' ~ share.name ~ '". Must be a key in networkmanager_connections.{ethernet,wifi,vpn} or a name in wireguard_interfaces.') }}
       {% endif %}
     {% endfor %}
 
