@@ -1,15 +1,330 @@
 ---
 # Deploy WireGuard as a NetworkManager-managed connection (mode: nm).
-# The .nmconnection keyfile includes peers (not supported by community.general.nmcli).
-# NM handles routing, DNS, and connection lifecycle.
+# Uses ini_file as a single source of truth: NM is free to add UUID,
+# timestamp and reorder keys after load — the next run only enforces
+# the keys this role owns, so reload churn does not produce diffs.
 
-- name: NM | Deploy connection profile
-  ansible.builtin.template:
-    src: wg-nm.nmconnection.j2
-    dest: '/etc/NetworkManager/system-connections/WireGuard {{ __wireguard_iface.name }}.nmconnection'
+- name: NM | Compute connection profile path
+  ansible.builtin.set_fact:
+    __wg_nm_path: '/etc/NetworkManager/system-connections/WireGuard {{ __wireguard_iface.name }}.nmconnection'
+
+- name: NM | Ensure connection profile file exists with correct permissions
+  ansible.builtin.file:
+    path: '{{ __wg_nm_path }}'
+    state: touch
     owner: root
     group: root
     mode: '0600'
+    modification_time: preserve
+    access_time: preserve
+
+- name: NM | Read existing peer sections
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      grep -oE '^\[wireguard-peer\.[^]]+\]' '{{ __wg_nm_path }}' 2>/dev/null \
+        | sed -E 's/^\[wireguard-peer\.(.*)\]$/\1/' || true
+  args:
+    executable: /bin/bash
+  register: __wg_existing_peer_keys
+  changed_when: false
+  check_mode: false
+
+- name: NM | Compute stale peer public keys
+  ansible.builtin.set_fact:
+    __wg_stale_peer_keys: >-
+      {{ __wg_existing_peer_keys.stdout_lines | default([])
+         | difference(__wireguard_iface.peers | map(attribute='public_key') | list) }}
+
+- name: NM | Remove stale peer sections
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: 'wireguard-peer.{{ item }}'
+    state: absent
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  loop: '{{ __wg_stale_peer_keys }}'
+  loop_control:
+    label: 'wireguard-peer.{{ item[:12] }}…'
+  notify: Reload NetworkManager connections
+
+- name: NM | Set [connection] section keys
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: connection
+    option: '{{ item.option }}'
+    value: '{{ item.value }}'
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  loop:
+    - option: id
+      value: 'WireGuard {{ __wireguard_iface.name }}'
+    - option: type
+      value: wireguard
+    - option: interface-name
+      value: '{{ __wireguard_iface.name }}'
+    - option: autoconnect
+      value: '{{ __wireguard_iface.nm_autoconnect | default(false) | string | lower }}'
+  loop_control:
+    label: '[connection] {{ item.option }}'
+  notify: Reload NetworkManager connections
+
+- name: NM | Set [wireguard] private-key
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: wireguard
+    option: private-key
+    value: '{{ __wireguard_private_key }}'
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  no_log: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Set [wireguard] peer-routes
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: wireguard
+    option: peer-routes
+    value: 'true'
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove [wireguard] listen-port
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: wireguard
+    option: listen-port
+    value: '{{ __wireguard_iface.port | default(0) | string }}'
+    state: "{{ 'present' if (__wireguard_iface.port | default(0) | int > 0) else 'absent' }}"
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Compute aggregate allowed-ips for default-route detection
+  ansible.builtin.set_fact:
+    __wg_all_allowed: '{{ __wireguard_iface.peers | map(attribute="allowed_ips") | join(",") }}'
+
+- name: NM | Set or remove [wireguard] ip4-auto-default-route
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: wireguard
+    option: ip4-auto-default-route
+    value: 'true'
+    state: "{{ 'present' if '0.0.0.0/0' in __wg_all_allowed else 'absent' }}"
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove [wireguard] ip6-auto-default-route
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: wireguard
+    option: ip6-auto-default-route
+    value: 'true'
+    state: "{{ 'present' if '::/0' in __wg_all_allowed else 'absent' }}"
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Set per-peer allowed-ips
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: 'wireguard-peer.{{ item.public_key }}'
+    option: allowed-ips
+    value: '{{ (item.allowed_ips | replace(",", ";")) ~ ";" }}'
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  loop: '{{ __wireguard_iface.peers }}'
+  loop_control:
+    label: 'wireguard-peer.{{ item.public_key[:12] }}… allowed-ips'
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove per-peer endpoint
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: 'wireguard-peer.{{ item.public_key }}'
+    option: endpoint
+    value: '{{ item.endpoint | default("") }}'
+    state: "{{ 'present' if (item.endpoint is defined and item.endpoint | length > 0) else 'absent' }}"
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  loop: '{{ __wireguard_iface.peers }}'
+  loop_control:
+    label: 'wireguard-peer.{{ item.public_key[:12] }}… endpoint'
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove per-peer persistent-keepalive
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: 'wireguard-peer.{{ item.public_key }}'
+    option: persistent-keepalive
+    value: '{{ item.persistent_keepalive | default(0) | string }}'
+    state: "{{ 'present' if (item.persistent_keepalive | default(0) | int > 0) else 'absent' }}"
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  loop: '{{ __wireguard_iface.peers }}'
+  loop_control:
+    label: 'wireguard-peer.{{ item.public_key[:12] }}… persistent-keepalive'
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove per-peer preshared-key
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: 'wireguard-peer.{{ item.public_key }}'
+    option: preshared-key
+    value: '{{ item.preshared_key | default("") }}'
+    state: "{{ 'present' if (item.preshared_key is defined and item.preshared_key | length > 0) else 'absent' }}"
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  loop: '{{ __wireguard_iface.peers }}'
+  loop_control:
+    label: 'wireguard-peer.{{ item.public_key[:12] }}… preshared-key'
+  no_log: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove per-peer preshared-key-flags
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: 'wireguard-peer.{{ item.public_key }}'
+    option: preshared-key-flags
+    value: '0'
+    state: "{{ 'present' if (item.preshared_key is defined and item.preshared_key | length > 0) else 'absent' }}"
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  loop: '{{ __wireguard_iface.peers }}'
+  loop_control:
+    label: 'wireguard-peer.{{ item.public_key[:12] }}… preshared-key-flags'
+  notify: Reload NetworkManager connections
+
+- name: NM | Set [ipv4] section keys
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: ipv4
+    option: '{{ item.option }}'
+    value: '{{ item.value }}'
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  loop:
+    - option: address1
+      value: '{{ __wireguard_iface.address }}'
+    - option: method
+      value: manual
+  loop_control:
+    label: '[ipv4] {{ item.option }}'
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove [ipv4] dns
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: ipv4
+    option: dns
+    value: >-
+      {{ (__wireguard_iface.dns | first | replace(',', ';')) ~ ';'
+         if (__wireguard_iface.dns is defined and __wireguard_iface.dns | length > 0)
+         else '' }}
+    state: >-
+      {{ 'present'
+         if (__wireguard_iface.dns is defined and __wireguard_iface.dns | length > 0)
+         else 'absent' }}
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove [ipv4] dns-search
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: ipv4
+    option: dns-search
+    value: >-
+      {{ (__wireguard_iface.dns_search | join(';')) ~ ';'
+         if (__wireguard_iface.dns_search is defined and __wireguard_iface.dns_search | length > 0)
+         else '' }}
+    state: >-
+      {{ 'present'
+         if (__wireguard_iface.dns_search is defined and __wireguard_iface.dns_search | length > 0)
+         else 'absent' }}
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove [ipv4] dns-priority
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: ipv4
+    option: dns-priority
+    value: '{{ __wireguard_iface.dns_priority | default("") | string }}'
+    state: "{{ 'present' if __wireguard_iface.dns_priority is defined else 'absent' }}"
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Set or remove [ipv4] never-default
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: ipv4
+    option: never-default
+    value: 'true'
+    state: "{{ 'present' if __wireguard_iface.never_default | default(false) | bool else 'absent' }}"
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  notify: Reload NetworkManager connections
+
+- name: NM | Set [ipv6] section keys
+  community.general.ini_file:
+    path: '{{ __wg_nm_path }}'
+    section: ipv6
+    option: '{{ item.option }}'
+    value: '{{ item.value }}'
+    state: '{{ item.state | default("present") }}'
+    owner: root
+    group: root
+    mode: '0600'
+    no_extra_spaces: true
+  loop: >-
+    {{
+      ([{'option': 'address1', 'value': __wireguard_iface.address_ipv6},
+        {'option': 'method', 'value': 'manual'}]
+       if (__wireguard_iface.address_ipv6 | default('') | length > 0)
+       else [{'option': 'address1', 'value': '', 'state': 'absent'},
+             {'option': 'method', 'value': 'disabled'}])
+    }}
+  loop_control:
+    label: '[ipv6] {{ item.option }}'
   notify: Reload NetworkManager connections
 
 - name: NM | Ensure wg-quick service is stopped and disabled
