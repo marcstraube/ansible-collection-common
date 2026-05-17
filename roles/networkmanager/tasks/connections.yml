@@ -375,6 +375,55 @@
     - item.stdout is defined
     - item.stdout | trim | length > 0
 
+- name: Connections | Build expected present-state connection name sets
+  ansible.builtin.set_fact:
+    __nm_expected_ethernet_names: >-
+      {{ (networkmanager_connections.ethernet | default({}) | dict2items
+          | rejectattr('value.state', 'defined') | map(attribute='key') | list)
+         + (networkmanager_connections.ethernet | default({}) | dict2items
+            | selectattr('value.state', 'defined')
+            | selectattr('value.state', 'equalto', 'present')
+            | map(attribute='key') | list) }}
+    __nm_expected_wifi_names: >-
+      {{ (networkmanager_connections.wifi | default({}) | dict2items
+          | rejectattr('value.state', 'defined') | map(attribute='key') | list)
+         + (networkmanager_connections.wifi | default({}) | dict2items
+            | selectattr('value.state', 'defined')
+            | selectattr('value.state', 'equalto', 'present')
+            | map(attribute='key') | list) }}
+    __nm_expected_vpn_names: >-
+      {{ (networkmanager_connections.vpn | default({}) | dict2items
+          | rejectattr('value.state', 'defined') | map(attribute='key') | list)
+         + (networkmanager_connections.vpn | default({}) | dict2items
+            | selectattr('value.state', 'defined')
+            | selectattr('value.state', 'equalto', 'present')
+            | map(attribute='key') | list) }}
+
+# Defense in depth: catches cases the check_mode: false patch on the UUID
+# lookup tasks does not cover (e.g. nmcli daemon down, connection not yet
+# created on first install, race conditions during configure).
+- name: Connections | Verify UUIDs were collected for all configured connections
+  ansible.builtin.assert:
+    that:
+      - __nm_expected_ethernet_names
+        | difference(all_network_connections.ethernet.keys() | list)
+        | length == 0
+      - __nm_expected_wifi_names
+        | difference(all_network_connections.wifi.keys() | list)
+        | length == 0
+      - __nm_expected_vpn_names
+        | difference(all_network_connections.vpn.keys() | list)
+        | length == 0
+    fail_msg: >-
+      UUID enumeration failed for one or more configured NM connections.
+      Missing ethernet: {{ __nm_expected_ethernet_names
+        | difference(all_network_connections.ethernet.keys() | list) | list }}.
+      Missing wifi: {{ __nm_expected_wifi_names
+        | difference(all_network_connections.wifi.keys() | list) | list }}.
+      Missing vpn: {{ __nm_expected_vpn_names
+        | difference(all_network_connections.vpn.keys() | list) | list }}.
+      Run `nmcli connection show` on the target host to investigate.
+
 - name: Connections | Build VPN UUID list for Ethernet connections
   ansible.builtin.set_fact:
     vpn_uuids_for_connection: >-
