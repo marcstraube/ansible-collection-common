@@ -51,6 +51,9 @@
   register: __wireguard_generated_pubkey
   changed_when: false
   no_log: true
+  # Read-only derivation of pubkey from privkey, must run under --check
+  # so the subsequent `Save public key to file` copy task has content.
+  check_mode: false
 
 - name: Keys | Save public key to file
   ansible.builtin.copy:
