@@ -1,0 +1,19 @@
+---
+#
+# Shell User Configuration
+#
+
+- name: Users | Get users to configure
+  ansible.builtin.set_fact:
+    __shell_configure_users: >-
+      {{ shell_users if shell_users | length > 0
+         else (users_list | default([]) | map(attribute='name') | list) }}
+
+- name: Users | Change default shell for users
+  ansible.builtin.user:
+    name: '{{ item }}'
+    shell: '{{ __shell_paths[shell_default] }}'
+  loop: '{{ __shell_configure_users }}'
+  when:
+    - __shell_configure_users | length > 0
+    - shell_user_config_mode != 'disabled'

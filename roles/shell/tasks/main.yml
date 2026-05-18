@@ -1,0 +1,79 @@
+---
+#
+# Shell Main Tasks
+#
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - shell
+    - shell:vars
+
+- name: Main | Validate Starship preset
+  ansible.builtin.assert:
+    that:
+      - shell_starship_preset | length == 0
+        or shell_starship_preset in __shell_starship_valid_presets
+    fail_msg: >-
+      shell_starship_preset must be empty or one of
+      {{ __shell_starship_valid_presets }}, got: '{{ shell_starship_preset }}'
+  when:
+    - shell_enabled | bool
+    - shell_starship_enabled | bool
+    - shell_starship_config_enabled | bool
+  tags:
+    - shell
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: shell_enabled | bool
+  tags:
+    - shell
+    - shell:install
+
+- name: Main | Import Oh My Zsh tasks
+  ansible.builtin.import_tasks: ohmyzsh.yml
+  when:
+    - shell_enabled | bool
+    - shell_zsh_enabled | bool
+    - shell_zsh_framework == 'ohmyzsh'
+  tags:
+    - shell
+    - shell:ohmyzsh
+
+- name: Main | Import user tasks
+  ansible.builtin.import_tasks: users.yml
+  when:
+    - shell_enabled | bool
+    - shell_default != 'bash'
+  tags:
+    - shell
+    - shell:users
+
+- name: Main | Import Starship config tasks
+  ansible.builtin.import_tasks: starship.yml
+  when:
+    - shell_enabled | bool
+    - shell_starship_enabled | bool
+    - shell_starship_config_enabled | bool
+  tags:
+    - shell
+    - shell:starship
+
+- name: Main | Import Starship shell init tasks
+  ansible.builtin.import_tasks: starship_init.yml
+  when:
+    - shell_enabled | bool
+    - shell_starship_enabled | bool
+    - shell_starship_shells | length > 0
+  tags:
+    - shell
+    - shell:starship

@@ -1,0 +1,53 @@
+---
+#
+# Oh My Zsh Installation and Configuration
+#
+
+- name: OhMyZsh | Get users to configure
+  ansible.builtin.set_fact:
+    __shell_ohmyzsh_users: >-
+      {{ shell_users if shell_users | length > 0
+         else (users_list | default([]) | map(attribute='name') | list) }}
+
+- name: OhMyZsh | Clone Oh My Zsh
+  ansible.builtin.git:
+    repo: 'https://github.com/ohmyzsh/ohmyzsh.git'
+    dest: '/home/{{ item }}/.oh-my-zsh'
+    depth: 1
+    version: 'master'
+    update: "{{ shell_user_config_mode == 'managed' }}"
+  become: true
+  become_user: '{{ item }}'
+  loop: '{{ __shell_ohmyzsh_users }}'
+  when: shell_user_config_mode != 'disabled'
+  retries: 5
+  delay: 10
+
+- name: OhMyZsh | Clone custom plugins  # noqa: latest[git]
+  ansible.builtin.git:
+    repo: '{{ item.1.repo }}'
+    dest: '/home/{{ item.0 }}/.oh-my-zsh/custom/plugins/{{ item.1.name }}'
+    depth: 1
+    version: '{{ item.1.version | default("master") }}'
+    update: "{{ shell_user_config_mode == 'managed' }}"
+  become: true
+  become_user: '{{ item.0 }}'
+  loop: '{{ __shell_ohmyzsh_users | product(shell_ohmyzsh_custom_plugins) | list }}'
+  loop_control:
+    label: '{{ item.0 }}: {{ item.1.name }}'
+  when:
+    - shell_user_config_mode != 'disabled'
+    - shell_ohmyzsh_custom_plugins | length > 0
+  retries: 5
+  delay: 10
+
+- name: OhMyZsh | Deploy .zshrc
+  ansible.builtin.template:
+    src: 'ohmyzsh.zshrc.j2'
+    dest: '/home/{{ item }}/.zshrc'
+    owner: '{{ item }}'
+    group: '{{ item }}'
+    mode: '0644'
+    force: "{{ shell_user_config_mode == 'managed' }}"
+  loop: '{{ __shell_ohmyzsh_users }}'
+  when: shell_user_config_mode != 'disabled'
