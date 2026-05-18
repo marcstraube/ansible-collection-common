@@ -9,11 +9,14 @@
 # Version Detection (for firewalld.conf conditionals)
 #
 
+# check_mode: false — read-only lookup, must run under --check so the
+# downstream set_fact has a parseable version string instead of empty.
 - name: Configure | Get firewalld version
   ansible.builtin.command:
     cmd: firewall-cmd --version
   register: __firewalld_version_output
   changed_when: false
+  check_mode: false
 
 - name: Configure | Set version facts
   ansible.builtin.set_fact:
