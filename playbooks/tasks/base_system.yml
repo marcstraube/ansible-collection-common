@@ -337,6 +337,18 @@
     - multiplexer
   when: multiplexer_enabled | default(true) | bool
 
+- name: Base System | Include shell role
+  ansible.builtin.include_role:
+    name: marcstraube.common.shell
+    apply:
+      tags:
+        - base-system
+        - shell
+  tags:
+    - base-system
+    - shell
+  when: shell_enabled | default(true) | bool
+
 - name: Base System | Include fonts role
   ansible.builtin.include_role:
     name: marcstraube.common.fonts
