@@ -222,6 +222,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, markdown-lint, yaml-lint, detect-changes]
     if: needs.detect-changes.outputs.has_roles == 'true'
+    # AIDE 0.19.3 (latest upstream) fails to build against nettle 4.0 due to
+    # a digest() API break — see https://github.com/aide/aide/issues/218.
+    # Upstream aide is in maintenance mode, no fix released. Allow only the
+    # aide matrix entry to fail so unrelated regressions still gate CI.
+    # Revert this to false once upstream lands a fix.
+    continue-on-error: ${{ matrix.role == 'aide' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
