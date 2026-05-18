@@ -9,6 +9,8 @@
     cmd: aa-status --json
   register: __clamav_aa_status
   changed_when: false
+  # Read-only lookup, must run under --check so downstream from_json gets parseable input.
+  check_mode: false
   when: __clamav_apparmor_active.stat.exists
 
 - name: AppArmor | Enforce AppArmor profile for clamd
@@ -18,8 +20,8 @@
   when:
     - __clamav_apparmor_active.stat.exists
     - __clamav_apparmor_profile not in
-      ((__clamav_aa_status.stdout | default('{}') | from_json).get('profiles', {})
+      ((__clamav_aa_status.stdout | default('{}', true) | from_json).get('profiles', {})
       | dict2items | selectattr('value', 'eq', 'enforce') | map(attribute='key') | list)
     - __clamav_apparmor_profile | basename not in
-      ((__clamav_aa_status.stdout | default('{}') | from_json).get('profiles', {})
+      ((__clamav_aa_status.stdout | default('{}', true) | from_json).get('profiles', {})
       | dict2items | selectattr('value', 'eq', 'enforce') | map(attribute='key') | list)

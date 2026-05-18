@@ -10,17 +10,19 @@
   register: __fail2ban_aa_status
   changed_when: false
   failed_when: false
+  # Read-only lookup, must run under --check so set_fact has parseable JSON.
+  check_mode: false
   when: __fail2ban_apparmor_active.stat.exists
 
 - name: AppArmor | Build enforce set
   ansible.builtin.set_fact:
     __fail2ban_apparmor_enforce_set: >-
-      {{ (__fail2ban_aa_status.stdout | default('{}') | from_json).get('profiles', {})
+      {{ (__fail2ban_aa_status.stdout | default('{}', true) | from_json).get('profiles', {})
          | dict2items | selectattr('value', 'eq', 'enforce')
          | map(attribute='key') | list }}
   when:
     - __fail2ban_apparmor_active.stat.exists
-    - __fail2ban_aa_status.rc == 0
+    - __fail2ban_aa_status.rc | default(1) == 0
 
 - name: AppArmor | Enforce fail2ban profile
   ansible.builtin.command:

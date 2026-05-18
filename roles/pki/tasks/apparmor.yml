@@ -21,17 +21,19 @@
   changed_when: false
   # aa-status may fail if AppArmor has no loaded profiles
   failed_when: false
+  # Read-only lookup, must run under --check so set_fact has parseable JSON.
+  check_mode: false
   when: __pki_apparmor_active.stat.exists
 
 - name: AppArmor | Build enforce set
   ansible.builtin.set_fact:
     __pki_apparmor_enforce_set: >-
-      {{ (__pki_aa_status.stdout | default('{}') | from_json).get('profiles', {})
+      {{ (__pki_aa_status.stdout | default('{}', true) | from_json).get('profiles', {})
          | dict2items | selectattr('value', 'eq', 'enforce')
          | map(attribute='key') | list }}
   when:
     - __pki_apparmor_active.stat.exists
-    - __pki_aa_status.rc == 0
+    - __pki_aa_status.rc | default(1) == 0
 
 - name: AppArmor | Enforce OCSP responder profile
   ansible.builtin.command:

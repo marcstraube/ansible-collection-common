@@ -8,24 +8,29 @@
 # Keys are inconsistent: sometimes full path (/usr/bin/man), sometimes
 # basename only (tcpdump). We check both forms for reliable matching.
 # failed_when: false — aa-status requires kernel AppArmor subsystem (unavailable in containers)
+# check_mode: false — read-only lookup, must run under --check so the
+# downstream set_fact has parseable JSON instead of an empty stdout.
 - name: Profiles | Get current AppArmor profile status
   ansible.builtin.command:
     cmd: aa-status --json
   register: __apparmor_status_json
   changed_when: false
   failed_when: false
+  check_mode: false
 
+# default('{}', true) — also fall back when stdout is an empty string
+# (aa-status failed on a host without kernel support, or skipped).
 - name: Profiles | Build profile mode lookup sets
   ansible.builtin.set_fact:
     __apparmor_enforce_set: >-
-      {{ (__apparmor_status_json.stdout | default('{}') | from_json).get('profiles', {})
+      {{ (__apparmor_status_json.stdout | default('{}', true) | from_json).get('profiles', {})
          | dict2items | selectattr('value', 'eq', 'enforce')
          | map(attribute='key') | list }}
     __apparmor_complain_set: >-
-      {{ (__apparmor_status_json.stdout | default('{}') | from_json).get('profiles', {})
+      {{ (__apparmor_status_json.stdout | default('{}', true) | from_json).get('profiles', {})
          | dict2items | selectattr('value', 'eq', 'complain')
          | map(attribute='key') | list }}
-  when: __apparmor_status_json.rc == 0
+  when: __apparmor_status_json.rc | default(1) == 0
 
 #
 # Enforce Profiles
