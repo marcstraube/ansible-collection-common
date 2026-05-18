@@ -1,0 +1,77 @@
+---
+- name: Converge — Native framework
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'zsh'
+    shell_zsh_enabled: true
+    shell_zsh_framework: 'native'
+    shell_zsh_plugins:
+      - 'completions'
+    shell_fish_enabled: false
+    shell_bash_completion_enabled: true
+    shell_starship_enabled: "{{ ansible_facts['os_family'] == 'Archlinux' }}"
+    shell_fzf_enabled: true
+    shell_users: []
+
+  tasks:
+    - name: Converge | Include shell role (native)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+- name: Converge — Oh My Zsh framework
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'zsh'
+    shell_zsh_enabled: true
+    shell_zsh_framework: 'ohmyzsh'
+    shell_ohmyzsh_theme: 'robbyrussell'
+    shell_ohmyzsh_plugins:
+      - 'git'
+    shell_ohmyzsh_custom_plugins:
+      - name: 'zsh-autosuggestions'
+        repo: 'https://github.com/zsh-users/zsh-autosuggestions.git'
+    shell_starship_enabled: false
+    shell_zoxide_enabled: false
+    shell_fzf_enabled: false
+    shell_fish_enabled: false
+    shell_bash_completion_enabled: false
+    shell_users:
+      - 'testuser'
+    shell_user_config_mode: 'managed'
+
+  tasks:
+    - name: Converge | Include shell role (ohmyzsh)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+- name: Converge — Starship config (Arch only — starship not in Debian/EL repos)
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'bash'
+    shell_zsh_enabled: false
+    shell_fish_enabled: false
+    shell_bash_completion_enabled: false
+    shell_starship_enabled: true
+    shell_starship_config_enabled: true
+    shell_starship_preset: 'plain-text-symbols'
+    shell_starship_shells:
+      - 'bash'
+    shell_user_config_mode: 'managed'
+    shell_users:
+      - 'testuser'
+    shell_fzf_enabled: false
+
+  tasks:
+    - name: Converge | Include shell role (starship)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      when: ansible_facts['os_family'] == 'Archlinux'

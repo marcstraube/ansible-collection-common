@@ -1,0 +1,25 @@
+---
+#
+# RedHat Variables
+#
+
+# Zsh plugins
+__shell_zsh_plugin_packages:
+  completions: ''
+  autosuggestions: 'zsh-autosuggestions'
+  syntax-highlighting: 'zsh-syntax-highlighting'
+  history-substring-search: ''
+
+__shell_zsh_grml_package: ''
+
+# Starship
+__shell_starship_package: ''
+
+# Additional tools
+__shell_fzf_package: 'fzf'
+__shell_zoxide_package: 'zoxide'
+__shell_eza_package: 'eza'
+__shell_bat_package: 'bat'
+__shell_fd_package: 'fd-find'
+__shell_ripgrep_package: 'ripgrep'
+__shell_tldr_package: 'tldr'

@@ -1,0 +1,126 @@
+---
+#
+# Role Control
+#
+
+# Enable the shell role
+shell_enabled: true
+
+#
+# Default Shell
+#
+
+# Default shell for users: zsh, fish, bash
+shell_default: 'bash'
+
+# Users to change shell for (empty = all users from users_list)
+shell_users: []
+
+# User configuration mode: managed (always deploy), initial (only if absent), disabled
+# 'initial' preserves user customisations after first deploy.
+# Set to 'managed' for continuous reconciliation.
+shell_user_config_mode: 'initial'
+
+#
+# Zsh
+#
+
+# Enable Zsh installation
+shell_zsh_enabled: false
+
+# Zsh framework: native (system packages) or ohmyzsh (Oh My Zsh per-user install)
+shell_zsh_framework: 'native'
+
+# Zsh plugins to install (native framework only)
+# Options: autosuggestions, syntax-highlighting, completions, history-substring-search
+shell_zsh_plugins:
+  - 'completions'
+  - 'autosuggestions'
+  - 'syntax-highlighting'
+
+# Enable grml-zsh-config (native framework only, Arch ISO defaults)
+shell_zsh_grml_enabled: false
+
+#
+# Oh My Zsh (only when shell_zsh_framework == 'ohmyzsh')
+#
+
+# Oh My Zsh theme (set to '' to disable, e.g. when using Starship)
+shell_ohmyzsh_theme: 'robbyrussell'
+
+# Built-in Oh My Zsh plugins to activate
+shell_ohmyzsh_plugins:
+  - 'git'
+
+# Third-party plugins to install via git clone into custom/plugins
+# Each entry requires 'name' and 'repo'. Optional 'version' (default: master).
+shell_ohmyzsh_custom_plugins: []
+# Example:
+#   - name: 'zsh-autosuggestions'
+#     repo: 'https://github.com/zsh-users/zsh-autosuggestions.git'
+#   - name: 'zsh-syntax-highlighting'
+#     repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git'
+#   - name: 'zsh-completions'
+#     repo: 'https://github.com/zsh-users/zsh-completions.git'
+
+#
+# Fish
+#
+
+# Enable Fish installation
+shell_fish_enabled: false
+
+#
+# Bash
+#
+
+# Enable bash-completion
+shell_bash_completion_enabled: true
+
+#
+# Starship
+#
+
+# Enable Starship prompt installation
+shell_starship_enabled: true
+
+# Enable Starship config deployment
+shell_starship_config_enabled: false
+
+# Starship preset (empty = minimal default config)
+# Options: bracketed-segments, catppuccin-powerline, gruvbox-rainbow,
+#          jetpack, nerd-font-symbols, no-empty-icons, no-nerd-font,
+#          no-runtime-versions, pastel-powerline, plain-text-symbols,
+#          pure-preset, tokyo-night
+# Source: `starship preset --list`
+shell_starship_preset: ''
+
+# Configure Starship for shells (adds init to shell config)
+shell_starship_shells:
+  - 'zsh'
+  - 'bash'
+
+#
+# Additional Tools
+#
+
+# Enable fzf (fuzzy finder)
+shell_fzf_enabled: true
+
+# Enable zoxide (smarter cd)
+shell_zoxide_enabled: false
+
+# Enable eza (modern ls)
+shell_eza_enabled: false
+
+# Enable bat (cat with syntax highlighting)
+shell_bat_enabled: false
+
+# Enable fd (modern find)
+shell_fd_enabled: false
+
+# Enable ripgrep (modern grep)
+shell_ripgrep_enabled: false
+
+# Enable tldr (simplified man pages)
+shell_tldr_enabled: false

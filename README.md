@@ -7,7 +7,7 @@
 ## Description
 
 Shared Ansible roles for multi-OS infrastructure management.
-41 roles covering base system, security, networking, package management,
+42 roles covering base system, security, networking, package management,
 user management, editors, and more.
 
 ## Supported Platforms
@@ -32,6 +32,7 @@ user management, editors, and more.
 | **sudo**              | Sudo configuration                                        |
 | **editors**           | Text editors (nano, vim, neovim) with per-user config     |
 | **multiplexer**       | Terminal multiplexers (tmux, zellij) with per-user config |
+| **shell**             | Shells (zsh, bash, fish), Starship prompt, modern CLI     |
 | **utils**             | CLI utilities and monitoring tools                        |
 | **fonts**             | System and Nerd Fonts                                     |
 | **energy_management** | Power management (logind, PPD/TLP/tuned)                  |

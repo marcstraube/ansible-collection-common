@@ -1,0 +1,179 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    #
+    # Zsh
+    #
+
+    - name: Verify | Check zsh installed (Arch)
+      ansible.builtin.command:
+        cmd: 'pacman -Q {{ __shell_zsh_package }}'
+      register: _shell_zsh_arch
+      changed_when: false
+      failed_when: _shell_zsh_arch.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Archlinux'
+        - __shell_zsh_package | default('') | length > 0
+
+    - name: Verify | Check zsh installed (Debian)
+      ansible.builtin.command:
+        cmd: 'dpkg -l {{ __shell_zsh_package }}'
+      register: _shell_zsh_deb
+      changed_when: false
+      failed_when: _shell_zsh_deb.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Debian'
+        - __shell_zsh_package | default('') | length > 0
+
+    - name: Verify | Check zsh installed (RedHat)
+      ansible.builtin.command:  # noqa: command-instead-of-module
+        cmd: 'rpm -q {{ __shell_zsh_package }}'
+      register: _shell_zsh_rpm
+      changed_when: false
+      failed_when: _shell_zsh_rpm.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'RedHat'
+        - __shell_zsh_package | default('') | length > 0
+
+    #
+    # Fzf
+    #
+
+    - name: Verify | Check fzf installed (Arch)
+      ansible.builtin.command:
+        cmd: 'pacman -Q {{ __shell_fzf_package }}'
+      register: _shell_fzf_arch
+      changed_when: false
+      failed_when: _shell_fzf_arch.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Archlinux'
+        - __shell_fzf_package | default('') | length > 0
+
+    - name: Verify | Check fzf installed (Debian)
+      ansible.builtin.command:
+        cmd: 'dpkg -l {{ __shell_fzf_package }}'
+      register: _shell_fzf_deb
+      changed_when: false
+      failed_when: _shell_fzf_deb.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Debian'
+        - __shell_fzf_package | default('') | length > 0
+
+    - name: Verify | Check fzf installed (RedHat)
+      ansible.builtin.command:  # noqa: command-instead-of-module
+        cmd: 'rpm -q {{ __shell_fzf_package }}'
+      register: _shell_fzf_rpm
+      changed_when: false
+      failed_when: _shell_fzf_rpm.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'RedHat'
+        - __shell_fzf_package | default('') | length > 0
+
+    #
+    # Starship (Arch only)
+    #
+
+    - name: Verify | Check starship installed (Arch)
+      ansible.builtin.command:
+        cmd: 'pacman -Q {{ __shell_starship_package }}'
+      register: _shell_starship_arch
+      changed_when: false
+      failed_when: _shell_starship_arch.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Archlinux'
+        - __shell_starship_package | default('') | length > 0
+
+    #
+    # Oh My Zsh
+    #
+
+    - name: Verify | Check Oh My Zsh directory exists
+      ansible.builtin.stat:
+        path: '/home/testuser/.oh-my-zsh'
+      register: _shell_ohmyzsh_dir
+      failed_when: not _shell_ohmyzsh_dir.stat.exists
+
+    - name: Verify | Check Oh My Zsh oh-my-zsh.sh exists
+      ansible.builtin.stat:
+        path: '/home/testuser/.oh-my-zsh/oh-my-zsh.sh'
+      register: _shell_ohmyzsh_sh
+      failed_when: not _shell_ohmyzsh_sh.stat.exists
+
+    - name: Verify | Check custom plugin cloned
+      ansible.builtin.stat:
+        path: '/home/testuser/.oh-my-zsh/custom/plugins/zsh-autosuggestions'
+      register: _shell_ohmyzsh_custom_plugin
+      failed_when: not _shell_ohmyzsh_custom_plugin.stat.exists
+
+    - name: Verify | Check .zshrc deployed
+      ansible.builtin.stat:
+        path: '/home/testuser/.zshrc'
+      register: _shell_ohmyzsh_zshrc
+      failed_when: not _shell_ohmyzsh_zshrc.stat.exists
+
+    - name: Verify | Check .zshrc contains Oh My Zsh source
+      ansible.builtin.command:
+        cmd: 'grep -q "source.*oh-my-zsh.sh" /home/testuser/.zshrc'
+      register: _shell_ohmyzsh_source
+      changed_when: false
+      failed_when: _shell_ohmyzsh_source.rc != 0
+
+    - name: Verify | Check .zshrc contains theme
+      ansible.builtin.command:
+        cmd: 'grep -q "ZSH_THEME=\"robbyrussell\"" /home/testuser/.zshrc'
+      register: _shell_ohmyzsh_theme
+      changed_when: false
+      failed_when: _shell_ohmyzsh_theme.rc != 0
+
+    #
+    # Starship config (Arch only)
+    #
+
+    - name: Verify | Check starship.toml deployed (Arch)
+      ansible.builtin.stat:
+        path: '/home/testuser/.config/starship.toml'
+      register: _shell_starship_toml
+      failed_when: not _shell_starship_toml.stat.exists
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check starship.toml contains plain-text-symbols content (Arch)
+      ansible.builtin.command:
+        cmd: 'grep -q "success_symbol" /home/testuser/.config/starship.toml'
+      register: _shell_starship_content
+      changed_when: false
+      failed_when: _shell_starship_content.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Starship init line in shell rc (Arch only — testuser has bash init via converge)
+    #
+
+    - name: Verify | Check starship init block in testuser .bashrc (Arch)
+      ansible.builtin.command:
+        cmd: 'grep -q "starship init bash" /home/testuser/.bashrc'
+      register: _shell_starship_bash_init
+      changed_when: false
+      failed_when: _shell_starship_bash_init.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check starship init block has ansible-managed marker (Arch)
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — starship init" /home/testuser/.bashrc'
+      register: _shell_starship_marker
+      changed_when: false
+      failed_when: _shell_starship_marker.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'

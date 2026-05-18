@@ -1,0 +1,38 @@
+---
+#
+# Shell Installation
+#
+
+- name: Install | Build package list
+  ansible.builtin.set_fact:
+    __shell_install_packages: >-
+      {{
+        (shell_zsh_enabled | bool | ternary([__shell_zsh_package], [])) +
+        ((shell_zsh_enabled | bool and shell_zsh_framework == 'native') | ternary(
+          shell_zsh_plugins | map('extract', __shell_zsh_plugin_packages) | select('string') | list, [])) +
+        ((shell_zsh_grml_enabled | bool and shell_zsh_framework == 'native' and __shell_zsh_grml_package | length > 0)
+          | ternary([__shell_zsh_grml_package], [])) +
+        (shell_fish_enabled | bool | ternary([__shell_fish_package], [])) +
+        (shell_bash_completion_enabled | bool | ternary([__shell_bash_completion_package], [])) +
+        (shell_starship_enabled | bool | ternary([__shell_starship_package], [])) +
+        (shell_fzf_enabled | bool | ternary([__shell_fzf_package], [])) +
+        (shell_zoxide_enabled | bool | ternary([__shell_zoxide_package], [])) +
+        (shell_eza_enabled | bool | ternary([__shell_eza_package], [])) +
+        (shell_bat_enabled | bool | ternary([__shell_bat_package], [])) +
+        (shell_fd_enabled | bool | ternary([__shell_fd_package], [])) +
+        (shell_ripgrep_enabled | bool | ternary([__shell_ripgrep_package], [])) +
+        (shell_tldr_enabled | bool | ternary([__shell_tldr_package], []))
+      }}
+
+- name: Install | Filter empty packages
+  ansible.builtin.set_fact:
+    __shell_install_packages: >-
+      {{ __shell_install_packages | select('string') | reject('equalto', '') | unique | list }}
+
+- name: Install | Shell packages
+  ansible.builtin.package:
+    name: '{{ __shell_install_packages }}'
+    state: present
+  when: __shell_install_packages | length > 0
+  retries: 3
+  delay: 5

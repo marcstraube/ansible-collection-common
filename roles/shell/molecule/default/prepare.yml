@@ -1,0 +1,144 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __prepare_packages:
+      Debian:
+        - systemd
+        - systemd-timesyncd
+        - locales
+        - dbus
+      RedHat:
+        - glibc-langpack-en
+        - glibc-locale-source
+
+  tasks:
+    #
+    # Package Cache
+    #
+
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Install EPEL release (RedHat)  # noqa: package-latest
+      ansible.builtin.package:
+        name: epel-release
+        state: latest
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    #
+    # Container Dependencies
+    #
+
+    - name: Prepare | Replace curl-minimal with curl (RedHat)
+      ansible.builtin.dnf:
+        name:
+          - curl
+        state: present
+        allowerasing: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Sudo PAM bypass — required for tasks using `become_user` on
+    # geerlingguy Rocky containers under GitHub-hosted runners
+    # (test container only).
+
+    - name: Prepare | Bypass sudo PAM stack (RedHat container)
+      ansible.builtin.copy:
+        content: |
+          #%PAM-1.0
+          auth       sufficient   pam_permit.so
+          account    sufficient   pam_permit.so
+          password   sufficient   pam_permit.so
+          session    sufficient   pam_permit.so
+        dest: /etc/pam.d/sudo
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Disable sudoers authentication (RedHat container)
+      ansible.builtin.copy:
+        content: 'Defaults !authenticate'
+        dest: /etc/sudoers.d/molecule-no-auth
+        owner: root
+        group: root
+        mode: '0440'
+        validate: 'visudo -cf %s'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
+        state: present
+      when: ansible_facts['os_family'] in __prepare_packages
+
+    - name: Prepare | Start D-Bus (RedHat)
+      ansible.builtin.systemd_service:
+        name: dbus-broker
+        state: started
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    #
+    # AUR Builder (Arch)
+    #
+
+    - name: Prepare | Install base-devel and sudo (Arch)
+      community.general.pacman:
+        name:
+          - base-devel
+          - sudo
+        state: present
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Create aur_builder user (Arch)
+      ansible.builtin.user:
+        name: aur_builder
+        group: wheel
+        create_home: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Configure sudoers for aur_builder (Arch)
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/aur_builder
+        line: 'aur_builder ALL=(ALL) NOPASSWD: ALL'
+        create: true
+        mode: '0440'
+        validate: 'visudo -cf %s'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Test Dependencies
+    #
+
+    - name: Prepare | Install git
+      ansible.builtin.package:
+        name: git
+        state: present
+
+    - name: Prepare | Create test user
+      ansible.builtin.user:
+        name: testuser
+        create_home: true
+        shell: /bin/bash
+        # Real sha512 password hash. Required so PAM account management
+        # accepts root → testuser become in containerised Rocky under
+        # GitHub-hosted runners (locked accounts and `*` placeholder
+        # both fail pam_unix account check with "Authentication service
+        # cannot retrieve authentication info").
+        password: "{{ 'molecule-testuser-noop' | password_hash('sha512') }}"
+        update_password: 'on_create'

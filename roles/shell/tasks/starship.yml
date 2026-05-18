@@ -1,0 +1,55 @@
+---
+#
+# Starship Per-User Configuration
+#
+
+- name: Starship | Get users to configure
+  ansible.builtin.set_fact:
+    __shell_starship_users: >-
+      {{ shell_users if shell_users | length > 0
+         else (users_list | default([]) | map(attribute='name') | list) }}
+
+- name: Starship | Ensure ~/.config exists
+  ansible.builtin.file:
+    path: '/home/{{ item }}/.config'
+    state: directory
+    owner: '{{ item }}'
+    group: '{{ item }}'
+    mode: '0755'
+  loop: '{{ __shell_starship_users }}'
+  when: shell_user_config_mode != 'disabled'
+
+- name: Starship | Render preset content
+  ansible.builtin.command:
+    cmd: 'starship preset {{ shell_starship_preset }}'
+  register: __shell_starship_preset_content
+  changed_when: false
+  when:
+    - shell_user_config_mode != 'disabled'
+    - shell_starship_preset | length > 0
+
+- name: Starship | Deploy preset config
+  ansible.builtin.copy:
+    content: "{{ __shell_starship_preset_content.stdout }}\n"
+    dest: '/home/{{ item }}/.config/starship.toml'
+    owner: '{{ item }}'
+    group: '{{ item }}'
+    mode: '0644'
+    force: "{{ shell_user_config_mode == 'managed' }}"
+  loop: '{{ __shell_starship_users }}'
+  when:
+    - shell_user_config_mode != 'disabled'
+    - shell_starship_preset | length > 0
+
+- name: Starship | Deploy minimal default config (no preset)
+  ansible.builtin.template:
+    src: 'starship.toml.j2'
+    dest: '/home/{{ item }}/.config/starship.toml'
+    owner: '{{ item }}'
+    group: '{{ item }}'
+    mode: '0644'
+    force: "{{ shell_user_config_mode == 'managed' }}"
+  loop: '{{ __shell_starship_users }}'
+  when:
+    - shell_user_config_mode != 'disabled'
+    - shell_starship_preset | length == 0

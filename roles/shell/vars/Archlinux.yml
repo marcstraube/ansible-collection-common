@@ -1,0 +1,25 @@
+---
+#
+# Arch Linux Variables
+#
+
+# Zsh plugins
+__shell_zsh_plugin_packages:
+  completions: 'zsh-completions'
+  autosuggestions: 'zsh-autosuggestions'
+  syntax-highlighting: 'zsh-syntax-highlighting'
+  history-substring-search: 'zsh-history-substring-search'
+
+__shell_zsh_grml_package: 'grml-zsh-config'
+
+# Starship
+__shell_starship_package: 'starship'
+
+# Additional tools
+__shell_fzf_package: 'fzf'
+__shell_zoxide_package: 'zoxide'
+__shell_eza_package: 'eza'
+__shell_bat_package: 'bat'
+__shell_fd_package: 'fd'
+__shell_ripgrep_package: 'ripgrep'
+__shell_tldr_package: 'tldr'
