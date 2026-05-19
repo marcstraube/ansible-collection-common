@@ -162,16 +162,74 @@ On platforms where `zoxide` is not packaged (currently EL 10 — not in
 EPEL 10), `shell_zoxide_enabled` is a silent no-op: neither the
 package nor the init line is deployed.
 
+### atuin / ble.sh / bash-preexec
+
+| Variable                       | Default                     | Description                                       |
+|--------------------------------|-----------------------------|---------------------------------------------------|
+| `shell_atuin_enabled`          | `false`                     | Enable atuin (magical shell history)              |
+| `shell_atuin_shells`           | `['bash', 'zsh', 'fish']`   | Configure atuin init for these shells             |
+| `shell_blesh_enabled`          | `false`                     | Enable ble.sh (Bash Line Editor) — Arch AUR only  |
+| `shell_blesh_variant`          | `'stable'`                  | ble.sh variant: `'stable'` or `'git'`             |
+| `shell_bash_preexec_enabled`   | `false`                     | Enable bash-preexec — Arch only                   |
+
+Package availability:
+
+| Tool         | Arch                        | Debian Trixie | Rocky 9 (EPEL 9) | Rocky 10               |
+|--------------|-----------------------------|---------------|------------------|------------------------|
+| atuin        | `extra/atuin`               | `main/atuin`  | `epel/atuin`     | — (not in EPEL 10 yet) |
+| ble.sh       | AUR (`blesh` / `blesh-git`) | —             | —                | —                      |
+| bash-preexec | `extra/bash-preexec`        | —             | —                | —                      |
+
+`shell_blesh_variant: 'git'` selects the `blesh-git` AUR package
+(rolling upstream) instead of `blesh` (tagged release). The AUR
+install uses `kewlfft.aur.aur` and runs as the `aur_builder` user.
+
+`shell_atuin_shells` writes the atuin init line via `blockinfile`:
+
+| Shell  | Target file                  | Init line                          |
+|--------|------------------------------|------------------------------------|
+| `bash` | `~/.bashrc`                  | `eval "$(atuin init bash)"`        |
+| `zsh`  | `~/.zshrc`                   | `eval "$(atuin init zsh)"`         |
+| `fish` | `~/.config/fish/config.fish` | `atuin init fish \| source`        |
+
+bash-preexec and ble.sh each add a single source line to `~/.bashrc`:
+
+| Tool         | Init line                              |
+|--------------|----------------------------------------|
+| bash-preexec | `source /usr/share/bash-preexec.sh`    |
+| ble.sh       | `source /usr/share/blesh/ble.sh`       |
+
+atuin's bash integration depends on either `bash-preexec` or
+`ble.sh` being sourced first. The role writes blocks to `.bashrc`
+in this order so the dependency is satisfied at shell startup:
+
+1. `bash-preexec` source line
+2. `ble.sh` source line
+3. atuin init line
+
+The role does not enforce the dependency. If `shell_atuin_enabled`
+is set with `bash` in `shell_atuin_shells` but neither
+`shell_bash_preexec_enabled` nor `shell_blesh_enabled` is set,
+atuin's bash hooks will not fire — the user is responsible for
+enabling one of the two.
+
+All three toggles honour `shell_user_config_mode` like the other
+init blocks. On platforms where the package is not available, the
+toggle is a silent no-op (no package install, no init block).
+
 ## Tags
 
-| Tag               | Description                    |
-|-------------------|--------------------------------|
-| `shell`           | All shell tasks                |
-| `shell:install`   | Package installation           |
-| `shell:ohmyzsh`   | Oh My Zsh setup and config     |
-| `shell:users`     | User shell configuration       |
-| `shell:starship`  | Starship per-user config       |
-| `shell:zoxide`    | Zoxide per-user init           |
+| Tag                   | Description                    |
+|-----------------------|--------------------------------|
+| `shell`               | All shell tasks                |
+| `shell:install`       | Package installation           |
+| `shell:ohmyzsh`       | Oh My Zsh setup and config     |
+| `shell:users`         | User shell configuration       |
+| `shell:starship`      | Starship per-user config       |
+| `shell:zoxide`        | Zoxide per-user init           |
+| `shell:atuin`         | atuin per-user init            |
+| `shell:blesh`         | ble.sh per-user init           |
+| `shell:bash-preexec`  | bash-preexec per-user init     |
 
 ## Example Playbook
 
@@ -209,6 +267,9 @@ molecule test -s default -- --limit shell-archlinux
 - [bat](https://github.com/sharkdp/bat) — `cat` clone with syntax highlighting and Git integration
 - [fd](https://github.com/sharkdp/fd) — Simple, fast, user-friendly alternative to `find`
 - [ripgrep](https://github.com/BurntSushi/ripgrep) — Recursive `grep` alternative respecting gitignore
+- [atuin](https://github.com/atuinsh/atuin) — Magical shell history with sync, search, and stats
+- [ble.sh](https://github.com/akinomyoga/ble.sh) — Bash Line Editor — full-featured replacement for the bash readline
+- [bash-preexec](https://github.com/rcaloras/bash-preexec) — `preexec` and `precmd` hook framework for bash
 - [tldr](https://tldr.sh/) — Simplified, community-driven man pages
 
 ## License

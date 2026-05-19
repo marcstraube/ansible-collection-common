@@ -239,3 +239,130 @@
       changed_when: false
       failed_when: _shell_zoxide_absent.rc == 0
       when: __shell_zoxide_package | default('') | length == 0
+
+    #
+    # atuin (Arch / Debian / EL 9 — not in EL 10)
+    #
+
+    - name: Verify | Check atuin installed (Arch)
+      ansible.builtin.command:
+        cmd: 'pacman -Q {{ __shell_atuin_package }}'
+      register: _shell_atuin_arch
+      changed_when: false
+      failed_when: _shell_atuin_arch.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Archlinux'
+        - __shell_atuin_package | default('') | length > 0
+
+    - name: Verify | Check atuin installed (Debian)
+      ansible.builtin.command:
+        cmd: 'dpkg -l {{ __shell_atuin_package }}'
+      register: _shell_atuin_deb
+      changed_when: false
+      failed_when: _shell_atuin_deb.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Debian'
+        - __shell_atuin_package | default('') | length > 0
+
+    - name: Verify | Check atuin installed (RedHat)
+      ansible.builtin.command:  # noqa: command-instead-of-module
+        cmd: 'rpm -q {{ __shell_atuin_package }}'
+      register: _shell_atuin_rpm
+      changed_when: false
+      failed_when: _shell_atuin_rpm.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'RedHat'
+        - __shell_atuin_package | default('') | length > 0
+
+    - name: Verify | Check atuin init block in testuser .bashrc
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — atuin init" /home/testuser/.bashrc'
+      register: _shell_atuin_bash_init
+      changed_when: false
+      failed_when: _shell_atuin_bash_init.rc != 0
+      when: __shell_atuin_package | default('') | length > 0
+
+    - name: Verify | Check atuin init block absent when package unavailable
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — atuin init" /home/testuser/.bashrc'
+      register: _shell_atuin_absent
+      changed_when: false
+      failed_when: _shell_atuin_absent.rc == 0
+      when: __shell_atuin_package | default('') | length == 0
+
+    #
+    # atuin fish init (Arch only — Arch is the only platform with the
+    # fish-converge play). Checks the fish config file directly.
+    #
+
+    - name: Verify | Check atuin fish init block (Arch)
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — atuin init" /home/testuser/.config/fish/config.fish'
+      register: _shell_atuin_fish_init
+      changed_when: false
+      failed_when: _shell_atuin_fish_init.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # bash-preexec (Arch only — extra/bash-preexec)
+    #
+
+    - name: Verify | Check bash-preexec installed (Arch)
+      ansible.builtin.command:
+        cmd: 'pacman -Q {{ __shell_bash_preexec_package }}'
+      register: _shell_bash_preexec_arch
+      changed_when: false
+      failed_when: _shell_bash_preexec_arch.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Archlinux'
+        - __shell_bash_preexec_package | default('') | length > 0
+
+    - name: Verify | Check bash-preexec init block in testuser .bashrc (Arch)
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — bash-preexec init" /home/testuser/.bashrc'
+      register: _shell_bash_preexec_init
+      changed_when: false
+      failed_when: _shell_bash_preexec_init.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Archlinux'
+        - __shell_bash_preexec_package | default('') | length > 0
+
+    #
+    # bash-preexec init line must come before atuin init in .bashrc
+    # (atuin's bash hooks depend on bash-preexec already loaded).
+    #
+
+    - name: Verify | Check bash-preexec block precedes atuin block (Arch)
+      ansible.builtin.shell: |
+        set -o pipefail
+        preexec_line=$(grep -n "ANSIBLE MANAGED — bash-preexec init" /home/testuser/.bashrc | head -1 | cut -d: -f1)
+        atuin_line=$(grep -n "ANSIBLE MANAGED — atuin init" /home/testuser/.bashrc | head -1 | cut -d: -f1)
+        [ -n "$preexec_line" ] && [ -n "$atuin_line" ] && [ "$preexec_line" -lt "$atuin_line" ]
+      register: _shell_init_order
+      changed_when: false
+      failed_when: _shell_init_order.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # ble.sh (Arch only — AUR)
+    #
+
+    - name: Verify | Check ble.sh installed (Arch)
+      ansible.builtin.command:
+        cmd: 'pacman -Q {{ __shell_blesh_package }}'
+      register: _shell_blesh_arch
+      changed_when: false
+      failed_when: _shell_blesh_arch.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Archlinux'
+        - __shell_blesh_package | default('') | length > 0
+
+    - name: Verify | Check ble.sh init block in testuser .bashrc (Arch)
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — ble.sh init" /home/testuser/.bashrc'
+      register: _shell_blesh_init
+      changed_when: false
+      failed_when: _shell_blesh_init.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Archlinux'
+        - __shell_blesh_package | default('') | length > 0

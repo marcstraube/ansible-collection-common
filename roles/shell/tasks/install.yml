@@ -21,7 +21,9 @@
         (shell_bat_enabled | bool | ternary([__shell_bat_package], [])) +
         (shell_fd_enabled | bool | ternary([__shell_fd_package], [])) +
         (shell_ripgrep_enabled | bool | ternary([__shell_ripgrep_package], [])) +
-        (shell_tldr_enabled | bool | ternary([__shell_tldr_package], []))
+        (shell_tldr_enabled | bool | ternary([__shell_tldr_package], [])) +
+        (shell_atuin_enabled | bool | ternary([__shell_atuin_package], [])) +
+        (shell_bash_preexec_enabled | bool | ternary([__shell_bash_preexec_package], []))
       }}
 
 - name: Install | Filter empty packages
@@ -36,3 +38,20 @@
   when: __shell_install_packages | length > 0
   retries: 3
   delay: 5
+
+#
+# AUR Packages (Arch Linux only)
+#
+
+- name: Install | ble.sh from AUR
+  become: true
+  become_user: 'aur_builder'
+  kewlfft.aur.aur:
+    name: '{{ __shell_blesh_package }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - shell_blesh_enabled | bool
+    - __shell_blesh_package | length > 0

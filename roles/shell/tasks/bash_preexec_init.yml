@@ -1,0 +1,47 @@
+---
+#
+# bash-preexec Shell Initialization
+#
+# Adds `source /usr/share/bash-preexec.sh` to the per-user `.bashrc`
+# via blockinfile. bash-preexec is bash-only and ships only on Arch
+# Linux (extra/bash-preexec); on other distros this play is gated
+# off by the package guard in tasks/main.yml.
+#
+# Honours `shell_user_config_mode`:
+#
+#   managed  — reconcile the marker block on every run (Ansible wins)
+#   initial  — act only on users present in `__users_newly_created`
+#              for this run (fact set by `marcstraube.common.users`);
+#              existing users' rc files are left alone
+#   disabled — skip entirely
+#
+# Wiring order: bash-preexec must be sourced before any tool that
+# depends on its preexec/precmd hooks (notably atuin). The import
+# order in tasks/main.yml places this file before atuin_init.yml so
+# the corresponding `.bashrc` blockinfile entry appears earlier.
+#
+
+- name: BashPreexecInit | Get users to configure
+  ansible.builtin.set_fact:
+    __shell_bash_preexec_init_users: >-
+      {{ shell_users if shell_users | length > 0
+         else (users_list | default([]) | map(attribute='name') | list) }}
+
+- name: BashPreexecInit | Add bash init line
+  ansible.builtin.blockinfile:
+    path: '/home/{{ item }}/.bashrc'
+    block: 'source /usr/share/bash-preexec.sh'
+    marker: '# {mark} ANSIBLE MANAGED — bash-preexec init'
+    create: true
+    owner: '{{ item }}'
+    group: '{{ item }}'
+    mode: '0644'
+  loop: '{{ __shell_bash_preexec_init_users }}'
+  loop_control:
+    label: '{{ item }}'
+  when:
+    - shell_user_config_mode != 'disabled'
+    - >-
+      shell_user_config_mode == 'managed'
+      or (shell_user_config_mode == 'initial'
+          and item in (__users_newly_created | default([])))
