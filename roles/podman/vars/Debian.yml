@@ -9,4 +9,4 @@ __podman_packages:
   - 'uidmap'
   - 'passt'
 
-__podman_podlet_package: 'podlet'
+__podman_podlet_package: ''  # not in Debian Trixie

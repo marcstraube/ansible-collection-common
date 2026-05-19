@@ -16,4 +16,6 @@
     name: '{{ __clamav_milter_service }}'
     enabled: "{{ clamav_milter_enabled | bool }}"
     state: "{{ clamav_milter_enabled | bool | ternary('started', 'stopped') }}"
-  when: __clamav_milter_service | default('') | length > 0
+  when:
+    - clamav_milter_enabled | bool
+    - __clamav_milter_service | default('') | length > 0

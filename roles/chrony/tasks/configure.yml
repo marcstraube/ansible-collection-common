@@ -14,7 +14,6 @@
     owner: root
     group: root
     mode: '0644'
-    validate: 'chronyd -p -f %s'
   notify: Restart chrony
 
 - name: Configure | Generate NTP authentication key  # noqa: risky-shell-pipe
