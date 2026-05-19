@@ -77,3 +77,13 @@
   tags:
     - shell
     - shell:starship
+
+- name: Main | Import Zoxide shell init tasks
+  ansible.builtin.import_tasks: zoxide_init.yml
+  when:
+    - shell_enabled | bool
+    - shell_zoxide_enabled | bool
+    - shell_zoxide_shells | length > 0
+  tags:
+    - shell
+    - shell:zoxide
