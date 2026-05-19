@@ -23,3 +23,8 @@ __shell_bat_package: 'bat'
 __shell_fd_package: 'fd'
 __shell_ripgrep_package: 'ripgrep'
 __shell_tldr_package: 'tldr'
+
+# atuin / ble.sh / bash-preexec
+__shell_atuin_package: 'atuin'
+__shell_blesh_package: "{{ 'blesh-git' if shell_blesh_variant == 'git' else 'blesh' }}"
+__shell_bash_preexec_package: 'bash-preexec'

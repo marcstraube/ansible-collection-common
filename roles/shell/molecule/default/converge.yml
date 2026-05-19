@@ -99,3 +99,77 @@
     - name: Converge | Include shell role (zoxide)  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+- name: Converge — atuin + bash-preexec (Arch/Debian/EL9 — atuin available)
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'bash'
+    shell_zsh_enabled: false
+    shell_fish_enabled: false
+    shell_bash_completion_enabled: false
+    shell_starship_enabled: false
+    shell_atuin_enabled: true
+    shell_atuin_shells:
+      - 'bash'
+    shell_bash_preexec_enabled: true
+    shell_user_config_mode: 'managed'
+    shell_users:
+      - 'testuser'
+    shell_fzf_enabled: false
+
+  tasks:
+    - name: Converge | Include shell role (atuin + bash-preexec)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+- name: Converge — ble.sh (Arch only — AUR)
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'bash'
+    shell_zsh_enabled: false
+    shell_fish_enabled: false
+    shell_bash_completion_enabled: false
+    shell_starship_enabled: false
+    shell_blesh_enabled: true
+    shell_blesh_variant: 'stable'
+    shell_user_config_mode: 'managed'
+    shell_users:
+      - 'testuser'
+    shell_fzf_enabled: false
+
+  tasks:
+    - name: Converge | Include shell role (blesh)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Converge — atuin fish init (Arch only — keep fish-converge scope small)
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'bash'
+    shell_zsh_enabled: false
+    shell_fish_enabled: true
+    shell_bash_completion_enabled: false
+    shell_starship_enabled: false
+    shell_atuin_enabled: true
+    shell_atuin_shells:
+      - 'fish'
+    shell_user_config_mode: 'managed'
+    shell_users:
+      - 'testuser'
+    shell_fzf_enabled: false
+
+  tasks:
+    - name: Converge | Include shell role (atuin fish)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      when: ansible_facts['os_family'] == 'Archlinux'

@@ -25,3 +25,8 @@ __shell_bat_package: 'bat'
 __shell_fd_package: 'fd-find'
 __shell_ripgrep_package: 'ripgrep'
 __shell_tldr_package: 'tldr'
+
+# atuin / ble.sh / bash-preexec
+__shell_atuin_package: ''  # not in EPEL 10 yet
+__shell_blesh_package: ''  # AUR only on Arch
+__shell_bash_preexec_package: ''  # not in EPEL

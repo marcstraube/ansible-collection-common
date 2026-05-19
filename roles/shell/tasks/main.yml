@@ -88,3 +88,34 @@
   tags:
     - shell
     - shell:zoxide
+
+- name: Main | Import bash-preexec shell init tasks
+  ansible.builtin.import_tasks: bash_preexec_init.yml
+  when:
+    - shell_enabled | bool
+    - shell_bash_preexec_enabled | bool
+    - __shell_bash_preexec_package | default('') | length > 0
+  tags:
+    - shell
+    - shell:bash-preexec
+
+- name: Main | Import ble.sh shell init tasks
+  ansible.builtin.import_tasks: blesh_init.yml
+  when:
+    - shell_enabled | bool
+    - shell_blesh_enabled | bool
+    - __shell_blesh_package | default('') | length > 0
+  tags:
+    - shell
+    - shell:blesh
+
+- name: Main | Import atuin shell init tasks
+  ansible.builtin.import_tasks: atuin_init.yml
+  when:
+    - shell_enabled | bool
+    - shell_atuin_enabled | bool
+    - shell_atuin_shells | length > 0
+    - __shell_atuin_package | default('') | length > 0
+  tags:
+    - shell
+    - shell:atuin

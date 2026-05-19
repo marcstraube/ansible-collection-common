@@ -129,3 +129,38 @@ shell_ripgrep_enabled: false
 
 # Enable tldr (simplified man pages)
 shell_tldr_enabled: false
+
+#
+# Atuin (magical shell history)
+#
+
+# Enable atuin installation
+# Not in EPEL 10 yet — toggle is a no-op there
+shell_atuin_enabled: false
+
+# Configure atuin init for these shells (adds eval to shell config)
+shell_atuin_shells:
+  - 'bash'
+  - 'zsh'
+  - 'fish'
+
+#
+# ble.sh (Bash Line Editor) — Arch AUR only, bash only
+#
+
+# Enable ble.sh installation
+shell_blesh_enabled: false
+
+# ble.sh variant: 'stable' or 'git' (latest upstream development)
+# Stable releases lag upstream; many users want the 'git' variant.
+shell_blesh_variant: 'stable'
+
+#
+# bash-preexec (preexec/precmd hooks for bash) — Arch only, bash only
+#
+
+# Enable bash-preexec installation
+# Required by atuin's bash integration; sourced before atuin init line.
+# If not enabled, atuin bash integration depends on ble.sh being enabled
+# (which provides its own preexec/precmd hooks).
+shell_bash_preexec_enabled: false

@@ -1,0 +1,116 @@
+---
+#
+# atuin Shell Initialization
+#
+# Adds `eval "$(atuin init <shell>)"` (or fish equivalent) to the
+# per-user shell rc file via blockinfile. atuin's bash integration
+# depends on either bash-preexec or ble.sh being sourced first; the
+# wiring order in tasks/main.yml ensures those init blocks are
+# written to `.bashrc` before this one.
+#
+# Honours `shell_user_config_mode`:
+#
+#   managed  — reconcile the marker block on every run (Ansible wins)
+#   initial  — act only on users present in `__users_newly_created`
+#              for this run (fact set by `marcstraube.common.users`);
+#              existing users' rc files are left alone
+#   disabled — skip entirely
+#
+# Unlike zoxide and starship, atuin is not pre-wired in the Oh My Zsh
+# .zshrc template — under `shell_zsh_framework: 'ohmyzsh'` the atuin
+# init block is appended below the templated content via blockinfile.
+#
+
+- name: AtuinInit | Get users to configure
+  ansible.builtin.set_fact:
+    __shell_atuin_init_users: >-
+      {{ shell_users if shell_users | length > 0
+         else (users_list | default([]) | map(attribute='name') | list) }}
+
+#
+# bash
+#
+
+- name: AtuinInit | Add bash init line
+  ansible.builtin.blockinfile:
+    path: '/home/{{ item }}/.bashrc'
+    block: 'eval "$(atuin init bash)"'
+    marker: '# {mark} ANSIBLE MANAGED — atuin init'
+    create: true
+    owner: '{{ item }}'
+    group: '{{ item }}'
+    mode: '0644'
+  loop: '{{ __shell_atuin_init_users }}'
+  loop_control:
+    label: '{{ item }}'
+  when:
+    - "'bash' in shell_atuin_shells"
+    - shell_user_config_mode != 'disabled'
+    - >-
+      shell_user_config_mode == 'managed'
+      or (shell_user_config_mode == 'initial'
+          and item in (__users_newly_created | default([])))
+
+#
+# zsh
+#
+
+- name: AtuinInit | Add zsh init line
+  ansible.builtin.blockinfile:
+    path: '/home/{{ item }}/.zshrc'
+    block: 'eval "$(atuin init zsh)"'
+    marker: '# {mark} ANSIBLE MANAGED — atuin init'
+    create: true
+    owner: '{{ item }}'
+    group: '{{ item }}'
+    mode: '0644'
+  loop: '{{ __shell_atuin_init_users }}'
+  loop_control:
+    label: '{{ item }}'
+  when:
+    - "'zsh' in shell_atuin_shells"
+    - shell_user_config_mode != 'disabled'
+    - >-
+      shell_user_config_mode == 'managed'
+      or (shell_user_config_mode == 'initial'
+          and item in (__users_newly_created | default([])))
+
+#
+# fish
+#
+
+- name: AtuinInit | Ensure fish config directory exists
+  ansible.builtin.file:
+    path: '/home/{{ item }}/.config/fish'
+    state: directory
+    owner: '{{ item }}'
+    group: '{{ item }}'
+    mode: '0755'
+  loop: '{{ __shell_atuin_init_users }}'
+  when:
+    - "'fish' in shell_atuin_shells"
+    - shell_user_config_mode != 'disabled'
+    - >-
+      shell_user_config_mode == 'managed'
+      or (shell_user_config_mode == 'initial'
+          and item in (__users_newly_created | default([])))
+
+- name: AtuinInit | Add fish init line
+  ansible.builtin.blockinfile:
+    path: '/home/{{ item }}/.config/fish/config.fish'
+    block: 'atuin init fish | source'
+    marker: '# {mark} ANSIBLE MANAGED — atuin init'
+    create: true
+    owner: '{{ item }}'
+    group: '{{ item }}'
+    mode: '0644'
+  loop: '{{ __shell_atuin_init_users }}'
+  loop_control:
+    label: '{{ item }}'
+  when:
+    - "'fish' in shell_atuin_shells"
+    - shell_user_config_mode != 'disabled'
+    - >-
+      shell_user_config_mode == 'managed'
+      or (shell_user_config_mode == 'initial'
+          and item in (__users_newly_created | default([])))
