@@ -6,6 +6,13 @@
 #
 
 __utils_monitor_bottom: ''
+__utils_monitor_procs: 'procs'
+
+#
+# Disk Usage
+#
+
+__utils_disk_dust: 'du-dust'
 
 #
 # File Managers

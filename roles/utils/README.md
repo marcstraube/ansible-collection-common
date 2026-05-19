@@ -46,12 +46,27 @@ list with availability notes per OS.
 
 ### Monitors
 
-| Variable                       | Default | Description                           |
-|--------------------------------|---------|---------------------------------------|
-| `utils_monitor_htop_enabled`   | `true`  | Interactive process viewer            |
-| `utils_monitor_btop_enabled`   | `false` | Modern resource monitor (btop++)      |
-| `utils_monitor_bottom_enabled` | `false` | System monitor (Arch only)            |
-| `utils_monitor_atop_enabled`   | `false` | Advanced process monitor with logging |
+| Variable                       | Default | Description                                |
+|--------------------------------|---------|--------------------------------------------|
+| `utils_monitor_htop_enabled`   | `true`  | Interactive process viewer                 |
+| `utils_monitor_btop_enabled`   | `false` | Modern resource monitor (btop++)           |
+| `utils_monitor_bottom_enabled` | `false` | System monitor (Arch only)                 |
+| `utils_monitor_atop_enabled`   | `false` | Advanced process monitor with logging      |
+| `utils_monitor_procs_enabled`  | `false` | Modern process viewer (Arch/Debian/EL9)    |
+
+### Disk Usage
+
+| Variable                  | Default | Description                              |
+|---------------------------|---------|------------------------------------------|
+| `utils_disk_dust_enabled` | `false` | du replacement as tree (Arch/Debian)     |
+| `utils_disk_duf_enabled`  | `false` | Colourised df replacement                |
+
+### Secrets / Encryption
+
+| Variable                     | Default | Description                              |
+|------------------------------|---------|------------------------------------------|
+| `utils_secrets_age_enabled`  | `false` | Simple file encryption tool              |
+| `utils_secrets_sops_enabled` | `false` | Encrypted file editor (Arch only)        |
 
 ### File Transfer
 
@@ -138,6 +153,11 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - [btop](https://github.com/aristocratos/btop) — modern resource monitor for the terminal
 - [ripgrep](https://github.com/BurntSushi/ripgrep) — fast recursive grep alternative
 - [fd](https://github.com/sharkdp/fd) — fast find alternative
+- [procs](https://github.com/dalance/procs) — modern `ps` replacement with colourised output
+- [dust](https://github.com/bootandy/dust) — `du` replacement showing disk usage as a tree
+- [duf](https://github.com/muesli/duf) — `df` replacement with colourised filesystem overview
+- [age](https://github.com/FiloSottile/age) — simple file encryption tool
+- [sops](https://github.com/getsops/sops) — editor for encrypted YAML/JSON/ENV/INI files
 
 ## License
 

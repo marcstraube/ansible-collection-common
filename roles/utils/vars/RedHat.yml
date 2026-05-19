@@ -8,6 +8,13 @@
 #
 
 __utils_monitor_bottom: ''
+__utils_monitor_procs: ''
+
+#
+# Disk Usage
+#
+
+__utils_disk_dust: ''
 
 #
 # File Managers

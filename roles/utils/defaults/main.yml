@@ -22,6 +22,32 @@ utils_monitor_bottom_enabled: false
 # Advanced system & process monitor with logging (atop)
 utils_monitor_atop_enabled: false
 
+# Modern process viewer with colourised output (procs)
+# Not available on Rocky 10
+utils_monitor_procs_enabled: false
+
+#
+# Disk Usage
+#
+
+# du replacement showing disk usage as a tree (dust)
+# Not available on Rocky
+utils_disk_dust_enabled: false
+
+# df replacement with colourised filesystem overview (duf)
+utils_disk_duf_enabled: false
+
+#
+# Secrets / Encryption
+#
+
+# Simple file encryption tool (age)
+utils_secrets_age_enabled: false
+
+# Editor for encrypted files (sops)
+# Arch only
+utils_secrets_sops_enabled: false
+
 #
 # File Transfer
 #
