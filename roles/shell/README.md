@@ -158,6 +158,10 @@ the marker block on every run; `'initial'` deploys the block on
 first run and leaves the file alone if the marker is already present
 (preserving any user modifications inside it); `'disabled'` skips.
 
+On platforms where `zoxide` is not packaged (currently EL 10 — not in
+EPEL 10), `shell_zoxide_enabled` is a silent no-op: neither the
+package nor the init line is deployed.
+
 ## Tags
 
 | Tag               | Description                    |

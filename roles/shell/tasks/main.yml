@@ -84,6 +84,7 @@
     - shell_enabled | bool
     - shell_zoxide_enabled | bool
     - shell_zoxide_shells | length > 0
+    - __shell_zoxide_package | default('') | length > 0
   tags:
     - shell
     - shell:zoxide

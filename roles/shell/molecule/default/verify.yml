@@ -213,7 +213,7 @@
         - __shell_zoxide_package | default('') | length > 0
 
     #
-    # Zoxide init line in shell rc (all distros — testuser has bash init via converge)
+    # Zoxide init line in shell rc (skipped when zoxide unavailable, e.g. EL 10)
     #
 
     - name: Verify | Check zoxide init block in testuser .bashrc
@@ -222,6 +222,7 @@
       register: _shell_zoxide_bash_init
       changed_when: false
       failed_when: _shell_zoxide_bash_init.rc != 0
+      when: __shell_zoxide_package | default('') | length > 0
 
     - name: Verify | Check zoxide init block has ansible-managed marker
       ansible.builtin.command:
@@ -229,3 +230,12 @@
       register: _shell_zoxide_marker
       changed_when: false
       failed_when: _shell_zoxide_marker.rc != 0
+      when: __shell_zoxide_package | default('') | length > 0
+
+    - name: Verify | Check zoxide init block absent when package unavailable
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — zoxide init" /home/testuser/.bashrc'
+      register: _shell_zoxide_absent
+      changed_when: false
+      failed_when: _shell_zoxide_absent.rc == 0
+      when: __shell_zoxide_package | default('') | length == 0
