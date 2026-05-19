@@ -7,7 +7,7 @@
 #
 
 __utils_monitor_bottom: ''
-__utils_monitor_procs: 'rust-procs'
+__utils_monitor_procs: 'procs'
 
 #
 # Disk Usage

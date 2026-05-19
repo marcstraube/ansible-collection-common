@@ -323,19 +323,9 @@
     # procs (Arch/Debian/EL9 — not in EL10)
     #
 
-    - name: Verify | Set procs package name
-      ansible.builtin.set_fact:
-        _utils_procs_pkg_name: >-
-          {{ 'rust-procs'
-             if (ansible_facts['os_family'] == 'RedHat'
-                 and ansible_facts['distribution_major_version'] == '9')
-             else 'procs' }}
-      when: not (ansible_facts['os_family'] == 'RedHat'
-                 and ansible_facts['distribution_major_version'] == '10')
-
     - name: Verify | Check procs package installed
       ansible.builtin.package:
-        name: '{{ _utils_procs_pkg_name }}'
+        name: procs
         state: present
       check_mode: true
       register: _utils_procs_pkg
