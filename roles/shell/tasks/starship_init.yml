@@ -8,11 +8,12 @@
 # without a custom config (using starship defaults).
 #
 # Honours `shell_user_config_mode`:
-#   managed  — reconcile the marker block on every run
-#   initial  — deploy on first run; if the marker is already present
-#              for the user, leave the file alone (preserve any
-#              modifications inside the marker block)
-#   disabled — skip
+#
+#   managed  — reconcile the marker block on every run (Ansible wins)
+#   initial  — act only on users present in `__users_newly_created`
+#              for this run (fact set by `marcstraube.common.users`);
+#              existing users' rc files are left alone
+#   disabled — skip entirely
 #
 # zsh handling: when `shell_zsh_framework == 'ohmyzsh'`, the
 # ohmyzsh.zshrc.j2 template already includes the starship init line.
@@ -29,67 +30,50 @@
 # bash
 #
 
-- name: StarshipInit | Check existing bash starship init per user
-  ansible.builtin.shell:
-    cmd: 'test -f /home/{{ item }}/.bashrc && grep -q "starship init bash" /home/{{ item }}/.bashrc'
-  loop: '{{ __shell_starship_init_users }}'
-  register: __shell_starship_init_bash_check
-  changed_when: false
-  failed_when: false
-  when:
-    - "'bash' in shell_starship_shells"
-    - shell_user_config_mode != 'disabled'
-
 - name: StarshipInit | Add bash init line
   ansible.builtin.blockinfile:
-    path: '/home/{{ item.0 }}/.bashrc'
+    path: '/home/{{ item }}/.bashrc'
     block: 'eval "$(starship init bash)"'
     marker: '# {mark} ANSIBLE MANAGED — starship init'
     create: true
-    owner: '{{ item.0 }}'
-    group: '{{ item.0 }}'
+    owner: '{{ item }}'
+    group: '{{ item }}'
     mode: '0644'
-  loop: '{{ __shell_starship_init_users | zip(__shell_starship_init_bash_check.results | default([])) | list }}'
+  loop: '{{ __shell_starship_init_users }}'
   loop_control:
-    label: '{{ item.0 }}'
+    label: '{{ item }}'
   when:
     - "'bash' in shell_starship_shells"
     - shell_user_config_mode != 'disabled'
-    - shell_user_config_mode == 'managed' or (item.1.rc | default(1)) != 0
+    - >-
+      shell_user_config_mode == 'managed'
+      or (shell_user_config_mode == 'initial'
+          and item in (__users_newly_created | default([])))
 
 #
 # zsh
 #
 
-- name: StarshipInit | Check existing zsh starship init per user
-  ansible.builtin.shell:
-    cmd: 'test -f /home/{{ item }}/.zshrc && grep -q "starship init zsh" /home/{{ item }}/.zshrc'
-  loop: '{{ __shell_starship_init_users }}'
-  register: __shell_starship_init_zsh_check
-  changed_when: false
-  failed_when: false
-  when:
-    - "'zsh' in shell_starship_shells"
-    - shell_zsh_framework != 'ohmyzsh'
-    - shell_user_config_mode != 'disabled'
-
 - name: StarshipInit | Add zsh init line
   ansible.builtin.blockinfile:
-    path: '/home/{{ item.0 }}/.zshrc'
+    path: '/home/{{ item }}/.zshrc'
     block: 'eval "$(starship init zsh)"'
     marker: '# {mark} ANSIBLE MANAGED — starship init'
     create: true
-    owner: '{{ item.0 }}'
-    group: '{{ item.0 }}'
+    owner: '{{ item }}'
+    group: '{{ item }}'
     mode: '0644'
-  loop: '{{ __shell_starship_init_users | zip(__shell_starship_init_zsh_check.results | default([])) | list }}'
+  loop: '{{ __shell_starship_init_users }}'
   loop_control:
-    label: '{{ item.0 }}'
+    label: '{{ item }}'
   when:
     - "'zsh' in shell_starship_shells"
     - shell_zsh_framework != 'ohmyzsh'
     - shell_user_config_mode != 'disabled'
-    - shell_user_config_mode == 'managed' or (item.1.rc | default(1)) != 0
+    - >-
+      shell_user_config_mode == 'managed'
+      or (shell_user_config_mode == 'initial'
+          and item in (__users_newly_created | default([])))
 
 #
 # fish
@@ -106,33 +90,27 @@
   when:
     - "'fish' in shell_starship_shells"
     - shell_user_config_mode != 'disabled'
-
-- name: StarshipInit | Check existing fish starship init per user
-  ansible.builtin.shell:
-    cmd: >-
-      test -f /home/{{ item }}/.config/fish/config.fish &&
-      grep -q "starship init fish" /home/{{ item }}/.config/fish/config.fish
-  loop: '{{ __shell_starship_init_users }}'
-  register: __shell_starship_init_fish_check
-  changed_when: false
-  failed_when: false
-  when:
-    - "'fish' in shell_starship_shells"
-    - shell_user_config_mode != 'disabled'
+    - >-
+      shell_user_config_mode == 'managed'
+      or (shell_user_config_mode == 'initial'
+          and item in (__users_newly_created | default([])))
 
 - name: StarshipInit | Add fish init line
   ansible.builtin.blockinfile:
-    path: '/home/{{ item.0 }}/.config/fish/config.fish'
+    path: '/home/{{ item }}/.config/fish/config.fish'
     block: 'starship init fish | source'
     marker: '# {mark} ANSIBLE MANAGED — starship init'
     create: true
-    owner: '{{ item.0 }}'
-    group: '{{ item.0 }}'
+    owner: '{{ item }}'
+    group: '{{ item }}'
     mode: '0644'
-  loop: '{{ __shell_starship_init_users | zip(__shell_starship_init_fish_check.results | default([])) | list }}'
+  loop: '{{ __shell_starship_init_users }}'
   loop_control:
-    label: '{{ item.0 }}'
+    label: '{{ item }}'
   when:
     - "'fish' in shell_starship_shells"
     - shell_user_config_mode != 'disabled'
-    - shell_user_config_mode == 'managed' or (item.1.rc | default(1)) != 0
+    - >-
+      shell_user_config_mode == 'managed'
+      or (shell_user_config_mode == 'initial'
+          and item in (__users_newly_created | default([])))
