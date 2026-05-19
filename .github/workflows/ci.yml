@@ -6,6 +6,11 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Weekly on Sunday 07:00 UTC — catches upstream package drift
+    # (EPEL / Arch repos / Debian) without code changes.
+    - cron: '0 7 * * 0'
+  workflow_dispatch:
 
 jobs:
   # =============================================================================
@@ -123,6 +128,8 @@ jobs:
   # Shared file changes (galaxy.yml, plugins/, meta/runtime.yml) test all roles.
   # Vagrant roles (apparmor, auditd, hardening, hardware_tokens,
   # networkmanager, wireguard) require VMs and are tested locally.
+  # On schedule / workflow_dispatch: full matrix (all roles × all platforms)
+  # to catch upstream package drift.
   # =============================================================================
   detect-changes:
     name: Detect Changed Roles
@@ -136,7 +143,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine changed roles
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Determine roles and platforms to test
         id: set-matrix
         run: |
           # Auto-detect podman roles from molecule driver config
@@ -148,59 +158,76 @@ jobs:
             fi
           done
 
-          # Determine base commit for diff
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE="${{ github.event.pull_request.base.sha }}"
-          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-            BASE="${{ github.event.before }}"
-          else
-            # Force push or initial push — test all roles
-            echo "Initial or force push — testing all roles"
-            BASE=""
-          fi
-
-          # If no valid base, test all podman roles
-          if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
+          # On schedule or manual dispatch: test everything
+          EVENT="${{ github.event_name }}"
+          if [ "$EVENT" = "schedule" ] || [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "Event '$EVENT' — full matrix (all roles × all platforms)"
             ROLES="$ALL_PODMAN_ROLES"
           else
-            CHANGED=$(git diff --name-only "$BASE" "${{ github.sha }}")
+            # Determine base commit for diff
+            if [ "$EVENT" = "pull_request" ]; then
+              BASE="${{ github.event.pull_request.base.sha }}"
+            elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              BASE="${{ github.event.before }}"
+            else
+              echo "Initial or force push — testing all roles"
+              BASE=""
+            fi
 
-            # Shared files that require testing all roles
-            if echo "$CHANGED" | grep -qE '^(galaxy\.yml|requirements\.yml|plugins/|meta/runtime\.yml)'; then
-              echo "Shared files changed — testing all roles"
+            # If no valid base, test all podman roles
+            if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
               ROLES="$ALL_PODMAN_ROLES"
             else
-              # Find roles with substantive changes (skip README-only)
-              ROLES=$(echo "$CHANGED" \
-                | grep '^roles/' \
-                | grep -v '/README\.md$' \
-                | sed 's|^roles/\([^/]*\)/.*|\1|' \
-                | sort -u \
-                | tr '\n' ' ')
+              CHANGED=$(git diff --name-only "$BASE" "${{ github.sha }}")
 
-              # Filter to podman roles only
-              FILTERED=""
-              for role in $ROLES; do
-                if echo " $ALL_PODMAN_ROLES " | grep -q " $role "; then
-                  FILTERED="$FILTERED $role"
-                fi
-              done
-              ROLES="$FILTERED"
+              # Shared files that require testing all roles
+              if echo "$CHANGED" | grep -qE '^(galaxy\.yml|requirements\.yml|plugins/|meta/runtime\.yml)'; then
+                echo "Shared files changed — testing all roles"
+                ROLES="$ALL_PODMAN_ROLES"
+              else
+                # Find roles with substantive changes (skip README-only)
+                ROLES=$(echo "$CHANGED" \
+                  | grep '^roles/' \
+                  | grep -v '/README\.md$' \
+                  | sed 's|^roles/\([^/]*\)/.*|\1|' \
+                  | sort -u \
+                  | tr '\n' ' ')
+
+                # Filter to podman roles only
+                FILTERED=""
+                for role in $ROLES; do
+                  if echo " $ALL_PODMAN_ROLES " | grep -q " $role "; then
+                    FILTERED="$FILTERED $role"
+                  fi
+                done
+                ROLES="$FILTERED"
+              fi
             fi
           fi
 
-          # Build JSON matrix
+          # Build JSON matrix: one entry per (role, platform) pair.
+          # Platforms are parsed from each role's molecule.yml so single-platform
+          # roles get a single entry and multi-platform roles get one per platform.
           MATRIX="["
           FIRST=true
           for role in $ROLES; do
             [ -z "$role" ] && continue
-            platform="$(echo "$role" | tr '_' '-')-archlinux"
-            if [ "$FIRST" = "true" ]; then
-              FIRST=false
-            else
-              MATRIX="${MATRIX},"
-            fi
-            MATRIX="${MATRIX}{\"role\":\"${role}\",\"platform\":\"${platform}\"}"
+            platforms=$(python3 -c "
+          import yaml, sys
+          with open(sys.argv[1]) as f:
+              data = yaml.safe_load(f)
+          for p in data.get('platforms', []):
+              print(p['name'])
+          " "roles/$role/molecule/default/molecule.yml")
+
+            for platform in $platforms; do
+              if [ "$FIRST" = "true" ]; then
+                FIRST=false
+              else
+                MATRIX="${MATRIX},"
+              fi
+              MATRIX="${MATRIX}{\"role\":\"${role}\",\"platform\":\"${platform}\"}"
+            done
           done
           MATRIX="${MATRIX}]"
 
@@ -210,12 +237,14 @@ jobs:
           else
             echo "has_roles=true" >> "$GITHUB_OUTPUT"
             echo "Roles to test: $ROLES"
+            echo "Matrix entries: $(echo "$MATRIX" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
           fi
 
           echo "matrix={\"include\":${MATRIX}}" >> "$GITHUB_OUTPUT"
 
   # =============================================================================
-  # MOLECULE ROLE-BY-ROLE (changed podman roles only, Arch Linux)
+  # MOLECULE ROLE × PLATFORM (changed roles × all their platforms;
+  # full matrix on schedule / workflow_dispatch)
   # =============================================================================
   molecule-roles:
     name: Molecule ${{ matrix.role }} (${{ matrix.platform }})
