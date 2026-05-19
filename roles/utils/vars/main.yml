@@ -11,6 +11,19 @@ __utils_monitor_btop: 'btop'
 __utils_monitor_atop: 'atop'
 
 #
+# Disk Usage
+#
+
+__utils_disk_duf: 'duf'
+
+#
+# Secrets / Encryption
+#
+
+__utils_secrets_age: 'age'  # pragma: allowlist secret
+__utils_secrets_sops: ''  # pragma: allowlist secret
+
+#
 # File Transfer
 #
 

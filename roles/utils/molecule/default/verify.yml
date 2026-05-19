@@ -318,3 +318,121 @@
         that:
           - "'fd' in _utils_fd_version.stdout"
         fail_msg: fd version output unexpected
+
+    #
+    # procs (Arch/Debian/EL9 — not in EL10)
+    #
+
+    - name: Verify | Set procs package name
+      ansible.builtin.set_fact:
+        _utils_procs_pkg_name: >-
+          {{ 'rust-procs'
+             if (ansible_facts['os_family'] == 'RedHat'
+                 and ansible_facts['distribution_major_version'] == '9')
+             else 'procs' }}
+      when: not (ansible_facts['os_family'] == 'RedHat'
+                 and ansible_facts['distribution_major_version'] == '10')
+
+    - name: Verify | Check procs package installed
+      ansible.builtin.package:
+        name: '{{ _utils_procs_pkg_name }}'
+        state: present
+      check_mode: true
+      register: _utils_procs_pkg
+      failed_when: _utils_procs_pkg.changed
+      when: not (ansible_facts['os_family'] == 'RedHat'
+                 and ansible_facts['distribution_major_version'] == '10')
+
+    - name: Verify | Check procs binary exists
+      ansible.builtin.command:
+        cmd: which procs
+      register: _utils_procs_bin
+      changed_when: false
+      failed_when: _utils_procs_bin.rc != 0
+      when: not (ansible_facts['os_family'] == 'RedHat'
+                 and ansible_facts['distribution_major_version'] == '10')
+
+    #
+    # dust (Arch/Debian — not in EL)
+    #
+
+    - name: Verify | Set dust package name
+      ansible.builtin.set_fact:
+        _utils_dust_pkg_name: "{{ 'du-dust' if ansible_facts['os_family'] == 'Debian' else 'dust' }}"
+      when: ansible_facts['os_family'] in ['Archlinux', 'Debian']
+
+    - name: Verify | Check dust package installed
+      ansible.builtin.package:
+        name: '{{ _utils_dust_pkg_name }}'
+        state: present
+      check_mode: true
+      register: _utils_dust_pkg
+      failed_when: _utils_dust_pkg.changed
+      when: ansible_facts['os_family'] in ['Archlinux', 'Debian']
+
+    - name: Verify | Check dust binary exists
+      ansible.builtin.command:
+        cmd: which dust
+      register: _utils_dust_bin
+      changed_when: false
+      failed_when: _utils_dust_bin.rc != 0
+      when: ansible_facts['os_family'] in ['Archlinux', 'Debian']
+
+    #
+    # duf (all platforms)
+    #
+
+    - name: Verify | Check duf package installed
+      ansible.builtin.package:
+        name: duf
+        state: present
+      check_mode: true
+      register: _utils_duf_pkg
+      failed_when: _utils_duf_pkg.changed
+
+    - name: Verify | Check duf binary exists
+      ansible.builtin.command:
+        cmd: which duf
+      register: _utils_duf_bin
+      changed_when: false
+      failed_when: _utils_duf_bin.rc != 0
+
+    #
+    # age (all platforms)
+    #
+
+    - name: Verify | Check age package installed
+      ansible.builtin.package:
+        name: age
+        state: present
+      check_mode: true
+      register: _utils_age_pkg
+      failed_when: _utils_age_pkg.changed
+
+    - name: Verify | Check age binary exists
+      ansible.builtin.command:
+        cmd: which age
+      register: _utils_age_bin
+      changed_when: false
+      failed_when: _utils_age_bin.rc != 0
+
+    #
+    # sops (Arch only)
+    #
+
+    - name: Verify | Check sops package installed
+      ansible.builtin.package:
+        name: sops
+        state: present
+      check_mode: true
+      register: _utils_sops_pkg
+      failed_when: _utils_sops_pkg.changed
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Check sops binary exists
+      ansible.builtin.command:
+        cmd: which sops
+      register: _utils_sops_bin
+      changed_when: false
+      failed_when: _utils_sops_bin.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'

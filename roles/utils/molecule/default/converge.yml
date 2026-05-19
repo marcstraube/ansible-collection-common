@@ -9,6 +9,15 @@
     # Monitors
     utils_monitor_htop_enabled: true
     utils_monitor_btop_enabled: true
+    utils_monitor_procs_enabled: true
+
+    # Disk usage
+    utils_disk_dust_enabled: true
+    utils_disk_duf_enabled: true
+
+    # Secrets / encryption
+    utils_secrets_age_enabled: true
+    utils_secrets_sops_enabled: true
 
     # File transfer
     utils_transfer_rsync_enabled: true
