@@ -177,3 +177,65 @@
       changed_when: false
       failed_when: _shell_starship_marker.rc != 0
       when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Zoxide (all distros)
+    #
+
+    - name: Verify | Check zoxide installed (Arch)
+      ansible.builtin.command:
+        cmd: 'pacman -Q {{ __shell_zoxide_package }}'
+      register: _shell_zoxide_arch
+      changed_when: false
+      failed_when: _shell_zoxide_arch.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Archlinux'
+        - __shell_zoxide_package | default('') | length > 0
+
+    - name: Verify | Check zoxide installed (Debian)
+      ansible.builtin.command:
+        cmd: 'dpkg -l {{ __shell_zoxide_package }}'
+      register: _shell_zoxide_deb
+      changed_when: false
+      failed_when: _shell_zoxide_deb.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'Debian'
+        - __shell_zoxide_package | default('') | length > 0
+
+    - name: Verify | Check zoxide installed (RedHat)
+      ansible.builtin.command:  # noqa: command-instead-of-module
+        cmd: 'rpm -q {{ __shell_zoxide_package }}'
+      register: _shell_zoxide_rpm
+      changed_when: false
+      failed_when: _shell_zoxide_rpm.rc != 0
+      when:
+        - ansible_facts['os_family'] == 'RedHat'
+        - __shell_zoxide_package | default('') | length > 0
+
+    #
+    # Zoxide init line in shell rc (skipped when zoxide unavailable, e.g. EL 10)
+    #
+
+    - name: Verify | Check zoxide init block in testuser .bashrc
+      ansible.builtin.command:
+        cmd: 'grep -q "zoxide init bash" /home/testuser/.bashrc'
+      register: _shell_zoxide_bash_init
+      changed_when: false
+      failed_when: _shell_zoxide_bash_init.rc != 0
+      when: __shell_zoxide_package | default('') | length > 0
+
+    - name: Verify | Check zoxide init block has ansible-managed marker
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — zoxide init" /home/testuser/.bashrc'
+      register: _shell_zoxide_marker
+      changed_when: false
+      failed_when: _shell_zoxide_marker.rc != 0
+      when: __shell_zoxide_package | default('') | length > 0
+
+    - name: Verify | Check zoxide init block absent when package unavailable
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — zoxide init" /home/testuser/.bashrc'
+      register: _shell_zoxide_absent
+      changed_when: false
+      failed_when: _shell_zoxide_absent.rc == 0
+      when: __shell_zoxide_package | default('') | length == 0

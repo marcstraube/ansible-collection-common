@@ -1,8 +1,6 @@
 ---
 #
-# RedHat / EL 10 Variables
-#
-# For EL 9, see RedHat-9.yml.
+# EL 9 Variables — EPEL 9 ships some tools not yet packaged for EPEL 10
 #
 
 # Zsh plugins
@@ -19,7 +17,7 @@ __shell_starship_package: ''
 
 # Additional tools
 __shell_fzf_package: 'fzf'
-__shell_zoxide_package: ''  # not in EPEL 10
+__shell_zoxide_package: 'zoxide'  # EPEL 9 only
 __shell_eza_package: 'eza'
 __shell_bat_package: 'bat'
 __shell_fd_package: 'fd-find'

@@ -75,3 +75,27 @@
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
       when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Converge — Zoxide init (all distros — zoxide ships in every repo)
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'bash'
+    shell_zsh_enabled: false
+    shell_fish_enabled: false
+    shell_bash_completion_enabled: false
+    shell_starship_enabled: false
+    shell_zoxide_enabled: true
+    shell_zoxide_shells:
+      - 'bash'
+    shell_user_config_mode: 'managed'
+    shell_users:
+      - 'testuser'
+    shell_fzf_enabled: false
+
+  tasks:
+    - name: Converge | Include shell role (zoxide)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

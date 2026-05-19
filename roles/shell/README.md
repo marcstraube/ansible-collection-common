@@ -126,15 +126,41 @@ first run and leaves the file alone if the marker is already present
 
 ### Additional Tools
 
-| Variable                 | Default | Description                               |
-|--------------------------|---------|-------------------------------------------|
-| `shell_fzf_enabled`      | `true`  | Enable fzf (fuzzy finder)                 |
-| `shell_zoxide_enabled`   | `false` | Enable zoxide (smarter cd)                |
-| `shell_eza_enabled`      | `false` | Enable eza (modern ls)                    |
-| `shell_bat_enabled`      | `false` | Enable bat (cat with syntax highlighting) |
-| `shell_fd_enabled`       | `false` | Enable fd (modern find)                   |
-| `shell_ripgrep_enabled`  | `false` | Enable ripgrep (modern grep)              |
-| `shell_tldr_enabled`     | `false` | Enable tldr (simplified man pages)        |
+| Variable                 | Default           | Description                                  |
+|--------------------------|-------------------|----------------------------------------------|
+| `shell_fzf_enabled`      | `true`            | Enable fzf (fuzzy finder)                    |
+| `shell_zoxide_enabled`   | `false`           | Enable zoxide (smarter cd)                   |
+| `shell_zoxide_shells`    | `['zsh', 'bash']` | Configure zoxide init for these shells       |
+| `shell_eza_enabled`      | `false`           | Enable eza (modern ls)                       |
+| `shell_bat_enabled`      | `false`           | Enable bat (cat with syntax highlighting)    |
+| `shell_fd_enabled`       | `false`           | Enable fd (modern find)                      |
+| `shell_ripgrep_enabled`  | `false`           | Enable ripgrep (modern grep)                 |
+| `shell_tldr_enabled`     | `false`           | Enable tldr (simplified man pages)           |
+
+`shell_zoxide_shells` controls which shell rcfiles get a zoxide init
+line appended via `blockinfile` (with marker
+`# ANSIBLE MANAGED — zoxide init`). Without an init line, the
+`zoxide` package is installed but unusable — `eval "$(zoxide init <shell>)"`
+must be sourced for the `z` command to work.
+
+| Shell  | Target file                  | Init line                          |
+|--------|------------------------------|------------------------------------|
+| `bash` | `~/.bashrc`                  | `eval "$(zoxide init bash)"`       |
+| `zsh`  | `~/.zshrc`                   | `eval "$(zoxide init zsh)"`        |
+| `fish` | `~/.config/fish/config.fish` | `zoxide init fish \| source`       |
+
+The zsh init line is skipped when `shell_zsh_framework: 'ohmyzsh'` —
+the Oh My Zsh `.zshrc` template already includes zoxide init when
+`shell_zoxide_enabled` is true, so adding it again would duplicate.
+
+Init lines honour `shell_user_config_mode`: `'managed'` reconciles
+the marker block on every run; `'initial'` deploys the block on
+first run and leaves the file alone if the marker is already present
+(preserving any user modifications inside it); `'disabled'` skips.
+
+On platforms where `zoxide` is not packaged (currently EL 10 — not in
+EPEL 10), `shell_zoxide_enabled` is a silent no-op: neither the
+package nor the init line is deployed.
 
 ## Tags
 
@@ -145,6 +171,7 @@ first run and leaves the file alone if the marker is already present
 | `shell:ohmyzsh`   | Oh My Zsh setup and config     |
 | `shell:users`     | User shell configuration       |
 | `shell:starship`  | Starship per-user config       |
+| `shell:zoxide`    | Zoxide per-user init           |
 
 ## Example Playbook
 
