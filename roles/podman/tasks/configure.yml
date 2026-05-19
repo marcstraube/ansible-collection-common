@@ -38,13 +38,27 @@
     state: absent
   when: not (podman_docker_alias_enabled | bool)
 
+# Re-check the docker binary here so the symlink guard also works when
+# install.yml was skipped via --tags podman:configure.
+- name: Configure | Check if real Docker binary exists
+  ansible.builtin.stat:
+    path: /usr/bin/docker
+  register: __podman_docker_bin
+
 - name: Configure | Create docker socket symlink
   ansible.builtin.file:
     src: '/run/podman/podman.sock'
     dest: '/run/docker.sock'
     state: link
     force: true
-  when: podman_docker_socket_symlink_enabled | bool
+  when:
+    - podman_docker_socket_symlink_enabled | bool
+    # Skip when the docker role is enabled — its daemon owns /run/docker.sock.
+    - not (docker_enabled | default(false) | bool)
+    # Skip when real Docker binary exists (regular file, not the podman-docker shim,
+    # which is a symlink to /usr/bin/podman). Mirrors the guard in install.yml for
+    # the podman-docker package.
+    - not (__podman_docker_bin.stat.exists and not __podman_docker_bin.stat.islnk)
   # Socket may not exist yet before podman.socket is started
   failed_when: false
 
