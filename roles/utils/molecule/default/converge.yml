@@ -19,6 +19,20 @@
     utils_secrets_age_enabled: true
     utils_secrets_sops_enabled: true
 
+    # Network diagnostics
+    utils_net_dig_enabled: true
+    utils_net_mtr_enabled: true
+    utils_net_traceroute_enabled: true
+    utils_net_nmap_enabled: true
+    utils_net_iperf3_enabled: true
+    utils_net_netcat_enabled: true
+    utils_net_whois_enabled: true
+    utils_net_iftop_enabled: true
+    utils_net_nethogs_enabled: true
+    utils_net_httpie_enabled: true
+    utils_net_xh_enabled: true
+    utils_net_arp_scan_enabled: true
+
     # File transfer
     utils_transfer_rsync_enabled: true
 

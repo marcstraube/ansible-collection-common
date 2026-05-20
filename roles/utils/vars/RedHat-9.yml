@@ -16,6 +16,18 @@ __utils_monitor_procs: 'procs'
 __utils_disk_dust: ''
 
 #
+# Network Diagnostics
+# arp-scan inherits from main.yml — in EPEL 9
+# httpie is listed in EPEL 9 but pulls in python3.9dist(pygments) which lives
+# in CRB only — install fails with default repo set, so override to ''
+#
+
+__utils_net_dig: 'bind-utils'
+__utils_net_netcat: 'netcat'
+__utils_net_xh: ''  # not in Rocky
+__utils_net_httpie: ''  # EPEL 9 package has unsatisfiable CRB-only dependency
+
+#
 # File Managers
 #
 
