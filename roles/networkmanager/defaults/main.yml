@@ -137,6 +137,19 @@ networkmanager_vpn_plugins: []
 # Connections
 #
 # Connection profiles managed via community.general.nmcli.
+#
+# First-class fields map to community.general.nmcli module parameters
+# (ifname, ip4, gw4, dns4, routes4, autoconnect, ...).
+#
+# The generic `settings:` dict takes nmcli-native keys and is applied via
+# a single `nmcli connection modify` per connection. Any setting nmcli
+# supports works — see https://networkmanager.dev/docs/api/latest/settings-spec.html
+#
+# Idempotency note: values are compared verbatim against `nmcli -t -f all
+# connection show <conn>` output. nmcli normalizes some values on store
+# (e.g. ipv4.dhcp-send-hostname "1" is stored as "yes"). Use the form
+# nmcli returns to avoid every run being reported as changed.
+#
 # Example:
 #   ethernet:
 #     "My Office Connection":
@@ -148,8 +161,14 @@ networkmanager_vpn_plugins: []
 #       dns4:
 #         - "8.8.8.8"
 #         - "8.8.4.4"
-#       dhcp_send_hostname_ipv4: true
-#       dhcp_send_hostname_ipv6: true
+#       settings:
+#         ipv4.dhcp-send-hostname: "yes"
+#         ipv6.dhcp-send-hostname: "yes"
+#   wifi:
+#     "Home WiFi":
+#       ssid: "MyNetwork"
+#       settings:
+#         802-11-wireless.cloned-mac-address: "random"
 networkmanager_connections:
   ethernet: {}
   wifi: {}
