@@ -21,6 +21,14 @@ __utils_disk_dust: 'dust'
 __utils_secrets_sops: 'sops'  # pragma: allowlist secret
 
 #
+# Network Diagnostics
+#
+
+__utils_net_dig: 'bind'
+__utils_net_netcat: 'openbsd-netcat'
+__utils_net_xh: 'xh'
+
+#
 # File Managers
 #
 

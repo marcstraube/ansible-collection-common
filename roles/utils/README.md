@@ -68,6 +68,35 @@ list with availability notes per OS.
 | `utils_secrets_age_enabled`  | `false` | Simple file encryption tool              |
 | `utils_secrets_sops_enabled` | `false` | Encrypted file editor (Arch only)        |
 
+### Network Diagnostics
+
+| Variable                       | Default | Description                                      |
+|--------------------------------|---------|--------------------------------------------------|
+| `utils_net_dig_enabled`        | `false` | dig / nslookup / host (BIND tools)               |
+| `utils_net_mtr_enabled`        | `false` | mtr (combined traceroute + ping)                 |
+| `utils_net_traceroute_enabled` | `false` | traceroute (classic)                             |
+| `utils_net_nmap_enabled`       | `false` | nmap port scanner / host discovery               |
+| `utils_net_iperf3_enabled`     | `false` | iperf3 bandwidth measurement                     |
+| `utils_net_netcat_enabled`     | `false` | netcat (OpenBSD flavour)                         |
+| `utils_net_whois_enabled`      | `false` | whois domain registration info                   |
+| `utils_net_iftop_enabled`      | `false` | iftop per-connection bandwidth TUI               |
+| `utils_net_nethogs_enabled`    | `false` | nethogs per-process bandwidth                    |
+| `utils_net_httpie_enabled`     | `false` | HTTPie command-line HTTP client (Arch/Debian)    |
+| `utils_net_xh_enabled`         | `false` | xh rust HTTPie clone (Arch/Debian)               |
+| `utils_net_arp_scan_enabled`   | `false` | arp-scan LAN host discovery (not on EL 10)       |
+
+Package mapping per platform:
+
+| Tool         | Arch                 | Debian Trixie    | Rocky 9      | Rocky 10     |
+|--------------|----------------------|------------------|--------------|--------------|
+| dig          | `bind`               | `bind9-dnsutils` | `bind-utils` | `bind-utils` |
+| netcat       | `openbsd-netcat`     | `netcat-openbsd` | `netcat`     | `netcat`     |
+| httpie       | `httpie`             | `httpie`         | —            | —            |
+| xh           | `xh`                 | `xh`             | —            | —            |
+| arp-scan     | `arp-scan`           | `arp-scan`       | `arp-scan`   | —            |
+
+All other tools use the same package name on every supported distro.
+
 ### File Transfer
 
 | Variable                       | Default | Description            |
@@ -158,6 +187,17 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - [duf](https://github.com/muesli/duf) — `df` replacement with colourised filesystem overview
 - [age](https://github.com/FiloSottile/age) — simple file encryption tool
 - [sops](https://github.com/getsops/sops) — editor for encrypted YAML/JSON/ENV/INI files
+- [BIND tools](https://www.isc.org/bind/) — dig, nslookup, host
+- [mtr](https://github.com/traviscross/mtr) — combined traceroute and ping
+- [nmap](https://nmap.org/) — Network Mapper, port scanner
+- [iperf3](https://iperf.fr/) — bandwidth measurement
+- [OpenBSD netcat](https://man.openbsd.org/nc) — TCP/UDP swiss army knife
+- [whois](https://www.iana.org/whois) — domain registration lookup
+- [iftop](https://www.ex-parrot.com/pdw/iftop/) — per-connection bandwidth TUI
+- [nethogs](https://github.com/raboof/nethogs) — per-process bandwidth
+- [HTTPie](https://httpie.io/) — modern command-line HTTP client
+- [xh](https://github.com/ducaale/xh) — rust HTTPie reimplementation
+- [arp-scan](https://github.com/royhills/arp-scan) — LAN host discovery via ARP
 
 ## License
 

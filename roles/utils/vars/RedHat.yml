@@ -17,6 +17,16 @@ __utils_monitor_procs: ''
 __utils_disk_dust: ''
 
 #
+# Network Diagnostics
+#
+
+__utils_net_dig: 'bind-utils'
+__utils_net_netcat: 'netcat'
+__utils_net_xh: ''  # not in Rocky
+__utils_net_httpie: ''  # not in EPEL 10
+__utils_net_arp_scan: ''  # not in EPEL 10
+
+#
 # File Managers
 #
 

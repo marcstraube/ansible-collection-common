@@ -426,3 +426,57 @@
       changed_when: false
       failed_when: _utils_sops_bin.rc != 0
       when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Network Diagnostics — loop-based per-tool check.
+    # Each entry carries the OS-resolved package name (empty = skip) and the
+    # binary name that should land in PATH after install. Tools where the
+    # package is empty for the current OS are silently skipped.
+    #
+
+    - name: Verify | Check network diagnostics packages installed
+      ansible.builtin.package:
+        name: '{{ item.pkg }}'
+        state: present
+      check_mode: true
+      register: _utils_net_pkg
+      failed_when: _utils_net_pkg.changed
+      loop:
+        - { name: 'dig', pkg: '{{ __utils_net_dig | default("") }}' }
+        - { name: 'mtr', pkg: '{{ __utils_net_mtr | default("") }}' }
+        - { name: 'traceroute', pkg: '{{ __utils_net_traceroute | default("") }}' }
+        - { name: 'nmap', pkg: '{{ __utils_net_nmap | default("") }}' }
+        - { name: 'iperf3', pkg: '{{ __utils_net_iperf3 | default("") }}' }
+        - { name: 'netcat', pkg: '{{ __utils_net_netcat | default("") }}' }
+        - { name: 'whois', pkg: '{{ __utils_net_whois | default("") }}' }
+        - { name: 'iftop', pkg: '{{ __utils_net_iftop | default("") }}' }
+        - { name: 'nethogs', pkg: '{{ __utils_net_nethogs | default("") }}' }
+        - { name: 'httpie', pkg: '{{ __utils_net_httpie | default("") }}' }
+        - { name: 'xh', pkg: '{{ __utils_net_xh | default("") }}' }
+        - { name: 'arp-scan', pkg: '{{ __utils_net_arp_scan | default("") }}' }
+      loop_control:
+        label: '{{ item.name }}'
+      when: item.pkg | length > 0
+
+    - name: Verify | Check network diagnostics binaries exist
+      ansible.builtin.command:
+        cmd: 'which {{ item.bin }}'
+      register: _utils_net_bin
+      changed_when: false
+      failed_when: _utils_net_bin.rc != 0
+      loop:
+        - { bin: 'dig', pkg: '{{ __utils_net_dig | default("") }}' }
+        - { bin: 'mtr', pkg: '{{ __utils_net_mtr | default("") }}' }
+        - { bin: 'traceroute', pkg: '{{ __utils_net_traceroute | default("") }}' }
+        - { bin: 'nmap', pkg: '{{ __utils_net_nmap | default("") }}' }
+        - { bin: 'iperf3', pkg: '{{ __utils_net_iperf3 | default("") }}' }
+        - { bin: 'nc', pkg: '{{ __utils_net_netcat | default("") }}' }
+        - { bin: 'whois', pkg: '{{ __utils_net_whois | default("") }}' }
+        - { bin: 'iftop', pkg: '{{ __utils_net_iftop | default("") }}' }
+        - { bin: 'nethogs', pkg: '{{ __utils_net_nethogs | default("") }}' }
+        - { bin: 'http', pkg: '{{ __utils_net_httpie | default("") }}' }
+        - { bin: 'xh', pkg: '{{ __utils_net_xh | default("") }}' }
+        - { bin: 'arp-scan', pkg: '{{ __utils_net_arp_scan | default("") }}' }
+      loop_control:
+        label: '{{ item.bin }}'
+      when: item.pkg | length > 0

@@ -15,6 +15,14 @@ __utils_monitor_procs: 'procs'
 __utils_disk_dust: 'du-dust'
 
 #
+# Network Diagnostics
+#
+
+__utils_net_dig: 'bind9-dnsutils'
+__utils_net_netcat: 'netcat-openbsd'
+__utils_net_xh: 'xh'
+
+#
 # File Managers
 #
 

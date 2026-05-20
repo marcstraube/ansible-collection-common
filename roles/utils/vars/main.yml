@@ -24,6 +24,24 @@ __utils_secrets_age: 'age'  # pragma: allowlist secret
 __utils_secrets_sops: ''  # pragma: allowlist secret
 
 #
+# Network Diagnostics
+# Tools available on all distros (or with EL 10 override below) live here.
+#
+
+__utils_net_mtr: 'mtr'
+__utils_net_traceroute: 'traceroute'
+__utils_net_nmap: 'nmap'
+__utils_net_iperf3: 'iperf3'
+__utils_net_whois: 'whois'
+__utils_net_iftop: 'iftop'
+__utils_net_nethogs: 'nethogs'
+# arp-scan is in EPEL 9 but not EPEL 10 — RedHat.yml clears it
+# httpie ships only on Arch and Debian (EL excluded due to dep issues) —
+# RedHat.yml AND RedHat-9.yml both clear it
+__utils_net_httpie: 'httpie'
+__utils_net_arp_scan: 'arp-scan'
+
+#
 # File Transfer
 #
 

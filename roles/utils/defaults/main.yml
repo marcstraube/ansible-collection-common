@@ -49,6 +49,50 @@ utils_secrets_age_enabled: false
 utils_secrets_sops_enabled: false
 
 #
+# Network Diagnostics
+#
+
+# DNS lookup tools — dig, nslookup, host (BIND tools package)
+utils_net_dig_enabled: false
+
+# mtr — combined traceroute and ping
+utils_net_mtr_enabled: false
+
+# traceroute (classic)
+utils_net_traceroute_enabled: false
+
+# nmap — port scanner / host discovery
+utils_net_nmap_enabled: false
+
+# iperf3 — bandwidth measurement tool
+utils_net_iperf3_enabled: false
+
+# netcat (OpenBSD flavour) — TCP/UDP swiss army knife
+utils_net_netcat_enabled: false
+
+# whois — domain registration info
+utils_net_whois_enabled: false
+
+# iftop — per-connection bandwidth TUI
+utils_net_iftop_enabled: false
+
+# nethogs — per-process bandwidth monitor
+utils_net_nethogs_enabled: false
+
+# HTTPie — modern command-line HTTP client
+# Arch + Debian only (EPEL 9 ships httpie but with an unsatisfiable
+# CRB-only python dependency; not packaged for EPEL 10)
+utils_net_httpie_enabled: false
+
+# xh — rust HTTPie reimplementation
+# Arch + Debian only
+utils_net_xh_enabled: false
+
+# arp-scan — LAN host discovery via ARP
+# Not available on Rocky 10
+utils_net_arp_scan_enabled: false
+
+#
 # File Transfer
 #
 
