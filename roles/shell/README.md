@@ -126,16 +126,16 @@ first run and leaves the file alone if the marker is already present
 
 ### Additional Tools
 
-| Variable                 | Default           | Description                                  |
-|--------------------------|-------------------|----------------------------------------------|
-| `shell_fzf_enabled`      | `true`            | Enable fzf (fuzzy finder)                    |
-| `shell_zoxide_enabled`   | `false`           | Enable zoxide (smarter cd)                   |
-| `shell_zoxide_shells`    | `['zsh', 'bash']` | Configure zoxide init for these shells       |
-| `shell_eza_enabled`      | `false`           | Enable eza (modern ls)                       |
-| `shell_bat_enabled`      | `false`           | Enable bat (cat with syntax highlighting)    |
-| `shell_fd_enabled`       | `false`           | Enable fd (modern find)                      |
-| `shell_ripgrep_enabled`  | `false`           | Enable ripgrep (modern grep)                 |
-| `shell_tldr_enabled`     | `false`           | Enable tldr (simplified man pages)           |
+| Variable                 | Default                   | Description                                  |
+|--------------------------|---------------------------|----------------------------------------------|
+| `shell_fzf_enabled`      | `true`                    | Enable fzf (fuzzy finder)                    |
+| `shell_zoxide_enabled`   | `false`                   | Enable zoxide (smarter cd)                   |
+| `shell_zoxide_shells`    | `['bash', 'zsh', 'fish']` | Configure zoxide init for these shells       |
+| `shell_eza_enabled`      | `false`                   | Enable eza (modern ls)                       |
+| `shell_bat_enabled`      | `false`                   | Enable bat (cat with syntax highlighting)    |
+| `shell_fd_enabled`       | `false`                   | Enable fd (modern find)                      |
+| `shell_ripgrep_enabled`  | `false`                   | Enable ripgrep (modern grep)                 |
+| `shell_tldr_enabled`     | `false`                   | Enable tldr (simplified man pages)           |
 
 `shell_zoxide_shells` controls which shell rcfiles get a zoxide init
 line appended via `blockinfile` (with marker

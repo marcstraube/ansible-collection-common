@@ -241,6 +241,19 @@
       when: __shell_zoxide_package | default('') | length == 0
 
     #
+    # zoxide fish init (Arch only — Arch is the only platform with the
+    # fish-converge play). Checks the fish config file directly.
+    #
+
+    - name: Verify | Check zoxide fish init block (Arch)
+      ansible.builtin.command:
+        cmd: 'grep -q "ANSIBLE MANAGED — zoxide init" /home/testuser/.config/fish/config.fish'
+      register: _shell_zoxide_fish_init
+      changed_when: false
+      failed_when: _shell_zoxide_fish_init.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
     # atuin (Arch / Debian / EL 9 — not in EL 10)
     #
 
