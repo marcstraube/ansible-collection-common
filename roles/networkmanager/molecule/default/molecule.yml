@@ -48,18 +48,20 @@ provisioner:
               gw4: 192.168.1.1
               state: present
               autoconnect: false
-              dhcp_send_hostname_ipv4: true
-              dhcp_send_hostname_ipv6: true
               vpn:
                 - Test VPN Company
+              settings:
+                ipv4.dhcp-send-hostname: "yes"
+                ipv6.dhcp-send-hostname: "yes"
             'Home Ethernet':
               ifname: eth2
               ip4: 192.168.2.10/24
               gw4: 192.168.2.1
               state: present
               autoconnect: false
-              dhcp_send_hostname_ipv4: false
-              dhcp_send_hostname_ipv6: false
+              settings:
+                ipv4.dhcp-send-hostname: "no"
+                ipv6.dhcp-send-hostname: "no"
           wifi:
             'Office WiFi':
               ifname: wlan2
@@ -68,11 +70,15 @@ provisioner:
               autoconnect: false
               vpn:
                 - Test VPN Company
+              settings:
+                802-11-wireless.cloned-mac-address: random
             'Home WiFi':
               ifname: wlan3
               ssid: Home-Network
               state: present
               autoconnect: false
+              settings:
+                802-11-wireless.cloned-mac-address: AA:BB:CC:DD:EE:FF
           vpn:
             'Test VPN Company':
               vpn:
@@ -169,8 +175,9 @@ provisioner:
               gw4: 192.168.1.1
               state: present
               autoconnect: false
-              dhcp_send_hostname_ipv4: true
-              dhcp_send_hostname_ipv6: true
+              settings:
+                ipv4.dhcp-send-hostname: "yes"
+                ipv6.dhcp-send-hostname: "yes"
           wifi: {}
           vpn: {}
         test_networkmanager_smb_shares: []
@@ -192,8 +199,9 @@ provisioner:
               gw4: 192.168.1.1
               state: present
               autoconnect: false
-              dhcp_send_hostname_ipv4: true
-              dhcp_send_hostname_ipv6: true
+              settings:
+                ipv4.dhcp-send-hostname: "yes"
+                ipv6.dhcp-send-hostname: "yes"
           wifi: {}
           vpn: {}
         test_networkmanager_smb_shares: []
@@ -215,8 +223,9 @@ provisioner:
               gw4: 192.168.1.1
               state: present
               autoconnect: false
-              dhcp_send_hostname_ipv4: true
-              dhcp_send_hostname_ipv6: true
+              settings:
+                ipv4.dhcp-send-hostname: "yes"
+                ipv6.dhcp-send-hostname: "yes"
           wifi: {}
           vpn: {}
         test_networkmanager_smb_shares: []

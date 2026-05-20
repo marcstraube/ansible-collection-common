@@ -200,42 +200,67 @@
         success_msg: Unmanaged devices correctly configured in daemon config
 
     #
-    # DHCP Hostname Verification
+    # Generic Settings Dict Verification
     #
+    # Walks every `settings:` entry on every present connection and asserts
+    # nmcli's stored value (after unescaping `\:` -> `:`) matches the value
+    # in the inventory.
 
-    - name: Verify | Set fact for connections with dhcp_send_hostname explicitly set to false
+    - name: Verify | Flatten settings entries from test inventory
       ansible.builtin.set_fact:
-        dhcp_hostname_disabled_connections: >-
-          {{ (test_networkmanager_connections.ethernet | dict2items +
-          test_networkmanager_connections.wifi | dict2items) |
-          selectattr('value.dhcp_send_hostname_ipv4', 'defined') |
-          rejectattr('value.dhcp_send_hostname_ipv4') | map(attribute='key') | list }}
+        verify_settings_entries: >-
+          {{ verify_settings_entries | default([])
+             + (item.value.settings | default({}) | dict2items
+                | map('combine', {'conn_name': item.key})
+                | list) }}
+      loop: >-
+        {{ (test_networkmanager_connections.ethernet | default({}) | dict2items)
+           + (test_networkmanager_connections.wifi | default({}) | dict2items) }}
+      loop_control:
+        label: "{{ item.key }}"
+      when:
+        - item.value.state | default('present') == 'present'
+        - item.value.settings | default({}) | length > 0
 
-    - name: Verify | Check connections for dhcp-send-hostname override
-      ansible.builtin.shell: |
-        set -o pipefail
-        nmcli -t -f ipv4.dhcp-send-hostname connection show "{{ item }}" | cut -d: -f2
-      args:
-        executable: /bin/bash
-      register: connection_dhcp_hostname
+    - name: Verify | Query nmcli for each managed setting
+      ansible.builtin.command:
+        cmd: 'nmcli -t -f {{ item.key | quote }} connection show {{ item.conn_name | quote }}'
+      register: verify_settings_query
       changed_when: false
-      failed_when: false
-      loop: "{{ dhcp_hostname_disabled_connections }}"
-      when: dhcp_hostname_disabled_connections | length > 0
+      loop: "{{ verify_settings_entries | default([]) }}"
+      loop_control:
+        label: "{{ item.conn_name }}/{{ item.key }}"
 
-    - name: Verify | Assert connections have dhcp-send-hostname disabled
+    - name: Verify | Assert each managed setting matches inventory
+      vars:
+        bool_norm:
+          'yes': '1'
+          'true': '1'
+          '1': '1'
+          'no': '0'
+          'false': '0'
+          '0': '0'
+          'default': '-1'
+          'unknown': '-1'
+          '-1': '-1'
+        current_raw: >-
+          {{ item.stdout | regex_replace('^[^:]+:', '')
+                         | regex_replace('\\\\(.)', '\\1') }}
+        desired_raw: "{{ item.item.value | string }}"
       ansible.builtin.assert:
         that:
           - >-
-            item.stdout | trim in ['no', '0', 'false']
-        fail_msg: Connection '{{ item.item }}' does not have dhcp-send-hostname disabled
-        success_msg: Connection '{{ item.item }}' correctly has dhcp-send-hostname disabled
-      loop: "{{ connection_dhcp_hostname.results | default([]) }}"
+            bool_norm.get(current_raw | lower, current_raw)
+            == bool_norm.get(desired_raw | lower, desired_raw)
+        fail_msg: >-
+          Connection '{{ item.item.conn_name }}' key '{{ item.item.key }}'
+          expected '{{ desired_raw }}' but nmcli stored '{{ current_raw }}'
+        success_msg: >-
+          Connection '{{ item.item.conn_name }}' key '{{ item.item.key }}'
+          correctly set to '{{ desired_raw }}'
+      loop: "{{ verify_settings_query.results | default([]) }}"
       loop_control:
-        label: "{{ item.item }}"
-      when:
-        - dhcp_hostname_disabled_connections | length > 0
-        - item.rc == 0
+        label: "{{ item.item.conn_name }}/{{ item.item.key }}"
 
     #
     # Polkit Verification

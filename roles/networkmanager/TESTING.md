@@ -224,9 +224,10 @@ test_networkmanager_connections:
     'Test Ethernet Connection':
       ifname: eth1
       ip4: 192.168.1.10/24
-      dhcp_send_hostname_ipv4: true
       vpn:
         - Test VPN Company
+      settings:
+        ipv4.dhcp-send-hostname: "yes"
   wifi:
     'Office WiFi':
       ifname: wlan2

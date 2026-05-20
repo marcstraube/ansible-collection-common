@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 .molecule/
 molecule/**/instance_config.yml
+**/.vagrant/
 *.retry
 *.log
 *.tar.gz

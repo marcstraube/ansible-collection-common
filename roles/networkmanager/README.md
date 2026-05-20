@@ -143,8 +143,9 @@ networkmanager_connections:
       dns4_search: ["office.local"]
       routes4: ["10.0.0.0/8 192.168.1.254"]
       route_metric4: 100
-      dhcp_send_hostname_ipv4: false    # per-connection override
-      vpn: ["Company VPN"]             # auto-connect VPN via connection.secondaries
+      vpn: ["Company VPN"]              # auto-connect VPN via connection.secondaries
+      settings:                         # generic nmcli-native settings (see below)
+        ipv4.dhcp-send-hostname: "no"
 ```
 
 #### WiFi Connections
@@ -158,7 +159,41 @@ networkmanager_connections:
       ssid: "MyNetwork"
       ifname: "wlan0"
       autoconnect: true
+      settings:
+        802-11-wireless.cloned-mac-address: "random"
 ```
+
+#### Generic `settings:` dict
+
+Any nmcli-native key not exposed as a first-class option above can be set
+via `settings:`. The value is passed verbatim to `nmcli connection modify
+<conn> <key> <value>`. Settings are diffed against the current stored
+value, so only changed keys are applied, and the device is reapplied once
+at the end of the play (not per setting).
+
+Common keys:
+
+| Key                                  | Purpose                              |
+|--------------------------------------|--------------------------------------|
+| `802-11-wireless.cloned-mac-address` | WiFi MAC randomization / clone       |
+| `802-3-ethernet.cloned-mac-address`  | Ethernet MAC clone                   |
+| `ipv4.dhcp-send-hostname`            | Send hostname to IPv4 DHCP server    |
+| `ipv6.dhcp-send-hostname`            | Send hostname to IPv6 DHCP server    |
+| `ipv4.dhcp-hostname`                 | Override hostname sent to DHCP       |
+| `connection.metered`                 | Mark connection as metered           |
+
+See <https://networkmanager.dev/docs/api/latest/settings-spec.html> for
+the full key reference.
+
+**Value formats**: the role accepts ternary-boolean values (used by keys
+like `*.dhcp-send-hostname`, `connection.metered`) in any of the forms
+nmcli's CLI parser understands: `yes`/`true`/`1`, `no`/`false`/`0`, or
+`default`/`unknown`/`-1`. The role normalizes both stored and desired
+values before comparing, so writing `"yes"` is equivalent to `"1"`.
+
+For other keys (strings, MAC addresses, enums like `random`), use the
+value verbatim — comparison is case-sensitive and uses the exact string
+nmcli returns.
 
 #### VPN Connections
 
@@ -257,7 +292,8 @@ networkmanager_unmanaged_devices:
             "Home WiFi":
               ssid: "HomeNetwork"
               autoconnect: true
-              dhcp_send_hostname_ipv4: false
+              settings:
+                ipv4.dhcp-send-hostname: "no"
           vpn:
             "Company VPN":
               vpn:

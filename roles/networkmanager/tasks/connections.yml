@@ -26,7 +26,6 @@
     type: ethernet
     conn_name: "{{ item.key }}"
     ifname: "{{ item.value.ifname | default(omit) }}"
-    mac: "{{ item.value.mac | default(omit) }}"
     ip4: "{{ item.value.ip4 | default(omit) }}"
     gw4: "{{ item.value.gw4 | default(omit) }}"
     gw4_ignore_auto: "{{ item.value.gw4_ignore_auto | default(omit) }}"
@@ -80,28 +79,6 @@
   loop_control:
     label: "{{ item.key }}"
   register: ethernet_connections_result
-
-# `community.general.nmcli` persists profile changes but does not push them to
-# the live interface state. `nmcli device reapply` applies most settings
-# (incl. ipv4.dns-search) without disrupting the active connection. "Device
-# not active" / "not found" are expected for connections whose device is down
-# or absent — silently ignored.
-
-- name: Connections | Reapply ethernet device for live changes
-  ansible.builtin.command:
-    cmd: 'nmcli device reapply {{ item.item.value.ifname }}'
-  loop: "{{ ethernet_connections_result.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.key }}"
-  when:
-    - item.changed | default(false)
-    - item.item.value.ifname is defined
-  register: __nm_reapply_eth
-  changed_when: false
-  failed_when:
-    - __nm_reapply_eth.rc | default(0) != 0
-    - "'not active' not in (__nm_reapply_eth.stderr | default(''))"
-    - "'not found' not in (__nm_reapply_eth.stderr | default(''))"
 
 - name: Connections | Force NetworkManager WiFi scan before creating WiFi connections
   ansible.builtin.shell: |
@@ -185,167 +162,96 @@
     label: "{{ item.key }}"
   register: wifi_connections_result
 
-- name: Connections | Reapply WiFi device for live changes
-  ansible.builtin.command:
-    cmd: 'nmcli device reapply {{ item.item.value.ifname }}'
-  loop: "{{ wifi_connections_result.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.key }}"
-  when:
-    - item.changed | default(false)
-    - item.item.value.ifname is defined
-  register: __nm_reapply_wifi
-  changed_when: false
-  failed_when:
-    - __nm_reapply_wifi.rc | default(0) != 0
-    - "'not active' not in (__nm_reapply_wifi.stderr | default(''))"
-    - "'not found' not in (__nm_reapply_wifi.stderr | default(''))"
+# Generic settings dict: a single check + modify + reapply pipeline for any
+# nmcli-native key. Replaces the per-setting check+modify pairs that used to
+# live here (cloned-mac, ipv4.dhcp-send-hostname, ipv6.dhcp-send-hostname).
+# Any setting the user puts in `connection.settings:` is queried, diffed
+# against the current stored value, and applied with one `nmcli connection
+# modify` per connection.
 
-- name: Connections | Check current WiFi cloned-mac-address
-  ansible.builtin.shell: |
-    set -o pipefail
-    nmcli -t -f 802-11-wireless.cloned-mac-address connection show "{{ item.key }}" | cut -d: -f2
-  args:
-    executable: /bin/bash
-  loop: "{{ networkmanager_connections.wifi | dict2items }}"
+- name: Connections | Flatten settings into (conn, ifname, key, value) entries
+  ansible.builtin.set_fact:
+    __nm_settings_flat: >-
+      {{ __nm_settings_flat | default([])
+         + (item.value.settings | dict2items
+            | map('combine', {
+                'conn_name': item.key,
+                'ifname': item.value.ifname | default('')
+              })
+            | list) }}
+  loop: >-
+    {{ (networkmanager_connections.ethernet | default({}) | dict2items)
+       + (networkmanager_connections.wifi | default({}) | dict2items) }}
   loop_control:
     label: "{{ item.key }}"
   when:
-    - item.value.state | default("present") == "present"
-    - item.value.mac is defined
-  register: current_wifi_cloned_mac
-  changed_when: false
-  failed_when: false
+    - item.value.state | default('present') == 'present'
+    - item.value.settings | default({}) | length > 0
 
-- name: Connections | Set WiFi cloned-mac-address
+# Per-key query (rather than `-f all`) — NetworkManager 1.50+ omits
+# deprecated properties from `-f all` output (e.g. `ipv4.dhcp-send-hostname`,
+# now superseded by `dhcp-send-hostname-v2`). Asking for the exact key the
+# user listed always works, deprecated or not.
+- name: Connections | Query current value for each managed setting
   ansible.builtin.command:
-    cmd: >-
-      nmcli connection modify "{{ item.item.key }}"
-      802-11-wireless.cloned-mac-address
-      "{{ item.item.value.mac }}"
-  loop: "{{ current_wifi_cloned_mac.results | default([]) }}"
+    cmd: 'nmcli -t -f {{ item.key | quote }} connection show {{ item.conn_name | quote }}'
+  loop: "{{ __nm_settings_flat | default([]) }}"
   loop_control:
-    label: "{{ item.item.key }}"
-  when:
-    - not item.skipped | default(false)
-    - item.stdout | trim != item.item.value.mac
+    label: "{{ item.conn_name }}/{{ item.key }}"
+  register: __nm_settings_query
+  changed_when: false
+  # nmcli may fail if NetworkManager is not running or the key is unknown
+  failed_when: false
+  check_mode: false
+
+# Two preprocessing steps before comparing stored vs desired:
+#   1. nmcli -t mode prefixes literal `\` and `:` in values with a backslash;
+#      unescape with regex `\\(.)` -> `\1` so MAC addresses (and any value
+#      containing colons) compare correctly.
+#   2. nmcli normalizes ternary-boolean inputs on store: writing "yes"
+#      results in stored value "1", "no" -> "0", "default" -> "-1".
+#      Map both sides through the same lookup table so the user can write
+#      either form interchangeably and idempotence still holds.
+- name: Connections | Compute settings delta (entries needing change)
+  vars:
+    __nm_bool_norm:
+      'yes': '1'
+      'true': '1'
+      '1': '1'
+      'no': '0'
+      'false': '0'
+      '0': '0'
+      'default': '-1'
+      'unknown': '-1'
+      '-1': '-1'
+    __nm_current_raw: >-
+      {{ item.stdout | default('')
+         | regex_replace('^[^:]+:', '')
+         | regex_replace('\\\\(.)', '\\1') }}
+    __nm_desired_raw: "{{ item.item.value | string }}"
+  ansible.builtin.set_fact:
+    __nm_settings_delta: >-
+      {{ __nm_settings_delta | default([])
+         + ([item.item] if __nm_bool_norm.get(__nm_current_raw | lower, __nm_current_raw)
+                        != __nm_bool_norm.get(__nm_desired_raw | lower, __nm_desired_raw)
+            else []) }}
+  loop: "{{ __nm_settings_query.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.conn_name }}/{{ item.item.key }}"
+
+- name: Connections | Apply settings delta per connection
+  ansible.builtin.command:
+    argv: >-
+      {{ ['nmcli', 'connection', 'modify', item.0]
+         + (item.1 | map(attribute='key')
+                   | zip(item.1 | map(attribute='value') | map('string') | list)
+                   | flatten | list) }}
+  loop: "{{ __nm_settings_delta | default([]) | groupby('conn_name') }}"
+  loop_control:
+    label: "{{ item.0 }}"
   changed_when: true
   notify: Reload NetworkManager connections
-  register: wifi_cloned_mac_result
-
-- name: Connections | Reapply WiFi device after cloned-mac change
-  ansible.builtin.command:
-    cmd: 'nmcli device reapply {{ item.item.item.value.ifname }}'
-  loop: "{{ wifi_cloned_mac_result.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.item.key }}"
-  when:
-    - item.changed | default(false)
-    - item.item.item.value.ifname is defined
-  register: __nm_reapply_mac
-  changed_when: false
-  failed_when:
-    - __nm_reapply_mac.rc | default(0) != 0
-    - "'not active' not in (__nm_reapply_mac.stderr | default(''))"
-    - "'not found' not in (__nm_reapply_mac.stderr | default(''))"
-
-- name: Connections | Check current ipv4.dhcp-send-hostname for connections
-  ansible.builtin.shell: |
-    set -o pipefail
-    nmcli -t -f ipv4.dhcp-send-hostname connection show "{{ item.key }}" | cut -d: -f2
-  args:
-    executable: /bin/bash
-  loop: "{{ ((networkmanager_connections.ethernet | dict2items) + (networkmanager_connections.wifi | dict2items)) }}"
-  loop_control:
-    label: "{{ item.key }}"
-  when:
-    - item.value.state | default("present") == "present"
-    - item.value.dhcp_send_hostname_ipv4 is defined
-  register: current_ipv4_dhcp_send_hostname
-  changed_when: false
-  # nmcli may fail if NetworkManager is not running or no connections exist
-  failed_when: false
-
-- name: Connections | Set ipv4.dhcp-send-hostname for connections
-  ansible.builtin.command:
-    cmd: >-
-      nmcli connection modify "{{ item.item.key }}"
-      ipv4.dhcp-send-hostname
-      "{{ '1' if item.item.value.dhcp_send_hostname_ipv4 else '0' }}"
-  loop: "{{ current_ipv4_dhcp_send_hostname.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.key }}"
-  when:
-    - not item.skipped | default(false)
-    - item.stdout | trim != ('1' if item.item.value.dhcp_send_hostname_ipv4 else '0')
-  changed_when: true
-  notify: Reload NetworkManager connections
-  register: ipv4_dhcp_send_hostname_result
-
-- name: Connections | Reapply device after ipv4.dhcp-send-hostname change
-  ansible.builtin.command:
-    cmd: 'nmcli device reapply {{ item.item.item.value.ifname }}'
-  loop: "{{ ipv4_dhcp_send_hostname_result.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.item.key }}"
-  when:
-    - item.changed | default(false)
-    - item.item.item.value.ifname is defined
-  register: __nm_reapply_dhcp4
-  changed_when: false
-  failed_when:
-    - __nm_reapply_dhcp4.rc | default(0) != 0
-    - "'not active' not in (__nm_reapply_dhcp4.stderr | default(''))"
-    - "'not found' not in (__nm_reapply_dhcp4.stderr | default(''))"
-
-- name: Connections | Check current ipv6.dhcp-send-hostname for connections
-  ansible.builtin.shell: |
-    set -o pipefail
-    nmcli -t -f ipv6.dhcp-send-hostname connection show "{{ item.key }}" | cut -d: -f2
-  args:
-    executable: /bin/bash
-  loop: "{{ ((networkmanager_connections.ethernet | dict2items) + (networkmanager_connections.wifi | dict2items)) }}"
-  loop_control:
-    label: "{{ item.key }}"
-  when:
-    - item.value.state | default("present") == "present"
-    - item.value.dhcp_send_hostname_ipv6 is defined
-  register: current_ipv6_dhcp_send_hostname
-  changed_when: false
-  # nmcli may fail if NetworkManager is not running or no connections exist
-  failed_when: false
-
-- name: Connections | Set ipv6.dhcp-send-hostname for connections
-  ansible.builtin.command:
-    cmd: >-
-      nmcli connection modify "{{ item.item.key }}"
-      ipv6.dhcp-send-hostname
-      "{{ '1' if item.item.value.dhcp_send_hostname_ipv6 else '0' }}"
-  loop: "{{ current_ipv6_dhcp_send_hostname.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.key }}"
-  when:
-    - not item.skipped | default(false)
-    - item.stdout | trim != ('1' if item.item.value.dhcp_send_hostname_ipv6 else '0')
-  changed_when: true
-  notify: Reload NetworkManager connections
-  register: ipv6_dhcp_send_hostname_result
-
-- name: Connections | Reapply device after ipv6.dhcp-send-hostname change
-  ansible.builtin.command:
-    cmd: 'nmcli device reapply {{ item.item.item.value.ifname }}'
-  loop: "{{ ipv6_dhcp_send_hostname_result.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.item.key }}"
-  when:
-    - item.changed | default(false)
-    - item.item.item.value.ifname is defined
-  register: __nm_reapply_dhcp6
-  changed_when: false
-  failed_when:
-    - __nm_reapply_dhcp6.rc | default(0) != 0
-    - "'not active' not in (__nm_reapply_dhcp6.stderr | default(''))"
-    - "'not found' not in (__nm_reapply_dhcp6.stderr | default(''))"
+  register: __nm_settings_modify_result
 
 - name: Connections | Ensure NetworkManager VPN connections exist
   community.general.nmcli:
@@ -559,6 +465,7 @@
     - not item.skipped | default(false)
     - item.stdout | trim != item.item.ansible_facts.vpn_uuids_for_connection
   changed_when: true
+  register: __nm_eth_secondaries_result
 
 - name: Connections | Build VPN UUID list for WiFi connections
   ansible.builtin.set_fact:
@@ -606,3 +513,81 @@
     - not item.skipped | default(false)
     - item.stdout | trim != item.item.ansible_facts.vpn_uuids_for_connection
   changed_when: true
+  register: __nm_wifi_secondaries_result
+
+# `community.general.nmcli` and direct `nmcli connection modify` calls persist
+# profile changes but do not push them to the live interface state. `nmcli
+# device reapply` applies most settings (incl. ipv4.dns-search, cloned-mac,
+# dhcp-send-hostname) without disrupting the active connection. "Device not
+# active" / "not found" are expected when the device is down or absent and
+# are silently ignored. We collect changed ifnames from every modify site,
+# dedup, and reapply each device exactly once.
+
+- name: Connections | Collect ifnames needing reapply (ethernet configure)
+  ansible.builtin.set_fact:
+    __nm_reapply_ifnames: >-
+      {{ __nm_reapply_ifnames | default([])
+         + ([item.item.value.ifname] if (item.changed | default(false)
+                                         and item.item.value.ifname is defined)
+            else []) }}
+  loop: "{{ ethernet_connections_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+
+- name: Connections | Collect ifnames needing reapply (wifi configure)
+  ansible.builtin.set_fact:
+    __nm_reapply_ifnames: >-
+      {{ __nm_reapply_ifnames | default([])
+         + ([item.item.value.ifname] if (item.changed | default(false)
+                                         and item.item.value.ifname is defined)
+            else []) }}
+  loop: "{{ wifi_connections_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+
+- name: Connections | Collect ifnames needing reapply (settings modify)
+  ansible.builtin.set_fact:
+    __nm_reapply_ifnames: >-
+      {{ __nm_reapply_ifnames | default([])
+         + ([item.item.1[0].ifname] if (item.changed | default(false)
+                                        and item.item.1[0].ifname | length > 0)
+            else []) }}
+  loop: "{{ __nm_settings_modify_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.0 }}"
+
+- name: Connections | Collect ifnames needing reapply (ethernet secondaries)
+  ansible.builtin.set_fact:
+    __nm_reapply_ifnames: >-
+      {{ __nm_reapply_ifnames | default([])
+         + ([item.item.item.item.value.ifname]
+            if (item.changed | default(false)
+                and item.item.item.item.value.ifname is defined)
+            else []) }}
+  loop: "{{ __nm_eth_secondaries_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.item.item.key | default('') }}"
+
+- name: Connections | Collect ifnames needing reapply (wifi secondaries)
+  ansible.builtin.set_fact:
+    __nm_reapply_ifnames: >-
+      {{ __nm_reapply_ifnames | default([])
+         + ([item.item.item.item.value.ifname]
+            if (item.changed | default(false)
+                and item.item.item.item.value.ifname is defined)
+            else []) }}
+  loop: "{{ __nm_wifi_secondaries_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.item.item.key | default('') }}"
+
+- name: Connections | Reapply NetworkManager devices for live changes
+  ansible.builtin.command:
+    cmd: 'nmcli device reapply {{ item }}'
+  loop: "{{ __nm_reapply_ifnames | default([]) | unique | list }}"
+  register: __nm_reapply_result
+  changed_when: false
+  failed_when:
+    - __nm_reapply_result.rc | default(0) != 0
+    - "'not active' not in (__nm_reapply_result.stderr | default(''))"
+    - "'not activated' not in (__nm_reapply_result.stderr | default(''))"
+    - "'not found' not in (__nm_reapply_result.stderr | default(''))"
