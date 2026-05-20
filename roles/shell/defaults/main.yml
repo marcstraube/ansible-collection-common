@@ -112,8 +112,9 @@ shell_zoxide_enabled: false
 
 # Configure zoxide for shells (adds init to shell config)
 shell_zoxide_shells:
-  - 'zsh'
   - 'bash'
+  - 'zsh'
+  - 'fish'
 
 # Enable eza (modern ls)
 shell_eza_enabled: false

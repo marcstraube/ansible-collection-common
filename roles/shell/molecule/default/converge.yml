@@ -100,6 +100,31 @@
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
 
+- name: Converge — zoxide fish init (Arch only — keep fish-converge scope small)
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'bash'
+    shell_zsh_enabled: false
+    shell_fish_enabled: true
+    shell_bash_completion_enabled: false
+    shell_starship_enabled: false
+    shell_zoxide_enabled: true
+    shell_zoxide_shells:
+      - 'fish'
+    shell_user_config_mode: 'managed'
+    shell_users:
+      - 'testuser'
+    shell_fzf_enabled: false
+
+  tasks:
+    - name: Converge | Include shell role (zoxide fish)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
 - name: Converge — atuin + bash-preexec (Arch/Debian/EL9 — atuin available)
   hosts: all
   gather_facts: true
