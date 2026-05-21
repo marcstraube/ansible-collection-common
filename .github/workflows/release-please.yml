@@ -35,20 +35,35 @@ jobs:
       # itself does not own MIGRATION.md, so without this step the
       # heading would have to be dated by hand on every release.
       #
-      # No-op when MIGRATION.md is absent, the heading is already dated,
-      # or the version release-please picked does not have a matching
-      # (unreleased) heading. Commit goes through the contents API so it
-      # is attributed to and verified as the release bot.
+      # The step locates the release PR by the `autorelease: pending`
+      # label that release-please applies, rather than via the action's
+      # `pr` output. The action only populates that output when it
+      # creates or updates the PR in *this* run — when the PR already
+      # exists and release-please reports "PR remained the same", the
+      # output is empty and any gating on it would silently skip this
+      # step.
+      #
+      # No-op when no release PR is open, MIGRATION.md is absent, the
+      # heading is already dated, or the version release-please picked
+      # does not have a matching (unreleased) heading. Commit goes
+      # through the contents API so it is attributed to and verified as
+      # the release bot.
       - name: Date (unreleased) section in MIGRATION.md
-        if: ${{ steps.release.outputs.pr }}
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
-          PR_DATA: ${{ steps.release.outputs.pr }}
         run: |
           set -euo pipefail
 
-          PR_BRANCH=$(jq -r '.headBranchName' <<< "$PR_DATA")
+          PR_BRANCH=$(gh pr list -R "$REPO" \
+            --label 'autorelease: pending' --state open \
+            --json headRefName --jq '.[0].headRefName // empty')
+
+          if [ -z "$PR_BRANCH" ]; then
+            echo "No open 'autorelease: pending' PR — nothing to do."
+            exit 0
+          fi
+
           NEW_VERSION=$(gh api "repos/${REPO}/contents/.release-please-manifest.json?ref=${PR_BRANCH}" \
             --jq '.content' | base64 -d | jq -r '.["."]')
           DATE=$(date -u +%Y-%m-%d)
