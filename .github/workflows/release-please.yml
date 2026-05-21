@@ -23,8 +23,70 @@ jobs:
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
 
       - uses: googleapis/release-please-action@v5.0.0
+        id: release
         with:
           token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           target-branch: main
+
+      # Rewrite the `## vX.Y.Z (unreleased)` heading in MIGRATION.md to
+      # `## vX.Y.Z - YYYY-MM-DD` on the open release PR. release-please
+      # itself does not own MIGRATION.md, so without this step the
+      # heading would have to be dated by hand on every release.
+      #
+      # No-op when MIGRATION.md is absent, the heading is already dated,
+      # or the version release-please picked does not have a matching
+      # (unreleased) heading. Commit goes through the contents API so it
+      # is attributed to and verified as the release bot.
+      - name: Date (unreleased) section in MIGRATION.md
+        if: ${{ steps.release.outputs.pr }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          PR_DATA: ${{ steps.release.outputs.pr }}
+        run: |
+          set -euo pipefail
+
+          PR_BRANCH=$(jq -r '.headBranchName' <<< "$PR_DATA")
+          NEW_VERSION=$(gh api "repos/${REPO}/contents/.release-please-manifest.json?ref=${PR_BRANCH}" \
+            --jq '.content' | base64 -d | jq -r '.["."]')
+          DATE=$(date -u +%Y-%m-%d)
+
+          echo "Release PR branch: ${PR_BRANCH}"
+          echo "Release version:   v${NEW_VERSION}"
+          echo "Date stamp:        ${DATE}"
+
+          # Pull MIGRATION.md from the PR branch (404 here means no
+          # MIGRATION.md at this revision — treat as a no-op).
+          if ! RESP=$(gh api "repos/${REPO}/contents/MIGRATION.md?ref=${PR_BRANCH}" 2>/dev/null); then
+            echo "MIGRATION.md not present on ${PR_BRANCH} — nothing to do."
+            exit 0
+          fi
+
+          OLD_CONTENT=$(jq -r '.content' <<< "$RESP" | base64 -d)
+          FILE_SHA=$(jq -r '.sha' <<< "$RESP")
+
+          PATTERN="## v${NEW_VERSION} (unreleased)"
+          REPLACEMENT="## v${NEW_VERSION} - ${DATE}"
+
+          if ! grep -Fq "$PATTERN" <<< "$OLD_CONTENT"; then
+            echo "No '${PATTERN}' heading in MIGRATION.md — already dated or version mismatch."
+            exit 0
+          fi
+
+          NEW_CONTENT=$(awk -v p="$PATTERN" -v r="$REPLACEMENT" \
+            '{if ($0 == p) print r; else print}' <<< "$OLD_CONTENT")
+
+          if [ "$OLD_CONTENT" = "$NEW_CONTENT" ]; then
+            echo "Rewrite produced identical content — nothing to commit."
+            exit 0
+          fi
+
+          NEW_B64=$(printf '%s\n' "$NEW_CONTENT" | base64 -w 0)
+
+          gh api -X PUT "repos/${REPO}/contents/MIGRATION.md" \
+            -f message="docs: date v${NEW_VERSION} migration section" \
+            -f content="${NEW_B64}" \
+            -f sha="${FILE_SHA}" \
+            -f branch="${PR_BRANCH}"
