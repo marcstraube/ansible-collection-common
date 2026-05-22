@@ -88,11 +88,16 @@ jobs:
                 # AUR probe: clone + makepkg --syncdeps. --skippgpcheck
                 # avoids per-package PGP setup. The build only needs to
                 # *complete* — we discard the artifact.
-                # The marcstraube/archlinux-ansible image already ships
-                # an aur_builder user wired up for sudo-less makepkg.
+                # The Arch image does not ship a build user; provision
+                # one inline (makepkg refuses to run as root). The
+                # wheel-group sudoers entry lets makepkg --syncdeps
+                # install build-time deps via pacman.  # pragma: allowlist secret
                 PROBE='set -euo pipefail
                 pacman -Sy --noconfirm >/dev/null
-                pacman -S --needed --noconfirm git base-devel >/dev/null
+                pacman -S --needed --noconfirm git base-devel sudo >/dev/null
+                id aur_builder >/dev/null 2>&1 || useradd -m -G wheel aur_builder
+                printf "%%wheel ALL=(ALL) NOPASSWD: ALL\n" > /etc/sudoers.d/wheel-nopw  # pragma: allowlist secret
+                chmod 0440 /etc/sudoers.d/wheel-nopw
                 rm -rf /tmp/aur-probe
                 sudo -u aur_builder -- bash -c "
                   git clone --depth=1 https://aur.archlinux.org/$PKG.git /tmp/aur-probe &&
