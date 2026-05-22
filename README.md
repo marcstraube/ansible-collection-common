@@ -115,7 +115,7 @@ ansible-galaxy collection install git+https://github.com/marcstraube/ansible-col
 # requirements.yml
 collections:
   - name: marcstraube.common
-    version: ">=1.0.0"
+    version: ">=2.0.0"
 ```
 
 ## Usage
