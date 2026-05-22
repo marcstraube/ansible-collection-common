@@ -27,7 +27,9 @@
     state: present
   retries: 3
   delay: 5
-  when: not (__aide_aur | bool)
+  when:
+    - not (__aide_aur | bool)
+    - __aide_package | length > 0
 
 - name: Install | Ensure AIDE directories exist
   ansible.builtin.file:

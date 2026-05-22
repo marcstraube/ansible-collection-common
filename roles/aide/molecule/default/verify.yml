@@ -4,6 +4,21 @@
   gather_facts: true
 
   tasks:
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    - name: Verify | Skip host when AIDE is a Layer-1 no-op on this platform
+      ansible.builtin.meta: end_host
+      when: __aide_package | default('') | length == 0
+
     #
     # Package and Binary Verification
     #

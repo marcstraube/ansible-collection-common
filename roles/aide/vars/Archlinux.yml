@@ -1,8 +1,18 @@
 ---
-__aide_package: 'aide'
+# AIDE 0.19.3 fails to build on Arch Linux against nettle 4.0 due to a
+# digest() API break in src/md.c (since ~2026-05-11). Upstream AIDE is
+# in maintenance mode; no fix released. See:
+#   https://github.com/aide/aide/issues/218
+# Layer-1 no-op: empty package + AUR path disabled. The role's main.yml
+# guards downstream tasks on `__aide_package | length > 0`, so the
+# whole role becomes a no-op on Arch until upstream ships a nettle-4.0
+# compatible release. Re-availability tracked by the drift-detection
+# workflow (#169).
+__aide_package: ''
 
-# AIDE is only available in the AUR on Arch Linux
-__aide_aur: true
+# AIDE is only available in the AUR on Arch Linux — AUR path disabled
+# while the PKGBUILD is unbuildable (see above).
+__aide_aur: false
 
 __aide_aur_packages:
   aide:
