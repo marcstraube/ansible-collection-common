@@ -3,7 +3,7 @@ galaxy_info:
   author: Marc Straube
   description: Configure package managers and repositories for ArchLinux, Debian/Ubuntu, and RHEL/Fedora/Rocky
   license: MIT
-  min_ansible_version: '2.20'
+  min_ansible_version: '2.19'
 
   platforms:
     - name: ArchLinux

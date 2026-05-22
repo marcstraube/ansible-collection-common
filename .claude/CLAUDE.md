@@ -5,7 +5,7 @@
 Shared Ansible roles for all system types (desktops, laptops, servers).
 Multi-OS support: Arch Linux (primary), Debian Trixie, Rocky Linux 9/10.
 
-## Coding Standards (ansible-core 2.20+)
+## Coding Standards (ansible-core 2.19+)
 
 - **Facts:** `ansible_facts['os_family']` — never `ansible_os_family` (deprecated)
 - **Modules:** Always FQCN (`ansible.builtin.*`, `community.general.*`, `kewlfft.aur.*`)

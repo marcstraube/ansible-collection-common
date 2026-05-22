@@ -9,7 +9,7 @@ description: >-
   42 shared Ansible roles for multi-OS infrastructure management. Covers base
   system, security hardening, networking, package management, user management,
   editors, and more. Supports Arch Linux, Debian Trixie, and Rocky Linux 9/10.
-  Built for ansible-core 2.20+.
+  Built for ansible-core 2.19+.
 license_file: LICENSE
 tags:
   - linux

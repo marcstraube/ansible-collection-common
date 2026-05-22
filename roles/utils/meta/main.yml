@@ -5,7 +5,7 @@ galaxy_info:
     Install common system utilities (monitors, file transfer,
     file managers, system info, fun terminal tools)
   license: MIT
-  min_ansible_version: '2.20'
+  min_ansible_version: '2.19'
 
   platforms:
     - name: ArchLinux

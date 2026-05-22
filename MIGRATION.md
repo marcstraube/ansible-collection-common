@@ -7,15 +7,21 @@ snippets. For the full list of changes per release, see
 
 ## v2.0.0 (unreleased)
 
-### Minimum ansible-core bumped from 2.17 to 2.20 (#173)
+### Minimum ansible-core bumped from 2.17 to 2.19 (#173)
 
 v2.0.0 unifies and raises the supported ansible-core floor. Previous
 v1.x state was inconsistent across surfaces (`meta/runtime.yml` declared
 `>=2.15.0` while READMEs and `galaxy.yml` claimed 2.17+); v2.0.0 aligns
-everything on **2.20.0** and bumps the CI forward-compat job to track
-2.21 one version ahead.
+everything on **2.19.0** and bumps the CI forward-compat job to track
+2.21 (latest stable) so it stays two versions above the floor.
 
-The 2.17 → 2.20 step does not change the install path for users on
+The floor stops at 2.19 rather than 2.20 because ansible-lint v26.4.0
+(latest at v2.0.0 release time) does not yet accept `>=2.20.0` in
+`meta/runtime.yml` — its `meta-runtime` rule only knows about 2.15
+through 2.19. Once ansible-lint catches up, a follow-up minor release
+will bump the floor to 2.20.
+
+The 2.17 → 2.19 step does not change the install path for users on
 RHEL 9 or Debian Bookworm — those distros' system `ansible-core` is
 older than 2.17 anyway, so a `pip install --user ansible-core` (or
 `pipx`) is the established workflow there. The bump just makes the
@@ -23,18 +29,18 @@ actually-supported floor honest.
 
 #### Required action
 
-Upgrade `ansible-core` to 2.20 or newer before installing this
+Upgrade `ansible-core` to 2.19 or newer before installing this
 collection's v2.0.0 release:
 
 ```bash
 # pip (system Python or venv)
-pip install --upgrade 'ansible-core>=2.20,<2.22'
+pip install --upgrade 'ansible-core>=2.19,<2.22'
 
 # pipx
 pipx upgrade --pip-args='--upgrade' ansible-core
 ```
 
-Distro packages currently shipping `ansible-core >= 2.20`:
+Distro packages currently shipping `ansible-core >= 2.19`:
 
 - Arch Linux: `extra/ansible-core`
 - Debian Trixie: `main/ansible-core`
@@ -44,7 +50,7 @@ Distro packages currently shipping `ansible-core >= 2.20`:
 If you pin `ansible-core` in a requirements file, set:
 
 ```text
-ansible-core>=2.20,<2.22
+ansible-core>=2.19,<2.22
 ```
 
 ### Deprecated v1.x variable renames removed (#60)
