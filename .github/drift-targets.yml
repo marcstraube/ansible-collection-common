@@ -1,0 +1,26 @@
+---
+# Drift-detection targets — packages currently marked as Layer-1 no-ops
+# (empty `__<role>_<pkg>_package` in vars/{distro}.yml). The
+# drift-detection workflow periodically probes each entry and opens an
+# issue when the package becomes installable again, so the
+# corresponding vars file entry can be restored.
+#
+# Schema (per entry):
+#   role:       role directory under roles/
+#   platform:   one of archlinux | debian-trixie | rocky-9 | rocky-10
+#   package:    upstream package name to probe with the platform's PM
+#   source:     'repo' (default) or 'aur' — aur targets attempt a
+#               makepkg build instead of a pacman download
+#   vars_file:  path (relative to the role) to the vars file that
+#               currently holds the no-op; included in the drift issue
+#               so the fix location is obvious
+#
+# Add an entry here when introducing a new Layer-1 no-op; remove the
+# entry when restoring the package.
+
+targets:
+  - role: aide
+    platform: archlinux
+    package: aide
+    source: aur
+    vars_file: vars/Archlinux.yml
