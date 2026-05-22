@@ -8,7 +8,7 @@ and instructions for contributing to this collection.
 ### Prerequisites
 
 - Python 3.13+
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Podman (for Molecule tests)
 - Git
 - pre-commit

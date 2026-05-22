@@ -4,7 +4,7 @@ galaxy_info:
   description: Configure hardware security tokens (NitroKey, YubiKey, FIDO2, smart cards)
   license: MIT
 
-  min_ansible_version: '2.17'
+  min_ansible_version: '2.19'
 
   platforms:
     - name: ArchLinux

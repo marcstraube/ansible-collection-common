@@ -19,7 +19,7 @@ user management, editors, and more.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 
 ## Included Roles
 
