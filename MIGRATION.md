@@ -5,7 +5,7 @@ breaking changes adds a section here with before/after inventory
 snippets. For the full list of changes per release, see
 [CHANGELOG.md](CHANGELOG.md).
 
-## v2.0.0 (unreleased)
+## v2.0.0 - 2026-05-22
 
 ### Minimum ansible-core bumped from 2.17 to 2.19 (#173)
 
