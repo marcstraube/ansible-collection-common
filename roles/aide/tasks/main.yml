@@ -31,7 +31,9 @@
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
-  when: aide_enabled | bool
+  when:
+    - aide_enabled | bool
+    - __aide_package | default('') | length > 0
   tags:
     - aide
     - aide:install
@@ -43,28 +45,36 @@
       tags:
         - aide
         - aide:install
-  when: aide_enabled | bool
+  when:
+    - aide_enabled | bool
+    - __aide_package | default('') | length > 0
   tags:
     - aide
     - aide:install
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
-  when: aide_enabled | bool
+  when:
+    - aide_enabled | bool
+    - __aide_package | default('') | length > 0
   tags:
     - aide
     - aide:configure
 
 - name: Main | Import database tasks
   ansible.builtin.import_tasks: database.yml
-  when: aide_enabled | bool
+  when:
+    - aide_enabled | bool
+    - __aide_package | default('') | length > 0
   tags:
     - aide
     - aide:database
 
 - name: Main | Import schedule tasks
   ansible.builtin.import_tasks: schedule.yml
-  when: aide_enabled | bool
+  when:
+    - aide_enabled | bool
+    - __aide_package | default('') | length > 0
   tags:
     - aide
     - aide:schedule

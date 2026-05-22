@@ -15,22 +15,28 @@ EL 10) automatically through OS-specific variable files.
 
 ## Supported Platforms
 
-| Platform                  | Notes                        |
-|---------------------------|------------------------------|
-| Arch Linux                | AUR, requires `aur_builder`¹ |
-| Debian Trixie             | Uses `_aide` user            |
-| EL 9 (Rocky, Alma, RHEL)  | AIDE 0.16, legacy directives |
-| EL 10 (Rocky, Alma, RHEL) | AIDE 0.18+                   |
+| Platform                  | Notes                                |
+|---------------------------|--------------------------------------|
+| Arch Linux                | Currently no-op (see below)¹         |
+| Debian Trixie             | Uses `_aide` user                    |
+| EL 9 (Rocky, Alma, RHEL)  | AIDE 0.16, legacy directives         |
+| EL 10 (Rocky, Alma, RHEL) | AIDE 0.18+                           |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
 overrides if needed.
 
-¹ As of 2026-05, AIDE 0.19.3 fails to build on Arch Linux against the new
-`nettle 4.0` due to a `digest()` API break in `src/md.c`. Existing
-installations remain functional, but fresh AUR builds abort. Upstream:
-[aide/aide#218](https://github.com/aide/aide/issues/218). Re-enable tracked
-in #126.
+¹ As of 2026-05, AIDE 0.19.3 fails to build on Arch Linux against `nettle 4.0`
+due to a `digest()` API break in `src/md.c`. Upstream AIDE is in maintenance
+mode and no fix has been released. Upstream tracking:
+[aide/aide#218](https://github.com/aide/aide/issues/218).
+
+The role is a Layer-1 no-op on Arch — `__aide_package` is empty in
+`vars/Archlinux.yml`, `main.yml` guards downstream tasks on a non-empty
+package, and the install task therefore skips. Existing AIDE installations
+remain functional (the role only installs/reconciles; it does not uninstall).
+The drift-detection workflow (#169) re-checks AUR availability on a schedule
+and opens an issue when the package becomes installable again.
 
 ## Role Variables
 
