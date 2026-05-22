@@ -1,0 +1,195 @@
+---
+name: Drift Detection
+
+# Probes Layer-1-no-op'd packages (see .github/drift-targets.yml) for
+# re-availability on their blocked platforms and opens an issue when a
+# package becomes installable again, so the corresponding vars/<OS>.yml
+# entry can be restored.
+
+on:
+  schedule:
+    # Weekly on Monday at 06:00 UTC. The CI matrix also runs weekly
+    # (Sunday 07:00 UTC) — staggered so a runner crunch on one does not
+    # delay the other.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  # =============================================================================
+  # LOAD-TARGETS — parse drift-targets.yml into a matrix
+  # =============================================================================
+  load-targets:
+    name: Load drift targets
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.parse.outputs.matrix }}
+      has_targets: ${{ steps.parse.outputs.has_targets }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Parse drift-targets.yml
+        id: parse
+        run: |
+          if [ ! -f .github/drift-targets.yml ]; then
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+            echo 'has_targets=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          MATRIX=$(python3 -c "
+          import json, yaml
+          with open('.github/drift-targets.yml') as f:
+              data = yaml.safe_load(f) or {}
+          targets = data.get('targets', [])
+          print(json.dumps({'include': targets}))
+          ")
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          if [ "$MATRIX" = '{"include":[]}' ]; then
+            echo 'has_targets=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'has_targets=true' >> "$GITHUB_OUTPUT"
+          fi
+
+  # =============================================================================
+  # PROBE — one job per target (parallel, fail-fast disabled)
+  # =============================================================================
+  probe:
+    name: Probe ${{ matrix.role }}/${{ matrix.package }} on ${{ matrix.platform }}
+    needs: load-targets
+    if: needs.load-targets.outputs.has_targets == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.load-targets.outputs.matrix) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Resolve image and probe command
+        id: resolve
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          SOURCE: ${{ matrix.source || 'repo' }}
+        run: |
+          case "$PLATFORM" in
+            archlinux)
+              IMAGE='docker.io/marcstraube/archlinux-ansible:latest'
+              if [ "$SOURCE" = "aur" ]; then
+                # AUR probe: clone + makepkg --syncdeps. --skippgpcheck
+                # avoids per-package PGP setup. The build only needs to
+                # *complete* — we discard the artifact.
+                # The marcstraube/archlinux-ansible image already ships
+                # an aur_builder user wired up for sudo-less makepkg.
+                PROBE='set -euo pipefail
+                pacman -Sy --noconfirm >/dev/null
+                pacman -S --needed --noconfirm git base-devel >/dev/null
+                rm -rf /tmp/aur-probe
+                sudo -u aur_builder -- bash -c "
+                  git clone --depth=1 https://aur.archlinux.org/$PKG.git /tmp/aur-probe &&
+                  cd /tmp/aur-probe &&
+                  makepkg --syncdeps --noconfirm --skippgpcheck
+                "'
+              else
+                PROBE='set -euo pipefail
+                pacman -Sy --noconfirm >/dev/null
+                pacman -S --downloadonly --noconfirm "$PKG"'
+              fi
+              ;;
+            debian-trixie)
+              IMAGE='docker.io/geerlingguy/docker-debian13-ansible:latest'
+              PROBE='set -euo pipefail
+              apt-get update -qq
+              apt-get install -y --download-only --no-install-recommends "$PKG"'
+              ;;
+            rocky-9)
+              IMAGE='docker.io/geerlingguy/docker-rockylinux9-ansible:latest'
+              PROBE='set -euo pipefail
+              dnf install -y --downloadonly --setopt=install_weak_deps=0 "$PKG"'
+              ;;
+            rocky-10)
+              IMAGE='docker.io/geerlingguy/docker-rockylinux10-ansible:latest'
+              PROBE='set -euo pipefail
+              dnf install -y --downloadonly --setopt=install_weak_deps=0 "$PKG"'
+              ;;
+            *)
+              echo "::error::Unknown platform: $PLATFORM"
+              exit 1
+              ;;
+          esac
+          {
+            echo "image=$IMAGE"
+            echo 'probe<<EOF'
+            echo "$PROBE"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run probe
+        id: probe
+        continue-on-error: true
+        env:
+          PKG: ${{ matrix.package }}
+          IMAGE: ${{ steps.resolve.outputs.image }}
+          PROBE_SCRIPT: ${{ steps.resolve.outputs.probe }}
+        run: |
+          # Pull image once (faster, clearer logs).
+          docker pull --quiet "$IMAGE"
+          # Run probe inside container. Stdout/stderr stream live to logs.
+          if docker run --rm \
+              -e PKG="$PKG" \
+              "$IMAGE" \
+              bash -c "$PROBE_SCRIPT"; then
+            echo 'result=available' >> "$GITHUB_OUTPUT"
+            echo "::notice::Package $PKG is installable on ${{ matrix.platform }} — drift detected"
+          else
+            echo 'result=unavailable' >> "$GITHUB_OUTPUT"
+            echo "::notice::Package $PKG is still unavailable on ${{ matrix.platform }} — no action"
+          fi
+
+      - name: Open drift issue
+        if: steps.probe.outputs.result == 'available'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # pragma: allowlist secret
+          GH_REPO: ${{ github.repository }}
+          TITLE: "Drift detected: re-enable `${{ matrix.package }}` on `${{ matrix.platform }}` in ${{ matrix.vars_file }}"
+        run: |
+          # Dedupe: skip if an open issue with this exact title already exists.
+          EXISTING=$(gh issue list \
+            --state open \
+            --search "in:title \"Drift detected: re-enable\" \"${{ matrix.package }}\" \"${{ matrix.platform }}\"" \
+            --json number,title \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" \
+            | head -1)
+          if [ -n "$EXISTING" ]; then
+            echo "Existing open drift issue #$EXISTING — skipping"
+            exit 0
+          fi
+
+          BODY=$(cat <<EOF
+          The drift-detection workflow successfully probed \`${{ matrix.package }}\` on \`${{ matrix.platform }}\` — the package is installable again.
+
+          To restore: revert the Layer-1 no-op in \`roles/${{ matrix.role }}/${{ matrix.vars_file }}\` (set the package back to its upstream name and drop the explanatory comment), then run the role's molecule to confirm.
+
+          - Role: \`${{ matrix.role }}\`
+          - Package: \`${{ matrix.package }}\`
+          - Platform: \`${{ matrix.platform }}\`
+          - Vars file: \`roles/${{ matrix.role }}/${{ matrix.vars_file }}\`
+          - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          The probe used a downloadonly / makepkg dry-run, so this issue may still false-positive on packages that install metadata cleanly but fail at use time — verify locally before closing.
+          EOF
+          )
+
+          gh issue create \
+            --title "$TITLE" \
+            --label "bug,enhancement" \
+            --body "$BODY"
