@@ -74,13 +74,13 @@ jobs:
         run: yamllint -c .yamllint .
 
   # =============================================================================
-  # MOLECULE FORWARD-COMPATIBILITY (ansible-core 2.20, representative subset)
+  # MOLECULE FORWARD-COMPATIBILITY (ansible-core 2.21, representative subset)
   # Tests a diverse subset of roles on latest ansible-core to catch
   # deprecations and breaking changes early.
   # Only runs on push to main — not needed for every PR.
   # =============================================================================
   molecule-compat:
-    name: Compat ${{ matrix.role }} (ansible-2.20)
+    name: Compat ${{ matrix.role }} (ansible-2.21)
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     needs: [lint, markdown-lint, yaml-lint]
@@ -104,7 +104,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install "ansible-core~=2.20.0" \
+          pip install "ansible-core~=2.21.0" \
                       molecule \
                       molecule-plugins[podman] \
                       passlib
