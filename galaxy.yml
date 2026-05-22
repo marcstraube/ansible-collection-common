@@ -29,15 +29,24 @@ homepage: https://github.com/marcstraube/ansible-collection-common
 issues: https://github.com/marcstraube/ansible-collection-common/issues
 build_ignore:
   - '*.tar.gz'
+  - .ansible
+  - .ansible-lint
+  - .claude
   - .git
   - .github
+  - .gitignore
   - .gitlab-ci.yml
-  - .ansible
-  - .claude
+  - .markdownlint-cli2.yaml
+  - .markdownlint.yml
+  - .pre-commit-config.yaml
+  - .release-please-manifest.json
+  - .secrets.baseline
   - .venv
+  - .yamllint
   - '*.pyc'
   - __pycache__
   - roles/*/molecule
+  - version.txt
 dependencies:
   community.general: '>=8.0.0'
   community.crypto: '>=2.9.0'
