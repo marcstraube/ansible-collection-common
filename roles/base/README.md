@@ -88,13 +88,17 @@ overrides if needed.
 
 | Variable                         | Default          | Description                                  |
 |----------------------------------|------------------|----------------------------------------------|
-| `base_bootloader`                | `'systemd-boot'` | Bootloader: systemd-boot, grub, none         |
+| `base_bootloader`                | OS-aware (\*)    | Bootloader: systemd-boot, grub, none         |
 | `base_grub_timeout`              | `5`              | GRUB menu timeout (seconds)                  |
 | `base_grub_default`              | `'0'`            | Default GRUB menu entry                      |
 | `base_kernel_parameters`         | `[]`             | Kernel params for GRUB_CMDLINE_LINUX_DEFAULT |
 | `base_systemd_boot_timeout`      | `3`              | systemd-boot loader timeout (seconds)        |
 | `base_systemd_boot_console_mode` | `'max'`          | systemd-boot console mode                    |
 | `base_systemd_boot_editor`       | `false`          | Allow boot parameter editing (security risk) |
+
+(\*) `base_bootloader` defaults to `grub` on Debian and RHEL-family
+distributions, and to `systemd-boot` on Arch Linux (set via
+`vars/<OS>.yml`).
 
 ### Packages
 

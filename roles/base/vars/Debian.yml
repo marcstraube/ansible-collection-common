@@ -13,3 +13,6 @@ __base_default_packages:
   - 'zip'
 
 __base_dialog_package: 'dialog'
+
+# Default bootloader (Debian ships GRUB by default)
+__base_default_bootloader: 'grub'

@@ -17,3 +17,6 @@ __base_locale_packages:
   - 'glibc-langpack-en'
 
 __base_dialog_package: 'dialog'
+
+# Default bootloader (RHEL-family ships GRUB by default)
+__base_default_bootloader: 'grub'
