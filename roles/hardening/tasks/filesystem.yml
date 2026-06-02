@@ -41,6 +41,9 @@
     label: '{{ item.path }}'
   register: __hardening_fstab_result
 
+# Skip in check mode: the prior ansible.posix.mount task only registers
+# the fstab change (does not write it), so `mount` would fail with
+# "can't find in /etc/fstab".
 - name: Filesystem | Mount or remount entries
   ansible.builtin.raw: >-
     if findmnt -n {{ item.item.path }} > /dev/null 2>&1; then
@@ -51,8 +54,8 @@
   loop: '{{ __hardening_fstab_result.results }}'
   loop_control:
     label: '{{ item.item.path }}'
+  when: not ansible_check_mode
   changed_when: false
-  check_mode: false
 
 - name: Filesystem | Configure /var/tmp bind mount in fstab
   ansible.posix.mount:
@@ -69,6 +72,7 @@
     if ! findmnt -n /var/tmp > /dev/null 2>&1; then
       mount /var/tmp;
     fi
-  when: hardening_fs_vartmp_bind_enabled | bool
+  when:
+    - hardening_fs_vartmp_bind_enabled | bool
+    - not ansible_check_mode
   changed_when: false
-  check_mode: false
