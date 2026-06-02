@@ -3,32 +3,31 @@
 # chicken-and-egg problem where mounting /tmp destroys the Ansible
 # module payload that was extracted there.
 
-# Auto-detect /tmp mount type to avoid breaking non-tmpfs mounts
-# (e.g. BTRFS subvolumes with their own security options)
+# Auto-detect /tmp mount type. Without explicit opt-in, only existing tmpfs
+# /tmp mounts are reconfigured. Converting a non-tmpfs /tmp (e.g. /tmp on /,
+# or a BTRFS subvolume) would silently mask existing files and can break
+# running services, so it is gated behind hardening_fs_tmp_force_tmpfs.
 - name: Filesystem | Detect current /tmp mount
   ansible.builtin.command:
-    cmd: findmnt -n -o TARGET,FSTYPE /tmp
+    cmd: findmnt -n -o FSTYPE /tmp
   register: __hardening_tmp_findmnt
   changed_when: false
   failed_when: false
   check_mode: false
 
-- name: Filesystem | Parse /tmp mount info
+- name: Filesystem | Parse /tmp fstype
   ansible.builtin.set_fact:
-    __hardening_tmp_is_separate: >-
-      {{ __hardening_tmp_findmnt.rc == 0 and
-         (__hardening_tmp_findmnt.stdout.split()[0] | default('')) == '/tmp' }}
     __hardening_tmp_fstype: >-
-      {{ __hardening_tmp_findmnt.stdout.split()[1] | default('')
+      {{ __hardening_tmp_findmnt.stdout | trim
          if __hardening_tmp_findmnt.rc == 0 else '' }}
 
-- name: Filesystem | Skip /tmp if already mounted as non-tmpfs
+- name: Filesystem | Skip /tmp unless already tmpfs (or force opt-in)
   ansible.builtin.set_fact:
     hardening_fs_mounts: >-
       {{ hardening_fs_mounts | rejectattr('path', 'equalto', '/tmp') | list }}
   when:
-    - __hardening_tmp_is_separate | bool
-    - __hardening_tmp_fstype not in ['tmpfs', '']
+    - __hardening_tmp_fstype != 'tmpfs'
+    - not (hardening_fs_tmp_force_tmpfs | bool)
 
 - name: Filesystem | Configure mount entries in fstab
   ansible.posix.mount:
