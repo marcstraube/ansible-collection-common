@@ -69,10 +69,19 @@ overrides if needed.
 
 ### Filesystem Mounts
 
-| Variable                           | Default            | Description             |
-|------------------------------------|--------------------|-------------------------|
-| `hardening_fs_mounts`              | `/tmp`, `/dev/shm` | Mount entries to harden |
-| `hardening_fs_vartmp_bind_enabled` | `true`             | Bind /var/tmp to /tmp   |
+| Variable                           | Default            | Description                                       |
+|------------------------------------|--------------------|---------------------------------------------------|
+| `hardening_fs_mounts`              | `/tmp`, `/dev/shm` | Mount entries to harden                           |
+| `hardening_fs_vartmp_bind_enabled` | `true`             | Bind /var/tmp to /tmp                             |
+| `hardening_fs_tmp_force_tmpfs`     | `false`            | Force /tmp → tmpfs even when /tmp is not tmpfs    |
+
+The `/tmp` entry in `hardening_fs_mounts` is only applied when the current
+`/tmp` is already a tmpfs (e.g. systemd `tmp.mount` on Arch). On systems
+where `/tmp` lives on the root filesystem, on a BTRFS subvolume, or on a
+dedicated non-tmpfs partition, the entry is skipped to avoid masking
+existing data or breaking services that hold open files there. Set
+`hardening_fs_tmp_force_tmpfs: true` to opt in — appropriate for fresh
+installs where `/tmp` is known to be empty.
 
 ## Tags
 

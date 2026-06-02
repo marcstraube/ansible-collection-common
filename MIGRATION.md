@@ -5,6 +5,36 @@ breaking changes adds a section here with before/after inventory
 snippets. For the full list of changes per release, see
 [CHANGELOG.md](CHANGELOG.md).
 
+## v2.0.1 (unreleased)
+
+### `hardening` — `/tmp` is no longer auto-converted to tmpfs
+
+The `/tmp` entry in `hardening_fs_mounts` is now only applied when the
+current `/tmp` is already a tmpfs. On hosts where `/tmp` lives on the
+root filesystem, on a BTRFS subvolume, or on another non-tmpfs mount,
+the entry is skipped instead of silently masking the existing `/tmp`
+contents with a fresh tmpfs.
+
+The previous default could break running services (`noexec` on `/tmp`
+prevents tools like `npm` from executing scripts there) and would
+hide files already on `/tmp` from any process that opened them after
+the remount.
+
+#### Required action
+
+Hosts that should still get `/tmp` converted to tmpfs — typically
+fresh-install or installer workflows where `/tmp` is known to be
+empty — need to opt in:
+
+```yaml
+# inventory: group_vars / host_vars
+hardening_fs_tmp_force_tmpfs: true
+```
+
+Hosts where `/tmp` is already tmpfs (e.g. Arch Linux with the
+default systemd `tmp.mount`) are unaffected — the hardened mount
+options are still applied.
+
 ## v2.0.0 - 2026-05-22
 
 ### Minimum ansible-core bumped from 2.17 to 2.19 (#173)

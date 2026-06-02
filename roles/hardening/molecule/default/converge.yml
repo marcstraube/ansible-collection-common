@@ -5,6 +5,10 @@
 
   vars:
     hardening_enabled: true
+    # Molecule VMs are fresh installs with an empty /tmp on the root
+    # filesystem. Opt in to the tmpfs conversion so the /tmp mount-option
+    # verification covers the force-tmpfs path.
+    hardening_fs_tmp_force_tmpfs: true
 
   tasks:
     - name: Converge | Include hardening role  # noqa: role-name[path]

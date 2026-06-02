@@ -122,3 +122,10 @@ hardening_fs_mounts:
 
 # Enable /var/tmp bind mount to /tmp (inherits /tmp mount options)
 hardening_fs_vartmp_bind_enabled: true
+
+# Force /tmp conversion to tmpfs even when the current /tmp is not tmpfs
+# (e.g. /tmp on /, BTRFS subvolume, dedicated /tmp partition).
+# DANGER: enabling this on a running system masks existing /tmp contents
+# and can break services that hold open files there. Intended for fresh
+# installs where /tmp is known to be empty.
+hardening_fs_tmp_force_tmpfs: false
