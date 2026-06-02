@@ -16,12 +16,19 @@ daemon configuration, and keyserver management.
 
 ## Supported Platforms
 
-| Platform                  | Notes                                     |
-|---------------------------|-------------------------------------------|
-| Arch Linux                | GnuPG 2.4+, includes GUI tools (Seahorse) |
-| Debian Trixie             | GnuPG 2.2+, includes GUI tools (Seahorse) |
-| EL 9 (Rocky, Alma, RHEL)  | GnuPG 2.3+                                |
-| EL 10 (Rocky, Alma, RHEL) | GnuPG 2.4+                                |
+| Platform                  | Notes                                                          |
+|---------------------------|----------------------------------------------------------------|
+| Arch Linux                | GnuPG 2.4+, includes GUI tools (Seahorse)                      |
+| Debian Trixie             | GnuPG 2.2+, includes GUI tools (Seahorse)                      |
+| EL 9 (Rocky, Alma, RHEL)  | GnuPG 2.3+; `paperkey` is not in EPEL — see CLI tools note (\*) |
+| EL 10 (Rocky, Alma, RHEL) | GnuPG 2.4+; `paperkey` is not in EPEL — see CLI tools note (\*) |
+
+(\*) `paperkey` (and `hopenpgp-tools`) are not packaged for EPEL 9/10,
+so `__gnupg_tools_packages` is empty on RHEL-family hosts and the
+"Install | Additional tools" task is a no-op there even when
+`gnupg_tools_enabled` is `true`. Users who need `paperkey` on EL must
+install it from source or a third-party COPR. Re-availability is
+probed weekly by the drift-detection workflow.
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars

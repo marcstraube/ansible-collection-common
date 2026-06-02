@@ -12,7 +12,9 @@
     state: present
   retries: 3
   delay: 5
-  when: gnupg_tools_enabled | default(true) | bool
+  when:
+    - gnupg_tools_enabled | default(true) | bool
+    - __gnupg_tools_packages | length > 0
 
 - name: Install | GUI packages
   ansible.builtin.package:

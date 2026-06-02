@@ -2,8 +2,12 @@
 __gnupg_packages:
   - 'gnupg2'
 
-__gnupg_tools_packages:
-  - 'paperkey'
+# paperkey is not packaged for EPEL 9 or EPEL 10 (Fedora-only, see
+# https://packages.fedoraproject.org/pkgs/paperkey/paperkey/);
+# hopenpgp-tools (Haskell) is likewise absent. Layer-1 no-op: keep
+# the list empty so the install task in install.yml is a noop on EL.
+# Re-availability tracked by the drift-detection workflow (#169).
+__gnupg_tools_packages: []
 
 __gnupg_gui_packages:
   - 'pinentry-gtk'
