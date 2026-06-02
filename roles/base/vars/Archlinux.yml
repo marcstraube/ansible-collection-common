@@ -13,3 +13,6 @@ __base_default_packages:
   - 'zip'
 
 __base_dialog_package: 'dialog'
+
+# Default bootloader (Arch installer ships systemd-boot as the modern choice)
+__base_default_bootloader: 'systemd-boot'

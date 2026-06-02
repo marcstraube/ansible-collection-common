@@ -115,7 +115,10 @@ base_microcode: 'auto'
 #
 
 # Bootloader type: systemd-boot, grub, none
-base_bootloader: 'systemd-boot'
+# Default is OS-aware via vars/<OS>.yml:
+#   Arch Linux       → systemd-boot
+#   Debian, RHEL-fam → grub
+base_bootloader: '{{ __base_default_bootloader | default("systemd-boot") }}'
 
 # GRUB timeout in seconds
 base_grub_timeout: 5
