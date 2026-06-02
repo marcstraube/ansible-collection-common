@@ -45,6 +45,25 @@
          else 'centos' }}/docker-ce.repo
   args:
     creates: '/etc/yum.repos.d/docker-ce.repo'
+  register: __docker_dnf_repo
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Install | Refresh dnf cache after Docker repo change
+  ansible.builtin.dnf:
+    update_cache: true
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __docker_dnf_repo is changed
+
+# Check that the Docker CE repo file is actually on disk before
+# touching the docker-ce packages. In check mode the add-repo
+# command above is not really executed, so without this gate the
+# package install tasks fail with "No package docker-ce available".
+- name: Install | Check Docker CE repo presence (RedHat)
+  ansible.builtin.stat:
+    path: '/etc/yum.repos.d/docker-ce.repo'
+  register: __docker_repo_stat
+  check_mode: false
   when: ansible_facts['os_family'] == 'RedHat'
 
 #
@@ -57,6 +76,9 @@
     state: present
   retries: 3
   delay: 5
+  when: >-
+    ansible_facts['os_family'] != 'RedHat'
+    or __docker_repo_stat.stat.exists
 
 - name: Install | Docker Compose plugin
   ansible.builtin.package:
@@ -64,7 +86,10 @@
     state: present
   retries: 3
   delay: 5
-  when: docker_compose_enabled | bool
+  when:
+    - docker_compose_enabled | bool
+    - ansible_facts['os_family'] != 'RedHat'
+      or __docker_repo_stat.stat.exists
 
 - name: Install | Docker Buildx plugin
   ansible.builtin.package:
@@ -72,7 +97,10 @@
     state: present
   retries: 3
   delay: 5
-  when: docker_buildx_enabled | bool
+  when:
+    - docker_buildx_enabled | bool
+    - ansible_facts['os_family'] != 'RedHat'
+      or __docker_repo_stat.stat.exists
 
 #
 # Directory and Group Setup
