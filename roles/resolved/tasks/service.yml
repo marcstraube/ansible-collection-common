@@ -1,10 +1,21 @@
 ---
+# Check whether systemd-resolved is actually installed. In check mode the
+# preceding install task only simulates the package install, so without
+# this gate the service/symlink tasks would fail on hosts that don't
+# already have the systemd-resolved unit file.
+- name: Service | Check if systemd-resolved unit is installed
+  ansible.builtin.stat:
+    path: '/usr/lib/systemd/system/{{ __resolved_service_name }}'
+  register: __resolved_service_unit
+  check_mode: false
+
 - name: Service | Manage systemd-resolved service
   ansible.builtin.systemd_service:
     name: '{{ __resolved_service_name }}'
     enabled: "{{ resolved_service_enabled | bool }}"
     state: "{{ resolved_service_enabled | bool | ternary('started', 'stopped') }}"
     daemon_reload: true
+  when: __resolved_service_unit.stat.exists
 
 - name: Service | Manage resolv.conf symlink
   ansible.builtin.file:
@@ -15,3 +26,4 @@
   when:
     - resolved_manage_resolv_conf | bool
     - resolved_service_enabled | bool
+    - __resolved_service_unit.stat.exists
