@@ -24,3 +24,11 @@ targets:
     package: aide
     source: aur
     vars_file: vars/Archlinux.yml
+  - role: gnupg
+    platform: rocky-9
+    package: paperkey
+    vars_file: vars/RedHat.yml
+  - role: gnupg
+    platform: rocky-10
+    package: paperkey
+    vars_file: vars/RedHat.yml
