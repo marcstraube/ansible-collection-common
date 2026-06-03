@@ -87,6 +87,51 @@ No action required for v2.1.0 — the deprecation is purely informational.
 
 ## v2.0.1 (unreleased)
 
+### `php` — RHEL default switched from Remi to AppStream
+
+Previously `roles/php/vars/RedHat.yml` shipped unconditional Remi-SCL
+package patterns (`php<XX>-php-cli`, `/etc/opt/remi/php<XX>/...`), but
+the role did not deploy the Remi repository. On any RHEL-family host
+without Remi pre-installed, the role failed with
+`No package php<XX>-php-cli available`.
+
+v2.0.1 introduces `php_redhat_repo` (`'appstream'` default, `'remi'`
+opt-in). AppStream uses the distro module streams and unversioned
+package names. Remi keeps the versioned `php<XX>-php-*` packages and
+`/etc/opt/remi/` paths for side-by-side installs.
+
+The Remi repository itself is not managed by the `php` role — it is
+multi-purpose (PHP, MariaDB, Redis, …) and lives in
+`marcstraube.common.package_management` under `dnf_remi_enabled`. The
+`php` role asserts the repo is on the host when
+`php_redhat_repo: 'remi'` is requested and fails with a hint otherwise.
+
+AppStream's `dnf module` streams are exclusive, so on `appstream` the
+role only accepts a single entry in `php_versions` (multi-version
+side-by-side requires `remi`). The role also asserts that the
+requested PHP version matches the active stream and fails with a hint
+otherwise.
+
+#### Required action
+
+Hosts that already had Remi installed and relied on the previous
+behaviour need both flags:
+
+```yaml
+# inventory: group_vars / host_vars
+dnf_remi_enabled: true            # marcstraube.common.package_management
+php_redhat_repo: 'remi'           # marcstraube.common.php
+```
+
+Hosts on AppStream get the default and need no inventory change, but
+the active module stream must match `php_versions[0].version`. To
+switch the active stream:
+
+```bash
+sudo dnf module reset -y php
+sudo dnf module enable -y php:8.2
+```
+
 ### `hardening` — `/tmp` is no longer auto-converted to tmpfs
 
 The `/tmp` entry in `hardening_fs_mounts` is now only applied when the

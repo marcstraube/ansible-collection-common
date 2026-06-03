@@ -24,6 +24,22 @@
   tags:
     - php
 
+- name: Main | Validate php_redhat_repo
+  ansible.builtin.assert:
+    that:
+      - php_redhat_repo in ['appstream', 'remi']
+      - (php_redhat_repo == 'remi') or (php_versions | length == 1)
+    fail_msg: |
+      php_redhat_repo must be 'appstream' or 'remi'.
+      AppStream dnf module streams are exclusive — only a single PHP
+      version per host. For multi-version installs set
+      php_redhat_repo: 'remi'.
+  when:
+    - php_enabled | bool
+    - ansible_facts['os_family'] == 'RedHat'
+  tags:
+    - php
+
 - name: Main | Import repository tasks
   ansible.builtin.import_tasks:
     file: repos.yml

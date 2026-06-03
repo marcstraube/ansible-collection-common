@@ -23,12 +23,12 @@ and full FPM pool templates.
 
 ## Supported Platforms
 
-| Platform                   | Notes |
-|----------------------------|-------|
-| Arch Linux                 |       |
-| Debian Trixie              |       |
-| EL 9 (Rocky, Alma, RHEL)   |       |
-| EL 10 (Rocky, Alma, RHEL)  |       |
+| Platform                   | Notes                                                          |
+|----------------------------|----------------------------------------------------------------|
+| Arch Linux                 | Official repo for current PHP, AUR for legacy versions         |
+| Debian Trixie              | Sury repository (multi-version side-by-side)                   |
+| EL 9 (Rocky, Alma, RHEL)   | AppStream (default, single stream) or Remi (`php_redhat_repo`) |
+| EL 10 (Rocky, Alma, RHEL)  | AppStream (default, single stream) or Remi (`php_redhat_repo`) |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
@@ -50,10 +50,43 @@ overrides if needed.
 
 ### PHP Versions
 
-| Variable              | Default               | Description                               |
-|-----------------------|-----------------------|-------------------------------------------|
-| `php_versions`        | `[{version: '8.4'}]`  | PHP versions to install (list of dicts)   |
-| `php_default_version` | `'8.4'`               | Default PHP version for CLI               |
+| Variable              | Default                 | Description                                       |
+|-----------------------|-------------------------|---------------------------------------------------|
+| `php_versions`        | `[{version: 'auto'}]`   | PHP versions to install (list of dicts)           |
+| `php_default_version` | `'auto'`                | Default PHP version for CLI                       |
+| `php_redhat_repo`     | `'appstream'`           | RHEL repo: `appstream` (single) or `remi` (multi) |
+
+#### `php_redhat_repo` — AppStream vs. Remi
+
+| Aspect                 | `'appstream'` (default)                   | `'remi'`                                      |
+|------------------------|-------------------------------------------|-----------------------------------------------|
+| Source                 | Distro AppStream (`dnf module` streams)   | Remi Collet's third-party repo                |
+| Package names          | `php-cli`, `php-fpm`, `php-<ext>`         | `php<XX>-php-cli`, `php<XX>-php-<ext>`        |
+| Paths                  | `/etc/php.d`, `/etc/php-fpm.d`            | `/etc/opt/remi/php<XX>/...`                   |
+| Available versions     | 8.0, 8.1, 8.2 on Rocky 9 (one at a time)  | 5.6 through current stable, side-by-side      |
+| Update cadence         | RHEL lifecycle (conservative)             | Upstream release day                          |
+| Lifecycle              | Application-stream support window         | Upstream PHP support per minor                |
+| `php_versions` length  | Must be 1 (streams are exclusive)         | Multiple versions allowed                     |
+
+When `php_redhat_repo: 'appstream'` and `php_versions[0].version` differs
+from the active module stream, the role fails with a hint to either
+switch the stream (`sudo dnf module reset -y php && sudo dnf module enable
+-y php:<X.Y>`) or use Remi.
+
+When `php_redhat_repo: 'remi'`, the Remi repository must already be on
+the host. Remi is multi-purpose (PHP, MariaDB, Redis, …) and is managed
+by `marcstraube.common.package_management`, not by this role. Enable it
+in inventory:
+
+```yaml
+dnf_remi_enabled: true
+# Optional: pin the active PHP module stream (Remi's modular variant)
+dnf_remi_php_version: '8.2'
+```
+
+Then run the `package_management` role before this one. The PHP role
+asserts the Remi repo is present and fails fast with this hint
+otherwise.
 
 Each entry in `php_versions` supports:
 

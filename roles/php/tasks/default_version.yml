@@ -16,7 +16,11 @@
     path: '/usr/bin/php{{ __php_default_ver }}'
   when: __php_has_alternatives | bool
 
-- name: Default Version | Set default PHP symlink (RedHat)
+# AppStream ships /usr/bin/php directly (single active stream), so no
+# wrapper symlink is needed. Remi installs versioned executables
+# (/usr/bin/php82, /usr/bin/php83, ...) — link the inventory's default
+# version into /usr/local/bin/php for shell convenience.
+- name: Default Version | Set default PHP symlink (RedHat Remi)
   ansible.builtin.file:
     src: '/usr/bin/php{{ __php_default_ver_compact }}'
     dest: '/usr/local/bin/php'
@@ -24,7 +28,9 @@
     force: true
     owner: root
     group: root
-  when: ansible_facts['os_family'] == 'RedHat'
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'remi'
 
 - name: Default Version | Set default PHP symlink (Arch AUR)
   ansible.builtin.file:

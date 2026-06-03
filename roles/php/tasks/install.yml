@@ -30,6 +30,41 @@
     - ansible_facts['os_family'] == 'Debian'
     - __php_debian_repo_info.stdout | default('') | trim | length > 0
 
+# When php_redhat_repo: 'remi' is requested, the Remi repo itself must
+# already be on the host (deployed by marcstraube.common.package_management
+# via dnf_remi_enabled — Remi is multi-purpose and lives there, not here).
+- name: Install | Check Remi repo presence (RedHat)
+  ansible.builtin.command:
+    cmd: dnf repolist --enabled remi-safe
+  register: __php_remi_repolist
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'remi'
+
+- name: Install | Assert Remi repo is enabled when requested (RedHat)
+  ansible.builtin.assert:
+    that:
+      - "'remi-safe' in (__php_remi_repolist.stdout | default(''))"
+    fail_msg: |
+      php_redhat_repo is 'remi' but the Remi repository is not enabled
+      on this host. Remi is multi-purpose (PHP, MariaDB, Redis, ...) and
+      is managed by marcstraube.common.package_management — enable it
+      in inventory with:
+
+        dnf_remi_enabled: true
+
+      Optionally pin the active PHP module stream with:
+
+        dnf_remi_php_version: '8.2'
+
+      Then re-run the package_management role before this one.
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'remi'
+
 - name: Install | Detect current RedHat PHP version
   ansible.builtin.shell:
     cmd: set -o pipefail && dnf info php-cli 2>/dev/null | grep -m1 '^Version' | grep -oP '\d+\.\d+'
