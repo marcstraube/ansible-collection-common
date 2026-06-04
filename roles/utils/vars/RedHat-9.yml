@@ -28,6 +28,19 @@ __utils_net_xh: ''  # not in Rocky
 __utils_net_httpie: ''  # EPEL 9 package has unsatisfiable CRB-only dependency
 
 #
+# Archive / Compression
+# (Same as RedHat.yml — RHEL-9 vars override the os_family file
+# entirely when present, so archive entries are repeated here.)
+#
+
+__utils_archive_p7zip:
+  - 'p7zip'
+  - 'p7zip-plugins'
+# unrar from RPM Fusion non-free — requires
+# dnf_rpmfusion_nonfree_enabled in marcstraube.common.package_management.
+__utils_archive_unrar: 'unrar'
+
+#
 # File Managers
 #
 

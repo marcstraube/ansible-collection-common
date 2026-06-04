@@ -9,6 +9,9 @@ __base_default_packages:
   - 'curl'
   - 'rsync'
   - 'tree'
+  # DEPRECATED in v2.1.0 — moved to marcstraube.common.utils archive
+  # section (utils_archive_zip_enabled / utils_archive_unzip_enabled,
+  # both default true). Will be removed from base in v3.0.0.
   - 'unzip'
   - 'zip'
 

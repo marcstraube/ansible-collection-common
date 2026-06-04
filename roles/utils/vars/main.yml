@@ -48,6 +48,20 @@ __utils_net_arp_scan: 'arp-scan'
 __utils_transfer_rsync: 'rsync'
 
 #
+# Archive / Compression
+# Tools available on all distros (or with distro override below).
+#
+
+__utils_archive_tar: 'tar'
+__utils_archive_zstd: 'zstd'
+__utils_archive_zip: 'zip'
+__utils_archive_unzip: 'unzip'
+__utils_archive_atool: 'atool'
+__utils_archive_pigz: 'pigz'
+# p7zip + unrar have differing package names across distros — see
+# Archlinux.yml, Debian.yml, RedHat.yml, RedHat-9.yml.
+
+#
 # File Managers
 #
 

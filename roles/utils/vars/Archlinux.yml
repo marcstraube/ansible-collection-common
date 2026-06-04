@@ -29,6 +29,13 @@ __utils_net_netcat: 'openbsd-netcat'
 __utils_net_xh: 'xh'
 
 #
+# Archive / Compression
+#
+
+__utils_archive_p7zip: 'p7zip'
+__utils_archive_unrar: ''  # AUR only
+
+#
 # File Managers
 #
 
@@ -85,3 +92,5 @@ __utils_aur_packages:
     - pokemonsay-git
   hollywood:
     - hollywood
+  archive_unrar:
+    - unrar

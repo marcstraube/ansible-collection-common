@@ -28,6 +28,63 @@ Users who previously enabled the non-free component out-of-band via
 custom `apt_custom_repos` entries can now switch to the toggle for
 the same effect and benefit from idempotent Components-line management.
 
+### `utils` — new Archive / Compression section
+
+`roles/utils/defaults/main.yml` gains a dedicated archive section with
+eight new toggles:
+
+| Toggle                          | Default |
+|---------------------------------|---------|
+| `utils_archive_tar_enabled`     | `true`  |
+| `utils_archive_zstd_enabled`    | `true`  |
+| `utils_archive_zip_enabled`     | `true`  |
+| `utils_archive_unzip_enabled`   | `true`  |
+| `utils_archive_p7zip_enabled`   | `false` |
+| `utils_archive_unrar_enabled`   | `false` |
+| `utils_archive_atool_enabled`   | `false` |
+| `utils_archive_pigz_enabled`    | `false` |
+
+Notes per toggle:
+
+- `tar` — POSIX `tar`. Required on RHEL minimal; Arch and Debian ship
+  it in their base image (install is a no-op there).
+- `zstd` — Modern fast compressor. Default Arch package format, used
+  by `mkinitcpio`, `makepkg`, `btrfs send/receive`.
+- `zip`, `unzip` — see deprecation notice below.
+- `p7zip` — 7-Zip clone. RHEL pulls `p7zip` + `p7zip-plugins` from EPEL.
+- `unrar` — RAR extractor.
+  - Arch: built from AUR via `aur_builder`.
+  - Debian: lives in non-free; set `apt_non_free_enabled: true` in
+    `marcstraube.common.package_management`.
+  - RHEL: lives in RPM Fusion non-free; set
+    `dnf_rpmfusion_nonfree_enabled: true` in
+    `marcstraube.common.package_management`.
+- `atool` — Universal archive frontend (dispatches to
+  tar/zip/7z/zstd/unrar/...). Not in EPEL 10 (entry blank there).
+- `pigz` — Parallel gzip implementation.
+
+The toggles are additive — no existing behaviour changes for inventories
+that simply upgrade. Users explicitly disabling `utils_enabled` are
+unaffected.
+
+#### Deprecation: `zip` / `unzip` in `base`
+
+`zip` and `unzip` are currently in `__base_default_packages` for all
+three distros AND now in `utils_archive_*` (both default `true`). The
+duplication is idempotent. In **v3.0.0**, both packages will be removed
+from `base`; deployments relying on them must either keep
+`utils_enabled: true` (default) **or** add the packages to
+`base_extra_packages`:
+
+```yaml
+# Required only if you set utils_enabled: false
+base_extra_packages:
+  - zip
+  - unzip
+```
+
+No action required for v2.1.0 — the deprecation is purely informational.
+
 ## v2.0.1 (unreleased)
 
 ### `hardening` — `/tmp` is no longer auto-converted to tmpfs

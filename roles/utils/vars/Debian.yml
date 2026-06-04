@@ -23,6 +23,18 @@ __utils_net_netcat: 'netcat-openbsd'
 __utils_net_xh: 'xh'
 
 #
+# Archive / Compression
+#
+
+# p7zip-full pulls in the full 7z command (the p7zip package alone
+# only ships the limited 7zr binary on Debian).
+__utils_archive_p7zip: 'p7zip-full'
+# unrar lives in Debian non-free. Enable the component via
+# marcstraube.common.package_management's apt_non_free_enabled toggle
+# (default false) — then this entry installs the package directly.
+__utils_archive_unrar: 'unrar'
+
+#
 # File Managers
 #
 
