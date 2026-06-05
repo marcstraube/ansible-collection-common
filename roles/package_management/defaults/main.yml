@@ -511,6 +511,16 @@ apt_preferences: []
 # Enable Debian Backports (Debian only)
 apt_backports_enabled: false
 
+# Enable the 'non-free' component in the default Debian sources
+# (Debian only — Ubuntu has multiverse, not addressed by this toggle).
+# Adds 'non-free' to the Components line of
+# /etc/apt/sources.list.d/debian.sources (deb822 format on Trixie+).
+apt_non_free_enabled: false
+
+# Enable the 'non-free-firmware' component (Debian only, since Bookworm).
+# Required for proprietary firmware blobs separated from non-free in 2023.
+apt_non_free_firmware_enabled: false
+
 # PPAs to add (Ubuntu only)
 # Example: ['ppa:ondrej/php', 'ppa:graphics-drivers/ppa']
 apt_ppas: []

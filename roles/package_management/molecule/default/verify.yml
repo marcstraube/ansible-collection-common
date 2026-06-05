@@ -154,6 +154,19 @@
           register: apt_lists
           failed_when: not apt_lists.stat.exists
 
+        - name: Verify | Read default Debian sources Components line
+          ansible.builtin.shell:
+            cmd: "grep -m1 '^Components:' /etc/apt/sources.list.d/debian.sources"
+          register: components_line
+          changed_when: false
+
+        - name: Verify | Assert non-free + non-free-firmware applied
+          ansible.builtin.assert:
+            that:
+              - "'non-free' in components_line.stdout"
+              - "'non-free-firmware' in components_line.stdout"
+            fail_msg: "Components line missing non-free entries: {{ components_line.stdout }}"
+
     #
     # RedHat/Fedora Verification
     #
