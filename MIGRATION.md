@@ -5,6 +5,29 @@ breaking changes adds a section here with before/after inventory
 snippets. For the full list of changes per release, see
 [CHANGELOG.md](CHANGELOG.md).
 
+## v2.1.0 (unreleased)
+
+### `package_management` — `apt_non_free_enabled` toggle (Debian)
+
+`roles/package_management` gains two new Debian-only toggles:
+
+- `apt_non_free_enabled` (default `false`) — adds `non-free` to the
+  Components line of `/etc/apt/sources.list.d/debian.sources`.
+- `apt_non_free_firmware_enabled` (default `false`) — adds
+  `non-free-firmware` (split from non-free since Bookworm).
+
+The role reads the current Components line from the deb822-format
+default sources file (Trixie+) and only appends the requested
+components — existing entries are preserved, no overwrite.
+
+No action required for inventories upgrading to v2.1.0 — the toggles
+default to `false` and the existing main-only sources behaviour is
+unchanged.
+
+Users who previously enabled the non-free component out-of-band via
+custom `apt_custom_repos` entries can now switch to the toggle for
+the same effect and benefit from idempotent Components-line management.
+
 ## v2.0.1 (unreleased)
 
 ### `hardening` — `/tmp` is no longer auto-converted to tmpfs

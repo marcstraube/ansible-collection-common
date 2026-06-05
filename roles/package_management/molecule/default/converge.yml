@@ -37,6 +37,8 @@
     apt_unattended_upgrades_enabled: false
     apt_apt_file_enabled: true
     apt_needrestart_enabled: true
+    apt_non_free_enabled: true
+    apt_non_free_firmware_enabled: true
 
     # RedHat/Fedora specific
     dnf_fastestmirror: true

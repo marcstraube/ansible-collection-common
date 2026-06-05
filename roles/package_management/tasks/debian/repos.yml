@@ -1,5 +1,45 @@
 ---
 #
+# Default Debian sources — Components management (Debian only)
+#
+# The deb822-format default sources file (Trixie+ ships
+# /etc/apt/sources.list.d/debian.sources) contains multiple Components
+# lines (one per stanza: main, security, sometimes updates). Both
+# toggles below append idempotently to every Components line whose
+# value does not already contain the requested term.
+#
+
+- name: Repos | Stat default Debian sources file (deb822)
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list.d/debian.sources
+  register: __apt_debian_sources
+  when: ansible_facts['distribution'] == 'Debian'
+
+- name: Repos | Add non-free to every Components line
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list.d/debian.sources
+    # Match a Components: line that does NOT already contain a
+    # bare 'non-free' (excluding 'non-free-firmware').
+    regexp: '^(Components:(?!.*\bnon-free(?!-firmware)\b).*)$'
+    replace: '\1 non-free'
+  when:
+    - ansible_facts['distribution'] == 'Debian'
+    - __apt_debian_sources.stat.exists | default(false)
+    - apt_non_free_enabled | bool
+  notify: 'apt configuration changed'
+
+- name: Repos | Add non-free-firmware to every Components line
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list.d/debian.sources
+    regexp: '^(Components:(?!.*\bnon-free-firmware\b).*)$'
+    replace: '\1 non-free-firmware'
+  when:
+    - ansible_facts['distribution'] == 'Debian'
+    - __apt_debian_sources.stat.exists | default(false)
+    - apt_non_free_firmware_enabled | bool
+  notify: 'apt configuration changed'
+
+#
 # Backports (Debian only)
 #
 
