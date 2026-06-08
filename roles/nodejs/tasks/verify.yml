@@ -1,14 +1,19 @@
 ---
+# Read-only version probes — must also run in check mode so the
+# nodejs_installed_version fact is populated for downstream roles
+# (e.g. marcstraube.server.n8n asserts Node.js >= 22).
 - name: Verify | Check Node.js version
   ansible.builtin.command: node --version
   register: __nodejs_version_check
   changed_when: false
+  check_mode: false
   failed_when: __nodejs_version_check.rc != 0
 
 - name: Verify | Check npm version
   ansible.builtin.command: npm --version
   register: __nodejs_npm_version_check
   changed_when: false
+  check_mode: false
   failed_when: __nodejs_npm_version_check.rc != 0
 
 - name: Verify | Set nodejs_installed_version fact
