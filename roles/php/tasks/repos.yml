@@ -44,3 +44,10 @@
   when:
     - ansible_facts['os_family'] == 'Debian'
     - (__php_sury_repo is changed) or (__php_sury_ppa is changed)
+
+#
+# Remi (RHEL/Rocky/Alma): the Remi repository itself is multi-purpose
+# (PHP, MariaDB, Redis, …) and lives in marcstraube.common.package_management
+# under dnf_remi_enabled. The php role only validates that the repo is on
+# the host when php_redhat_repo: 'remi' is requested — see install.yml.
+#

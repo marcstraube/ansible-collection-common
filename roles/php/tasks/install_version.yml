@@ -5,6 +5,21 @@
       {{ (__php_version_item.version == 'auto')
          | ternary(__php_system_version, __php_version_item.version) }}
 
+- name: Install Version | Validate AppStream version matches active stream
+  ansible.builtin.assert:
+    that:
+      - (__php_resolved_version | string) == (__php_system_version | string)
+    fail_msg: |
+      The active AppStream PHP module stream is {{ __php_system_version }},
+      but the inventory requested PHP {{ __php_resolved_version }}.
+      AppStream streams are exclusive — switch the active stream with
+      'sudo dnf module reset -y php && sudo dnf module enable -y php:{{ __php_resolved_version }}'
+      before re-running this role, or set php_redhat_repo: 'remi' to use
+      Remi side-by-side packages instead.
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'appstream'
+
 - name: Install Version | Set version facts
   ansible.builtin.set_fact:
     __php_ver: '{{ __php_resolved_version }}'
@@ -33,6 +48,24 @@
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_ver != __php_system_version
+
+# Override for Remi (RHEL multi-version side-by-side install).
+# vars/RedHat.yml ships AppStream defaults; switch to Remi naming +
+# paths when the inventory selects php_redhat_repo: 'remi'.
+- name: Install Version | Set RedHat Remi package patterns
+  ansible.builtin.set_fact:
+    __php_cli_package: 'php{{ __php_ver_compact }}-php-cli'
+    __php_fpm_package: 'php{{ __php_ver_compact }}-php-fpm'
+    __php_extension_prefix: 'php{{ __php_ver_compact }}-php-'
+    __php_fpm_service: 'php{{ __php_ver_compact }}-php-fpm'
+    __php_conf_dirs:
+      - '/etc/opt/remi/php{{ __php_ver_compact }}/php.d'
+    __php_fpm_pool_dir: '/etc/opt/remi/php{{ __php_ver_compact }}/php-fpm.d'
+    __php_fpm_listen_default: >-
+      /var/opt/remi/php{{ __php_ver_compact }}/run/php-fpm/www.sock
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'remi'
 
 - name: Install Version | Build package list
   ansible.builtin.set_fact:

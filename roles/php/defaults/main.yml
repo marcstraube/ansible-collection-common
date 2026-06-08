@@ -48,6 +48,24 @@ php_versions:
 # Use 'auto' to match the system-provided PHP version.
 php_default_version: 'auto'
 
+# RHEL/Rocky/Alma: choose the PHP source repository.
+#
+#   'appstream' (default): Distro AppStream PHP via dnf module streams.
+#                          Single PHP version per host (streams are exclusive).
+#                          Package names: php-cli, php-fpm, php-<ext>
+#                          Paths:         /etc/php.d/, /etc/php-fpm.d/
+#                          Conservative lifecycle, no third-party repo.
+#
+#   'remi':                Remi Collet's repository. Side-by-side multi-version
+#                          installs, newest PHP releases available immediately.
+#                          Package names: php<XX>-php-cli, php<XX>-php-<ext>
+#                          Paths:         /etc/opt/remi/php<XX>/...
+#                          Pulls in remi-release; recommended for hosts that
+#                          need several PHP versions in parallel.
+#
+# Ignored on Arch and Debian (those have only one upstream source each).
+php_redhat_repo: 'appstream'
+
 #
 # PHP Configuration (php.ini)
 #

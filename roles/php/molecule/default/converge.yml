@@ -15,9 +15,11 @@
     php_composer_enabled: true
 
   pre_tasks:
-    # Multi-version: add second PHP version on Debian/RedHat
-    # Arch multi-version requires AUR and cannot be tested in containers
-    - name: Converge | Enable multi-version (Debian/RedHat)
+    # Multi-version: add second PHP version on Debian.
+    # RedHat multi-version requires the Remi opt-in (AppStream streams are
+    # exclusive) and is exercised in a separate scenario.
+    # Arch multi-version requires AUR and cannot be tested in containers.
+    - name: Converge | Enable multi-version (Debian)
       ansible.builtin.set_fact:
         php_versions:
           - version: 'auto'
@@ -30,7 +32,7 @@
               - curl
               - mbstring
             fpm: true
-      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+      when: ansible_facts['os_family'] == 'Debian'
 
   tasks:
     - name: Converge | Include php role  # noqa: role-name[path]

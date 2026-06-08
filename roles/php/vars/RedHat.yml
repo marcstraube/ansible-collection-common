@@ -1,19 +1,79 @@
 ---
-# Remi SCL package name patterns (resolved at runtime via __php_ver_compact set in tasks)
-__php_cli_package: 'php{{ __php_ver_compact }}-php-cli'
-__php_fpm_package: 'php{{ __php_ver_compact }}-php-fpm'
-__php_extension_prefix: 'php{{ __php_ver_compact }}-php-'
-__php_fpm_service: 'php{{ __php_ver_compact }}-php-fpm'
+# AppStream PHP defaults (used when php_redhat_repo == 'appstream', the
+# default). Remi patterns are applied as overrides in install_version.yml
+# when php_redhat_repo == 'remi' — they need __php_ver_compact, which is
+# set per-version inside the install loop.
 
-# RHEL uses symlinks for default PHP version
+__php_cli_package: 'php-cli'
+__php_fpm_package: 'php-fpm'
+__php_extension_prefix: 'php-'
+__php_fpm_service: 'php-fpm'
+
+# RHEL does not use update-alternatives for PHP (single stream at a time)
 __php_has_alternatives: false
 
-# Configuration paths (version-dependent, resolved via __php_ver_compact)
+# AppStream paths
 __php_conf_dirs:
-  - '/etc/opt/remi/php{{ __php_ver_compact }}/php.d'
-__php_fpm_pool_dir: '/etc/opt/remi/php{{ __php_ver_compact }}/php-fpm.d'
-__php_fpm_listen_default: '/var/opt/remi/php{{ __php_ver_compact }}/run/php-fpm/www.sock'
+  - '/etc/php.d'
+  - '/etc/php-fpm.d'
+__php_fpm_pool_dir: '/etc/php-fpm.d'
+__php_fpm_listen_default: '/run/php-fpm/www.sock'
 
 # FPM pool defaults
 __php_fpm_default_user: 'apache'
 __php_fpm_default_group: 'apache'
+
+# Extension name mapping: generic name → RHEL AppStream package name.
+# Empty string = built into the php package (no separate package needed).
+# Missing keys fall back to '<__php_extension_prefix><name>'.
+__php_extension_map:
+  # Built into the core php package on AppStream
+  curl: ''
+  mbstring: ''
+  openssl: ''
+  json: ''
+  tokenizer: ''
+  ctype: ''
+  session: ''
+  fileinfo: ''
+  filter: ''
+  iconv: ''
+  pcre: ''
+  pdo: ''
+  phar: ''
+  # Naming differences vs. generic extension names
+  mysql: 'php-mysqlnd'
+  mysqli: 'php-mysqlnd'
+  mysqlnd: 'php-mysqlnd'
+  pdo_mysql: 'php-mysqlnd'
+  dom: 'php-xml'
+  simplexml: 'php-xml'
+  xmlreader: 'php-xml'
+  xmlwriter: 'php-xml'
+  xsl: 'php-xml'
+  # Separate AppStream packages
+  bcmath: 'php-bcmath'
+  dba: 'php-dba'
+  enchant: 'php-enchant'
+  gd: 'php-gd'
+  gmp: 'php-gmp'
+  intl: 'php-intl'
+  ldap: 'php-ldap'
+  odbc: 'php-odbc'
+  opcache: 'php-opcache'
+  pdo_sqlite: 'php-pdo'
+  pgsql: 'php-pgsql'
+  process: 'php-process'
+  snmp: 'php-snmp'
+  soap: 'php-soap'
+  sodium: 'php-sodium'
+  sqlite: 'php-pdo'
+  xml: 'php-xml'
+  zip: 'php-pecl-zip'
+  # PECL extensions (in EPEL or AppStream)
+  apcu: 'php-pecl-apcu'
+  imagick: 'php-pecl-imagick'
+  memcached: 'php-pecl-memcache'
+  mongodb: 'php-pecl-mongodb'
+  redis: 'php-pecl-redis'
+  xdebug: 'php-pecl-xdebug3'
