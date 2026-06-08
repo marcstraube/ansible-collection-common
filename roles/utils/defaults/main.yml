@@ -100,6 +100,54 @@ utils_net_arp_scan_enabled: false
 utils_transfer_rsync_enabled: true
 
 #
+# Archive / Compression
+#
+
+# tar — POSIX tar archive tool.
+# Required on RHEL minimal installs (Arch & Debian ship it in the
+# base image and the package install is a no-op there).
+utils_archive_tar_enabled: true
+
+# zstd — modern, fast compressor (.zst).
+# Default Arch package format and used by mkinitcpio, makepkg,
+# btrfs send/receive, etc.
+utils_archive_zstd_enabled: true
+
+# zip — universal compressed archive format
+# DEPRECATION: also present in marcstraube.common.base default
+# packages (v2.0.x); v3.0.0 will remove it there and rely on this
+# toggle exclusively.
+utils_archive_zip_enabled: true
+
+# unzip — counterpart to zip
+# DEPRECATION: also present in marcstraube.common.base default
+# packages (v2.0.x); v3.0.0 will remove it there and rely on this
+# toggle exclusively.
+utils_archive_unzip_enabled: true
+
+# p7zip — 7-Zip clone (.7z high-compression archives).
+# RHEL: in EPEL as p7zip + p7zip-plugins (both pulled in together).
+utils_archive_p7zip_enabled: false
+
+# unrar — extract proprietary RAR archives.
+#   Arch: pulled from AUR — requires `aur_helper` set in
+#         marcstraube.common.package_management (default 'paru').
+#   Debian: lives in non-free — requires
+#           `apt_non_free_enabled: true` in
+#           marcstraube.common.package_management.
+#   RHEL: lives in RPM Fusion non-free — requires
+#           `dnf_rpmfusion_nonfree_enabled: true` in
+#           marcstraube.common.package_management.
+utils_archive_unrar_enabled: false
+
+# atool — universal archive frontend that dispatches to
+# tar/zip/7z/zstd/unrar/... based on file type.
+utils_archive_atool_enabled: false
+
+# pigz — parallel gzip, scales gzip across CPU cores.
+utils_archive_pigz_enabled: false
+
+#
 # File Managers
 #
 

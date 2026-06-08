@@ -27,6 +27,22 @@ __utils_net_httpie: ''  # not in EPEL 10
 __utils_net_arp_scan: ''  # not in EPEL 10
 
 #
+# Archive / Compression
+#
+
+# p7zip on EPEL ships in two packages — p7zip (7zr) plus p7zip-plugins
+# (full 7z, 7za with all codecs). Install both.
+__utils_archive_p7zip:
+  - 'p7zip'
+  - 'p7zip-plugins'
+# unrar lives in RPM Fusion non-free (not in EPEL). Enable the repo
+# via marcstraube.common.package_management's dnf_rpmfusion_nonfree_enabled
+# toggle (default false); then this entry installs the package directly.
+__utils_archive_unrar: 'unrar'
+# atool is not packaged for EPEL 10 (EPEL 9 has it — see RedHat-9.yml).
+__utils_archive_atool: ''
+
+#
 # File Managers
 #
 

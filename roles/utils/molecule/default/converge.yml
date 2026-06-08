@@ -36,6 +36,16 @@
     # File transfer
     utils_transfer_rsync_enabled: true
 
+    # Archive / compression
+    utils_archive_tar_enabled: true
+    utils_archive_zstd_enabled: true
+    utils_archive_zip_enabled: true
+    utils_archive_unzip_enabled: true
+    utils_archive_p7zip_enabled: true
+    utils_archive_atool_enabled: true
+    utils_archive_pigz_enabled: true
+    # unrar omitted — Arch AUR-only, Debian non-free, RHEL unavailable
+
     # File managers
     utils_filemgr_mc_enabled: true
     utils_filemgr_vifm_enabled: true
