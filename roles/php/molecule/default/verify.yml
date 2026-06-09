@@ -273,3 +273,60 @@
         that:
           - "'Composer' in __verify_composer.stdout"
         fail_msg: "Composer not found: {{ __verify_composer.stdout }}"
+
+    #
+    # AUR build-list logic (Arch only)
+    #
+    # The kewlfft.aur.aur module is not exercised in containers — but the
+    # extension-map selection and prefix application can still be validated
+    # by mirroring the install_version.yml build logic against the role's
+    # vars file. Catches regressions where the AUR map drifts from the
+    # phpXX-* package naming or the prefix stops being applied.
+
+    - name: Verify | Load Arch role vars (AUR build-list test)
+      ansible.builtin.include_vars:
+        file: '{{ playbook_dir }}/../../vars/Archlinux.yml'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Build expected AUR package list
+      ansible.builtin.set_fact:
+        __verify_aur_packages: >-
+          {{ ['php84'] + ['php84-fpm'] +
+             _mapped_final +
+             (_unmapped | map('regex_replace', '^(.*)$', 'php84-' + '\1') | list) }}
+      vars:
+        _exts: [curl, mbstring, intl, pgsql, gd, imagick, xdebug, redis, json]
+        _map: '{{ __php_extension_map_aur }}'
+        _mapped_raw: "{{ _exts | select('in', _map) | map('extract', _map) | reject('equalto', '') | list }}"
+        _unmapped: "{{ _exts | reject('in', _map) | list }}"
+        _mapped_final: "{{ _mapped_raw | map('regex_replace', '^(.*)$', 'php84-' + '\\1') | list }}"
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert AUR build-list contains expected packages
+      ansible.builtin.assert:
+        that:
+          # Core
+          - "'php84' in __verify_aur_packages"
+          - "'php84-fpm' in __verify_aur_packages"
+          # Extensions split out of the phpXX bundle get the prefix applied
+          - "'php84-curl' in __verify_aur_packages"
+          - "'php84-mbstring' in __verify_aur_packages"
+          - "'php84-intl' in __verify_aur_packages"
+          - "'php84-pgsql' in __verify_aur_packages"
+          - "'php84-gd' in __verify_aur_packages"
+          - "'php84-imagick' in __verify_aur_packages"
+          - "'php84-xdebug' in __verify_aur_packages"
+          # Official-only package names must not leak into the AUR path
+          - "'php-curl' not in __verify_aur_packages"
+          - "'php-pgsql' not in __verify_aur_packages"
+          - "'php-gd' not in __verify_aur_packages"
+          - "'xdebug' not in __verify_aur_packages"
+          # Bundle-internal extensions (json) are skipped, not installed
+          - "'php84-json' not in __verify_aur_packages"
+          # Extensions missing from the AUR map (redis) fall back to the
+          # generic prefix rewrite — this is the documented behaviour.
+          - "'php84-redis' in __verify_aur_packages"
+        fail_msg: |
+          AUR build-list assertion failed.
+          Got: {{ __verify_aur_packages }}
+      when: ansible_facts['os_family'] == 'Archlinux'

@@ -226,6 +226,29 @@ The role detects the current PHP version in the Arch repos at runtime. If the
 requested version matches, official repo packages are used. Otherwise, AUR
 packages with the `php<ver>` prefix are installed (e.g., `php84`, `php84-fpm`).
 
+### Arch Extension Mapping (dual map)
+
+Arch ships PHP via two distinct package layouts that disagree on which
+extensions are built into the core package, which are split out, and on the
+prefix scheme. The role therefore keeps two separate extension maps in
+`vars/Archlinux.yml`:
+
+| Map                            | Active when              | Value semantics            |
+|--------------------------------|--------------------------|----------------------------|
+| `__php_extension_map_official` | requested == current PHP | Concrete package name      |
+| `__php_extension_map_aur`      | requested != current PHP | Suffix (prefix is applied) |
+
+Examples:
+
+- `pgsql` → `php-pgsql` (official) / `php84-pgsql` (AUR)
+- `xdebug` → `xdebug` (official) / `php84-xdebug` (AUR)
+
+In both maps an empty string `''` marks an extension as built into the core
+package (no separate sub-package installed). Extensions missing from the map
+fall back to `<prefix><name>`. A handful of extensions (`redis`, `mongodb`,
+`grpc`) are not shipped by the AUR `phpXX` bundle and will hit the fallback —
+override `php_versions[].extensions` or supply your own AUR PKGBUILD.
+
 ### Default Version Handling
 
 | OS     | Mechanism                                       |

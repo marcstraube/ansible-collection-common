@@ -20,16 +20,18 @@ __php_fpm_listen_default: '/run/php-fpm/php-fpm.sock'
 __php_fpm_default_user: 'http'
 __php_fpm_default_group: 'http'
 
-# Extension name mapping: generic name → Arch package name
-# Empty string = built into core php package (no separate package needed)
-# Missing keys use default: php-<name>
-__php_extension_map:
+# Extension mapping for the OFFICIAL Arch `php` package (current PHP version).
+# Values are concrete package names — used verbatim by the role.
+# Empty string '' = built into the core `php` package (no separate package).
+# Missing keys fall back to '<__php_extension_prefix><name>' (e.g. 'php-foo').
+__php_extension_map_official:
   curl: ''
   mbstring: ''
   xml: ''
   zip: ''
   intl: ''
   mysql: ''
+  mysqli: ''
   pdo_mysql: ''
   mysqlnd: ''
   json: ''
@@ -49,10 +51,23 @@ __php_extension_map:
   pdo: ''
   pdo_sqlite: ''
   bcmath: ''
+  bz2: ''
+  calendar: ''
+  dba: ''
   exif: ''
+  ffi: ''
   ftp: ''
   gettext: ''
+  gmp: ''
+  ldap: ''
+  pcntl: ''
+  posix: ''
+  shmop: ''
+  soap: ''
   sockets: ''
+  sysvmsg: ''
+  sysvsem: ''
+  sysvshm: ''
   opcache: ''
   gd: 'php-gd'
   imagick: 'php-imagick'
@@ -71,4 +86,80 @@ __php_extension_map:
   mongodb: 'php-mongodb'
   igbinary: 'php-igbinary'
   grpc: 'php-grpc'
+  xdebug: 'xdebug'
+
+# Extension mapping for AUR `phpXX-*` bundles (non-current PHP versions).
+# Values are SUFFIXES — the role prepends __php_extension_prefix (e.g. 'php84-').
+# Empty string '' = bundled into the AUR `phpXX` core package (no separate
+# sub-package — typical for json, pcre, session, filter, pdo_sqlite, ...).
+# Missing keys fall back to '<__php_extension_prefix><name>'. Note that
+# `phpXX-redis`, `phpXX-mongodb`, `phpXX-grpc` are not shipped by the
+# standard AUR phpXX bundle and will fail to install via this fallback.
+__php_extension_map_aur:
+  # Built into the AUR phpXX core package
+  json: ''
+  pcre: ''
+  session: ''
+  filter: ''
+  pdo_sqlite: ''
+  pdo_mysql: ''
+  mysqlnd: ''
+  # mysqli ships inside the phpXX-mysql sub-package alongside the legacy
+  # mysql extension; alias it so a `mysqli` entry installs the right one.
+  mysqli: 'mysql'
+  # Split as separate phpXX-* sub-packages
+  curl: 'curl'
+  mbstring: 'mbstring'
+  xml: 'xml'
+  zip: 'zip'
+  intl: 'intl'
+  mysql: 'mysql'
+  openssl: 'openssl'
+  tokenizer: 'tokenizer'
+  ctype: 'ctype'
+  fileinfo: 'fileinfo'
+  dom: 'dom'
+  simplexml: 'simplexml'
+  xmlreader: 'xmlreader'
+  xmlwriter: 'xmlwriter'
+  phar: 'phar'
+  iconv: 'iconv'
+  pdo: 'pdo'
+  bcmath: 'bcmath'
+  bz2: 'bz2'
+  calendar: 'calendar'
+  dba: 'dba'
+  exif: 'exif'
+  ffi: 'ffi'
+  firebird: 'firebird'
+  ftp: 'ftp'
+  gettext: 'gettext'
+  gmp: 'gmp'
+  imap: 'imap'
+  ldap: 'ldap'
+  pcntl: 'pcntl'
+  pdo_sqlsrv: 'pdo_sqlsrv'
+  posix: 'posix'
+  pspell: 'pspell'
+  shmop: 'shmop'
+  soap: 'soap'
+  sockets: 'sockets'
+  sysvmsg: 'sysvmsg'
+  sysvsem: 'sysvsem'
+  sysvshm: 'sysvshm'
+  opcache: 'opcache'
+  gd: 'gd'
+  imagick: 'imagick'
+  pgsql: 'pgsql'
+  sqlite: 'sqlite'
+  sodium: 'sodium'
+  tidy: 'tidy'
+  xsl: 'xsl'
+  snmp: 'snmp'
+  odbc: 'odbc'
+  enchant: 'enchant'
+  dblib: 'dblib'
+  apcu: 'apcu'
+  memcached: 'memcached'
+  igbinary: 'igbinary'
   xdebug: 'xdebug'
