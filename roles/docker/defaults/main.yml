@@ -165,6 +165,14 @@ docker_daemon_options: {}
 # Enable docker socket for on-demand activation
 docker_socket_enabled: true
 
+# wait_for_connection settings applied after a Docker (re)start. The 60 s
+# Ansible default can be too short when the SSH ControlMaster socket is torn
+# down by the daemon restart and the SSH key sits on a hardware token —
+# re-authentication needs a fresh PIN prompt, which often exceeds 60 s on
+# slow links. Raise the timeout or extend the delay to fit your environment.
+docker_service_wait_for_connection_delay: 5
+docker_service_wait_for_connection_timeout: 180
+
 # Enable system prune timer
 docker_prune_enabled: false
 

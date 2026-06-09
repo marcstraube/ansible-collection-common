@@ -108,13 +108,22 @@ overrides if needed.
 
 ### Systemd Integration
 
-| Variable                | Default  | Description                           |
-|-------------------------|----------|---------------------------------------|
-| `docker_socket_enabled` | `true`   | Enable docker socket                  |
-| `docker_prune_enabled`  | `false`  | Enable system prune timer             |
-| `docker_prune_schedule` | `weekly` | Prune schedule (OnCalendar format)    |
-| `docker_prune_all`      | `true`   | Prune all unused images               |
-| `docker_prune_volumes`  | `true`   | Prune volumes during prune            |
+| Variable                                     | Default  | Description                                        |
+|----------------------------------------------|----------|----------------------------------------------------|
+| `docker_socket_enabled`                      | `true`   | Enable docker socket                               |
+| `docker_service_wait_for_connection_delay`   | `5`      | wait_for_connection delay (s) after Docker start   |
+| `docker_service_wait_for_connection_timeout` | `180`    | wait_for_connection timeout (s) after Docker start |
+| `docker_prune_enabled`                       | `false`  | Enable system prune timer                          |
+| `docker_prune_schedule`                      | `weekly` | Prune schedule (OnCalendar format)                 |
+| `docker_prune_all`                           | `true`   | Prune all unused images                            |
+| `docker_prune_volumes`                       | `true`   | Prune volumes during prune                         |
+
+> **HW-token-friendly tuning:** when the SSH key on the controller lives on
+> a hardware token, the Docker daemon restart can outlast the SSH
+> ControlMaster socket — re-authentication then needs a fresh PIN prompt
+> that the default 60 s `wait_for_connection` timeout may not survive. The
+> raised default of 180 s gives the PIN window room; set
+> `docker_service_wait_for_connection_timeout` higher on slow links.
 
 ## Tags
 

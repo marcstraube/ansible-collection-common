@@ -14,8 +14,8 @@
 
 - name: Service | Wait for connection after Docker start  # noqa: no-handler
   ansible.builtin.wait_for_connection:
-    delay: 5
-    timeout: 60
+    delay: '{{ docker_service_wait_for_connection_delay }}'
+    timeout: '{{ docker_service_wait_for_connection_timeout }}'
   when: __docker_service_result.changed
 
 - name: Service | Deploy system prune timer
