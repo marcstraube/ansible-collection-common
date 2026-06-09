@@ -67,18 +67,43 @@
     - ansible_facts['os_family'] == 'RedHat'
     - php_redhat_repo == 'remi'
 
+# Select the active extension map. On Arch, the official `php` and AUR
+# `phpXX-*` package layouts disagree on what is split out, what is built-in,
+# and on the prefix scheme — they need separate maps. Other OSes use the
+# single map defined in their respective vars/ file.
+- name: Install Version | Select Arch AUR extension map
+  ansible.builtin.set_fact:
+    __php_extension_map: '{{ __php_extension_map_aur }}'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_use_aur | bool
+
+- name: Install Version | Select Arch official extension map
+  ansible.builtin.set_fact:
+    __php_extension_map: '{{ __php_extension_map_official }}'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - not (__php_use_aur | bool)
+
+# Build the package list. On the Arch AUR path the map values are suffixes
+# and must be prefixed with __php_extension_prefix (e.g. 'php84-'); on every
+# other path the map values are full package names and are used verbatim.
 - name: Install Version | Build package list
   ansible.builtin.set_fact:
     __php_version_packages: >-
       {{ [__php_cli_package] +
          ((__php_version_item.fpm | default(true) | bool) | ternary([__php_fpm_package], [])) +
-         (_mapped | reject('equalto', '') | list) +
+         _mapped_final +
          (_unmapped | map('regex_replace', '^(.*)$', __php_extension_prefix + '\1') | list) }}
   vars:
     _map: "{{ __php_extension_map | default({}) }}"
     _exts: "{{ __php_version_item.extensions | default([]) }}"
-    _mapped: "{{ _exts | select('in', _map) | map('extract', _map) | list }}"
+    _mapped_raw: "{{ _exts | select('in', _map) | map('extract', _map) | reject('equalto', '') | list }}"
     _unmapped: "{{ _exts | reject('in', _map) | list }}"
+    _mapped_final: >-
+      {{ (__php_use_aur | default(false) | bool)
+         | ternary(_mapped_raw | map('regex_replace', '^(.*)$', __php_extension_prefix + '\1') | list,
+                   _mapped_raw) }}
 
 - name: Install Version | PHP packages
   ansible.builtin.package:
