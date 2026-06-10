@@ -287,9 +287,9 @@ jobs:
   # MIGRATION DOC CHECK (PR only)
   # Fails any PR whose commits include a Conventional-Commit breaking
   # marker (`<type>!:` headline or `BREAKING CHANGE:` footer) without a
-  # MIGRATION.md change. Bypass: apply the `skip-migration-doc` label for
-  # purely informational breaking-change messages that do not warrant a
-  # migration entry (e.g. no-op removal of dead code).
+  # MIGRATION.md change. No bypass: the `!` marker is reserved for actual
+  # contract violations; if it was set incorrectly the commit message
+  # must be rewritten, not the gate skipped.
   # =============================================================================
   migration-doc-check:
     name: MIGRATION.md doc check
@@ -304,17 +304,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          BYPASS_LABEL: skip-migration-doc
         run: |
           set -euo pipefail
-
-          # Bypass via label
-          LABELS=$(gh pr view "$PR_NUMBER" -R "$REPO" --json labels \
-            --jq '.labels[].name')
-          if grep -Fxq "$BYPASS_LABEL" <<< "$LABELS"; then
-            echo "Bypass label '$BYPASS_LABEL' present — skipping check."
-            exit 0
-          fi
 
           # All commit messages on the PR (headline + body), paginated.
           COMMITS=$(gh api -X GET "repos/${REPO}/pulls/${PR_NUMBER}/commits" \
@@ -343,16 +334,19 @@ jobs:
           cat <<'EOF'
           Detected at least one breaking-change commit (Conventional-Commit
           `!` marker or BREAKING CHANGE: footer) but MIGRATION.md is not
-          modified by this PR.
+          modified by this PR. Pick one of the two paths:
 
-          Action: add a sub-section under the persistent `## Unreleased`
-          heading in MIGRATION.md describing the breaking change and the
-          required inventory action. See the Migration Guide intro for the
-          convention.
+          1. The `!` marker is correct — the change really breaks an
+             inventory contract. Add a sub-section under the persistent
+             `## Unreleased` heading in MIGRATION.md describing the change
+             and the required inventory action. See the Migration Guide
+             intro for the convention.
 
-          Bypass: apply the `skip-migration-doc` label to this PR if the
-          breaking-change commit message is purely informational and does
-          not need a migration entry (e.g. no-op removal of dead code).
+          2. The `!` marker is wrong — the change is additive, a no-op
+             removal of dead code, or merely implements documented intent.
+             Rewrite the commit message (`git rebase -i`, drop the `!`,
+             remove any `BREAKING CHANGE:` footer) and force-push. The `!`
+             marker is reserved strictly for actual contract violations.
           EOF
           exit 1
 

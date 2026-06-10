@@ -143,13 +143,17 @@ Always use generic placeholder data in commented examples:
    - `feat(chrony): add NTS support`
    - `fix(openssh): correct TLS configuration`
    - `refactor(users): simplify group management`
-5. **Breaking changes** — any PR with a `<type>!:` commit subject or a
-   `BREAKING CHANGE:` footer must add a sub-section under the persistent
-   `## Unreleased` heading in `MIGRATION.md` describing the change and
-   the required inventory action. CI enforces this; apply the
-   `skip-migration-doc` label to bypass for purely informational
-   breaking-change messages that do not warrant a migration entry
-   (e.g. no-op removal of dead code).
+5. **Breaking changes** — the `!` marker (`<type>!:` headline or
+   `BREAKING CHANGE:` footer) is reserved strictly for actual inventory
+   contract violations. Additive features, no-op removals of dead code,
+   and changes that merely implement documented intent are **not**
+   breaking — they use plain `feat:` / `refactor:` / `fix:`.
+
+   Any PR that does carry the `!` marker must add a sub-section under
+   the persistent `## Unreleased` heading in `MIGRATION.md` describing
+   the change and the required inventory action. CI enforces this; if
+   the marker was set incorrectly, rewrite the commit message rather
+   than working around the gate.
 
 ## License
 
