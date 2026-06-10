@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Reflector configuration file for the systemd service.
 #
 # Empty lines and lines beginning with "#" are ignored.  All other lines should

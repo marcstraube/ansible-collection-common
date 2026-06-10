@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # SSH client defaults
 
 {#- Derive host key algorithms from host key types when set to 'auto' -#}

@@ -1,4 +1,4 @@
-{{ ansible_managed | comment(decoration='" ') }}
+{{ ansible_managed | default('Ansible managed') | comment(decoration='" ') }}
 " Neovim Global Configuration
 {% if editors_neovim_config.syntax_on | default(true) %}
 

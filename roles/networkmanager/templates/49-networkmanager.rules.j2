@@ -1,4 +1,4 @@
-{{ ansible_managed | comment('c') }}
+{{ ansible_managed | default('Ansible managed') | comment('c') }}
 
 // Allow members of the "{{ networkmanager_polkit_group }}" group to manage
 // NetworkManager without authentication.

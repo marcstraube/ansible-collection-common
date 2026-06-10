@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # Podman Storage Configuration
 # See containers-storage.conf(5) for details.

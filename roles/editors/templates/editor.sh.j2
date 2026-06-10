@@ -1,5 +1,5 @@
 #!/bin/bash
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # Set default editor for all users
 export EDITOR={{ editors_default }}

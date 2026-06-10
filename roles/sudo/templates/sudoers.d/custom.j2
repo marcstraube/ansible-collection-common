@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Custom sudoers configuration: {{ item.name }}
 {% if item.content is defined %}
 {{ item.content }}

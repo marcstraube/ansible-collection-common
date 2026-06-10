@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 {% for zone in unbound_local_zones %}
 # Zone: {{ zone.name }}

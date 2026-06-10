@@ -1,4 +1,4 @@
 #!/bin/bash
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Lock all active user sessions when hardware token is removed
 /usr/bin/loginctl lock-sessions

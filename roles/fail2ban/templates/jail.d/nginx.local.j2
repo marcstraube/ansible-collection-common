@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 {% if fail2ban_nginx_http_auth_enabled %}
 
 # Nginx web server jails

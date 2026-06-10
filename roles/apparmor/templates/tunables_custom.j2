@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # Custom AppArmor tunables managed by Ansible.
 # Placed in /etc/apparmor.d/tunables/custom so apparmor_parser picks them up

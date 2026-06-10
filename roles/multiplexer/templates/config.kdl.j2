@@ -1,4 +1,4 @@
-{{ ansible_managed | comment('c') }}
+{{ ansible_managed | default('Ansible managed') | comment('c') }}
 // zellij Configuration
 
 {% if multiplexer_zellij_config.theme | default('') | length > 0 %}

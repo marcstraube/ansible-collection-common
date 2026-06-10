@@ -1,6 +1,6 @@
 #jinja2:lstrip_blocks: True
 #!/bin/sh
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # This script automatically unmounts SSHFS shares when the last network connection goes down.
 # It serves as a fallback for shutdown/restart scenarios where pre-down might not run.

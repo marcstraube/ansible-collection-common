@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Cryptographic settings
 
 {#- Derive algorithm lists from host key types when set to 'auto' -#}

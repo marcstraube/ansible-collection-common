@@ -1,5 +1,5 @@
 #!/bin/bash
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # Restic Backup Script: {{ item.name }}
 #

@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # WireGuard Configuration: {{ __wireguard_iface.name }}
 #

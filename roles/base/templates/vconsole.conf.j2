@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 KEYMAP={{ base_keymap }}
 {% if base_console_font %}
 FONT={{ base_console_font }}

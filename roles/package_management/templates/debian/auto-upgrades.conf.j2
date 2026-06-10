@@ -1,4 +1,4 @@
-{{ ansible_managed | comment('c') }}
+{{ ansible_managed | default('Ansible managed') | comment('c') }}
 // Auto-Upgrades Configuration
 
 APT::Periodic::Update-Package-Lists "1";

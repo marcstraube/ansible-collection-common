@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Session settings
 
 ClientAliveInterval {{ openssh_server_client_alive_interval }}

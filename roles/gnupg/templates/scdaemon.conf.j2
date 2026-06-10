@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 {% if gnupg_scdaemon_disable_ccid %}
 
 # Disable integrated CCID driver (use PC/SC only)

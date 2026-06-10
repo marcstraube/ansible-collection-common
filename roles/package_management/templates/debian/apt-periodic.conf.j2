@@ -1,4 +1,4 @@
-{{ ansible_managed | comment('c') }}
+{{ ansible_managed | default('Ansible managed') | comment('c') }}
 // APT Periodic Configuration
 
 APT::Periodic::Update-Package-Lists "{{ apt_periodic_update }}";

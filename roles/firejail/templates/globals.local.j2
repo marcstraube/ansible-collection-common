@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 {% if firejail_apparmor_enabled | default(false) | bool %}
 
 # AppArmor confinement for all sandboxed applications

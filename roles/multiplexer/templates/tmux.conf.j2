@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # tmux Configuration
 
 {% if multiplexer_tmux_config.prefix | default('') | length > 0 %}
