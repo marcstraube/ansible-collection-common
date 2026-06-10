@@ -30,10 +30,13 @@ jobs:
           manifest-file: .release-please-manifest.json
           target-branch: main
 
-      # Rewrite the `## vX.Y.Z (unreleased)` heading in MIGRATION.md to
-      # `## vX.Y.Z - YYYY-MM-DD` on the open release PR. release-please
-      # itself does not own MIGRATION.md, so without this step the
-      # heading would have to be dated by hand on every release.
+      # Date the persistent `## Unreleased` heading in MIGRATION.md and
+      # insert a fresh empty `## Unreleased` block above it on the open
+      # release PR. The Keep-a-Changelog-style persistent heading lets
+      # multiple breaking-change PRs in the same cycle append entries
+      # without each having to detect or create the heading, and removes
+      # the version guessing the previous (`## vX.Y.Z (unreleased)`)
+      # convention required.
       #
       # The step locates the release PR by the `autorelease: pending`
       # label that release-please applies, rather than via the action's
@@ -43,12 +46,11 @@ jobs:
       # output is empty and any gating on it would silently skip this
       # step.
       #
-      # No-op when no release PR is open, MIGRATION.md is absent, the
-      # heading is already dated, or the version release-please picked
-      # does not have a matching (unreleased) heading. Commit goes
+      # No-op when no release PR is open, MIGRATION.md is absent, or the
+      # `## Unreleased` heading is missing (already dated). Commit goes
       # through the contents API so it is attributed to and verified as
       # the release bot.
-      - name: Date (unreleased) section in MIGRATION.md
+      - name: Date Unreleased section in MIGRATION.md
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
@@ -82,16 +84,32 @@ jobs:
           OLD_CONTENT=$(jq -r '.content' <<< "$RESP" | base64 -d)
           FILE_SHA=$(jq -r '.sha' <<< "$RESP")
 
-          PATTERN="## v${NEW_VERSION} (unreleased)"
+          PATTERN="## Unreleased"
           REPLACEMENT="## v${NEW_VERSION} - ${DATE}"
 
-          if ! grep -Fq "$PATTERN" <<< "$OLD_CONTENT"; then
-            echo "No '${PATTERN}' heading in MIGRATION.md — already dated or version mismatch."
+          if ! grep -Fxq "$PATTERN" <<< "$OLD_CONTENT"; then
+            echo "No '${PATTERN}' heading in MIGRATION.md — already dated or section missing."
             exit 0
           fi
 
-          NEW_CONTENT=$(awk -v p="$PATTERN" -v r="$REPLACEMENT" \
-            '{if ($0 == p) print r; else print}' <<< "$OLD_CONTENT")
+          # Rewrite the first `## Unreleased` to two stacked headings:
+          # a fresh empty `## Unreleased` block (for the next cycle) on
+          # top, followed by the dated heading for this release. Any
+          # entries that lived under the original `## Unreleased` now
+          # sit under the dated heading where they belong.
+          NEW_CONTENT=$(awk -v p="$PATTERN" -v r="$REPLACEMENT" '
+            BEGIN { done = 0 }
+            {
+              if ($0 == p && !done) {
+                print p
+                print ""
+                print r
+                done = 1
+              } else {
+                print
+              }
+            }
+          ' <<< "$OLD_CONTENT")
 
           if [ "$OLD_CONTENT" = "$NEW_CONTENT" ]; then
             echo "Rewrite produced identical content — nothing to commit."
