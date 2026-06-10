@@ -5,7 +5,14 @@ breaking changes adds a section here with before/after inventory
 snippets. For the full list of changes per release, see
 [CHANGELOG.md](CHANGELOG.md).
 
-## v2.1.0 (unreleased)
+Following the [Keep a Changelog](https://keepachangelog.com/) convention,
+the file always carries a persistent `## Unreleased` section at the top.
+Breaking-change PRs append their entries under that section; the release
+workflow dates it to `## v<X.Y.Z> - YYYY-MM-DD` at release time and
+inserts a fresh empty `## Unreleased` above it. Do not delete the
+heading or rename it to a concrete version — the workflow handles that.
+
+## Unreleased
 
 ### `package_management` — `apt_non_free_enabled` toggle (Debian)
 
@@ -84,8 +91,6 @@ base_extra_packages:
 ```
 
 No action required for v2.1.0 — the deprecation is purely informational.
-
-## v2.0.1 (unreleased)
 
 ### `php` — RHEL default switched from Remi to AppStream
 
