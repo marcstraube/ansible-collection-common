@@ -1,5 +1,5 @@
 ---
-- name: Converge
+- name: Converge | Managed mode
   hosts: all
   gather_facts: true
 
@@ -40,6 +40,94 @@
         __users_newly_created:
           - 'testuser'
           - 'disableduser'
+
+  tasks:
+    - name: Converge | Include editors role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+
+- name: Converge | Initial mode (per-user gating)
+  hosts: all
+  gather_facts: false
+
+  vars:
+    editors_enabled: true
+    editors_nano_enabled: true
+    editors_vim_enabled: true
+    editors_neovim_enabled: true
+    editors_default: 'vim'
+    editors_user_config_mode: 'initial'
+    editors_users:
+      - username: 'initialnewuser'
+        vim_config:
+          set_relativenumber: true
+      - username: 'initialexistuser'
+        vim_config:
+          set_relativenumber: true
+
+  pre_tasks:
+    - name: Converge | Create initial-mode users
+      ansible.builtin.user:
+        name: '{{ item }}'
+        state: present
+        create_home: true
+      loop:
+        - initialnewuser
+        - initialexistuser
+
+    - name: Converge | Pre-seed existing user vimrc to prove it is left untouched
+      ansible.builtin.copy:
+        content: |
+          " molecule-fixture: pre-existing user content
+          set background=dark
+        dest: /home/initialexistuser/.vimrc
+        owner: initialexistuser
+        group: initialexistuser
+        mode: '0644'
+
+    - name: Converge | Mark only initialnewuser as newly created
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'initialnewuser'
+
+  tasks:
+    - name: Converge | Include editors role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+
+- name: Converge | Disabled mode (global)
+  hosts: all
+  gather_facts: false
+
+  vars:
+    editors_enabled: true
+    editors_nano_enabled: true
+    editors_vim_enabled: true
+    editors_neovim_enabled: true
+    editors_default: 'vim'
+    editors_user_config_mode: 'disabled'
+    editors_users:
+      - username: 'globaldisableduser'
+        vim_config:
+          set_relativenumber: true
+        neovim_config:
+          colorscheme: 'catppuccin'
+        nano_config:
+          set_mouse: false
+
+  pre_tasks:
+    - name: Converge | Create global-disabled-mode user
+      ansible.builtin.user:
+        name: globaldisableduser
+        state: present
+        create_home: true
+
+    - name: Converge | Mark global-disabled user as newly created
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'globaldisableduser'
 
   tasks:
     - name: Converge | Include editors role  # noqa: role-name[path]
