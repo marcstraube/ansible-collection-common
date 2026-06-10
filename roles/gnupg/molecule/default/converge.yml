@@ -1,5 +1,5 @@
 ---
-- name: Converge
+- name: Converge | Managed mode
   hosts: all
   gather_facts: true
 
@@ -35,6 +35,93 @@
         name: disableduser
         state: present
         create_home: true
+
+  tasks:
+    - name: Converge | Include gnupg role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+
+- name: Converge | Initial mode (per-user gating)
+  hosts: all
+  gather_facts: false
+
+  vars:
+    gnupg_enabled: true
+    gnupg_gui_enabled: false
+    gnupg_tools_enabled: false
+    gnupg_agent_ssh_enabled: false
+    gnupg_user_config_mode: 'initial'
+    gnupg_users:
+      - username: 'initialnewuser'
+        agent_ssh: false
+      - username: 'initialexistuser'
+        agent_ssh: false
+
+  pre_tasks:
+    - name: Converge | Create initial-mode users
+      ansible.builtin.user:
+        name: '{{ item }}'
+        state: present
+        create_home: true
+      loop:
+        - initialnewuser
+        - initialexistuser
+
+    - name: Converge | Ensure existing user .gnupg directory
+      ansible.builtin.file:
+        path: /home/initialexistuser/.gnupg
+        state: directory
+        owner: initialexistuser
+        group: initialexistuser
+        mode: '0700'
+
+    - name: Converge | Pre-seed existing user gpg.conf to prove it is left untouched
+      ansible.builtin.copy:
+        content: |
+          # molecule-fixture: pre-existing user content
+          trust-model classic
+        dest: /home/initialexistuser/.gnupg/gpg.conf
+        owner: initialexistuser
+        group: initialexistuser
+        mode: '0600'
+
+    - name: Converge | Mark only initialnewuser as newly created
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'initialnewuser'
+
+  tasks:
+    - name: Converge | Include gnupg role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+
+- name: Converge | Disabled mode (global)
+  hosts: all
+  gather_facts: false
+
+  vars:
+    gnupg_enabled: true
+    gnupg_gui_enabled: false
+    gnupg_tools_enabled: false
+    gnupg_agent_ssh_enabled: true
+    gnupg_user_config_mode: 'disabled'
+    gnupg_users:
+      - username: 'globaldisableduser'
+        agent_ssh: true
+
+  pre_tasks:
+    - name: Converge | Create global-disabled-mode user
+      ansible.builtin.user:
+        name: globaldisableduser
+        state: present
+        create_home: true
+
+    - name: Converge | Mark global-disabled user as newly created
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'globaldisableduser'
 
   tasks:
     - name: Converge | Include gnupg role  # noqa: role-name[path]
