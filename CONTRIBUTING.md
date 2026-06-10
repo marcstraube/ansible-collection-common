@@ -143,6 +143,13 @@ Always use generic placeholder data in commented examples:
    - `feat(chrony): add NTS support`
    - `fix(openssh): correct TLS configuration`
    - `refactor(users): simplify group management`
+5. **Breaking changes** — any PR with a `<type>!:` commit subject or a
+   `BREAKING CHANGE:` footer must add a sub-section under the persistent
+   `## Unreleased` heading in `MIGRATION.md` describing the change and
+   the required inventory action. CI enforces this; apply the
+   `skip-migration-doc` label to bypass for purely informational
+   breaking-change messages that do not warrant a migration entry
+   (e.g. no-op removal of dead code).
 
 ## License
 

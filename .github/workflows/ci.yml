@@ -284,17 +284,91 @@ jobs:
           ANSIBLE_FORCE_COLOR: '1'
 
   # =============================================================================
+  # MIGRATION DOC CHECK (PR only)
+  # Fails any PR whose commits include a Conventional-Commit breaking
+  # marker (`<type>!:` headline or `BREAKING CHANGE:` footer) without a
+  # MIGRATION.md change. Bypass: apply the `skip-migration-doc` label for
+  # purely informational breaking-change messages that do not warrant a
+  # migration entry (e.g. no-op removal of dead code).
+  # =============================================================================
+  migration-doc-check:
+    name: MIGRATION.md doc check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Enforce MIGRATION.md update on breaking-change PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BYPASS_LABEL: skip-migration-doc
+        run: |
+          set -euo pipefail
+
+          # Bypass via label
+          LABELS=$(gh pr view "$PR_NUMBER" -R "$REPO" --json labels \
+            --jq '.labels[].name')
+          if grep -Fxq "$BYPASS_LABEL" <<< "$LABELS"; then
+            echo "Bypass label '$BYPASS_LABEL' present — skipping check."
+            exit 0
+          fi
+
+          # All commit messages on the PR (headline + body), paginated.
+          COMMITS=$(gh api -X GET "repos/${REPO}/pulls/${PR_NUMBER}/commits" \
+            --paginate --jq '.[].commit.message')
+
+          # Conventional-Commit breaking marker:
+          # - `<type>!:` or `<type>(<scope>)!:` at the start of any line
+          # - `BREAKING CHANGE:` at the start of any line
+          if ! grep -qE '(^[a-z]+(\([^)]+\))?!:|^BREAKING CHANGE:)' <<< "$COMMITS"; then
+            echo "No breaking-change commits in this PR — nothing to enforce."
+            exit 0
+          fi
+
+          echo "Breaking-change commit detected. Checking MIGRATION.md diff…"
+
+          # All changed files on the PR, paginated.
+          FILES=$(gh api -X GET "repos/${REPO}/pulls/${PR_NUMBER}/files" \
+            --paginate --jq '.[].filename')
+
+          if grep -Fxq 'MIGRATION.md' <<< "$FILES"; then
+            echo "MIGRATION.md is modified — check passes."
+            exit 0
+          fi
+
+          echo "::error::Breaking-change PR must update MIGRATION.md."
+          cat <<'EOF'
+          Detected at least one breaking-change commit (Conventional-Commit
+          `!` marker or BREAKING CHANGE: footer) but MIGRATION.md is not
+          modified by this PR.
+
+          Action: add a sub-section under the persistent `## Unreleased`
+          heading in MIGRATION.md describing the breaking change and the
+          required inventory action. See the Migration Guide intro for the
+          convention.
+
+          Bypass: apply the `skip-migration-doc` label to this PR if the
+          breaking-change commit message is purely informational and does
+          not need a migration entry (e.g. no-op removal of dead code).
+          EOF
+          exit 1
+
+  # =============================================================================
   # CI GATE (single required check for branch protection)
   # =============================================================================
   ci-gate:
     name: CI Gate
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint, markdown-lint, yaml-lint, build, molecule-compat, molecule-roles]
+    needs: [lint, markdown-lint, yaml-lint, build, molecule-compat, molecule-roles, migration-doc-check]
     steps:
       - name: Check required job results
         run: |
-          # molecule-roles may be skipped when no roles changed
+          # molecule-roles may be skipped when no roles changed;
+          # migration-doc-check is skipped on push to main (PR-only).
           results=(
             "${{ needs.lint.result }}"
             "${{ needs.markdown-lint.result }}"
@@ -302,6 +376,7 @@ jobs:
             "${{ needs.build.result }}"
             "${{ needs.molecule-compat.result }}"
             "${{ needs.molecule-roles.result }}"
+            "${{ needs.migration-doc-check.result }}"
           )
           for r in "${results[@]}"; do
             if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
