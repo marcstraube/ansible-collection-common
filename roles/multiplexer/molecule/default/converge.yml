@@ -1,5 +1,5 @@
 ---
-- name: Converge
+- name: Converge | Managed mode
   hosts: all
   gather_facts: true
 
@@ -38,6 +38,99 @@
         __users_newly_created:
           - 'testuser'
           - 'disableduser'
+
+  tasks:
+    - name: Converge | Include multiplexer role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+
+- name: Converge | Initial mode (per-user gating)
+  hosts: all
+  gather_facts: false
+
+  vars:
+    multiplexer_enabled: true
+    multiplexer_tmux_enabled: true
+    multiplexer_zellij_enabled: false
+    multiplexer_user_config_mode: 'initial'
+    multiplexer_users:
+      - username: 'initialnewuser'
+        tpm_enabled: false
+        tmux_config:
+          prefix: 'C-b'
+      - username: 'initialexistuser'
+        tpm_enabled: false
+        tmux_config:
+          prefix: 'C-b'
+
+  pre_tasks:
+    - name: Converge | Create initial-mode users
+      ansible.builtin.user:
+        name: '{{ item }}'
+        state: present
+        create_home: true
+      loop:
+        - initialnewuser
+        - initialexistuser
+
+    - name: Converge | Ensure existing user tmux config directory
+      ansible.builtin.file:
+        path: /home/initialexistuser/.config/tmux
+        state: directory
+        owner: initialexistuser
+        group: initialexistuser
+        mode: '0755'
+
+    - name: Converge | Pre-seed existing user tmux config to prove it is left untouched
+      ansible.builtin.copy:
+        content: |
+          # molecule-fixture: pre-existing user content
+          set -g prefix C-z
+        dest: /home/initialexistuser/.config/tmux/tmux.conf
+        owner: initialexistuser
+        group: initialexistuser
+        mode: '0644'
+
+    - name: Converge | Mark only initialnewuser as newly created
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'initialnewuser'
+
+  tasks:
+    - name: Converge | Include multiplexer role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+
+- name: Converge | Disabled mode (global)
+  hosts: all
+  gather_facts: false
+
+  vars:
+    multiplexer_enabled: true
+    multiplexer_tmux_enabled: true
+    multiplexer_zellij_enabled: "{{ ansible_facts['os_family'] == 'Archlinux' }}"
+    multiplexer_user_config_mode: 'disabled'
+    multiplexer_users:
+      - username: 'globaldisableduser'
+        tpm_enabled: false
+        tmux_config:
+          prefix: 'C-b'
+        zellij_config:
+          theme: 'catppuccin'
+
+  pre_tasks:
+    - name: Converge | Create global-disabled-mode user
+      ansible.builtin.user:
+        name: globaldisableduser
+        state: present
+        create_home: true
+
+    - name: Converge | Mark global-disabled user as newly created
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'globaldisableduser'
 
   tasks:
     - name: Converge | Include multiplexer role  # noqa: role-name[path]

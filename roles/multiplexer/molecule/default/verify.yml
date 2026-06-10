@@ -231,3 +231,93 @@
       ansible.builtin.assert:
         that:
           - not __verify_disabled_zellij.stat.exists
+
+    #
+    # Initial Mode — Newly Created User (initialnewuser)
+    #
+    # multiplexer_user_config_mode=initial + user IN __users_newly_created
+    # → role MUST deploy the user's config.
+    #
+
+    - name: Verify | Check initialnewuser tmux config exists
+      ansible.builtin.stat:
+        path: /home/initialnewuser/.config/tmux/tmux.conf
+      register: __verify_initialnew_tmux_conf
+
+    - name: Verify | Assert initialnewuser tmux config is deployed
+      ansible.builtin.assert:
+        that:
+          - __verify_initialnew_tmux_conf.stat.exists
+          - __verify_initialnew_tmux_conf.stat.mode == '0644'
+          - __verify_initialnew_tmux_conf.stat.pw_name == 'initialnewuser'
+
+    - name: Verify | Read initialnewuser tmux config
+      ansible.builtin.slurp:
+        src: /home/initialnewuser/.config/tmux/tmux.conf
+      register: __verify_initialnew_tmux_content
+
+    - name: Verify | Assert initialnewuser tmux config has rendered template content
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (__verify_initialnew_tmux_content.content | b64decode)"
+          - "'prefix C-b' in (__verify_initialnew_tmux_content.content | b64decode)"
+
+    #
+    # Initial Mode — Existing User (initialexistuser)
+    #
+    # multiplexer_user_config_mode=initial + user NOT IN __users_newly_created
+    # → role MUST leave the user's pre-existing tmux.conf untouched.
+    #
+
+    - name: Verify | Check initialexistuser tmux config exists
+      ansible.builtin.stat:
+        path: /home/initialexistuser/.config/tmux/tmux.conf
+      register: __verify_initialexist_tmux_conf
+
+    - name: Verify | Assert initialexistuser tmux config file still present
+      ansible.builtin.assert:
+        that:
+          - __verify_initialexist_tmux_conf.stat.exists
+
+    - name: Verify | Read initialexistuser tmux config
+      ansible.builtin.slurp:
+        src: /home/initialexistuser/.config/tmux/tmux.conf
+      register: __verify_initialexist_tmux_content
+
+    - name: Verify | Assert initialexistuser tmux config is unchanged
+      ansible.builtin.assert:
+        that:
+          - >-
+            'molecule-fixture: pre-existing user content'
+            in (__verify_initialexist_tmux_content.content | b64decode)
+          - "'Ansible managed' not in (__verify_initialexist_tmux_content.content | b64decode)"
+          - "'prefix C-b' not in (__verify_initialexist_tmux_content.content | b64decode)"
+
+    #
+    # Disabled Mode — Global (globaldisableduser)
+    #
+    # multiplexer_user_config_mode=disabled
+    # → role MUST NOT deploy any per-user config files.
+    #
+
+    - name: Verify | Check globaldisableduser has no tmux config
+      ansible.builtin.stat:
+        path: /home/globaldisableduser/.config/tmux/tmux.conf
+      register: __verify_globaldisabled_tmux
+
+    - name: Verify | Assert globaldisableduser has no tmux config
+      ansible.builtin.assert:
+        that:
+          - not __verify_globaldisabled_tmux.stat.exists
+
+    - name: Verify | Check globaldisableduser has no zellij config (Arch only)
+      ansible.builtin.stat:
+        path: /home/globaldisableduser/.config/zellij/config.kdl
+      register: __verify_globaldisabled_zellij
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert globaldisableduser has no zellij config (Arch only)
+      ansible.builtin.assert:
+        that:
+          - not __verify_globaldisabled_zellij.stat.exists
+      when: ansible_facts['os_family'] == 'Archlinux'
