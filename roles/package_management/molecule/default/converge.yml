@@ -1,5 +1,5 @@
 ---
-- name: Converge
+- name: Converge | Managed mode
   hosts: all
   gather_facts: true
 
@@ -67,3 +67,147 @@
     - name: Converge | Include package_management role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+
+- name: Converge | Initial mode (per-user gating, Arch only)
+  hosts: all
+  gather_facts: false
+
+  vars:
+    package_management_enabled: true
+    # ArchLinux specific (kept identical to managed play for idempotency)
+    pacman_parallel_downloads: 5
+    pacman_color: true
+    pacman_ilovecandy: true
+    pacman_check_space: true
+    reflector_enabled: true
+    reflector:
+      countries: []
+      protocol: 'https'
+      latest: 5
+      sort: 'rate'
+      score: ''
+      age: 24
+    aur_helper: ''
+    paccache_enabled: true
+    pacman_pkgfile_enabled: true
+    makepkg_user_config_mode: 'initial'
+    makepkg_users:
+      - username: 'initialnewuser'
+        packager: 'Initial New <initial.new@example.com>'
+        gpg_key: '0011223344556677'
+      - username: 'initialexistuser'
+        packager: 'Initial Exist <initial.exist@example.com>'
+        gpg_key: '0011223344556677'
+    # Other-OS toggles kept for cross-platform converge no-op
+    apt_periodic_enabled: true
+    apt_periodic_update: 1
+    apt_install_recommends: true
+    apt_unattended_upgrades_enabled: false
+    apt_apt_file_enabled: true
+    apt_needrestart_enabled: true
+    apt_non_free_enabled: true
+    apt_non_free_firmware_enabled: true
+    dnf_fastestmirror: true
+    dnf_max_parallel_downloads: 10
+    dnf_best: true
+    dnf_epel_enabled: true
+    dnf_automatic_enabled: false
+    dnf_utils_enabled: true
+
+  pre_tasks:
+    - name: Converge | Initial mode pre-tasks (Arch only)
+      when: ansible_facts['os_family'] == 'Archlinux'
+      block:
+        - name: Converge | Create initial-mode users
+          ansible.builtin.user:
+            name: '{{ item }}'
+            state: present
+            create_home: true
+          loop:
+            - initialnewuser
+            - initialexistuser
+
+        - name: Converge | Pre-seed existing user makepkg.conf to prove it is left untouched
+          ansible.builtin.copy:
+            content: |
+              # molecule-fixture: pre-existing user content
+              PACKAGER="Should Not Be Overwritten <noop@example.com>"
+            dest: /home/initialexistuser/.makepkg.conf
+            owner: initialexistuser
+            group: initialexistuser
+            mode: '0644'
+
+        - name: Converge | Mark only initialnewuser as newly created
+          ansible.builtin.set_fact:
+            __users_newly_created:
+              - 'initialnewuser'
+
+  tasks:
+    - name: Converge | Include package_management role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+
+- name: Converge | Disabled mode (global, Arch only)
+  hosts: all
+  gather_facts: false
+
+  vars:
+    package_management_enabled: true
+    pacman_parallel_downloads: 5
+    pacman_color: true
+    pacman_ilovecandy: true
+    pacman_check_space: true
+    reflector_enabled: true
+    reflector:
+      countries: []
+      protocol: 'https'
+      latest: 5
+      sort: 'rate'
+      score: ''
+      age: 24
+    aur_helper: ''
+    paccache_enabled: true
+    pacman_pkgfile_enabled: true
+    makepkg_user_config_mode: 'disabled'
+    makepkg_users:
+      - username: 'globaldisableduser'
+        packager: 'Global Disabled <global.disabled@example.com>'
+        gpg_key: '0011223344556677'
+    apt_periodic_enabled: true
+    apt_periodic_update: 1
+    apt_install_recommends: true
+    apt_unattended_upgrades_enabled: false
+    apt_apt_file_enabled: true
+    apt_needrestart_enabled: true
+    apt_non_free_enabled: true
+    apt_non_free_firmware_enabled: true
+    dnf_fastestmirror: true
+    dnf_max_parallel_downloads: 10
+    dnf_best: true
+    dnf_epel_enabled: true
+    dnf_automatic_enabled: false
+    dnf_utils_enabled: true
+
+  pre_tasks:
+    - name: Converge | Disabled mode pre-tasks (Arch only)
+      when: ansible_facts['os_family'] == 'Archlinux'
+      block:
+        - name: Converge | Create global-disabled-mode user
+          ansible.builtin.user:
+            name: globaldisableduser
+            state: present
+            create_home: true
+
+        - name: Converge | Mark global-disabled user as newly created
+          ansible.builtin.set_fact:
+            __users_newly_created:
+              - 'globaldisableduser'
+
+  tasks:
+    - name: Converge | Include package_management role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      when: ansible_facts['os_family'] == 'Archlinux'
