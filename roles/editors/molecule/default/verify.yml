@@ -353,3 +353,101 @@
       ansible.builtin.assert:
         that:
           - not __verify_disabled_nano.stat.exists
+
+    #
+    # Initial Mode — Newly Created User (initialnewuser)
+    #
+    # editors_user_config_mode=initial + user IN __users_newly_created
+    # → role MUST deploy the user's config.
+    #
+
+    - name: Verify | Check initialnewuser vim config exists
+      ansible.builtin.stat:
+        path: /home/initialnewuser/.vimrc
+      register: __verify_initialnew_vimrc
+
+    - name: Verify | Assert initialnewuser vim config is deployed
+      ansible.builtin.assert:
+        that:
+          - __verify_initialnew_vimrc.stat.exists
+          - __verify_initialnew_vimrc.stat.mode == '0644'
+          - __verify_initialnew_vimrc.stat.pw_name == 'initialnewuser'
+
+    - name: Verify | Read initialnewuser vim config
+      ansible.builtin.slurp:
+        src: /home/initialnewuser/.vimrc
+      register: __verify_initialnew_vimrc_content
+
+    - name: Verify | Assert initialnewuser vim config has rendered template content
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (__verify_initialnew_vimrc_content.content | b64decode)"
+          - "'set relativenumber' in (__verify_initialnew_vimrc_content.content | b64decode)"
+
+    #
+    # Initial Mode — Existing User (initialexistuser)
+    #
+    # editors_user_config_mode=initial + user NOT IN __users_newly_created
+    # → role MUST leave the user's pre-existing vimrc untouched.
+    #
+
+    - name: Verify | Check initialexistuser vim config exists
+      ansible.builtin.stat:
+        path: /home/initialexistuser/.vimrc
+      register: __verify_initialexist_vimrc
+
+    - name: Verify | Assert initialexistuser vim config file still present
+      ansible.builtin.assert:
+        that:
+          - __verify_initialexist_vimrc.stat.exists
+
+    - name: Verify | Read initialexistuser vim config
+      ansible.builtin.slurp:
+        src: /home/initialexistuser/.vimrc
+      register: __verify_initialexist_vimrc_content
+
+    - name: Verify | Assert initialexistuser vim config is unchanged
+      ansible.builtin.assert:
+        that:
+          - >-
+            'molecule-fixture: pre-existing user content'
+            in (__verify_initialexist_vimrc_content.content | b64decode)
+          - "'Ansible managed' not in (__verify_initialexist_vimrc_content.content | b64decode)"
+          - "'set relativenumber' not in (__verify_initialexist_vimrc_content.content | b64decode)"
+
+    #
+    # Disabled Mode — Global (globaldisableduser)
+    #
+    # editors_user_config_mode=disabled
+    # → role MUST NOT deploy any per-user config files.
+    #
+
+    - name: Verify | Check globaldisableduser has no vim config
+      ansible.builtin.stat:
+        path: /home/globaldisableduser/.vimrc
+      register: __verify_globaldisabled_vimrc
+
+    - name: Verify | Assert globaldisableduser has no vim config
+      ansible.builtin.assert:
+        that:
+          - not __verify_globaldisabled_vimrc.stat.exists
+
+    - name: Verify | Check globaldisableduser has no neovim config
+      ansible.builtin.stat:
+        path: /home/globaldisableduser/.config/nvim/init.vim
+      register: __verify_globaldisabled_nvim
+
+    - name: Verify | Assert globaldisableduser has no neovim config
+      ansible.builtin.assert:
+        that:
+          - not __verify_globaldisabled_nvim.stat.exists
+
+    - name: Verify | Check globaldisableduser has no nano config
+      ansible.builtin.stat:
+        path: /home/globaldisableduser/.config/nano/nanorc
+      register: __verify_globaldisabled_nano
+
+    - name: Verify | Assert globaldisableduser has no nano config
+      ansible.builtin.assert:
+        that:
+          - not __verify_globaldisabled_nano.stat.exists
