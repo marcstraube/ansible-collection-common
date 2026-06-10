@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # NetworkManager daemon configuration
 # Deployed to /etc/NetworkManager/conf.d/00-ansible.conf

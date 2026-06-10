@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # System-wide OpenSSL defaults (drop-in override)
 

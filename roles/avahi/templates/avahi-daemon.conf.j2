@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # See avahi-daemon.conf(5) for more information.
 

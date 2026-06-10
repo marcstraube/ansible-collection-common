@@ -1,6 +1,6 @@
 #jinja2:lstrip_blocks: True
 #!/bin/sh
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # This script is called by wg-quick@.service via systemd drop-in.
 # It mounts/unmounts SMB shares that depend on WireGuard interfaces.

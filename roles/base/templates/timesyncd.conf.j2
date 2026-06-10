@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 [Time]
 {% if base_ntp_servers | length > 0 %}

@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # Cache TTL
 default-cache-ttl {{ gnupg_agent_default_cache_ttl }}

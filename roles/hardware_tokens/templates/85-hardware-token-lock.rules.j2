@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Lock screen when hardware token is removed
 
 {% for device in hardware_tokens_lock_on_removal_devices %}

@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Sudo access for user: {{ item.name }}
 {% if item.commands is defined and item.commands | length > 0 %}
 {% if item.nopasswd | default(false) %}

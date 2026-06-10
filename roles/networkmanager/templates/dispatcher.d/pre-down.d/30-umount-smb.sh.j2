@@ -1,6 +1,6 @@
 #jinja2:lstrip_blocks: True
 #!/bin/sh
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # This script attempts to unmount SMB shares before a network connection is brought down.
 # It ensures a share is only unmounted if none of its dependencies are active anymore.

@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 LANG={{ base_locale }}
 {% if base_locale_lc_ctype %}
 LC_CTYPE={{ base_locale_lc_ctype }}

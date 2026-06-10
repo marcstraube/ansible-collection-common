@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # Podman Registries Configuration
 # See containers-registries.conf(5) for details.

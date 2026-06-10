@@ -1,5 +1,5 @@
 #!/bin/bash
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # Two-Factor Authentication Setup Script
 # Run this script as the user who needs TOTP 2FA configured.

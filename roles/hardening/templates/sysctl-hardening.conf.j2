@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Kernel hardening parameters
 
 {% for key, value in hardening_kernel_settings.items() %}

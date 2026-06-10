@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # chrony.conf — NTP client/server configuration
 # See chrony.conf(5) for details.

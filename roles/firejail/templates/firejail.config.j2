@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 {% for key, value in firejail_config.items() %}
 {{ key }} {{ value }}

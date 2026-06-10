@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 {% for param in graphics_intel_kernel_params %}
 options {{ param }}

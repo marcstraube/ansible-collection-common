@@ -1,6 +1,6 @@
 #jinja2:lstrip_blocks: True
 #!/bin/sh
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # This script unmounts SMB shares associated with a specific VPN connection
 # when the VPN connection goes down.

@@ -1,6 +1,6 @@
 #jinja2:lstrip_blocks: True
 #!/bin/sh
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # This script automatically activates a WireGuard VPN tunnel when connecting
 # to a non-home network, and deactivates it when the base connection drops.

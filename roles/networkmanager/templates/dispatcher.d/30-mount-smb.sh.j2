@@ -1,6 +1,6 @@
 #jinja2:lstrip_blocks: True
 #!/bin/sh
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # This script automatically mounts SMB shares based on the active NetworkManager connection.
 # It checks if the current active network connection (Ethernet or Wi-Fi) is a dependency

@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # Override snmpd ExecStart to use agentaddress from snmpd.conf
 # instead of hardcoded "udp: udp6:" in upstream unit file.

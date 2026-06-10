@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # NVIDIA Dynamic Power Management for RTD3
 # 0x02 = fine-grained (Turing/pre-Ampere)

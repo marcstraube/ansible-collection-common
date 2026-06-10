@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Custom jails
 
 {% for jail in fail2ban_custom_jails %}

@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 timeout {{ base_systemd_boot_timeout }}
 console-mode {{ base_systemd_boot_console_mode }}

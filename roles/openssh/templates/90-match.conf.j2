@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 {% if openssh_server_sftp_chroot_enabled | default(false) | bool %}
 
 # Match blocks

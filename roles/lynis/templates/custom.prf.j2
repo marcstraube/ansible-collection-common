@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # Lynis Custom Profile
 # Place customizations here — never edit default.prf (overwritten on upgrade)

@@ -1,4 +1,4 @@
-{{ ansible_managed | comment(decoration='; ') }}
+{{ ansible_managed | default('Ansible managed') | comment(decoration='; ') }}
 
 ; Pool name
 [www]

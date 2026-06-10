@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 #
 # Clam AntiVirus - freshclam configuration file
 # See freshclam.conf(5) and https://docs.clamav.net/ for details.

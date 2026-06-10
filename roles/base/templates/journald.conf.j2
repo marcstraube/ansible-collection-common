@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 [Journal]
 SystemMaxUse={{ base_journald_max_use }}

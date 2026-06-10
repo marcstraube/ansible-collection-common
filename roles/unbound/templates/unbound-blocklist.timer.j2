@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 [Unit]
 Description=Update Unbound DNS Blocklist Timer

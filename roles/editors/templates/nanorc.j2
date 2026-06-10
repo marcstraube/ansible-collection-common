@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 # Nano Editor Configuration
 {% if editors_nano_config.set_autoindent | default(true) %}

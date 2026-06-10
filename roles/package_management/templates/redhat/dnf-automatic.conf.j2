@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 [commands]
 upgrade_type = {{ dnf_automatic_upgrade_type }}
 random_sleep = 0

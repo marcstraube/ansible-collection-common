@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 
 {% if gnupg_user.default_key is defined and gnupg_user.default_key | length > 0 %}
 

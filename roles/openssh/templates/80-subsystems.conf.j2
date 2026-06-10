@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 {% if openssh_server_sftp_enabled | bool %}
 
 # Subsystems

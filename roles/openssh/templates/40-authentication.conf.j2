@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ ansible_managed | default('Ansible managed') | comment }}
 # Authentication settings
 
 LoginGraceTime {{ openssh_server_login_grace_time }}
