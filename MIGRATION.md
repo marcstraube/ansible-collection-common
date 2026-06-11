@@ -14,6 +14,8 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+## v2.1.0 - 2026-06-11
+
 ### `php` — RHEL default switched from Remi to AppStream
 
 Previously `roles/php/vars/RedHat.yml` shipped unconditional Remi-SCL
