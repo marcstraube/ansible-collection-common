@@ -43,6 +43,7 @@ overrides if needed.
 | Variable                | Default | Description                                       |
 |-------------------------|---------|---------------------------------------------------|
 | `python_pipx_enabled`   | `true`  | Enable pipx for user-level Python tool management |
+| `python_pip_proxy`      | `''`    | HTTP(S) proxy for pip (used by pipx bootstrap)    |
 | `python_extra_packages` | `[]`    | Additional OS packages to install                 |
 
 ## Tags
@@ -77,6 +78,12 @@ On Rocky 9, the system pipx from EPEL (1.2.1) is too old for
 `community.general.pipx`. This role installs pipx via pip into a dedicated
 venv at `/opt/pipx-bootstrap/`. Downstream roles should use the bootstrap
 path on EL 9.
+
+In networks without direct PyPI/DNS access (e.g. an internal corporate
+network with an outbound HTTP(S) proxy), set `python_pip_proxy` to the
+proxy URL. It is applied as `HTTPS_PROXY`/`HTTP_PROXY` on the bootstrap
+pip task only; the OS-package tasks rely on the system package manager's
+own proxy configuration.
 
 ## References
 
