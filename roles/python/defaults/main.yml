@@ -13,5 +13,10 @@ python_enabled: true
 # Enable pipx for user-level Python tool management
 python_pipx_enabled: true
 
+# Optional HTTP(S) proxy for pip — applied as HTTPS_PROXY/HTTP_PROXY env
+# vars on the pipx bootstrap pip task. Required in networks that have no
+# direct DNS/internet access to PyPI. Empty (default) = no proxy.
+python_pip_proxy: ''
+
 # Additional OS packages to install (e.g., python3-dev, python3-lxml)
 python_extra_packages: []
