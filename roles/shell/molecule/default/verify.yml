@@ -386,17 +386,24 @@
     # shell_user_config_mode=initial + user IN __users_newly_created
     # → role MUST add the zoxide init blockinfile to the user's .bashrc.
     #
+    # The deploy-check assertion is gated on zoxide availability —
+    # __shell_zoxide_package is empty on EL 10 (zoxide not in EPEL 10),
+    # so the role's zoxide_init skips entirely there. The per-user
+    # gating pattern is still exercised on Arch, Debian, and EL 9.
+    #
 
     - name: Verify | Check initialnewuser .bashrc exists
       ansible.builtin.stat:
         path: /home/initialnewuser/.bashrc
       register: __verify_initialnew_bashrc
+      when: __shell_zoxide_package | default('') | length > 0
 
     - name: Verify | Assert initialnewuser .bashrc is owned by user
       ansible.builtin.assert:
         that:
           - __verify_initialnew_bashrc.stat.exists
           - __verify_initialnew_bashrc.stat.pw_name == 'initialnewuser'
+      when: __shell_zoxide_package | default('') | length > 0
 
     - name: Verify | Check zoxide init block present in initialnewuser .bashrc
       ansible.builtin.command:
@@ -404,6 +411,7 @@
       register: __verify_initialnew_zoxide
       changed_when: false
       failed_when: __verify_initialnew_zoxide.rc != 0
+      when: __shell_zoxide_package | default('') | length > 0
 
     #
     # Initial Mode — Existing User (initialexistuser)
