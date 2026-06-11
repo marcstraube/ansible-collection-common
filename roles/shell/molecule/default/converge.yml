@@ -198,3 +198,97 @@
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
       when: ansible_facts['os_family'] == 'Archlinux'
+
+
+# Initial- and disabled-mode coverage for `shell_user_config_mode`.
+# Uses zoxide-bash as the test vehicle because zoxide ships in every
+# distro repo and the init pattern (blockinfile on ~/.bashrc with a
+# `ANSIBLE MANAGED — zoxide init` marker) mirrors how starship, atuin,
+# bash-preexec, and ble.sh all consume the same mode variable.
+
+- name: Converge — Initial mode (per-user gating)
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'bash'
+    shell_zsh_enabled: false
+    shell_fish_enabled: false
+    shell_bash_completion_enabled: false
+    shell_starship_enabled: false
+    shell_zoxide_enabled: true
+    shell_zoxide_shells:
+      - 'bash'
+    shell_fzf_enabled: false
+    shell_user_config_mode: 'initial'
+    shell_users:
+      - 'initialnewuser'
+      - 'initialexistuser'
+
+  pre_tasks:
+    - name: Converge | Create initial-mode users
+      ansible.builtin.user:
+        name: '{{ item }}'
+        state: present
+        create_home: true
+      loop:
+        - initialnewuser
+        - initialexistuser
+
+    - name: Converge | Pre-seed existing user bashrc to prove it is left untouched
+      ansible.builtin.copy:
+        content: |
+          # molecule-fixture: pre-existing user content
+          alias ll='ls -la'
+        dest: /home/initialexistuser/.bashrc
+        owner: initialexistuser
+        group: initialexistuser
+        mode: '0644'
+
+    - name: Converge | Mark only initialnewuser as newly created
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'initialnewuser'
+
+  tasks:
+    - name: Converge | Include shell role (initial mode)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+
+- name: Converge — Disabled mode (global)
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'bash'
+    shell_zsh_enabled: false
+    shell_fish_enabled: false
+    shell_bash_completion_enabled: false
+    shell_starship_enabled: false
+    shell_zoxide_enabled: true
+    shell_zoxide_shells:
+      - 'bash'
+    shell_fzf_enabled: false
+    shell_user_config_mode: 'disabled'
+    shell_users:
+      - 'globaldisableduser'
+
+  pre_tasks:
+    - name: Converge | Create global-disabled-mode user
+      ansible.builtin.user:
+        name: globaldisableduser
+        state: present
+        create_home: true
+
+    - name: Converge | Mark global-disabled user as newly created
+      ansible.builtin.set_fact:
+        __users_newly_created:
+          - 'globaldisableduser'
+
+  tasks:
+    - name: Converge | Include shell role (disabled mode)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
