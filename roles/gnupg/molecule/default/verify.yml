@@ -285,3 +285,102 @@
         that:
           - not disabled_gnupg.stat.exists
         fail_msg: 'disableduser should not have .gnupg directory (mode: disabled)'
+
+    #
+    # Initial Mode — Newly Created User (initialnewuser)
+    #
+    # gnupg_user_config_mode=initial + user IN __users_newly_created
+    # → role MUST deploy the user's config.
+    #
+
+    - name: Verify | Check initialnewuser .gnupg directory
+      ansible.builtin.stat:
+        path: /home/initialnewuser/.gnupg
+      register: __verify_initialnew_gnupg_dir
+
+    - name: Verify | Assert initialnewuser .gnupg directory deployed
+      ansible.builtin.assert:
+        that:
+          - __verify_initialnew_gnupg_dir.stat.exists
+          - __verify_initialnew_gnupg_dir.stat.isdir
+          - __verify_initialnew_gnupg_dir.stat.mode == '0700'
+          - __verify_initialnew_gnupg_dir.stat.pw_name == 'initialnewuser'
+
+    - name: Verify | Read initialnewuser gpg.conf
+      ansible.builtin.slurp:
+        src: /home/initialnewuser/.gnupg/gpg.conf
+      register: __verify_initialnew_gpg_conf
+
+    - name: Verify | Assert initialnewuser gpg.conf has rendered template content
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (__verify_initialnew_gpg_conf.content | b64decode)"
+          - "'trust-model tofu+pgp' in (__verify_initialnew_gpg_conf.content | b64decode)"
+
+    #
+    # Initial Mode — Existing User (initialexistuser)
+    #
+    # gnupg_user_config_mode=initial + user NOT IN __users_newly_created
+    # → role MUST leave the user's pre-existing gpg.conf untouched.
+    #
+
+    - name: Verify | Check initialexistuser gpg.conf exists
+      ansible.builtin.stat:
+        path: /home/initialexistuser/.gnupg/gpg.conf
+      register: __verify_initialexist_gpg_conf
+
+    - name: Verify | Assert initialexistuser gpg.conf still present
+      ansible.builtin.assert:
+        that:
+          - __verify_initialexist_gpg_conf.stat.exists
+
+    - name: Verify | Read initialexistuser gpg.conf
+      ansible.builtin.slurp:
+        src: /home/initialexistuser/.gnupg/gpg.conf
+      register: __verify_initialexist_gpg_content
+
+    - name: Verify | Assert initialexistuser gpg.conf is unchanged
+      ansible.builtin.assert:
+        that:
+          - >-
+            'molecule-fixture: pre-existing user content'
+            in (__verify_initialexist_gpg_content.content | b64decode)
+          - "'Ansible managed' not in (__verify_initialexist_gpg_content.content | b64decode)"
+          - "'trust-model tofu+pgp' not in (__verify_initialexist_gpg_content.content | b64decode)"
+
+    - name: Verify | Check initialexistuser has no gpg-agent.conf
+      ansible.builtin.stat:
+        path: /home/initialexistuser/.gnupg/gpg-agent.conf
+      register: __verify_initialexist_agent_conf
+
+    - name: Verify | Assert initialexistuser has no gpg-agent.conf
+      ansible.builtin.assert:
+        that:
+          - not __verify_initialexist_agent_conf.stat.exists
+
+    #
+    # Disabled Mode — Global (globaldisableduser)
+    #
+    # gnupg_user_config_mode=disabled
+    # → role MUST NOT deploy a .gnupg directory or any config files.
+    #
+
+    - name: Verify | Check globaldisableduser has no .gnupg directory
+      ansible.builtin.stat:
+        path: /home/globaldisableduser/.gnupg
+      register: __verify_globaldisabled_gnupg
+
+    - name: Verify | Assert globaldisableduser has no .gnupg directory
+      ansible.builtin.assert:
+        that:
+          - not __verify_globaldisabled_gnupg.stat.exists
+
+    - name: Verify | Check globaldisableduser has no SSH environment file
+      ansible.builtin.stat:
+        path: /home/globaldisableduser/.config/environment.d/50-gpg-ssh.conf
+      register: __verify_globaldisabled_ssh_env
+
+    - name: Verify | Assert globaldisableduser has no SSH environment file
+      ansible.builtin.assert:
+        that:
+          - not __verify_globaldisabled_ssh_env.stat.exists
