@@ -23,3 +23,7 @@ __base_dialog_package: 'dialog'
 
 # Default bootloader (RHEL-family ships GRUB by default)
 __base_default_bootloader: 'grub'
+
+# GRUB binary + config path (EL ships grub2-* variants under /boot/grub2/)
+__base_grub_mkconfig: 'grub2-mkconfig'
+__base_grub_cfg: '/boot/grub2/grub.cfg'

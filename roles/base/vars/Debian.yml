@@ -19,3 +19,6 @@ __base_dialog_package: 'dialog'
 
 # Default bootloader (Debian ships GRUB by default)
 __base_default_bootloader: 'grub'
+
+__base_grub_mkconfig: 'grub-mkconfig'
+__base_grub_cfg: '/boot/grub/grub.cfg'
