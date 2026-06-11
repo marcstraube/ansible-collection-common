@@ -92,6 +92,15 @@ jobs:
             exit 0
           fi
 
+          # Idempotency guard: if the dated heading for this version
+          # already exists in the file, the rewrite has run before.
+          # Skip to avoid stacking duplicate headings on subsequent
+          # main-pushes within the same release cycle (MD024).
+          if grep -Fxq "$REPLACEMENT" <<< "$OLD_CONTENT"; then
+            echo "MIGRATION.md already contains '${REPLACEMENT}' heading — no-op."
+            exit 0
+          fi
+
           # Rewrite the first `## Unreleased` to two stacked headings:
           # a fresh empty `## Unreleased` block (for the next cycle) on
           # top, followed by the dated heading for this release. Any
