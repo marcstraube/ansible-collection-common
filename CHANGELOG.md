@@ -2,6 +2,36 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [2.1.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.0.0...v2.1.0) (2026-06-11)
+
+
+### Features
+
+* **docker:** make Wait-for-connection timeout configurable ([#202](https://github.com/marcstraube/ansible-collection-common/issues/202)) ([0ba3e2b](https://github.com/marcstraube/ansible-collection-common/commit/0ba3e2bece8e38edb48387b27c9868e1f89702db)), closes [#165](https://github.com/marcstraube/ansible-collection-common/issues/165)
+* **package_management:** apt_non_free toggle for Debian default sources ([#195](https://github.com/marcstraube/ansible-collection-common/issues/195)) ([6b58470](https://github.com/marcstraube/ansible-collection-common/commit/6b5847097355e8da4309ea826188324fe107bd08))
+* **roles:** add minor-version level to with_first_found vars lookup ([#206](https://github.com/marcstraube/ansible-collection-common/issues/206)) ([0ab916e](https://github.com/marcstraube/ansible-collection-common/commit/0ab916eac387fe6f97eb408da8f54a30a7be8ba8)), closes [#135](https://github.com/marcstraube/ansible-collection-common/issues/135)
+* **utils:** add Archive / Compression section ([#196](https://github.com/marcstraube/ansible-collection-common/issues/196)) ([cbfc7aa](https://github.com/marcstraube/ansible-collection-common/commit/cbfc7aa9833a7ede9dff193bceef2f4e098b2a8c))
+
+
+### Bug Fixes
+
+* **aide:** drop stale vars/RedHat-9.yml after EPEL AIDE 0.19 upgrade ([#208](https://github.com/marcstraube/ansible-collection-common/issues/208)) ([6c32fa3](https://github.com/marcstraube/ansible-collection-common/commit/6c32fa39f8e3ada42e9e07c317b1755338829067)), closes [#207](https://github.com/marcstraube/ansible-collection-common/issues/207)
+* **base:** default base_bootloader per OS (grub on RHEL/Debian, systemd-boot on Arch) ([#180](https://github.com/marcstraube/ansible-collection-common/issues/180)) ([c9d79d9](https://github.com/marcstraube/ansible-collection-common/commit/c9d79d9c4a7d44063140aab765827169ed4c834e))
+* **docker:** refresh dnf cache after repo add and skip install when repo missing ([#189](https://github.com/marcstraube/ansible-collection-common/issues/189)) ([92d6b91](https://github.com/marcstraube/ansible-collection-common/commit/92d6b919e08bdff38744108b8e2d734f83c95b34))
+* **gnupg:** make paperkey a Layer-1 no-op on EL (not in EPEL 9/10) ([#187](https://github.com/marcstraube/ansible-collection-common/issues/187)) ([6e4fb4c](https://github.com/marcstraube/ansible-collection-common/commit/6e4fb4cefa3c5fcb67ba32239ed27d8f76a75291))
+* **hardening:** preserve existing /tmp instead of force-converting to tmpfs ([#183](https://github.com/marcstraube/ansible-collection-common/issues/183)) ([d48f173](https://github.com/marcstraube/ansible-collection-common/commit/d48f173a8875cba7d2073fdd33d0442f73f4eb69))
+* **nodejs:** probe node/npm versions in check mode ([#199](https://github.com/marcstraube/ansible-collection-common/issues/199)) ([6829a4c](https://github.com/marcstraube/ansible-collection-common/commit/6829a4c8ddc9965efcd22ff33727fd5e680114b7))
+* **php:** split Arch extension map by official vs AUR layout ([#201](https://github.com/marcstraube/ansible-collection-common/issues/201)) ([c5a9c87](https://github.com/marcstraube/ansible-collection-common/commit/c5a9c872d491123be37b28cfa5ce30e187b0d15b)), closes [#200](https://github.com/marcstraube/ansible-collection-common/issues/200)
+* **php:** support AppStream and Remi on RHEL via php_redhat_repo ([#191](https://github.com/marcstraube/ansible-collection-common/issues/191)) ([6153132](https://github.com/marcstraube/ansible-collection-common/commit/615313277717829c4b7966b216829c8d6338bb79))
+* **resolved:** skip service and symlink tasks when systemd-resolved unit is missing ([#185](https://github.com/marcstraube/ansible-collection-common/issues/185)) ([b38bab9](https://github.com/marcstraube/ansible-collection-common/commit/b38bab95cda9237038ce597a24b513c7dd20a77b))
+* **templates:** make ansible_managed reference safe under ansible-core 2.23+ ([#205](https://github.com/marcstraube/ansible-collection-common/issues/205)) ([abb94d5](https://github.com/marcstraube/ansible-collection-common/commit/abb94d5f91e74399ea2aa13fc0b3fc18cc1e455b)), closes [#131](https://github.com/marcstraube/ansible-collection-common/issues/131)
+
+
+### Documentation
+
+* **migration:** adopt persistent Unreleased section (Keep a Changelog) ([#203](https://github.com/marcstraube/ansible-collection-common/issues/203)) ([e22afbf](https://github.com/marcstraube/ansible-collection-common/commit/e22afbfb68b828c2d0793ad63b56cfabc801a983)), closes [#162](https://github.com/marcstraube/ansible-collection-common/issues/162)
+* **migration:** scope MIGRATION.md to actionable breaking changes only ([#216](https://github.com/marcstraube/ansible-collection-common/issues/216)) ([02c487f](https://github.com/marcstraube/ansible-collection-common/commit/02c487f05facf0c131a96524d84ff296b7316511)), closes [#215](https://github.com/marcstraube/ansible-collection-common/issues/215)
+
 ## [2.0.0](https://github.com/marcstraube/ansible-collection-common/compare/v1.2.0...v2.0.0) (2026-05-22)
 
 
