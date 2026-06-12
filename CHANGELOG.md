@@ -2,6 +2,16 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [2.1.1](https://github.com/marcstraube/ansible-collection-common/compare/v2.1.0...v2.1.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **base:** use OS-specific binary and path for GRUB regeneration handler ([#219](https://github.com/marcstraube/ansible-collection-common/issues/219)) ([84007fc](https://github.com/marcstraube/ansible-collection-common/commit/84007fc57147575dd6601ab4a831d812a58147c2)), closes [#218](https://github.com/marcstraube/ansible-collection-common/issues/218)
+* **hardening:** restart PrivateTmp services after /var/tmp bind change ([#224](https://github.com/marcstraube/ansible-collection-common/issues/224)) ([8384b84](https://github.com/marcstraube/ansible-collection-common/commit/8384b842e9d4e9e3adbfd2dc7d9f9f852cb3a558)), closes [#223](https://github.com/marcstraube/ansible-collection-common/issues/223)
+* **nodejs:** pre-create global node_modules directory with mode 0755 ([#226](https://github.com/marcstraube/ansible-collection-common/issues/226)) ([41965d3](https://github.com/marcstraube/ansible-collection-common/commit/41965d35482830310a022b2fba4e4a5cbf36c58e)), closes [#225](https://github.com/marcstraube/ansible-collection-common/issues/225)
+* **python:** honor optional HTTP(S) proxy for pipx bootstrap pip install ([#222](https://github.com/marcstraube/ansible-collection-common/issues/222)) ([90ddaa2](https://github.com/marcstraube/ansible-collection-common/commit/90ddaa20b58767001bbd2afd19b29199f322d081)), closes [#221](https://github.com/marcstraube/ansible-collection-common/issues/221)
+
 ## [2.1.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.0.0...v2.1.0) (2026-06-11)
 
 
