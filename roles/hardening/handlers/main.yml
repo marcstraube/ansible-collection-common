@@ -6,3 +6,27 @@
   changed_when: false
   failed_when: false
   when: hardening_enabled | bool
+
+# When /tmp or /var/tmp mount layout changes after services with
+# PrivateTmp=yes have already started, their existing mount namespaces
+# are stale. A subsequent `systemctl reload` then fails with
+# status=226/NAMESPACE because systemd cannot rebuild the per-service
+# /var/tmp bind in the running namespace. Restart every running service
+# that declares PrivateTmp=yes so it re-enters a fresh namespace built
+# against the new host mounts. Idempotent on hosts where /tmp/var-tmp
+# never changed (no services to restart).
+- name: Restart PrivateTmp services
+  ansible.builtin.shell:
+    cmd: |
+      set -euo pipefail
+      systemctl list-units --type=service --state=running --no-legend --no-pager \
+        | awk '{print $1}' \
+        | while read -r unit; do
+            if [ "$(systemctl show -p PrivateTmp --value "$unit" 2>/dev/null)" = "yes" ]; then
+              systemctl restart "$unit"
+            fi
+          done
+    executable: /bin/bash
+  changed_when: true
+  listen: 'restart privatetmp services'
+  when: hardening_enabled | bool
