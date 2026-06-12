@@ -87,3 +87,33 @@
   when:
     - nodejs_npm_config | length > 0
     - item.stdout | default('') | trim != item.item.value | string
+
+#
+# Global npm prefix directory
+#
+# `npm install -g <pkg>` writes into `<npm prefix>/lib/node_modules/`. On
+# hosts hardened with pam_umask 0077 (the marcstraube.common.pam_hardening
+# default), npm creates this directory with mode 0700 on first use because
+# it inherits the calling process umask. That makes the install tree
+# inaccessible to non-root service users and causes downstream
+# `status=203/EXEC, Permission denied` failures on services that try to
+# exec the global binaries (n8n, gitlab-runner, etc.).
+#
+# Pre-create the directory with mode 0755 so npm uses it as-is. This is a
+# no-op on hosts where the directory already exists with the right
+# permissions, and only sets the top-level mode — per-package subtrees
+# stay as npm wrote them (individual install roles can fix those further
+# down).
+
+- name: Configure | Detect npm global prefix
+  ansible.builtin.command: npm prefix -g
+  register: __nodejs_npm_prefix
+  changed_when: false
+
+- name: Configure | Ensure global node_modules directory is traversable
+  ansible.builtin.file:
+    path: '{{ __nodejs_npm_prefix.stdout | trim }}/lib/node_modules'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
