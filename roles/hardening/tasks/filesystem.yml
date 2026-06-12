@@ -57,22 +57,18 @@
   when: not ansible_check_mode
   changed_when: false
 
-- name: Filesystem | Configure /var/tmp bind mount in fstab
+# /var/tmp does not face the chicken-and-egg problem that gates the
+# /tmp tasks above (Ansible's payload lives in /tmp, not /var/tmp), so
+# we can use state: mounted directly. This combines fstab write +
+# actual mount in one task and reports `changed` precisely when one
+# of the two side-effects happens, which lets us notify the handler
+# only on real mount-layout changes.
+- name: Filesystem | Configure /var/tmp bind mount
   ansible.posix.mount:
     path: '/var/tmp'
     src: '/tmp'
     fstype: 'none'
     opts: 'bind'
-    state: present
+    state: mounted
   when: hardening_fs_vartmp_bind_enabled | bool
-  register: __hardening_vartmp_fstab
-
-- name: Filesystem | Mount /var/tmp bind
-  ansible.builtin.raw: >-
-    if ! findmnt -n /var/tmp > /dev/null 2>&1; then
-      mount /var/tmp;
-    fi
-  when:
-    - hardening_fs_vartmp_bind_enabled | bool
-    - not ansible_check_mode
-  changed_when: false
+  notify: 'restart privatetmp services'
