@@ -46,6 +46,7 @@ provisioner:
               ifname: eth1
               ip4: 192.168.1.10/24
               gw4: 192.168.1.1
+              zone: internal
               state: present
               autoconnect: false
               vpn:
@@ -173,6 +174,7 @@ provisioner:
               ifname: eth1
               ip4: 192.168.1.10/24
               gw4: 192.168.1.1
+              zone: internal
               state: present
               autoconnect: false
               settings:
@@ -197,6 +199,7 @@ provisioner:
               ifname: eth1
               ip4: 192.168.1.10/24
               gw4: 192.168.1.1
+              zone: internal
               state: present
               autoconnect: false
               settings:
@@ -221,6 +224,7 @@ provisioner:
               ifname: eth1
               ip4: 192.168.1.10/24
               gw4: 192.168.1.1
+              zone: internal
               state: present
               autoconnect: false
               settings:

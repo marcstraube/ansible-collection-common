@@ -139,7 +139,15 @@ networkmanager_vpn_plugins: []
 # Connection profiles managed via community.general.nmcli.
 #
 # First-class fields map to community.general.nmcli module parameters
-# (ifname, ip4, gw4, dns4, routes4, autoconnect, ...).
+# (ifname, ip4, gw4, dns4, routes4, autoconnect, zone, ...).
+#
+# firewalld zone note: on hosts running firewalld, set the interface's
+# firewalld zone here via `zone:` (mapped to NetworkManager's
+# connection.zone). NetworkManager owns the zone of the interfaces it
+# manages, so assigning the same interface through the firewalld role's
+# `firewalld_interfaces` does not persist and drifts back to the default
+# zone on reapply/reboot. Use `firewalld_interfaces` only for interfaces
+# NetworkManager does not manage.
 #
 # The generic `settings:` dict takes nmcli-native keys and is applied via
 # a single `nmcli connection modify` per connection. Any setting nmcli
@@ -158,6 +166,7 @@ networkmanager_vpn_plugins: []
 #       autoconnect: true
 #       ip4: "192.168.1.10/24"
 #       gw4: "192.168.1.1"
+#       zone: "internal"          # firewalld zone (NM connection.zone)
 #       dns4:
 #         - "8.8.8.8"
 #         - "8.8.4.4"
