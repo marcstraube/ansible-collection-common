@@ -263,6 +263,51 @@
         label: "{{ item.item.conn_name }}/{{ item.item.key }}"
 
     #
+    # Connection Zone Verification
+    #
+    # Walks every present connection that defines a `zone` and asserts
+    # nmcli stored it as connection.zone (the firewalld zone owned by NM).
+
+    - name: Verify | Flatten zone entries from test inventory
+      ansible.builtin.set_fact:
+        verify_zone_entries: >-
+          {{ verify_zone_entries | default([])
+             + [{'conn_name': item.key, 'zone': item.value.zone}] }}
+      loop: >-
+        {{ (test_networkmanager_connections.ethernet | default({}) | dict2items)
+           + (test_networkmanager_connections.wifi | default({}) | dict2items) }}
+      loop_control:
+        label: "{{ item.key }}"
+      when:
+        - item.value.state | default('present') == 'present'
+        - item.value.zone is defined
+
+    - name: Verify | Query nmcli for each connection zone
+      ansible.builtin.command:
+        cmd: 'nmcli -t -f connection.zone connection show {{ item.conn_name | quote }}'
+      register: verify_zone_query
+      changed_when: false
+      loop: "{{ verify_zone_entries | default([]) }}"
+      loop_control:
+        label: "{{ item.conn_name }}"
+
+    - name: Verify | Assert each connection zone matches inventory
+      vars:
+        current_zone: "{{ item.stdout | regex_replace('^[^:]+:', '') }}"
+      ansible.builtin.assert:
+        that:
+          - current_zone == item.item.zone
+        fail_msg: >-
+          Connection '{{ item.item.conn_name }}' expected zone
+          '{{ item.item.zone }}' but nmcli stored '{{ current_zone }}'
+        success_msg: >-
+          Connection '{{ item.item.conn_name }}' correctly assigned to
+          zone '{{ item.item.zone }}'
+      loop: "{{ verify_zone_query.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item.conn_name }}"
+
+    #
     # Polkit Verification
     #
 

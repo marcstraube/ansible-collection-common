@@ -139,6 +139,7 @@ networkmanager_connections:
       autoconnect: true
       ip4: "192.168.1.10/24"
       gw4: "192.168.1.1"
+      zone: "internal"                  # firewalld zone (NM connection.zone)
       dns4: ["1.1.1.1", "8.8.8.8"]
       dns4_search: ["office.local"]
       routes4: ["10.0.0.0/8 192.168.1.254"]
@@ -147,6 +148,25 @@ networkmanager_connections:
       settings:                         # generic nmcli-native settings (see below)
         ipv4.dhcp-send-hostname: "no"
 ```
+
+#### firewalld zones on NetworkManager-managed interfaces
+
+Use `zone:` to assign an interface to a firewalld zone. It maps to
+NetworkManager's `connection.zone`, so NetworkManager applies the zone and
+keeps it across `nmcli device reapply` and reboot. This is the correct
+mechanism for any interface NetworkManager manages.
+
+Do **not** also assign the same interface through the `firewalld` role's
+`firewalld_interfaces`: firewalld's own interface-to-zone binding does not
+persist on NM-managed interfaces (`The interface is under control of
+NetworkManager`) and drifts back to the default zone. Reserve
+`firewalld_interfaces` for interfaces NetworkManager does not manage.
+
+On RHEL-family distributions (Rocky, AlmaLinux, RHEL, Fedora, CentOS
+Stream) firewalld and NetworkManager are both active by default, so this
+coupling is the standard case there and `zone:` is the expected way to
+assign an interface's zone. Elsewhere it applies wherever NetworkManager
+manages the interface and firewalld is in use.
 
 #### WiFi Connections
 

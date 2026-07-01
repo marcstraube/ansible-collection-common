@@ -74,6 +74,7 @@
     may_fail4: "{{ item.value.may_fail4 | default(omit) }}"
     method4: "{{ item.value.method4 | default(omit) }}"
     method6: "{{ item.value.method6 | default(omit) }}"
+    zone: "{{ item.value.zone | default(omit) }}"
     state: "{{ item.value.state | default('present') }}"
   loop: "{{ networkmanager_connections.ethernet | dict2items }}"
   loop_control:
@@ -156,6 +157,7 @@
     may_fail4: "{{ item.value.may_fail4 | default(omit) }}"
     method4: "{{ item.value.method4 | default(omit) }}"
     method6: "{{ item.value.method6 | default(omit) }}"
+    zone: "{{ item.value.zone | default(omit) }}"
     state: "{{ item.value.state | default('present') }}"
   loop: "{{ networkmanager_connections.wifi | dict2items }}"
   loop_control:

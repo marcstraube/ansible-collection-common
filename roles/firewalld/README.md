@@ -98,6 +98,17 @@ Deployed as `/etc/firewalld/firewalld.conf`.
 |------------------------|---------|----------------------------------------------------|
 | `firewalld_interfaces` | `[]`    | Interfaces assigned to zones (`{zone, interface}`) |
 
+> **NetworkManager-managed interfaces:** `firewalld_interfaces` binds the
+> interface on the firewalld side, which does not persist when
+> NetworkManager manages the interface — NetworkManager's `connection.zone`
+> takes precedence and drifts the interface back to the default zone on
+> reapply/reboot (`The interface is under control of NetworkManager`). For
+> those interfaces, set the zone via the `networkmanager` role's `zone:`
+> option instead. Use `firewalld_interfaces` only for interfaces
+> NetworkManager does not manage. This is the default configuration on
+> RHEL-family distributions, where firewalld and NetworkManager both ship
+> active.
+
 ### Port Forwarding
 
 | Variable             | Default | Description                                        |
