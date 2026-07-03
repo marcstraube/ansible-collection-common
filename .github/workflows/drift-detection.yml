@@ -30,7 +30,7 @@ jobs:
       has_targets: ${{ steps.parse.outputs.has_targets }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install PyYAML
         run: pip install --quiet pyyaml
@@ -73,7 +73,7 @@ jobs:
       matrix: ${{ fromJSON(needs.load-targets.outputs.matrix) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Resolve image and probe command
         id: resolve
