@@ -39,6 +39,14 @@
   delay: 5
   when: makepkg_distcc_enabled | bool
 
+- name: Makepkg | Install devtools
+  ansible.builtin.package:
+    name: 'devtools'
+    state: present
+  retries: 3
+  delay: 5
+  when: makepkg_devtools_enabled | bool
+
 #
 # Per-User makepkg.conf
 #

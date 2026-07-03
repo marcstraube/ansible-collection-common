@@ -63,17 +63,19 @@ overrides if needed.
 
 ### Arch Linux - Makepkg
 
-| Variable                 | Default      | Description                                     |
-|--------------------------|--------------|-------------------------------------------------|
-| `makepkg_packager`       | `''`         | Packager name/email for built packages          |
-| `makepkg_cflags`         | `''`         | Custom C compiler flags (empty = Arch defaults) |
-| `makepkg_ltoflags`       | `-flto=auto` | LTO flags                                       |
-| `makepkg_ccache_enabled` | `false`      | Enable ccache                                   |
-| `makepkg_distcc_enabled` | `false`      | Enable distcc                                   |
-| `makepkg_check`          | `true`       | Run check() in PKGBUILDs                        |
-| `makepkg_sign`           | `false`      | Sign built packages                             |
-| `makepkg_debug`          | `true`       | Build with debug symbols                        |
-| `makepkg_lto`            | `true`       | Build with LTO                                  |
+| Variable                   | Default      | Description                                     |
+|----------------------------|--------------|-------------------------------------------------|
+| `makepkg_packager`         | `''`         | Packager name/email for built packages          |
+| `makepkg_cflags`           | `''`         | Custom C compiler flags (empty = Arch defaults) |
+| `makepkg_ltoflags`         | `-flto=auto` | LTO flags                                       |
+| `makepkg_ccache_enabled`   | `false`      | Enable ccache                                   |
+| `makepkg_sccache_enabled`  | `false`      | Enable sccache (Rust)                           |
+| `makepkg_distcc_enabled`   | `false`      | Enable distcc                                   |
+| `makepkg_devtools_enabled` | `false`      | Install devtools (chrooted builds)              |
+| `makepkg_check`            | `true`       | Run check() in PKGBUILDs                        |
+| `makepkg_sign`             | `false`      | Sign built packages                             |
+| `makepkg_debug`            | `true`       | Build with debug symbols                        |
+| `makepkg_lto`              | `true`       | Build with LTO                                  |
 
 ### Arch Linux - Paru (AUR Helper)
 
