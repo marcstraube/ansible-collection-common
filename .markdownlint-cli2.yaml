@@ -1,5 +1,10 @@
 ---
 config:
   extends: .markdownlint.yml
+globs:
+  - "**/*.{md,markdown}"
 ignores:
   - "CHANGELOG.md"
+  - ".ansible/**"
+  - "**/.venv/**"
+  - "**/node_modules/**"

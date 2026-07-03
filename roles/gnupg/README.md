@@ -16,10 +16,10 @@ daemon configuration, and keyserver management.
 
 ## Supported Platforms
 
-| Platform                  | Notes                                                          |
-|---------------------------|----------------------------------------------------------------|
-| Arch Linux                | GnuPG 2.4+, includes GUI tools (Seahorse)                      |
-| Debian Trixie             | GnuPG 2.2+, includes GUI tools (Seahorse)                      |
+| Platform                  | Notes                                                           |
+|---------------------------|-----------------------------------------------------------------|
+| Arch Linux                | GnuPG 2.4+, includes GUI tools (Seahorse)                       |
+| Debian Trixie             | GnuPG 2.2+, includes GUI tools (Seahorse)                       |
 | EL 9 (Rocky, Alma, RHEL)  | GnuPG 2.3+; `paperkey` is not in EPEL — see CLI tools note (\*) |
 | EL 10 (Rocky, Alma, RHEL) | GnuPG 2.4+; `paperkey` is not in EPEL — see CLI tools note (\*) |
 
