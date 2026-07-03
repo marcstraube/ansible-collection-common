@@ -129,12 +129,12 @@ overrides if needed.
 
 ### Debian/Ubuntu - Repositories
 
-| Variable                              | Default | Description                                                              |
-|---------------------------------------|---------|--------------------------------------------------------------------------|
-| `apt_backports_enabled`               | `false` | Enable Debian Backports                                                  |
-| `apt_non_free_enabled`                | `false` | Append `non-free` to Components in default Debian deb822 sources         |
-| `apt_non_free_firmware_enabled`       | `false` | Append `non-free-firmware` to Components in default Debian deb822 sources |
-| `apt_custom_repos`                    | `[]`    | Custom repository definitions                                            |
+| Variable                        | Default | Description                                         |
+|---------------------------------|---------|-----------------------------------------------------|
+| `apt_backports_enabled`         | `false` | Enable Debian Backports                             |
+| `apt_non_free_enabled`          | `false` | Add `non-free` to Debian deb822 Components          |
+| `apt_non_free_firmware_enabled` | `false` | Add `non-free-firmware` to Debian deb822 Components |
+| `apt_custom_repos`              | `[]`    | Custom repository definitions                       |
 
 ### RHEL/Rocky - DNF
 
