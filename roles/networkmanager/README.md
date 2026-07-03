@@ -40,7 +40,17 @@ overrides if needed.
 ```yaml
 networkmanager_enabled: true            # enable the networkmanager role
 networkmanager_service_enabled: true    # enable and start the networkmanager service
+
+networkmanager_service_wait_for_connection_delay: 5     # delay (s) before recovery check after a restart
+networkmanager_service_wait_for_connection_timeout: 180 # timeout (s) for recovery check after a restart
 ```
+
+> **Restart recovery:** Only the restart path (see
+> [reload vs. restart](#how-daemon-config-changes-are-applied-reload-vs-restart))
+> waits for connectivity to return. Restarting NetworkManager can tear down the
+> interface used to reach the host over SSH, so recovery may exceed the 60 s
+> Ansible default. Raise `networkmanager_service_wait_for_connection_timeout`
+> (or extend the delay) on slow links.
 
 ### Daemon Configuration
 
@@ -103,6 +113,34 @@ networkmanager_wifi_backend: ''            # wpa_supplicant, iwd
 ```yaml
 networkmanager_ifupdown_managed: false     # manage /etc/network/interfaces devices
 ```
+
+#### How daemon-config changes are applied (reload vs. restart)
+
+NetworkManager re-reads `NetworkManager.conf` / `conf.d/*.conf` on reload
+(`nmcli general reload`, SIGHUP semantics) **without** tearing down active
+connections. A full daemon restart, by contrast, can drop the very interface
+used to reach the host over SSH.
+
+The role therefore reloads by default and only restarts when a setting is
+configured that NetworkManager does not apply at runtime.
+
+**Applied via reload (no restart):** `dns`, `rc-manager`, `no-auto-default`,
+`ignore-carrier`, all `[logging]` settings, all `[connectivity]` settings, all
+`[connection]` defaults (mdns, llmnr, powersave, wake-on-lan, dhcp-send-hostname),
+and `unmanaged_devices` (`[keyfile]`).
+
+**Requires a restart:** `plugins`, `systemd_resolved: false`, `hostname_mode`,
+`auth_polkit`, `firewall_backend`, `migrate_ifcfg_rh`, `wifi_backend`,
+`wifi_scan_rand_mac: false` (`[device]`), and `ifupdown_managed` (Debian).
+
+When any restart-requiring setting deviates from its distro default, a
+daemon-config change restarts NetworkManager (followed by a
+`wait_for_connection` recovery check) instead of reloading. The trigger is
+whether such a setting is *set*, not whether that exact key changed — so a host
+that configures, e.g., `wifi_backend` will restart on every daemon-config
+change. Hosts reachable over an NM-managed interface typically set none of the
+restart-requiring keys, so their daemon-config changes reload and the SSH
+session survives.
 
 ### Installation
 
