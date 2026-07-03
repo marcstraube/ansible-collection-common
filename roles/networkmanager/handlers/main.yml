@@ -5,17 +5,32 @@
   changed_when: false
   when: networkmanager_enabled | bool
 
+# Re-reads NetworkManager.conf / conf.d/*.conf without tearing down active
+# connections (SIGHUP semantics). Used for daemon-config changes that do not
+# require a full daemon restart, so an SSH session on an NM-managed interface
+# survives. Restart-requiring settings notify "Restart NetworkManager" instead
+# (gated by __networkmanager_restart_required, computed in configure.yml).
+- name: Reload NetworkManager
+  ansible.builtin.command:
+    cmd: nmcli general reload
+  changed_when: false
+  when:
+    - networkmanager_service_enabled | bool
+    - not (__networkmanager_restart_required | default(false) | bool)
+
 - name: Restart NetworkManager
   ansible.builtin.systemd_service:
     name: '{{ __networkmanager_service_name }}'
     state: restarted
-  when: networkmanager_service_enabled | bool
+  when:
+    - networkmanager_service_enabled | bool
+    - __networkmanager_restart_required | default(false) | bool
   notify: Wait for network recovery
 
 - name: Wait for network recovery
   ansible.builtin.wait_for_connection:
-    delay: 5
-    timeout: 60
+    delay: '{{ networkmanager_service_wait_for_connection_delay }}'
+    timeout: '{{ networkmanager_service_wait_for_connection_timeout }}'
   when: networkmanager_service_enabled | bool
 
 - name: Reload systemd daemon

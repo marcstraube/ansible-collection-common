@@ -143,6 +143,41 @@
         success_msg: Daemon config contains all expected sections and directives
 
     #
+    # Reload Behavior Verification
+    #
+    # The role reloads daemon config (nmcli general reload) instead of restarting
+    # for settings that do not require a restart, so an SSH session on an
+    # NM-managed interface survives. Assert that a reload keeps the same daemon
+    # process (MainPID unchanged) — i.e. it does not restart NetworkManager.
+
+    - name: Verify | Capture NetworkManager MainPID before reload
+      ansible.builtin.systemd_service:
+        name: NetworkManager.service
+      register: nm_state_before
+
+    - name: Verify | Reload NetworkManager daemon config
+      ansible.builtin.command: nmcli general reload
+      changed_when: false
+
+    - name: Verify | Capture NetworkManager MainPID after reload
+      ansible.builtin.systemd_service:
+        name: NetworkManager.service
+      register: nm_state_after
+
+    - name: Verify | Assert reload did not restart NetworkManager
+      ansible.builtin.assert:
+        that:
+          - nm_state_before.status.MainPID != '0'
+          - nm_state_before.status.MainPID == nm_state_after.status.MainPID
+        fail_msg: >-
+          nmcli general reload restarted NetworkManager
+          (MainPID {{ nm_state_before.status.MainPID }} ->
+          {{ nm_state_after.status.MainPID }})
+        success_msg: >-
+          nmcli general reload kept the same NetworkManager process
+          (MainPID {{ nm_state_after.status.MainPID }})
+
+    #
     # Legacy Config Migration Verification
     #
 

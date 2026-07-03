@@ -1,4 +1,25 @@
 ---
+# Most daemon-config changes are re-read on reload (SIGHUP) without dropping
+# active connections. A full restart is only required for settings NetworkManager
+# does not apply at runtime. This fact decides which handler fires: it is true
+# when any restart-requiring setting deviates from its distro default. Config
+# tasks notify both handlers; each handler gates itself on this fact so exactly
+# one runs. Granularity is "a restart-requiring setting is set", not "that exact
+# key changed" — servers reachable over an NM-managed interface set none of these,
+# so daemon-config changes reload and the SSH session survives.
+- name: Configure | Determine whether a daemon restart is required
+  ansible.builtin.set_fact:
+    __networkmanager_restart_required: >-
+      {{ (networkmanager_plugins | length > 0)
+         or (not networkmanager_systemd_resolved)
+         or (networkmanager_hostname_mode | length > 0)
+         or (networkmanager_auth_polkit | length > 0)
+         or (networkmanager_firewall_backend | length > 0)
+         or (networkmanager_migrate_ifcfg_rh | bool)
+         or (networkmanager_wifi_backend | length > 0)
+         or (not networkmanager_wifi_scan_rand_mac)
+         or (ansible_facts['os_family'] == 'Debian' and networkmanager_ifupdown_managed | bool) }}
+
 - name: Configure | Deploy NetworkManager daemon configuration
   ansible.builtin.template:
     src: networkmanager.conf.j2
@@ -6,19 +27,25 @@
     owner: root
     group: root
     mode: '0644'
-  notify: Restart NetworkManager
+  notify:
+    - Reload NetworkManager
+    - Restart NetworkManager
 
 - name: Configure | Remove legacy dhcp-send-hostname config (migrated to 00-ansible.conf)
   ansible.builtin.file:
     path: /etc/NetworkManager/conf.d/dhcp-send-hostname.conf
     state: absent
-  notify: Restart NetworkManager
+  notify:
+    - Reload NetworkManager
+    - Restart NetworkManager
 
 - name: Configure | Remove legacy unmanaged devices config (migrated to 00-ansible.conf)
   ansible.builtin.file:
     path: /etc/NetworkManager/conf.d/unmanaged.conf
     state: absent
-  notify: Restart NetworkManager
+  notify:
+    - Reload NetworkManager
+    - Restart NetworkManager
 
 - name: Configure | Flush handlers to apply configuration
   ansible.builtin.meta: flush_handlers

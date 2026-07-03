@@ -9,6 +9,14 @@ networkmanager_enabled: true
 # Enable and start the networkmanager service
 networkmanager_service_enabled: true
 
+# wait_for_connection settings applied after a NetworkManager restart. Only the
+# restart path uses them — a reload does not drop active connections. Restarting
+# the daemon can tear down the very interface used to reach the host over SSH,
+# so recovery may outlast the 60 s Ansible default (observed ~69 s on a live
+# run). Raise the timeout or extend the delay to fit your environment.
+networkmanager_service_wait_for_connection_delay: 5
+networkmanager_service_wait_for_connection_timeout: 180
+
 #
 # Daemon Configuration
 #
