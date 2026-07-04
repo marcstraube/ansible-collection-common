@@ -47,6 +47,14 @@
   delay: 5
   when: makepkg_devtools_enabled | bool
 
+- name: Makepkg | Install nvchecker
+  ansible.builtin.package:
+    name: 'nvchecker'
+    state: present
+  retries: 3
+  delay: 5
+  when: makepkg_nvchecker_enabled | bool
+
 #
 # Per-User makepkg.conf
 #
