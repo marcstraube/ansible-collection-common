@@ -241,6 +241,9 @@ makepkg_sccache_enabled: false
 # Install devtools for chrooted builds (makechrootpkg, mkarchroot)
 makepkg_devtools_enabled: false
 
+# Install nvchecker for tracking upstream package versions (PKGBUILD authoring)
+makepkg_nvchecker_enabled: false
+
 # Run check() function in PKGBUILDs
 makepkg_check: true
 
