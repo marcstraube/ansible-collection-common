@@ -47,7 +47,7 @@ editors_neovim_config_enabled: true
 editors_neovim_binary_enabled: false
 
 # Neovim release version to install
-editors_neovim_version: 'v0.12.3'
+editors_neovim_version: 'v0.12.4'
 
 #
 # Nano Configuration
