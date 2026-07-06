@@ -9,6 +9,15 @@ wireguard_enabled: true
 # Enable and start WireGuard services (per interface)
 wireguard_service_enabled: true
 
+# wait_for_connection settings applied after a WireGuard interface restart.
+# Restarting wg-quick@<iface> tears down the tunnel, so when Ansible reaches the
+# host through that very tunnel the control connection drops until the interface
+# comes back. Recovery can outlast the 60 s Ansible default on slow links or
+# when the SSH key sits on a hardware token needing a fresh PIN prompt. Raise
+# the timeout or extend the delay to fit your environment.
+wireguard_service_wait_for_connection_delay: 5
+wireguard_service_wait_for_connection_timeout: 180
+
 #
 # Global Configuration
 #

@@ -31,10 +31,21 @@ overrides if needed.
 
 ### Role Control
 
-| Variable                    | Default | Description                            |
-|-----------------------------|---------|----------------------------------------|
-| `firewalld_enabled`         | `true`  | Enable the firewalld role              |
-| `firewalld_service_enabled` | `true`  | Enable and start the firewalld service |
+| Variable                                        | Default | Description                                     |
+|-------------------------------------------------|---------|-------------------------------------------------|
+| `firewalld_enabled`                             | `true`  | Enable the firewalld role                       |
+| `firewalld_service_enabled`                     | `true`  | Enable and start the firewalld service          |
+| `firewalld_service_wait_for_connection_delay`   | `5`     | wait_for_connection delay (s) after a restart   |
+| `firewalld_service_wait_for_connection_timeout` | `180`   | wait_for_connection timeout (s) after a restart |
+
+> **HW-token-friendly tuning:** only a firewalld *restart* (triggered by
+> `firewalld.conf` changes) flushes the ruleset and can drop the SSH session —
+> the far more common *reload* path is gentle. When the restart drops the
+> connection and the SSH key on the controller lives on a hardware token,
+> re-authentication needs a fresh PIN prompt that the default 60 s
+> `wait_for_connection` timeout may not survive. The raised default of 180 s
+> gives the PIN window room; set
+> `firewalld_service_wait_for_connection_timeout` higher on slow links.
 
 ### Daemon Settings
 

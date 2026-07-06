@@ -40,11 +40,21 @@ overrides if needed.
 
 ### Role Control
 
-| Variable                    | Default            | Description                             |
-|-----------------------------|--------------------|-----------------------------------------|
-| `wireguard_enabled`         | `true`             | Enable the wireguard role               |
-| `wireguard_service_enabled` | `true`             | Enable and start services per interface |
-| `wireguard_config_dir`      | `'/etc/wireguard'` | Key/config directory                    |
+| Variable                                        | Default            | Description                                   |
+|-------------------------------------------------|--------------------|-----------------------------------------------|
+| `wireguard_enabled`                             | `true`             | Enable the wireguard role                     |
+| `wireguard_service_enabled`                     | `true`             | Enable and start services per interface       |
+| `wireguard_service_wait_for_connection_delay`   | `5`                | wait_for_connection delay (s) after restart   |
+| `wireguard_service_wait_for_connection_timeout` | `180`              | wait_for_connection timeout (s) after restart |
+| `wireguard_config_dir`                          | `'/etc/wireguard'` | Key/config directory                          |
+
+> **HW-token-friendly tuning:** when Ansible reaches the host through the tunnel
+> it is restarting, the control connection drops until `wg-quick@<iface>` comes
+> back. If the SSH key on the controller lives on a hardware token,
+> re-authentication needs a fresh PIN prompt that the default 60 s
+> `wait_for_connection` timeout may not survive. The raised default of 180 s
+> gives the PIN window room; set `wireguard_service_wait_for_connection_timeout`
+> higher on slow links.
 
 ### Interface Configuration
 

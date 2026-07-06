@@ -17,3 +17,14 @@
     name: '{{ __firewalld_service_name }}'
     state: restarted
   when: firewalld_service_enabled | bool
+  notify: Wait for network recovery
+
+# Restarting the daemon flushes the ruleset, which can drop the SSH session used
+# to reach the host. Wait for the connection to recover before continuing so the
+# play does not fail on the 60 s Ansible default. Defined after "Restart
+# firewalld" so it runs afterwards (handler order follows definition order).
+- name: Wait for network recovery
+  ansible.builtin.wait_for_connection:
+    delay: '{{ firewalld_service_wait_for_connection_delay }}'
+    timeout: '{{ firewalld_service_wait_for_connection_timeout }}'
+  when: firewalld_service_enabled | bool
