@@ -77,3 +77,64 @@ __php_extension_map:
   mongodb: 'php-pecl-mongodb'
   redis: 'php-pecl-redis'
   xdebug: 'php-pecl-xdebug3'
+
+# Extension name mapping for the Remi SCL layout (php_redhat_repo == 'remi').
+# Unlike __php_extension_map above (full AppStream package names used
+# verbatim), these values are SUFFIXES appended to the versioned Remi prefix
+# 'php<XX>-php-' (e.g. 'pecl-xdebug3' -> 'php84-php-pecl-xdebug3'), mirroring
+# the Arch AUR map. Empty string = built into the base php<XX>-php package
+# (php<XX>-php-common). Missing keys fall back to '<prefix><name>'. Suffixes
+# verified against rpms.remirepo.net; version digits (redis6, xdebug3,
+# imagick-im7) track Remi's current packaging and may shift on updates.
+__php_extension_map_remi:
+  # Built into the base php<XX>-php package (via php<XX>-php-common)
+  curl: ''
+  openssl: ''
+  json: ''
+  tokenizer: ''
+  ctype: ''
+  session: ''
+  fileinfo: ''
+  filter: ''
+  iconv: ''
+  pcre: ''
+  phar: ''
+  # Bundled subpackages — several generic names share one subpackage
+  mbstring: 'mbstring'
+  mysql: 'mysqlnd'
+  mysqli: 'mysqlnd'
+  mysqlnd: 'mysqlnd'
+  pdo_mysql: 'mysqlnd'
+  pdo: 'pdo'
+  pdo_sqlite: 'pdo'
+  sqlite: 'pdo'
+  dom: 'xml'
+  simplexml: 'xml'
+  xmlreader: 'xml'
+  xmlwriter: 'xml'
+  xsl: 'xml'
+  xml: 'xml'
+  process: 'process'
+  # Separate subpackages
+  bcmath: 'bcmath'
+  dba: 'dba'
+  enchant: 'enchant'
+  gd: 'gd'
+  gmp: 'gmp'
+  intl: 'intl'
+  ldap: 'ldap'
+  odbc: 'odbc'
+  opcache: 'opcache'
+  pgsql: 'pgsql'
+  snmp: 'snmp'
+  soap: 'soap'
+  sodium: 'sodium'
+  # PECL extensions (php<XX>-php-pecl-*). Remi ships no unversioned imagick —
+  # it splits by ImageMagick major version; im7 is the modern default.
+  apcu: 'pecl-apcu'
+  imagick: 'pecl-imagick-im7'
+  memcached: 'pecl-memcached'
+  mongodb: 'pecl-mongodb'
+  redis: 'pecl-redis6'
+  xdebug: 'pecl-xdebug3'
+  zip: 'pecl-zip'

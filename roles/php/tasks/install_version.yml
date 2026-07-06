@@ -25,6 +25,9 @@
     __php_ver: '{{ __php_resolved_version }}'
     __php_ver_compact: "{{ __php_resolved_version | replace('.', '') }}"
     __php_use_aur: false
+    # Whether the active extension map holds suffixes (prefix applied) rather
+    # than full package names. True on the Arch AUR and RedHat Remi paths.
+    __php_extension_map_suffix: false
 
 # Reset Arch patterns to official repo defaults (overridden by set_fact in previous AUR iterations)
 - name: Install Version | Reset Arch package patterns
@@ -74,6 +77,7 @@
 - name: Install Version | Select Arch AUR extension map
   ansible.builtin.set_fact:
     __php_extension_map: '{{ __php_extension_map_aur }}'
+    __php_extension_map_suffix: true
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_use_aur | bool
@@ -85,9 +89,22 @@
     - ansible_facts['os_family'] == 'Archlinux'
     - not (__php_use_aur | bool)
 
-# Build the package list. On the Arch AUR path the map values are suffixes
-# and must be prefixed with __php_extension_prefix (e.g. 'php84-'); on every
-# other path the map values are full package names and are used verbatim.
+# On Remi, base and extension packages use versioned SCL names
+# (php<XX>-php-<...>). vars/RedHat.yml ships the AppStream map (full package
+# names) as the default, so switch to the Remi suffix map and prefix its
+# values with __php_extension_prefix like the Arch AUR path.
+- name: Install Version | Select RedHat Remi extension map
+  ansible.builtin.set_fact:
+    __php_extension_map: '{{ __php_extension_map_remi }}'
+    __php_extension_map_suffix: true
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'remi'
+
+# Build the package list. When the active map holds suffixes (Arch AUR,
+# RedHat Remi) they must be prefixed with __php_extension_prefix (e.g.
+# 'php84-' or 'php84-php-'); otherwise the map values are full package names
+# and are used verbatim.
 - name: Install Version | Build package list
   ansible.builtin.set_fact:
     __php_version_packages: >-
@@ -101,7 +118,7 @@
     _mapped_raw: "{{ _exts | select('in', _map) | map('extract', _map) | reject('equalto', '') | list }}"
     _unmapped: "{{ _exts | reject('in', _map) | list }}"
     _mapped_final: >-
-      {{ (__php_use_aur | default(false) | bool)
+      {{ (__php_extension_map_suffix | default(false) | bool)
          | ternary(_mapped_raw | map('regex_replace', '^(.*)$', __php_extension_prefix + '\1') | list,
                    _mapped_raw) }}
 

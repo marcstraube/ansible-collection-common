@@ -1,0 +1,26 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    php_enabled: true
+    # Remi SCL parallel-install path — exercises __php_extension_map_remi.
+    php_redhat_repo: 'remi'
+    php_default_version: '8.4'
+    php_composer_enabled: false
+    php_versions:
+      - version: '8.4'
+        extensions:
+          - curl        # built into php84-php-common (skipped, not a package)
+          - gd          # separate subpackage: php84-php-gd
+          - intl        # separate subpackage: php84-php-intl
+          - mysqli      # collapses to php84-php-mysqlnd
+          - xdebug      # versioned PECL: php84-php-pecl-xdebug3
+          - redis       # versioned PECL: php84-php-pecl-redis6
+        fpm: true
+
+  tasks:
+    - name: Converge | Include php role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
