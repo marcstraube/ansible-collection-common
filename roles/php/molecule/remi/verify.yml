@@ -1,0 +1,97 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    #
+    # Extension packages — the Remi map resolved to real php84-php-*
+    # package names and dnf actually installed them.
+    #
+
+    - name: Verify | Gather installed packages
+      ansible.builtin.package_facts:
+        manager: rpm
+
+    - name: Verify | Assert expected Remi extension packages are installed
+      ansible.builtin.assert:
+        that:
+          - "item in ansible_facts.packages"
+        fail_msg: "Expected Remi package not installed: {{ item }}"
+      loop:
+        - php84-php-cli
+        - php84-php-fpm
+        - php84-php-gd
+        - php84-php-intl
+        - php84-php-mysqlnd    # mysqli collapses here
+        - php84-php-pecl-xdebug3
+        - php84-php-pecl-redis6
+
+    - name: Verify | Assert AppStream package names were not installed
+      ansible.builtin.assert:
+        that:
+          - "item not in ansible_facts.packages"
+        fail_msg: "AppStream package unexpectedly installed on Remi path: {{ item }}"
+      loop:
+        - php-pecl-xdebug3
+        - php-gd
+
+    #
+    # Loaded modules — the SCL php84 binary loads the requested extensions.
+    #
+
+    - name: Verify | List loaded modules (php84)
+      ansible.builtin.command:
+        cmd: /usr/bin/php84 -m
+      register: __verify_php84_modules
+      changed_when: false
+
+    - name: Verify | Assert requested extensions are loaded
+      ansible.builtin.assert:
+        that:
+          - "'curl' in __verify_php84_modules.stdout"
+          - "'gd' in __verify_php84_modules.stdout"
+          - "'intl' in __verify_php84_modules.stdout"
+          - "'mysqli' in __verify_php84_modules.stdout"
+          - "'xdebug' in __verify_php84_modules.stdout"
+          - "'redis' in __verify_php84_modules.stdout"
+        fail_msg: >-
+          Expected extensions not loaded by php84:
+          {{ __verify_php84_modules.stdout }}
+
+    #
+    # Default-version symlink points at the Remi SCL binary.
+    #
+
+    - name: Verify | Check default php symlink
+      ansible.builtin.stat:
+        path: /usr/local/bin/php
+      register: __verify_php_link
+
+    - name: Verify | Assert default php links to php84
+      ansible.builtin.assert:
+        that:
+          - __verify_php_link.stat.exists
+          - __verify_php_link.stat.islnk
+          - __verify_php_link.stat.lnk_target == '/usr/bin/php84'
+        fail_msg: >-
+          /usr/local/bin/php does not link to /usr/bin/php84:
+          {{ __verify_php_link.stat.lnk_target | default('missing') }}
+
+    #
+    # FPM service for the Remi SCL version.
+    #
+
+    - name: Verify | Check Remi FPM service
+      ansible.builtin.systemd_service:
+        name: php84-php-fpm
+      register: __verify_remi_fpm
+
+    - name: Verify | Assert Remi FPM is active and enabled
+      ansible.builtin.assert:
+        that:
+          - __verify_remi_fpm.status.ActiveState == 'active'
+          - __verify_remi_fpm.status.UnitFileState == 'enabled'
+        fail_msg: >-
+          php84-php-fpm not active/enabled:
+          {{ __verify_remi_fpm.status.ActiveState }}

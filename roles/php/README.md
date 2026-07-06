@@ -249,6 +249,25 @@ fall back to `<prefix><name>`. A handful of extensions (`redis`, `mongodb`,
 `grpc`) are not shipped by the AUR `phpXX` bundle and will hit the fallback —
 override `php_versions[].extensions` or supply your own AUR PKGBUILD.
 
+### RHEL Extension Mapping
+
+RHEL uses two maps for the same reason Arch does — the AppStream and Remi
+package layouts differ:
+
+| Map                        | `php_redhat_repo` | Value semantics           |
+|----------------------------|-------------------|---------------------------|
+| `__php_extension_map`      | `appstream`       | Concrete package name     |
+| `__php_extension_map_remi` | `remi`            | Suffix (prefix applied)   |
+
+On AppStream, values are full package names (`php-gd`, `php-pecl-xdebug3`).
+On Remi (SCL parallel install), values are suffixes applied after the
+versioned prefix `php<XX>-php-`, so `xdebug` resolves to
+`php84-php-pecl-xdebug3` and `gd` to `php84-php-gd`. Empty string `''` marks
+an extension as built into the base `php<XX>-php` package. Remi ships no
+unversioned ImageMagick binding — `imagick` maps to `pecl-imagick-im7`
+(ImageMagick 7). Version digits in PECL suffixes (`redis6`, `xdebug3`) track
+Remi's current packaging and are verified against `rpms.remirepo.net`.
+
 ### Default Version Handling
 
 | OS     | Mechanism                                       |

@@ -1,0 +1,32 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache
+      ansible.builtin.dnf:
+        update_cache: true
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Install EPEL
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Install Remi repository
+      ansible.builtin.dnf:
+        name: "https://rpms.remirepo.net/enterprise/remi-release-{{ ansible_facts['distribution_major_version'] }}.rpm"
+        state: present
+        disable_gpg_check: true
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Update cache after repos
+      ansible.builtin.dnf:
+        update_cache: true
+      retries: 3
+      delay: 5

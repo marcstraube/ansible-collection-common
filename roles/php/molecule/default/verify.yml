@@ -330,3 +330,62 @@
           AUR build-list assertion failed.
           Got: {{ __verify_aur_packages }}
       when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
+    # Remi build-list logic (RedHat only)
+    #
+    # A live Remi side-by-side (SCL) install conflicts with the AppStream
+    # stack the converge already sets up, so — as with the AUR path above —
+    # the Remi extension-map selection and prefix application are validated
+    # by mirroring the install_version.yml build logic against the role's
+    # vars file. Catches regressions where the Remi map drifts from the
+    # php<XX>-php-* SCL naming or the prefix stops being applied.
+
+    - name: Verify | Load RedHat role vars (Remi build-list test)
+      ansible.builtin.include_vars:
+        file: '{{ playbook_dir }}/../../vars/RedHat.yml'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Build expected Remi package list
+      ansible.builtin.set_fact:
+        __verify_remi_packages: >-
+          {{ ['php84-php-cli'] + ['php84-php-fpm'] +
+             _mapped_final +
+             (_unmapped | map('regex_replace', '^(.*)$', 'php84-php-' + '\1') | list) }}
+      vars:
+        _exts: [curl, mbstring, intl, gd, xdebug, redis, mysqli, xsl, pdo_sqlite, json]
+        _map: '{{ __php_extension_map_remi }}'
+        _mapped_raw: "{{ _exts | select('in', _map) | map('extract', _map) | reject('equalto', '') | list }}"
+        _unmapped: "{{ _exts | reject('in', _map) | list }}"
+        _mapped_final: "{{ _mapped_raw | map('regex_replace', '^(.*)$', 'php84-php-' + '\\1') | list }}"
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Assert Remi build-list contains expected packages
+      ansible.builtin.assert:
+        that:
+          # Core SCL packages
+          - "'php84-php-cli' in __verify_remi_packages"
+          - "'php84-php-fpm' in __verify_remi_packages"
+          # Mapped subpackages get the versioned SCL prefix applied
+          - "'php84-php-mbstring' in __verify_remi_packages"
+          - "'php84-php-intl' in __verify_remi_packages"
+          - "'php84-php-gd' in __verify_remi_packages"
+          # PECL suffixes carry the version digit
+          - "'php84-php-pecl-xdebug3' in __verify_remi_packages"
+          - "'php84-php-pecl-redis6' in __verify_remi_packages"
+          # Collapsed subpackages: mysqli -> mysqlnd, xsl -> xml
+          - "'php84-php-mysqlnd' in __verify_remi_packages"
+          - "'php84-php-xml' in __verify_remi_packages"
+          # pdo_sqlite is bundled into the pdo subpackage
+          - "'php84-php-pdo' in __verify_remi_packages"
+          # AppStream package names must not leak into the Remi path
+          - "'php-gd' not in __verify_remi_packages"
+          - "'php-pecl-xdebug3' not in __verify_remi_packages"
+          - "'php-intl' not in __verify_remi_packages"
+          # Built-in extensions (curl, json) are skipped, not installed
+          - "'php84-php-curl' not in __verify_remi_packages"
+          - "'php84-php-json' not in __verify_remi_packages"
+        fail_msg: |
+          Remi build-list assertion failed.
+          Got: {{ __verify_remi_packages }}
+      when: ansible_facts['os_family'] == 'RedHat'
