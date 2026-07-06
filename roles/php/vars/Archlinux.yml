@@ -163,3 +163,4 @@ __php_extension_map_aur:
   memcached: 'memcached'
   igbinary: 'igbinary'
   xdebug: 'xdebug'
+  pcov: 'pcov'

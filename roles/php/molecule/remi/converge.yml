@@ -18,6 +18,7 @@
           - mysqli      # collapses to php84-php-mysqlnd
           - xdebug      # versioned PECL: php84-php-pecl-xdebug3
           - redis       # versioned PECL: php84-php-pecl-redis6
+          - pcov        # PECL, Remi-only: php84-php-pecl-pcov
         fpm: true
 
   tasks:

@@ -295,7 +295,7 @@
              _mapped_final +
              (_unmapped | map('regex_replace', '^(.*)$', 'php84-' + '\1') | list) }}
       vars:
-        _exts: [curl, mbstring, intl, pgsql, gd, imagick, xdebug, redis, json]
+        _exts: [curl, mbstring, intl, pgsql, gd, imagick, xdebug, pcov, redis, json]
         _map: '{{ __php_extension_map_aur }}'
         _mapped_raw: "{{ _exts | select('in', _map) | map('extract', _map) | reject('equalto', '') | list }}"
         _unmapped: "{{ _exts | reject('in', _map) | list }}"
@@ -316,6 +316,7 @@
           - "'php84-gd' in __verify_aur_packages"
           - "'php84-imagick' in __verify_aur_packages"
           - "'php84-xdebug' in __verify_aur_packages"
+          - "'php84-pcov' in __verify_aur_packages"
           # Official-only package names must not leak into the AUR path
           - "'php-curl' not in __verify_aur_packages"
           - "'php-pgsql' not in __verify_aur_packages"
@@ -353,7 +354,7 @@
              _mapped_final +
              (_unmapped | map('regex_replace', '^(.*)$', 'php84-php-' + '\1') | list) }}
       vars:
-        _exts: [curl, mbstring, intl, gd, xdebug, redis, mysqli, xsl, pdo_sqlite, json]
+        _exts: [curl, mbstring, intl, gd, xdebug, redis, pcov, mysqli, xsl, pdo_sqlite, json]
         _map: '{{ __php_extension_map_remi }}'
         _mapped_raw: "{{ _exts | select('in', _map) | map('extract', _map) | reject('equalto', '') | list }}"
         _unmapped: "{{ _exts | reject('in', _map) | list }}"
@@ -373,6 +374,8 @@
           # PECL suffixes carry the version digit
           - "'php84-php-pecl-xdebug3' in __verify_remi_packages"
           - "'php84-php-pecl-redis6' in __verify_remi_packages"
+          # pcov is Remi-only, resolved through the Remi map
+          - "'php84-php-pecl-pcov' in __verify_remi_packages"
           # Collapsed subpackages: mysqli -> mysqlnd, xsl -> xml
           - "'php84-php-mysqlnd' in __verify_remi_packages"
           - "'php84-php-xml' in __verify_remi_packages"

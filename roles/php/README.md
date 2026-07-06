@@ -242,12 +242,17 @@ Examples:
 
 - `pgsql` → `php-pgsql` (official) / `php84-pgsql` (AUR)
 - `xdebug` → `xdebug` (official) / `php84-xdebug` (AUR)
+- `pcov` → AUR only (`php84-pcov`); not in the official repos
 
 In both maps an empty string `''` marks an extension as built into the core
 package (no separate sub-package installed). Extensions missing from the map
 fall back to `<prefix><name>`. A handful of extensions (`redis`, `mongodb`,
 `grpc`) are not shipped by the AUR `phpXX` bundle and will hit the fallback —
 override `php_versions[].extensions` or supply your own AUR PKGBUILD.
+
+`pcov` is the inverse case: it exists only in the AUR, so it is available on
+the AUR path (`php84-pcov`) but not through the official `php` package, and is
+therefore absent from `__php_extension_map_official`.
 
 ### RHEL Extension Mapping
 
@@ -267,6 +272,11 @@ an extension as built into the base `php<XX>-php` package. Remi ships no
 unversioned ImageMagick binding — `imagick` maps to `pecl-imagick-im7`
 (ImageMagick 7). Version digits in PECL suffixes (`redis6`, `xdebug3`) track
 Remi's current packaging and are verified against `rpms.remirepo.net`.
+
+`pcov` is packaged only for Remi (`php<XX>-php-pecl-pcov`), not for AppStream
+or EPEL. On the default AppStream path it maps to `''` (a no-op), so requesting
+it installs nothing rather than failing; use `php_redhat_repo: 'remi'` to
+install it.
 
 ### Default Version Handling
 

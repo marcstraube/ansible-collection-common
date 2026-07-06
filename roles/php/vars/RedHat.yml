@@ -77,6 +77,11 @@ __php_extension_map:
   mongodb: 'php-pecl-mongodb'
   redis: 'php-pecl-redis'
   xdebug: 'php-pecl-xdebug3'
+  # pcov is not packaged for AppStream or EPEL — it is only available via
+  # the Remi repository (php_redhat_repo: 'remi', see
+  # __php_extension_map_remi below). Mapped to '' so that an AppStream
+  # request is an intentional no-op rather than a failing install.
+  pcov: ''
 
 # Extension name mapping for the Remi SCL layout (php_redhat_repo == 'remi').
 # Unlike __php_extension_map above (full AppStream package names used
@@ -138,3 +143,4 @@ __php_extension_map_remi:
   redis: 'pecl-redis6'
   xdebug: 'pecl-xdebug3'
   zip: 'pecl-zip'
+  pcov: 'pecl-pcov'
