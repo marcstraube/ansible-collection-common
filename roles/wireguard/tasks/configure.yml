@@ -16,3 +16,14 @@
   when:
     - __wireguard_config_changed is changed
     - wireguard_service_enabled | bool
+
+# Restarting the tunnel can drop the control connection when Ansible reaches the
+# host through this very interface. Wait for the connection to recover before
+# continuing so the play does not fail on the 60 s Ansible default.
+- name: Configure | Wait for connection recovery
+  ansible.builtin.wait_for_connection:
+    delay: '{{ wireguard_service_wait_for_connection_delay }}'
+    timeout: '{{ wireguard_service_wait_for_connection_timeout }}'
+  when:
+    - __wireguard_config_changed is changed
+    - wireguard_service_enabled | bool
