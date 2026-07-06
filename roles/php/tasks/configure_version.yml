@@ -36,6 +36,22 @@
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_ver != __php_system_version
 
+# Override for RedHat Remi (versioned SCL paths, one set per side-by-side
+# version). install_version.yml bakes these facts to the last installed
+# version, so recompute them per version here — otherwise every version's
+# php.ini/www.conf is written to the last version's /etc/opt/remi/php<XX> dir.
+- name: Configure Version | Set RedHat Remi config paths
+  ansible.builtin.set_fact:
+    __php_conf_dirs:
+      - '/etc/opt/remi/php{{ __php_ver_compact }}/php.d'
+    __php_fpm_pool_dir: '/etc/opt/remi/php{{ __php_ver_compact }}/php-fpm.d'
+    __php_fpm_listen_default: >-
+      /var/opt/remi/php{{ __php_ver_compact }}/run/php-fpm/www.sock
+    __php_fpm_service: 'php{{ __php_ver_compact }}-php-fpm'
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'remi'
+
 - name: Configure Version | Set effective listen socket
   ansible.builtin.set_fact:
     __php_effective_listen: '{{ __php_fpm_listen_default }}'
