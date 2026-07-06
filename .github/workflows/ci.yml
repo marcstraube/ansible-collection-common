@@ -205,28 +205,34 @@ jobs:
             fi
           fi
 
-          # Build JSON matrix: one entry per (role, platform) pair.
-          # Platforms are parsed from each role's molecule.yml so single-platform
-          # roles get a single entry and multi-platform roles get one per platform.
+          # Build JSON matrix: one entry per (role, scenario, platform).
+          # All molecule scenarios (default plus extras like 'remi') are
+          # discovered; platforms come from each scenario's molecule.yml.
+          # Only podman scenarios run here — Vagrant scenarios need VMs.
           MATRIX="["
           FIRST=true
           for role in $ROLES; do
             [ -z "$role" ] && continue
-            platforms=$(python3 -c "
+            for scenario_dir in roles/$role/molecule/*/; do
+              scenario=$(basename "$scenario_dir")
+              mol="${scenario_dir}molecule.yml"
+              [ -f "$mol" ] || continue
+              grep -q 'name: podman' "$mol" || continue
+              platforms=$(python3 -c "
           import yaml, sys
           with open(sys.argv[1]) as f:
               data = yaml.safe_load(f)
           for p in data.get('platforms', []):
               print(p['name'])
-          " "roles/$role/molecule/default/molecule.yml")
-
-            for platform in $platforms; do
-              if [ "$FIRST" = "true" ]; then
-                FIRST=false
-              else
-                MATRIX="${MATRIX},"
-              fi
-              MATRIX="${MATRIX}{\"role\":\"${role}\",\"platform\":\"${platform}\"}"
+          " "$mol")
+              for platform in $platforms; do
+                if [ "$FIRST" = "true" ]; then
+                  FIRST=false
+                else
+                  MATRIX="${MATRIX},"
+                fi
+                MATRIX="${MATRIX}{\"role\":\"${role}\",\"scenario\":\"${scenario}\",\"platform\":\"${platform}\"}"
+              done
             done
           done
           MATRIX="${MATRIX}]"
@@ -247,7 +253,7 @@ jobs:
   # full matrix on schedule / workflow_dispatch)
   # =============================================================================
   molecule-roles:
-    name: Molecule ${{ matrix.role }} (${{ matrix.platform }})
+    name: Molecule ${{ matrix.role }} / ${{ matrix.scenario }} (${{ matrix.platform }})
     runs-on: ubuntu-latest
     needs: [lint, markdown-lint, yaml-lint, detect-changes]
     if: needs.detect-changes.outputs.has_roles == 'true'
@@ -277,7 +283,7 @@ jobs:
 
       - name: Run Molecule test
         working-directory: roles/${{ matrix.role }}
-        run: molecule test
+        run: molecule test -s ${{ matrix.scenario }}
         env:
           MOLECULE_PLATFORM_NAME: ${{ matrix.platform }}
           PY_COLORS: '1'
