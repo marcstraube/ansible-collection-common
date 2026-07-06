@@ -20,6 +20,12 @@
           - redis       # versioned PECL: php84-php-pecl-redis6
           - pcov        # PECL, Remi-only: php84-php-pecl-pcov
         fpm: true
+      # Second version proves Remi side-by-side multi-version installs (#192):
+      # both php<XX>-php-fpm services and per-version /etc/opt/remi paths.
+      - version: '8.3'
+        extensions:
+          - gd          # separate subpackage: php83-php-gd
+        fpm: true
 
   tasks:
     - name: Converge | Include php role  # noqa: role-name[path]

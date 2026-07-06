@@ -30,6 +30,17 @@
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_ver != __php_system_version
 
+# Override for RedHat Remi (versioned SCL service, one per side-by-side version).
+# install_version.yml bakes __php_fpm_service to the last installed version, so
+# recompute it per version here or only that version's service gets managed.
+- name: Service Version | Set RedHat Remi service name
+  ansible.builtin.set_fact:
+    __php_fpm_service: 'php{{ __php_ver_compact }}-php-fpm'
+  when:
+    - __php_service_item.fpm | default(true) | bool
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'remi'
+
 - name: Service Version | Manage PHP-FPM
   ansible.builtin.systemd_service:
     name: '{{ __php_fpm_service }}'

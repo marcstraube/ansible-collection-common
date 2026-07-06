@@ -27,6 +27,10 @@
         - php84-php-pecl-xdebug3
         - php84-php-pecl-redis6
         - php84-php-pecl-pcov
+        # Second side-by-side version (8.3)
+        - php83-php-cli
+        - php83-php-fpm
+        - php83-php-gd
 
     - name: Verify | Assert AppStream package names were not installed
       ansible.builtin.assert:
@@ -81,19 +85,46 @@
           {{ __verify_php_link.stat.lnk_target | default('missing') }}
 
     #
-    # FPM service for the Remi SCL version.
+    # Per-version FPM services and config — multi-version side-by-side (#192).
+    # Both requested versions (8.4 default + 8.3) must have their own active
+    # SCL FPM service and their own /etc/opt/remi/php<XX>/ config files.
     #
 
-    - name: Verify | Check Remi FPM service
+    - name: Verify | Check per-version Remi FPM services
       ansible.builtin.systemd_service:
-        name: php84-php-fpm
+        name: 'php{{ item }}-php-fpm'
       register: __verify_remi_fpm
+      loop:
+        - '84'
+        - '83'
 
-    - name: Verify | Assert Remi FPM is active and enabled
+    - name: Verify | Assert per-version Remi FPM services active and enabled
       ansible.builtin.assert:
         that:
-          - __verify_remi_fpm.status.ActiveState == 'active'
-          - __verify_remi_fpm.status.UnitFileState == 'enabled'
+          - item.status.ActiveState == 'active'
+          - item.status.UnitFileState == 'enabled'
         fail_msg: >-
-          php84-php-fpm not active/enabled:
-          {{ __verify_remi_fpm.status.ActiveState }}
+          php{{ item.item }}-php-fpm not active/enabled:
+          {{ item.status.ActiveState }}
+      loop: '{{ __verify_remi_fpm.results }}'
+      loop_control:
+        label: 'php{{ item.item }}-php-fpm'
+
+    - name: Verify | Check per-version Remi config files
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: __verify_remi_conf
+      loop:
+        - /etc/opt/remi/php84/php.d/99-ansible.ini
+        - /etc/opt/remi/php84/php-fpm.d/www.conf
+        - /etc/opt/remi/php83/php.d/99-ansible.ini
+        - /etc/opt/remi/php83/php-fpm.d/www.conf
+
+    - name: Verify | Assert per-version Remi config files deployed
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: 'Remi config file missing: {{ item.item }}'
+      loop: '{{ __verify_remi_conf.results }}'
+      loop_control:
+        label: '{{ item.item }}'
