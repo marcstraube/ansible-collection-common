@@ -26,6 +26,7 @@
         - php84-php-mysqlnd    # mysqli collapses here
         - php84-php-pecl-xdebug3
         - php84-php-pecl-redis6
+        - php84-php-pecl-pcov
 
     - name: Verify | Assert AppStream package names were not installed
       ansible.builtin.assert:
@@ -55,6 +56,7 @@
           - "'mysqli' in __verify_php84_modules.stdout"
           - "'xdebug' in __verify_php84_modules.stdout"
           - "'redis' in __verify_php84_modules.stdout"
+          - "'pcov' in __verify_php84_modules.stdout"
         fail_msg: >-
           Expected extensions not loaded by php84:
           {{ __verify_php84_modules.stdout }}
