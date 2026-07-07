@@ -2,6 +2,32 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [2.2.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.1.1...v2.2.0) (2026-07-07)
+
+
+### Features
+
+* add wait_for_connection recovery timeout to firewalld and wireguard ([#258](https://github.com/marcstraube/ansible-collection-common/issues/258)) ([3c6685b](https://github.com/marcstraube/ansible-collection-common/commit/3c6685bf508ce6f80775e5b6aa81b2c8b3e21299))
+* **networkmanager:** add zone option for firewalld zone assignment ([#234](https://github.com/marcstraube/ansible-collection-common/issues/234)) ([98d7b03](https://github.com/marcstraube/ansible-collection-common/commit/98d7b030d433895e96cdc04f9f69a2774bdcc3ba))
+* **openssh:** add optional SSH client tools (sshm, mosh, sshfs, autossh) ([#261](https://github.com/marcstraube/ansible-collection-common/issues/261)) ([854ed63](https://github.com/marcstraube/ansible-collection-common/commit/854ed63858c72d8227c571976bf3ad557fd31277))
+* **package_management:** add makepkg_devtools_enabled toggle ([#243](https://github.com/marcstraube/ansible-collection-common/issues/243)) ([8db4180](https://github.com/marcstraube/ansible-collection-common/commit/8db41802d0e73fb90111e0cfb695579a6fea27d0))
+* **package_management:** add makepkg_nvchecker_enabled toggle ([#250](https://github.com/marcstraube/ansible-collection-common/issues/250)) ([96272c4](https://github.com/marcstraube/ansible-collection-common/commit/96272c48799ce0a0b3420424a3f5c06a9afc7ab4)), closes [#231](https://github.com/marcstraube/ansible-collection-common/issues/231)
+* **php:** add pcov to the extension map ([#253](https://github.com/marcstraube/ansible-collection-common/issues/253)) ([9410da8](https://github.com/marcstraube/ansible-collection-common/commit/9410da860f01a05bc87d414ec27f110440c5586f)), closes [#217](https://github.com/marcstraube/ansible-collection-common/issues/217)
+
+
+### Bug Fixes
+
+* **networkmanager:** reload daemon config instead of restarting to preserve SSH ([#239](https://github.com/marcstraube/ansible-collection-common/issues/239)) ([c2f5bdc](https://github.com/marcstraube/ansible-collection-common/commit/c2f5bdc2a5f98d6b1218d7282b2e63d2ef3d680e)), closes [#238](https://github.com/marcstraube/ansible-collection-common/issues/238)
+* **nodejs:** don't fail verify in check mode when Node.js is absent ([#237](https://github.com/marcstraube/ansible-collection-common/issues/237)) ([5563c39](https://github.com/marcstraube/ansible-collection-common/commit/5563c397a1c819505096a64e07ee3fe93cd540ab))
+* **package_management:** grant aur_shared access to paru clone dir via ACLs ([#262](https://github.com/marcstraube/ansible-collection-common/issues/262)) ([7ffb05e](https://github.com/marcstraube/ansible-collection-common/commit/7ffb05e9fd658e5b4e77bbf085da03e093bc51ef))
+* **php:** recompute per-version Remi facts in configure and service phases ([#255](https://github.com/marcstraube/ansible-collection-common/issues/255)) ([8730123](https://github.com/marcstraube/ansible-collection-common/commit/8730123a9afb523f43c7623aec61c0109a557cca)), closes [#254](https://github.com/marcstraube/ansible-collection-common/issues/254) [#192](https://github.com/marcstraube/ansible-collection-common/issues/192)
+* **php:** resolve Remi extensions to versioned SCL package names ([#252](https://github.com/marcstraube/ansible-collection-common/issues/252)) ([a54b7b3](https://github.com/marcstraube/ansible-collection-common/commit/a54b7b3049caa08dbb58172bf36baa79eddf8a92)), closes [#246](https://github.com/marcstraube/ansible-collection-common/issues/246)
+
+
+### Documentation
+
+* **package_management:** fix Debian repo table markdownlint line-length ([#242](https://github.com/marcstraube/ansible-collection-common/issues/242)) ([0fb6754](https://github.com/marcstraube/ansible-collection-common/commit/0fb6754d8899e42f40883a94520b7c8cd8e7314b))
+
 ## [2.1.1](https://github.com/marcstraube/ansible-collection-common/compare/v2.1.0...v2.1.1) (2026-06-12)
 
 
