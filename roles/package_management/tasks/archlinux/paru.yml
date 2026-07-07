@@ -65,16 +65,15 @@
     permissions: rwX
     state: present
 
-# One-off recovery: restore group access on entries created before the
-# default ACLs were in place, so live hosts recover without manual cleanup.
+# One-off recovery: restore group access on entries created before the default
+# ACLs were in place, so live hosts recover without manual cleanup. setfacl -R
+# is used directly because ansible.posix.acl's recursive mode is not idempotent
+# across versions; changed_when is false because the default ACLs above already
+# guarantee correct permissions for any newly created entry.
 - name: Paru | Recover group permissions on existing clone entries
-  ansible.posix.acl:
-    path: '{{ paru_clone_dir }}'
-    etype: group
-    entity: aur_shared
-    permissions: rwX
-    recursive: true
-    state: present
+  ansible.builtin.command:
+    cmd: 'setfacl -R -m g:aur_shared:rwX -m d:g:aur_shared:rwX {{ paru_clone_dir }}'
+  changed_when: false
 
 - name: Paru | Disable Copy-on-Write on shared clone directory (BTRFS)
   ansible.builtin.file:
