@@ -32,3 +32,19 @@ targets:
     platform: rocky-10
     package: paperkey
     vars_file: vars/RedHat.yml
+  - role: openssh
+    platform: debian-trixie
+    package: sshm
+    vars_file: vars/Debian.yml
+  - role: openssh
+    platform: rocky-9
+    package: sshm
+    vars_file: vars/RedHat-9.yml
+  - role: openssh
+    platform: rocky-10
+    package: sshm
+    vars_file: vars/RedHat.yml
+  - role: openssh
+    platform: rocky-10
+    package: autossh
+    vars_file: vars/RedHat.yml

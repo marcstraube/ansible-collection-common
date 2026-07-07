@@ -67,6 +67,13 @@
     openssh_server_banner_enabled: true
     openssh_server_banner_content: 'Test banner'
 
+    # Test optional SSH client tools.
+    # sshm is AUR-only (Arch); enable it only there — no-op elsewhere.
+    openssh_tools_sshm_enabled: "{{ ansible_facts['os_family'] == 'Archlinux' }}"
+    openssh_tools_mosh_enabled: true
+    openssh_tools_sshfs_enabled: true
+    openssh_tools_autossh_enabled: true
+
   tasks:
     - name: Converge | Include openssh role  # noqa: role-name[path]
       ansible.builtin.include_role:

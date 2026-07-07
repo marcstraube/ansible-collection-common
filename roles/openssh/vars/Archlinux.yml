@@ -24,6 +24,14 @@ __openssh_agent_service: 'ssh-agent.service'
 
 __openssh_apparmor_profile: '/usr/bin/sshd'
 
+# Optional SSH client tools (empty string = not installed via package module)
+# sshm ships via AUR (sshm-bin), handled by the dedicated AUR task.
+__openssh_tools_sshm_pkg: ''
+__openssh_tools_sshm_aur_pkg: 'sshm-bin'
+__openssh_tools_mosh_pkg: 'mosh'
+__openssh_tools_sshfs_pkg: 'sshfs'
+__openssh_tools_autossh_pkg: 'autossh'
+
 # OpenSSH 10.3p1 on Arch
 __openssh_print_lastlog_supported: false
 __openssh_required_rsa_size_supported: true

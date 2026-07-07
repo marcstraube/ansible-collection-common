@@ -457,3 +457,27 @@ openssh_firewalld_zone: 'public'
 
 # Enable AppArmor profile enforcement (Arch/Debian only, not RHEL/Rocky)
 openssh_apparmor_enabled: false
+
+#
+# Optional SSH Client Tools
+#
+# SSH-related tools that ship as separate packages but belong to the
+# OpenSSH workflow. All toggles default to false (purely additive).
+
+# sshm — TUI SSH connection manager with ProxyJump support
+# (github.com/Gu1llaum-3/sshm). Arch: AUR (sshm-bin). Not packaged on
+# Debian/RedHat — toggle is a no-op there.
+openssh_tools_sshm_enabled: false
+
+# mosh — UDP-based mobile shell; survives roaming and suspend
+openssh_tools_mosh_enabled: false
+
+# sshfs — mount remote filesystems over SFTP (FUSE)
+openssh_tools_sshfs_enabled: false
+
+# autossh — wrapper that restarts SSH sessions/tunnels on failure
+openssh_tools_autossh_enabled: false
+
+# UDP port range mosh-server uses. When mosh is enabled and firewalld is
+# active, this range is opened. Format: "start:end" (mosh convention).
+openssh_tools_mosh_udp_port_range: '60000:61000'

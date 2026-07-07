@@ -25,3 +25,12 @@
   when:
     - __openssh_firewalld_status.status.ActiveState | default('') == 'active'
     - openssh_server_additional_ports | length > 0
+
+- name: Firewall | Manage mosh UDP port range
+  ansible.posix.firewalld:
+    port: '{{ openssh_tools_mosh_udp_port_range | replace(":", "-") }}/udp'
+    zone: '{{ openssh_firewalld_zone }}'
+    permanent: true
+    immediate: true
+    state: "{{ openssh_tools_mosh_enabled | bool | ternary('enabled', 'disabled') }}"
+  when: __openssh_firewalld_status.status.ActiveState | default('') == 'active'
