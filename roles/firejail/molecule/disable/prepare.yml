@@ -6,7 +6,6 @@
 
 - name: Prepare | Refresh caches
   hosts: all
-  become: true
   gather_facts: true
 
   tasks:
@@ -42,7 +41,6 @@
 
 - name: Prepare | Pre-install firejail via role
   hosts: all
-  become: true
   gather_facts: true
 
   vars:
