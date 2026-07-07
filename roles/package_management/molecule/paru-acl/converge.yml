@@ -1,0 +1,27 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # Mirror the role default so the post-include simulation task can
+    # reference it (include_role defaults are not exposed to the play).
+    paru_clone_dir: '/var/cache/paru/clone'
+
+  tasks:
+    - name: Converge | Run paru configuration tasks  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: archlinux/paru.yml
+
+    # Reproduce the #228 scenario: aur_builder creates a build directory under
+    # a restrictive umask (as the hardening role sets). runuser is used so the
+    # nologin system user can act without a PAM/login shell. The `creates`
+    # guard keeps the idempotence run clean.
+    - name: Converge | Simulate aur_builder creating a build dir under umask 0077
+      ansible.builtin.command:
+        cmd: >-
+          runuser -u aur_builder -- bash -c
+          'umask 0077; mkdir -p {{ paru_clone_dir }}/testpkg;
+          echo x > {{ paru_clone_dir }}/testpkg/PKGBUILD'
+        creates: '{{ paru_clone_dir }}/testpkg/PKGBUILD'
