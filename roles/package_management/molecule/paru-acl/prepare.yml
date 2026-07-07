@@ -1,0 +1,30 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Install ACL utilities
+      community.general.pacman:
+        name: acl
+        state: present
+      retries: 3
+      delay: 5
+
+    # paru.yml adds aur_builder to the aur_shared group but does not create the
+    # user — that lives in aur.yml, which builds the helper and is out of scope
+    # for this scenario. Create it here so paru.yml can run standalone.
+    - name: Prepare | Create aur_builder user
+      ansible.builtin.user:
+        name: aur_builder
+        home: /var/cache/aur_builder
+        shell: /usr/bin/nologin
+        system: true
+        create_home: true

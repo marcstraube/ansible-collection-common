@@ -1,0 +1,42 @@
+---
+# Focused scenario for the shared paru clone-directory ACLs (issue #228).
+# Runs only tasks/archlinux/paru.yml (not the AUR helper build) on Arch, then
+# asserts that a build directory created by aur_builder under a restrictive
+# umask still inherits aur_shared group access via the default ACLs.
+driver:
+  name: podman
+platforms:
+  - name: package-management-paru-acl-archlinux
+    image: docker.io/marcstraube/archlinux-ansible:latest
+    pre_build_image: true
+    command: /usr/lib/systemd/systemd
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      /run: rw,nosuid,nodev,size=65536k
+      /tmp: rw,nosuid,nodev
+provisioner:
+  name: ansible
+  playbooks:
+    prepare: prepare.yml
+    converge: converge.yml
+    verify: verify.yml
+  inventory:
+    host_vars:
+      package-management-paru-acl-archlinux:
+        ansible_python_interpreter: /usr/bin/python
+  config_options:
+    defaults:
+      allow_broken_conditionals: true
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - dependency
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy

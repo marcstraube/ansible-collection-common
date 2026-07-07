@@ -102,6 +102,12 @@ overrides if needed.
 | `paru_search_by`        | `name-desc`             | Search by field                  |
 | `paru_shared_users`     | `[]`                    | Users sharing AUR clone cache    |
 
+The shared clone directory is group-owned by `aur_shared` with the SGID bit,
+and carries default ACLs granting the group `rwX`. This ensures packages that
+`aur_builder` clones can later be rebuilt by any `aur_shared` member even when
+a restrictive default umask (such as the `hardening` role's `0077`) would
+otherwise strip group permissions from newly created files.
+
 ### Arch Linux - Tools
 
 | Variable                          | Default | Description                          |

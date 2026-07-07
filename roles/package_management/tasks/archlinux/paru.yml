@@ -44,6 +44,37 @@
     group: aur_shared
     mode: '2775'
 
+# The SGID bit propagates the aur_shared group ownership, but a restrictive
+# umask (e.g. hardening's 0077) strips group permissions from files that
+# aur_builder creates. Default ACLs force group-rwX on new entries regardless
+# of the creating user's umask, so other aur_shared members can rebuild.
+- name: Paru | Set default owning-group ACL on shared clone directory
+  ansible.posix.acl:
+    path: '{{ paru_clone_dir }}'
+    default: true
+    etype: group
+    permissions: rwX
+    state: present
+
+- name: Paru | Set default aur_shared ACL on shared clone directory
+  ansible.posix.acl:
+    path: '{{ paru_clone_dir }}'
+    default: true
+    etype: group
+    entity: aur_shared
+    permissions: rwX
+    state: present
+
+# One-off recovery: restore group access on entries created before the default
+# ACLs were in place, so live hosts recover without manual cleanup. setfacl -R
+# is used directly because ansible.posix.acl's recursive mode is not idempotent
+# across versions; changed_when is false because the default ACLs above already
+# guarantee correct permissions for any newly created entry.
+- name: Paru | Recover group permissions on existing clone entries
+  ansible.builtin.command:
+    cmd: 'setfacl -R -m g:aur_shared:rwX -m d:g:aur_shared:rwX {{ paru_clone_dir }}'
+  changed_when: false
+
 - name: Paru | Disable Copy-on-Write on shared clone directory (BTRFS)
   ansible.builtin.file:
     path: '{{ paru_clone_dir }}'
