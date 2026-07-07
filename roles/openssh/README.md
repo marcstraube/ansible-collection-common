@@ -168,6 +168,39 @@ All variables are defined in `defaults/main.yml` with secure defaults.
 |----------------------------|---------|-------------------------------------|
 | `openssh_apparmor_enabled` | `false` | Enable AppArmor profile enforcement |
 
+### Optional SSH Client Tools
+
+Additive tools that ship as separate packages but belong to the OpenSSH
+workflow. All toggles default to `false`.
+
+| Variable                            | Default       | Description                                  |
+|-------------------------------------|---------------|----------------------------------------------|
+| `openssh_tools_sshm_enabled`        | `false`       | sshm — TUI SSH connection manager (Arch/AUR) |
+| `openssh_tools_mosh_enabled`        | `false`       | mosh — UDP mobile shell, survives roaming    |
+| `openssh_tools_sshfs_enabled`       | `false`       | sshfs — mount remote filesystems over SFTP   |
+| `openssh_tools_autossh_enabled`     | `false`       | autossh — auto-restart SSH sessions/tunnels  |
+| `openssh_tools_mosh_udp_port_range` | `60000:61000` | UDP range mosh-server uses (opened in rule)  |
+
+Distro availability:
+
+| Tool      | Arch           | Debian | EL 9 / EL 10      |
+|-----------|----------------|--------|-------------------|
+| `sshm`    | AUR (sshm-bin) | —      | —                 |
+| `mosh`    | extra          | Main   | EPEL              |
+| `sshfs`   | extra          | Main   | EPEL (fuse-sshfs) |
+| `autossh` | extra          | Main   | EPEL              |
+
+`sshm` is only packaged for Arch (via AUR); the toggle is a no-op on Debian
+and EL. When `openssh_tools_mosh_enabled` is `true` and firewalld is active,
+the role opens `openssh_tools_mosh_udp_port_range` (UDP) in the configured
+`openssh_firewalld_zone`.
+
+`mosh` additionally requires a UTF-8 locale on the server, otherwise
+`mosh-server` refuses to start. To propagate the client's locale, forward it
+via sshd by adding `AcceptEnv LANG LC_*` to `openssh_server_extra_sshd_config`.
+The other tools (`sshfs`, `autossh`, `sshm`) need no server-side configuration;
+mount and tunnel definitions remain inventory-driven and out of role scope.
+
 ## Tags
 
 | Tag                 | Scope                  |
@@ -177,6 +210,7 @@ All variables are defined in `defaults/main.yml` with secure defaults.
 | `openssh:hostkeys`  | Host key generation    |
 | `openssh:configure` | Configuration + moduli |
 | `openssh:client`    | Client config          |
+| `openssh:tools`     | Optional client tools  |
 | `openssh:service`   | Service management     |
 | `openssh:firewall`  | Firewalld rules        |
 | `openssh:apparmor`  | AppArmor enforcement   |

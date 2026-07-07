@@ -323,6 +323,39 @@
         fail_msg: 'Client config missing'
 
     #
+    # Optional SSH Client Tools
+    #
+
+    - name: Verify | Check mosh-server binary exists
+      ansible.builtin.command:
+        cmd: which mosh-server
+      register: __openssh_mosh_bin
+      changed_when: false
+      failed_when: __openssh_mosh_bin.rc != 0
+
+    - name: Verify | Check sshfs binary exists
+      ansible.builtin.command:
+        cmd: which sshfs
+      register: __openssh_sshfs_bin
+      changed_when: false
+      failed_when: __openssh_sshfs_bin.rc != 0
+
+    - name: Verify | Check autossh binary exists
+      ansible.builtin.command:
+        cmd: which autossh
+      register: __openssh_autossh_bin
+      changed_when: false
+      failed_when: __openssh_autossh_bin.rc != 0
+
+    - name: Verify | Check sshm binary exists (Arch)
+      ansible.builtin.command:
+        cmd: which sshm
+      register: __openssh_sshm_bin
+      changed_when: false
+      failed_when: __openssh_sshm_bin.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    #
     # Configuration Validation
     #
 

@@ -1,0 +1,38 @@
+---
+# Optional SSH client tools that ship as separate packages but belong to
+# the OpenSSH workflow. Each tool is gated by its own toggle; all default
+# to false. Enabled distro packages install in a single transaction;
+# empty strings (tools not packaged on the current OS) are filtered out.
+# sshm is AUR-only and installed via a dedicated task on Arch.
+
+- name: Tools | Build package list
+  ansible.builtin.set_fact:
+    __openssh_tools_packages: >-
+      {{
+        [
+          (openssh_tools_sshm_enabled | bool)    | ternary(__openssh_tools_sshm_pkg, ''),
+          (openssh_tools_mosh_enabled | bool)    | ternary(__openssh_tools_mosh_pkg, ''),
+          (openssh_tools_sshfs_enabled | bool)   | ternary(__openssh_tools_sshfs_pkg, ''),
+          (openssh_tools_autossh_enabled | bool) | ternary(__openssh_tools_autossh_pkg, ''),
+        ] | reject('equalto', '') | list
+      }}
+
+- name: Tools | Install SSH client tools
+  ansible.builtin.package:
+    name: '{{ __openssh_tools_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: __openssh_tools_packages | length > 0
+
+- name: Tools | Install sshm from AUR (Arch)
+  become: true
+  become_user: aur_builder
+  kewlfft.aur.aur:
+    name: '{{ __openssh_tools_sshm_aur_pkg }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - openssh_tools_sshm_enabled | bool

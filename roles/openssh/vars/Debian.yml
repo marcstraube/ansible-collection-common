@@ -25,6 +25,13 @@ __openssh_agent_service: 'ssh-agent.service'
 
 __openssh_apparmor_profile: '/usr/sbin/sshd'
 
+# Optional SSH client tools (empty string = not packaged upstream)
+# sshm is not packaged for Debian → no-op (Layer-1); see drift workflow.
+__openssh_tools_sshm_pkg: ''
+__openssh_tools_mosh_pkg: 'mosh'
+__openssh_tools_sshfs_pkg: 'sshfs'
+__openssh_tools_autossh_pkg: 'autossh'
+
 # OpenSSH 10.0p1 on Debian Trixie
 __openssh_print_lastlog_supported: false
 __openssh_required_rsa_size_supported: true

@@ -52,6 +52,24 @@
     - openssh
     - openssh:client
 
+- name: Main | Include SSH client tools tasks
+  ansible.builtin.include_tasks:
+    file: tools.yml
+    apply:
+      tags:
+        - openssh
+        - openssh:tools
+  when:
+    - openssh_enabled | bool
+    - >-
+      openssh_tools_sshm_enabled | bool
+      or openssh_tools_mosh_enabled | bool
+      or openssh_tools_sshfs_enabled | bool
+      or openssh_tools_autossh_enabled | bool
+  tags:
+    - openssh
+    - openssh:tools
+
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
   when: openssh_enabled | bool
