@@ -332,6 +332,7 @@
       register: __openssh_mosh_bin
       changed_when: false
       failed_when: __openssh_mosh_bin.rc != 0
+      when: __openssh_tools_mosh_pkg | length > 0
 
     - name: Verify | Check sshfs binary exists
       ansible.builtin.command:
@@ -339,6 +340,7 @@
       register: __openssh_sshfs_bin
       changed_when: false
       failed_when: __openssh_sshfs_bin.rc != 0
+      when: __openssh_tools_sshfs_pkg | length > 0
 
     - name: Verify | Check autossh binary exists
       ansible.builtin.command:
@@ -346,6 +348,7 @@
       register: __openssh_autossh_bin
       changed_when: false
       failed_when: __openssh_autossh_bin.rc != 0
+      when: __openssh_tools_autossh_pkg | length > 0
 
     - name: Verify | Check sshm binary exists (Arch)
       ansible.builtin.command:

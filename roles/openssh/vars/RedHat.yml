@@ -25,11 +25,12 @@ __openssh_agent_service: 'ssh-agent.service'
 
 # Optional SSH client tools (from EPEL; empty string = not packaged)
 # sshm is not packaged for EL → no-op (Layer-1); see drift workflow.
+# autossh is not in EPEL 10 (only EPEL 9) → no-op here; see drift workflow.
 # sshfs ships as fuse-sshfs on EL.
 __openssh_tools_sshm_pkg: ''
 __openssh_tools_mosh_pkg: 'mosh'
 __openssh_tools_sshfs_pkg: 'fuse-sshfs'
-__openssh_tools_autossh_pkg: 'autossh'
+__openssh_tools_autossh_pkg: ''
 
 # OpenSSH 9.9p1 on Rocky 10 (baseline)
 __openssh_print_lastlog_supported: false

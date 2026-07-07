@@ -183,15 +183,17 @@ workflow. All toggles default to `false`.
 
 Distro availability:
 
-| Tool      | Arch           | Debian | EL 9 / EL 10      |
-|-----------|----------------|--------|-------------------|
-| `sshm`    | AUR (sshm-bin) | —      | —                 |
-| `mosh`    | extra          | Main   | EPEL              |
-| `sshfs`   | extra          | Main   | EPEL (fuse-sshfs) |
-| `autossh` | extra          | Main   | EPEL              |
+| Tool      | Arch           | Debian | EL 9              | EL 10             |
+|-----------|----------------|--------|-------------------|-------------------|
+| `sshm`    | AUR (sshm-bin) | —      | —                 | —                 |
+| `mosh`    | extra          | Main   | EPEL              | EPEL              |
+| `sshfs`   | extra          | Main   | EPEL (fuse-sshfs) | EPEL (fuse-sshfs) |
+| `autossh` | extra          | Main   | EPEL              | — (not packaged)  |
 
 `sshm` is only packaged for Arch (via AUR); the toggle is a no-op on Debian
-and EL. When `openssh_tools_mosh_enabled` is `true` and firewalld is active,
+and EL. `autossh` is in EPEL 9 but not EPEL 10, so its toggle is a no-op on
+EL 10. No-op tools are re-probed by the drift-detection workflow and restored
+once packaged. When `openssh_tools_mosh_enabled` is `true` and firewalld is active,
 the role opens `openssh_tools_mosh_udp_port_range` (UDP) in the configured
 `openssh_firewalld_zone`.
 
