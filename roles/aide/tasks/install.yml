@@ -1,7 +1,7 @@
 ---
 - name: Install | Import GPG keys for AUR package verification
   become: true
-  become_user: 'aur_builder'
+  become_user: "{{ aur_builder_user | default('aur_builder') }}"
   ansible.builtin.command:
     cmd: 'gpg --keyserver keys.openpgp.org --recv-keys {{ item }}'
   loop: '{{ __aide_gpg_keys | default([]) }}'
@@ -13,7 +13,7 @@
 
 - name: Install | AIDE package (AUR)
   become: true
-  become_user: 'aur_builder'
+  become_user: "{{ aur_builder_user | default('aur_builder') }}"
   kewlfft.aur.aur:
     name: '{{ __aide_aur_packages.aide }}'
     state: present
