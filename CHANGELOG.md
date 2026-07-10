@@ -2,6 +2,13 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [2.2.1](https://github.com/marcstraube/ansible-collection-common/compare/v2.2.0...v2.2.1) (2026-07-10)
+
+
+### Bug Fixes
+
+* replace hardcoded aur_builder with aur_builder_user variable ([#265](https://github.com/marcstraube/ansible-collection-common/issues/265)) ([bc91bad](https://github.com/marcstraube/ansible-collection-common/commit/bc91bad07411e7699dec01d3dd5f035b411c01ca))
+
 ## [2.2.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.1.1...v2.2.0) (2026-07-07)
 
 
