@@ -182,7 +182,7 @@ jobs:
           BODY=$(cat <<EOF
           The drift-detection workflow successfully probed \`${{ matrix.package }}\` on \`${{ matrix.platform }}\` — the package is installable again.
 
-          To restore: revert the Layer-1 no-op in \`roles/${{ matrix.role }}/${{ matrix.vars_file }}\` (set the package back to its upstream name and drop the explanatory comment), then run the role's molecule to confirm.
+          To restore: revert the Layer-1 no-op in \`roles/${{ matrix.role }}/${{ matrix.vars_file }}\` (set the package back to its upstream name and drop the explanatory comment), remove this package's entry from \`.github/drift-targets.yml\`, then run the role's molecule to confirm.
 
           - Role: \`${{ matrix.role }}\`
           - Package: \`${{ matrix.package }}\`
