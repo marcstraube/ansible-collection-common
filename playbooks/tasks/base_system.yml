@@ -155,6 +155,24 @@
   # Always include — the role dispatches install/configure (enabled=true) or
   # cleanup (enabled=false) internally based on firejail_enabled.
 
+# NetworkManager runs before firewalld so interface-to-zone bindings
+# (connection.zone) are in place before firewalld locks down. Otherwise, on a
+# fresh host, firewalld applies its zone policy while every interface is still
+# in the default zone — cutting SSH if the management interface's zone is the
+# only one allowing it. NM stays ahead of the remaining networking roles
+# (resolved/wireguard/etc.) which do not depend on it.
+- name: Base System | Include networkmanager role
+  ansible.builtin.include_role:
+    name: marcstraube.common.networkmanager
+    apply:
+      tags:
+        - base-system
+        - networkmanager
+  tags:
+    - base-system
+    - networkmanager
+  when: networkmanager_enabled | default(true) | bool
+
 - name: Base System | Include firewalld role
   ansible.builtin.include_role:
     name: marcstraube.common.firewalld
@@ -260,18 +278,6 @@
     - base-system
     - wireguard
   when: wireguard_enabled | default(true) | bool
-
-- name: Base System | Include networkmanager role
-  ansible.builtin.include_role:
-    name: marcstraube.common.networkmanager
-    apply:
-      tags:
-        - base-system
-        - networkmanager
-  tags:
-    - base-system
-    - networkmanager
-  when: networkmanager_enabled | default(true) | bool
 
 - name: Base System | Include avahi role
   ansible.builtin.include_role:
