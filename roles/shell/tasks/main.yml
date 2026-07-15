@@ -65,6 +65,7 @@
     - shell_enabled | bool
     - shell_starship_enabled | bool
     - shell_starship_config_enabled | bool
+    - __shell_starship_package | default('') | length > 0
   tags:
     - shell
     - shell:starship
@@ -75,6 +76,7 @@
     - shell_enabled | bool
     - shell_starship_enabled | bool
     - shell_starship_shells | length > 0
+    - __shell_starship_package | default('') | length > 0
   tags:
     - shell
     - shell:starship

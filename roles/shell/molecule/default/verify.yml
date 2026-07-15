@@ -84,7 +84,7 @@
         - __shell_fzf_package | default('') | length > 0
 
     #
-    # Starship (Arch only)
+    # Starship (init/config gated on package availability)
     #
 
     - name: Verify | Check starship installed (Arch)
@@ -96,6 +96,40 @@
       when:
         - ansible_facts['os_family'] == 'Archlinux'
         - __shell_starship_package | default('') | length > 0
+
+    # The role adds the `starship init` line and deploys starship.toml only
+    # where it installs the binary. On Arch the package exists -> both present;
+    # on EL/Debian __shell_starship_package is '' -> both must be absent
+    # (otherwise every login prints "starship: command not found").
+    - name: Verify | starship init line present in .bashrc (Arch)
+      ansible.builtin.command:
+        cmd: 'grep -q "starship init bash" /home/testuser/.bashrc'
+      register: _shell_starship_init_arch
+      changed_when: false
+      failed_when: _shell_starship_init_arch.rc != 0
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | starship.toml deployed (Arch)
+      ansible.builtin.stat:
+        path: /home/testuser/.config/starship.toml
+      register: _shell_starship_toml_arch
+      failed_when: not _shell_starship_toml_arch.stat.exists
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | starship init line absent in .bashrc (non-Arch)
+      ansible.builtin.command:
+        cmd: 'grep -q "starship init bash" /home/testuser/.bashrc'
+      register: _shell_starship_init_other
+      changed_when: false
+      failed_when: _shell_starship_init_other.rc == 0
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    - name: Verify | starship.toml absent (non-Arch)
+      ansible.builtin.stat:
+        path: /home/testuser/.config/starship.toml
+      register: _shell_starship_toml_other
+      failed_when: _shell_starship_toml_other.stat.exists
+      when: ansible_facts['os_family'] != 'Archlinux'
 
     #
     # Oh My Zsh

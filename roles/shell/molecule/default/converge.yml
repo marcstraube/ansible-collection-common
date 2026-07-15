@@ -50,7 +50,7 @@
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
 
-- name: Converge — Starship config (Arch only — starship not in Debian/EL repos)
+- name: Converge — Starship config (all distros — role gates init on package availability)
   hosts: all
   gather_facts: true
 
@@ -74,7 +74,6 @@
     - name: Converge | Include shell role (starship)  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
-      when: ansible_facts['os_family'] == 'Archlinux'
 
 - name: Converge — Zoxide init (all distros — zoxide ships in every repo)
   hosts: all
