@@ -1,6 +1,10 @@
 ---
+# python3-packaging: the ansible-core pip module imports `packaging` on the
+# target interpreter — declared explicitly so roles using the pip module do
+# not depend on it being pulled in incidentally across EL point releases.
 __python_packages:
   - 'python3'
+  - 'python3-packaging'
 
 __python_pip_packages:
   - 'python3-pip'

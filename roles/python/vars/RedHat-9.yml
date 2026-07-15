@@ -1,6 +1,11 @@
 ---
+# python3-packaging: the ansible-core pip module imports `packaging` on the
+# target interpreter (/usr/bin/python3 = 3.9 on EL9) — declared explicitly so
+# the role does not rely on it being pulled in incidentally, which varies
+# between EL9 point releases (present on 9.7, absent on a minimal 9.8).
 __python_packages:
   - 'python3'
+  - 'python3-packaging'
   - 'python3.12'
 
 __python_pip_packages:
