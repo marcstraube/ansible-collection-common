@@ -227,6 +227,18 @@
     - chrony
   when: chrony_enabled | default(true) | bool
 
+- name: Base System | Include mta role
+  ansible.builtin.include_role:
+    name: marcstraube.common.mta
+    apply:
+      tags:
+        - base-system
+        - mta
+  tags:
+    - base-system
+    - mta
+  when: mta_enabled | default(true) | bool
+
 - name: Base System | Include logrotate role
   ansible.builtin.include_role:
     name: marcstraube.common.logrotate

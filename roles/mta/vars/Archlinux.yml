@@ -1,0 +1,7 @@
+---
+__mta_packages:
+  - 'postfix'
+__mta_service_name: 'postfix'
+# Arch's postfix package provides /usr/bin/sendmail directly (no alternatives
+# system) — empty disables the alternatives task.
+__mta_sendmail_path: ''

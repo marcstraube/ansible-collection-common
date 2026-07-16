@@ -1,0 +1,103 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    #
+    # Load OS-Specific Variables
+    #
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Check postfix package is installed
+      ansible.builtin.package:
+        name: postfix
+        state: present
+      check_mode: true
+      register: mta_pkg_check
+      failed_when: mta_pkg_check.changed
+
+    #
+    # Configuration Verification (postconf)
+    #
+
+    - name: Verify | Query managed Postfix parameters
+      ansible.builtin.command:
+        cmd: 'postconf -h {{ item }}'
+      loop:
+        - inet_interfaces
+        - mynetworks
+        - myorigin
+      register: mta_postconf
+      changed_when: false
+
+    - name: Verify | Assert Postfix parameters are set correctly
+      ansible.builtin.assert:
+        that:
+          - "(mta_postconf.results[0].stdout | trim) == 'loopback-only'"
+          - "(mta_postconf.results[1].stdout | trim) == '127.0.0.0/8 [::1]/128'"
+          - "(mta_postconf.results[2].stdout | trim) == 'example.test'"
+        fail_msg: 'Postfix main.cf parameters not configured correctly'
+
+    #
+    # System MTA Verification
+    #
+
+    - name: Verify | Resolve the system sendmail binary
+      ansible.builtin.command:
+        cmd: readlink -f /usr/sbin/sendmail
+      register: mta_sendmail
+      changed_when: false
+
+    - name: Verify | Assert Postfix provides sendmail (RedHat)
+      ansible.builtin.assert:
+        that:
+          - "'postfix' in mta_sendmail.stdout"
+        fail_msg: 'Postfix is not the selected system MTA'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    #
+    # Service Verification
+    #
+
+    - name: Verify | Check postfix service is enabled
+      ansible.builtin.systemd_service:
+        name: '{{ __mta_service_name }}'
+        enabled: true
+      check_mode: true
+      register: mta_service_enabled
+      failed_when: mta_service_enabled.changed
+
+    - name: Verify | Check postfix service is running
+      ansible.builtin.systemd_service:
+        name: '{{ __mta_service_name }}'
+        state: started
+      check_mode: true
+      register: mta_service_running
+      failed_when: mta_service_running.changed
+
+    #
+    # Functional Test
+    #
+
+    - name: Verify | Queue a test message via sendmail
+      ansible.builtin.command:
+        cmd: 'sendmail -f root root@localhost'
+        stdin: "Subject: molecule test\n\ntest body\n"
+      register: mta_sendmail_test
+      changed_when: false
+      failed_when: mta_sendmail_test.rc != 0

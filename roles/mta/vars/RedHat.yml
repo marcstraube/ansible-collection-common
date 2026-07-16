@@ -1,0 +1,6 @@
+---
+__mta_packages:
+  - 'postfix'
+__mta_service_name: 'postfix'
+# Postfix's sendmail binary registered with the RHEL `mta` alternatives group.
+__mta_sendmail_path: '/usr/sbin/sendmail.postfix'

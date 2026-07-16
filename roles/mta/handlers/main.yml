@@ -1,0 +1,6 @@
+---
+- name: Restart Postfix
+  ansible.builtin.systemd_service:
+    name: '{{ __mta_service_name }}'
+    state: restarted
+  when: mta_service_enabled | bool
