@@ -1,0 +1,47 @@
+---
+# main.cf is managed key-by-key with postconf rather than a template so the
+# distro's compiled-in paths/owners stay intact and only the parameters the
+# role owns are touched.
+- name: Configure | Assemble managed Postfix parameters
+  ansible.builtin.set_fact:
+    __mta_parameters: >-
+      {{
+        {
+          'myhostname': mta_myhostname,
+          'mydomain': mta_mydomain,
+          'myorigin': mta_myorigin,
+          'relayhost': mta_relayhost,
+          'mynetworks': mta_mynetworks,
+          'inet_interfaces': mta_inet_interfaces,
+          'inet_protocols': mta_inet_protocols,
+        } | combine(mta_extra_parameters)
+      }}
+
+- name: Configure | Query current Postfix parameters
+  ansible.builtin.command:
+    cmd: 'postconf -h {{ item.key }}'
+  loop: '{{ __mta_parameters | dict2items }}'
+  loop_control:
+    label: '{{ item.key }}'
+  register: __mta_current
+  changed_when: false
+  check_mode: false
+
+- name: Configure | Set Postfix parameters
+  ansible.builtin.command:
+    argv:
+      - postconf
+      - -e
+      - '{{ item.item.key }}={{ item.item.value }}'
+  loop: '{{ __mta_current.results }}'
+  loop_control:
+    label: '{{ item.item.key }}={{ item.item.value }}'
+  when: (item.stdout | trim) != (item.item.value | trim)
+  changed_when: true
+  notify: Restart Postfix
+
+- name: Configure | Set Postfix as the system MTA
+  community.general.alternatives:
+    name: mta
+    path: '{{ __mta_sendmail_path }}'
+  when: __mta_sendmail_path | length > 0

@@ -1,0 +1,7 @@
+---
+__mta_packages:
+  - 'postfix'
+__mta_service_name: 'postfix'
+# Debian's postfix package installs /usr/sbin/sendmail via dpkg-divert, so no
+# alternatives switch is needed — empty disables the alternatives task.
+__mta_sendmail_path: ''

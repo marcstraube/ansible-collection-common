@@ -7,7 +7,7 @@
 ## Description
 
 Shared Ansible roles for multi-OS infrastructure management.
-42 roles covering base system, security, networking, package management,
+43 roles covering base system, security, networking, package management,
 user management, editors, and more.
 
 ## Supported Platforms
@@ -90,6 +90,7 @@ user management, editors, and more.
 | ------------- | ------------------------ |
 | **chrony**    | NTP time synchronization |
 | **logrotate** | Log rotation             |
+| **mta**       | Send-only mail (Postfix) |
 | **docker**    | Docker container runtime |
 | **podman**    | Podman container runtime |
 | **snmp**      | SNMP monitoring agent    |

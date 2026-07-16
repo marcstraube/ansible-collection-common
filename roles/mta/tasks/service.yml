@@ -1,0 +1,6 @@
+---
+- name: Service | Manage Postfix service
+  ansible.builtin.systemd_service:
+    name: '{{ __mta_service_name }}'
+    enabled: "{{ mta_service_enabled | bool }}"
+    state: "{{ mta_service_enabled | bool | ternary('started', 'stopped') }}"

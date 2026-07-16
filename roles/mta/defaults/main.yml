@@ -1,0 +1,55 @@
+---
+#
+# Role Control
+#
+
+# Enable the mta role
+mta_enabled: true
+
+# Enable and start the mta service
+mta_service_enabled: true
+
+#
+# Identity
+#
+
+# Fully-qualified hostname used as the mail envelope origin (main.cf myhostname)
+mta_myhostname: "{{ ansible_facts['fqdn'] }}"
+
+# Mail domain appended to unqualified addresses (main.cf mydomain)
+mta_mydomain: "{{ ansible_facts['domain'] | default('localdomain', true) }}"
+
+# Domain that locally-posted mail appears to come from (main.cf myorigin).
+# Rewrites e.g. root@host into root@domain on outgoing mail.
+mta_myorigin: "{{ mta_mydomain }}"
+
+#
+# Mail Routing
+#
+
+# Smarthost to relay all outbound mail through (main.cf relayhost). Empty =
+# direct delivery via DNS/MX lookup (Postfix default, like a normal server).
+# Format: 'host', '[host]' (skip MX lookup), or '[host]:port'.
+mta_relayhost: ''
+
+# Networks allowed to relay mail through this host (main.cf mynetworks).
+# Default: loopback only — this host relays its own mail and nothing else.
+mta_mynetworks: '127.0.0.0/8 [::1]/128'
+
+# Interfaces Postfix binds to (main.cf inet_interfaces). 'loopback-only' makes
+# this a send-only null client that accepts no inbound connections.
+mta_inet_interfaces: 'loopback-only'
+
+# IP protocols Postfix uses (main.cf inet_protocols): all, ipv4, or ipv6.
+mta_inet_protocols: 'all'
+
+#
+# Extra Configuration
+#
+
+# Additional main.cf parameters as key=value pairs, applied verbatim via
+# postconf. Escape hatch for options the role does not model.
+mta_extra_parameters: {}
+# Example:
+#   message_size_limit: '52428800'
+#   smtp_tls_security_level: 'may'

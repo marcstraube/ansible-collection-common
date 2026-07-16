@@ -1,0 +1,27 @@
+---
+# Debian's postfix package is interactive by default; preseed debconf so the
+# unattended install lands on a working "Internet Site" (direct delivery) base
+# that the configure phase then tunes via postconf.
+- name: Install | Preseed Postfix debconf selections (Debian)
+  ansible.builtin.debconf:
+    name: postfix
+    question: '{{ item.question }}'
+    value: '{{ item.value }}'
+    vtype: '{{ item.vtype }}'
+  loop:
+    - question: 'postfix/main_mailer_type'
+      value: 'Internet Site'
+      vtype: 'select'
+    - question: 'postfix/mailname'
+      value: '{{ mta_myhostname }}'
+      vtype: 'string'
+  loop_control:
+    label: '{{ item.question }}'
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install | Postfix packages
+  ansible.builtin.package:
+    name: '{{ __mta_packages }}'
+    state: present
+  retries: 3
+  delay: 5
