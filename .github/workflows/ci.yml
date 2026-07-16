@@ -105,8 +105,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install "ansible-core~=2.21.0" \
-                      molecule \
-                      molecule-plugins[podman] \
+                      "molecule==26.6.0" \
+                      "molecule-plugins[podman]==26.7.8" \
                       passlib
 
       - name: Install collection dependencies
@@ -273,8 +273,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install "ansible-core~=2.17.0" \
-                      molecule \
-                      molecule-plugins[podman] \
+                      "molecule==26.6.0" \
+                      "molecule-plugins[podman]==26.7.8" \
                       passlib
 
       - name: Install collection dependencies
