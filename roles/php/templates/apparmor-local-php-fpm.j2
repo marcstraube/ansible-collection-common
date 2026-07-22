@@ -1,0 +1,11 @@
+{{ ansible_managed | comment }}
+# Local override for the packaged php-fpm AppArmor profile.
+#
+# The profile attaches to /usr/bin/php-fpm* and therefore also confines
+# the versioned variants (php-fpm84, ...), but the stock php abstraction
+# only permits the unversioned config paths. Allow the versioned config
+# trees, runtime directories and sockets.
+/etc/php[0-9]*/** r,
+@{run}/php[0-9]*-fpm/ rw,
+@{run}/php[0-9]*-fpm/*.sock{,et} rwlk,
+@{run}/php[0-9]*-fpm.pid rw,
