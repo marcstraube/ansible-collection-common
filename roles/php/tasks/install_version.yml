@@ -130,12 +130,128 @@
   delay: 5
   when: not (__php_use_aur | bool)
 
+# Installed parts of the split package that are not in the configured
+# list (e.g. phpXX-pdo or phpXX-cli, pulled in earlier as dependencies)
+# pin the exact base version too and would block the upgrade — merge
+# them into the same transaction.
+# check_mode: false — read-only lookup, must run under --check so the
+# merge below operates on the actual package list.
+- name: Install Version | Detect installed split-package parts (Arch)
+  ansible.builtin.command:
+    cmd: pacman -Qq
+  register: __php_installed_query
+  changed_when: false
+  check_mode: false
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_use_aur | bool
+
+- name: Install Version | Merge installed split-package parts (Arch)
+  ansible.builtin.set_fact:
+    __php_version_packages: >-
+      {{ (__php_version_packages
+          + (__php_installed_query.stdout_lines
+             | select('match', '^' + (__php_extension_prefix | regex_escape) + '.+')
+             | list))
+         | unique | list }}
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_use_aur | bool
+
+# Version jump handling: the extensions need the NEW base installed to
+# build (makedep), but pacman refuses to upgrade the base while the OLD
+# extensions still pin it exactly — a circle paru cannot resolve
+# (Morganamilo/paru#707). Detect the jump by comparing the installed
+# base version against the AUR target and drop the pinned extension
+# parts first (-Rdd, base stays); the install below then rebuilds
+# everything in one go. A prior AUR system upgrade (e.g. via a system
+# update role) makes this a no-op.
+# check_mode: false — read-only lookup, must run under --check.
+- name: Install Version | Query AUR target version (Arch)
+  become: true
+  become_user: "{{ aur_builder_user | default('aur_builder') }}"
+  ansible.builtin.command:
+    argv: ['paru', '-Si', '{{ __php_cli_package }}']
+  environment:
+    LC_ALL: 'C'
+  register: __php_aur_target_info
+  changed_when: false
+  check_mode: false
+  failed_when: false
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_use_aur | bool
+
+# check_mode: false — read-only lookup, must run under --check.
+- name: Install Version | Query installed base version (Arch)
+  ansible.builtin.command:
+    argv: ['pacman', '-Q', '{{ __php_cli_package }}']
+  register: __php_installed_base
+  changed_when: false
+  check_mode: false
+  failed_when: false
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_use_aur | bool
+
+- name: Install Version | Remove pinned split-package parts before version jump (Arch)
+  ansible.builtin.command:
+    argv: >-
+      {{ ['pacman', '-Rdd', '--noconfirm']
+         + (__php_installed_query.stdout_lines
+            | select('match', '^' + (__php_extension_prefix | regex_escape) + '.+')
+            | list) }}
+  register: __php_parts_removed
+  changed_when: true
+  vars:
+    __php_aur_target_version: >-
+      {{ (__php_aur_target_info.stdout_lines | default([])
+          | select('match', '^Version')
+          | map('regex_replace', '^Version\s*:\s*', '')
+          | first | default('')) | trim }}
+    __php_installed_base_version: >-
+      {{ ((__php_installed_base.stdout | default('')).split() | last | default('')) }}
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __php_use_aur | bool
+    - __php_installed_base.rc | default(1) == 0
+    - __php_aur_target_version | length > 0
+    - __php_installed_base_version | length > 0
+    - __php_aur_target_version != __php_installed_base_version
+    - __php_installed_query.stdout_lines
+      | select('match', '^' + (__php_extension_prefix | regex_escape) + '.+')
+      | list | length > 0
+
+# The AUR phpXX packages form a split package whose parts pin the exact
+# base version (phpXX-<ext> depends on phpXX=<version>). kewlfft.aur.aur
+# installs packages one at a time, which can never satisfy that pin once
+# upstream moved past the installed version: the freshly built base
+# conflicts with the still-pinned installed extensions. Call paru once
+# with the full list instead, so the base and every extension move in a
+# single transaction. --batchinstall makes paru defer the install of
+# every built package to one final pacman transaction instead of
+# installing after each build (paru's default staging otherwise prepares
+# a base-only transaction that the still-pinned installed extensions
+# reject — Morganamilo/paru#707). --needed keeps the call idempotent
+# when everything is already current.
+# --nocheck: the split-package check() phases are fragile against the
+# live system libraries (e.g. the imagick SVG rendering comparison test
+# breaks with current ImageMagick/librsvg) and rerun the full PHP test
+# suite on every build. Upstream test coverage is the AUR maintainer's
+# CI concern, not a deploy-time gate. The retries cover transient
+# download failures; already built packages are reused from the cache
+# on a retry.
 - name: Install Version | PHP packages from AUR (Arch)
   become: true
   become_user: "{{ aur_builder_user | default('aur_builder') }}"
-  kewlfft.aur.aur:
-    name: '{{ __php_version_packages }}'
-    state: present
+  ansible.builtin.command:
+    argv: >-
+      {{ ['paru', '-S', '--noconfirm', '--needed', '--cleanafter',
+          '--batchinstall', '--mflags', '--nocheck'] + __php_version_packages }}
+  environment:
+    LC_ALL: 'C'
+  register: __php_aur_install
+  changed_when: "'there is nothing to do' not in __php_aur_install.stdout"
   retries: 3
   delay: 5
   when:

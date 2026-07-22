@@ -75,6 +75,14 @@
     - php
     - php:configure
 
+- name: Main | Import AppArmor tasks
+  ansible.builtin.import_tasks:
+    file: apparmor.yml
+  when: php_enabled | bool
+  tags:
+    - php
+    - php:configure
+
 - name: Main | Import service tasks
   ansible.builtin.import_tasks:
     file: service.yml

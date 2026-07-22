@@ -1,0 +1,42 @@
+---
+#
+# AppArmor integration for versioned PHP-FPM variants
+#
+# The packaged php-fpm profile attaches to /usr/bin/php-fpm* and
+# therefore also confines the versioned variants (php-fpm84, ...), but
+# the stock php abstraction only permits the unversioned config paths
+# (/etc/php/**). The versioned /etc/phpXX trees are denied and FPM
+# fails to start with EACCES (13) even as root. Extend the profile
+# through its `include if exists <local/php-fpm>` hook.
+#
+
+- name: AppArmor | Check if AppArmor is active
+  ansible.builtin.stat:
+    path: /sys/kernel/security/apparmor
+  register: __php_apparmor_active
+
+- name: AppArmor | Check if packaged php-fpm profile exists
+  ansible.builtin.stat:
+    path: /etc/apparmor.d/php-fpm
+  register: __php_apparmor_profile
+  when: __php_apparmor_active.stat.exists
+
+- name: AppArmor | Deploy local override for versioned php-fpm variants
+  ansible.builtin.template:
+    src: 'apparmor-local-php-fpm.j2'
+    dest: '/etc/apparmor.d/local/php-fpm'
+    owner: root
+    group: root
+    mode: '0644'
+  register: __php_apparmor_override
+  when:
+    - __php_apparmor_active.stat.exists
+    - __php_apparmor_profile.stat.exists | default(false)
+
+# Runs immediately, not as a handler: the reloaded profile must be in
+# place before the service tasks start the versioned FPM units.
+- name: AppArmor | Reload php-fpm profile  # noqa: no-handler
+  ansible.builtin.command:
+    cmd: 'apparmor_parser -r /etc/apparmor.d/php-fpm'
+  changed_when: true
+  when: __php_apparmor_override is changed
