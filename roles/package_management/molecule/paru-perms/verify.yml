@@ -1,0 +1,63 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    paru_clone_dir: '/var/cache/paru/clone'
+
+  tasks:
+    - name: Verify | Read ACL of the shared clone directory
+      ansible.builtin.command:
+        cmd: 'getfacl -p {{ paru_clone_dir }}'
+      register: __pm_clone_acl
+      changed_when: false
+
+    - name: Verify | Assert no default ACLs remain on the clone tree
+      ansible.builtin.assert:
+        that:
+          - "'default:' not in __pm_clone_acl.stdout"
+        fail_msg: >-
+          Default ACLs present on the shared clone directory — they make
+          libarchive/bsdtar skip its final chmod during source extraction
+          and broken modes end up inside built packages.
+
+    - name: Verify | Stat the shared clone directory
+      ansible.builtin.stat:
+        path: '{{ paru_clone_dir }}'
+      register: __pm_clone_stat
+
+    - name: Verify | Assert builder ownership and SGID mode
+      ansible.builtin.assert:
+        that:
+          - __pm_clone_stat.stat.pw_name == 'aur_builder'
+          - __pm_clone_stat.stat.gr_name == 'aur_shared'
+          - __pm_clone_stat.stat.mode == '2775'
+        fail_msg: 'Clone directory is not aur_builder:aur_shared with mode 2775'
+
+    - name: Verify | Stat the legacy entry
+      ansible.builtin.stat:
+        path: '{{ paru_clone_dir }}/legacypkg/PKGBUILD'
+      register: __pm_legacy_stat
+
+    - name: Verify | Assert the legacy root-owned entry was adopted
+      ansible.builtin.assert:
+        that:
+          - __pm_legacy_stat.stat.pw_name == 'aur_builder'
+          - __pm_legacy_stat.stat.gr_name == 'aur_shared'
+        fail_msg: 'Legacy clone entry was not adopted by the builder'
+
+    - name: Verify | Stat the builder-created entry
+      ansible.builtin.stat:
+        path: '{{ paru_clone_dir }}/testpkg'
+      register: __pm_testpkg_stat
+
+    - name: Verify | Assert SGID group inheritance and group access
+      ansible.builtin.assert:
+        that:
+          - __pm_testpkg_stat.stat.gr_name == 'aur_shared'
+          - __pm_testpkg_stat.stat.rgrp
+          - __pm_testpkg_stat.stat.xgrp
+        fail_msg: >-
+          Builder-created entry did not inherit aur_shared group access
+          through the SGID bit under the enforced 022 umask.
