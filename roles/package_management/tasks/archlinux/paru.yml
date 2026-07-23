@@ -36,11 +36,14 @@
     append: true
   loop: '{{ paru_shared_users }}'
 
+# Owned by the builder user: makepkg chmods paths inside the tree and
+# POSIX only permits that for the owner. Group access for the other
+# aur_shared members comes from SGID + the default ACLs below.
 - name: Paru | Create shared clone directory
   ansible.builtin.file:
     path: '{{ paru_clone_dir }}'
     state: directory
-    owner: root
+    owner: '{{ aur_builder_user }}'
     group: aur_shared
     mode: '2775'
 
@@ -74,6 +77,41 @@
   ansible.builtin.command:
     cmd: 'setfacl -R -m g:aur_shared:rwX -m d:g:aur_shared:rwX {{ paru_clone_dir }}'
   changed_when: false
+
+# makepkg chmods paths inside the clone tree and POSIX only permits that
+# for the owner — group write access and ACLs do not help. Builds run as
+# the builder user, so normalise ownership of existing entries; clones
+# created interactively by other group members are adopted on the next
+# run. changed_when is false: this is a top-up like the ACL recovery
+# above, newly built entries are owned by the builder anyway.
+- name: Paru | Recover ownership on existing clone entries
+  ansible.builtin.command:
+    cmd: 'chown -R {{ aur_builder_user }}:aur_shared {{ paru_clone_dir }}'
+  changed_when: false
+
+# git refuses to operate on repositories owned by another user
+# (CVE-2022-24765 safe.directory check). In the shared clone directory
+# that is the normal case: any aur_shared member may have cloned a
+# package first, while paru builds run as the builder user. Shared
+# write access inside the group is the deliberate design here (SGID +
+# default ACLs), so mark the clone tree as safe system-wide.
+- name: Paru | Mark shared clone directory as git-safe
+  community.general.git_config:
+    scope: system
+    name: safe.directory
+    value: '{{ paru_clone_dir }}/*'
+    add_mode: add
+
+# The module creates /etc/gitconfig subject to the root umask; under a
+# hardened umask (0077) that yields 0600 and git silently skips an
+# unreadable system config — the safe.directory entry would never reach
+# the builder user.
+- name: Paru | Ensure system gitconfig is world-readable
+  ansible.builtin.file:
+    path: /etc/gitconfig
+    owner: root
+    group: root
+    mode: '0644'
 
 - name: Paru | Disable Copy-on-Write on shared clone directory (BTRFS)
   ansible.builtin.file:
