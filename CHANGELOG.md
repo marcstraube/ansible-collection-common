@@ -2,6 +2,24 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [2.3.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.2.1...v2.3.0) (2026-07-23)
+
+
+### Features
+
+* **hardening:** optional /proc hidepid mounting for servers ([#285](https://github.com/marcstraube/ansible-collection-common/issues/285)) ([a5c1688](https://github.com/marcstraube/ansible-collection-common/commit/a5c1688a32695afc263b82db66aaf96b32fdaba1))
+* **mta:** add send-only system mail role (Postfix null client) ([#276](https://github.com/marcstraube/ansible-collection-common/issues/276)) ([8a29762](https://github.com/marcstraube/ansible-collection-common/commit/8a2976205e6c8000e075d59439b2214f41fde842)), closes [#275](https://github.com/marcstraube/ansible-collection-common/issues/275)
+
+
+### Bug Fixes
+
+* **base_system:** run networkmanager before firewalld to avoid SSH lockout ([#271](https://github.com/marcstraube/ansible-collection-common/issues/271)) ([dab619c](https://github.com/marcstraube/ansible-collection-common/commit/dab619c9e8f6197c67fb9fcc02c1c6c4938078cf)), closes [#270](https://github.com/marcstraube/ansible-collection-common/issues/270)
+* **package_management:** keep AUR-built package file modes intact on hardened hosts ([#287](https://github.com/marcstraube/ansible-collection-common/issues/287)) ([4aca39c](https://github.com/marcstraube/ansible-collection-common/commit/4aca39c4c471efb3e7e3b4ef679027caece18f25))
+* **package_management:** make the shared paru clone directory usable for the builder user ([#283](https://github.com/marcstraube/ansible-collection-common/issues/283)) ([c78817f](https://github.com/marcstraube/ansible-collection-common/commit/c78817fb7e635d43cd6ba88fefd524770e4db133))
+* **php:** repair versioned AUR PHP deployment (install transaction and AppArmor) ([#282](https://github.com/marcstraube/ansible-collection-common/issues/282)) ([abbcd9c](https://github.com/marcstraube/ansible-collection-common/commit/abbcd9c24feb6cc272ddffb41c10f9c66865464e))
+* **python:** declare python3-packaging for the EL pip module ([#269](https://github.com/marcstraube/ansible-collection-common/issues/269)) ([d24e140](https://github.com/marcstraube/ansible-collection-common/commit/d24e140e45a6165ebbf3001f5669ee53d8d4469a)), closes [#268](https://github.com/marcstraube/ansible-collection-common/issues/268)
+* **shell:** only configure starship where the package is installed ([#274](https://github.com/marcstraube/ansible-collection-common/issues/274)) ([23571f7](https://github.com/marcstraube/ansible-collection-common/commit/23571f7a2d61907a1b76d376f899e28651f44b68)), closes [#273](https://github.com/marcstraube/ansible-collection-common/issues/273)
+
 ## [2.2.1](https://github.com/marcstraube/ansible-collection-common/compare/v2.2.0...v2.2.1) (2026-07-10)
 
 
