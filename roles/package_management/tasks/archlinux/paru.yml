@@ -38,7 +38,8 @@
 
 # Owned by the builder user: makepkg chmods paths inside the tree and
 # POSIX only permits that for the owner. Group access for the other
-# aur_shared members comes from SGID + the default ACLs below.
+# aur_shared members comes from the SGID bit plus the builder's
+# enforced 022 umask.
 - name: Paru | Create shared clone directory
   ansible.builtin.file:
     path: '{{ paru_clone_dir }}'
@@ -47,42 +48,25 @@
     group: aur_shared
     mode: '2775'
 
-# The SGID bit propagates the aur_shared group ownership, but a restrictive
-# umask (e.g. hardening's 0077) strips group permissions from files that
-# aur_builder creates. Default ACLs force group-rwX on new entries regardless
-# of the creating user's umask, so other aur_shared members can rebuild.
-- name: Paru | Set default owning-group ACL on shared clone directory
-  ansible.posix.acl:
-    path: '{{ paru_clone_dir }}'
-    default: true
-    etype: group
-    permissions: rwX
-    state: present
-
-- name: Paru | Set default aur_shared ACL on shared clone directory
-  ansible.posix.acl:
-    path: '{{ paru_clone_dir }}'
-    default: true
-    etype: group
-    entity: aur_shared
-    permissions: rwX
-    state: present
-
-# One-off recovery: restore group access on entries created before the default
-# ACLs were in place, so live hosts recover without manual cleanup. setfacl -R
-# is used directly because ansible.posix.acl's recursive mode is not idempotent
-# across versions; changed_when is false because the default ACLs above already
-# guarantee correct permissions for any newly created entry.
-- name: Paru | Recover group permissions on existing clone entries
+# NO ACLs on the clone tree: default ACLs make libarchive/bsdtar skip
+# its final chmod during source extraction (to avoid clobbering the
+# ACLs), so extracted files keep the restrictive modes of the initial
+# secure open() and those broken modes end up inside the built packages
+# (group/other lose read and execute). Group access for aur_shared
+# members comes from the SGID bit plus the builder's enforced 022 umask
+# instead. The recursive strip migrates hosts that carry ACLs from
+# earlier role versions; changed_when is false because it is a top-up
+# like the ownership recovery below.
+- name: Paru | Strip ACLs from shared clone directory
   ansible.builtin.command:
-    cmd: 'setfacl -R -m g:aur_shared:rwX -m d:g:aur_shared:rwX {{ paru_clone_dir }}'
+    cmd: 'setfacl -R -b {{ paru_clone_dir }}'
   changed_when: false
 
 # makepkg chmods paths inside the clone tree and POSIX only permits that
-# for the owner — group write access and ACLs do not help. Builds run as
-# the builder user, so normalise ownership of existing entries; clones
+# for the owner — group write access does not help. Builds run as the
+# builder user, so normalise ownership of existing entries; clones
 # created interactively by other group members are adopted on the next
-# run. changed_when is false: this is a top-up like the ACL recovery
+# run. changed_when is false: this is a top-up like the ACL strip
 # above, newly built entries are owned by the builder anyway.
 - name: Paru | Recover ownership on existing clone entries
   ansible.builtin.command:
@@ -93,8 +77,8 @@
 # (CVE-2022-24765 safe.directory check). In the shared clone directory
 # that is the normal case: any aur_shared member may have cloned a
 # package first, while paru builds run as the builder user. Shared
-# write access inside the group is the deliberate design here (SGID +
-# default ACLs), so mark the clone tree as safe system-wide.
+# write access inside the group is the deliberate design here (SGID),
+# so mark the clone tree as safe system-wide.
 - name: Paru | Mark shared clone directory as git-safe
   community.general.git_config:
     scope: system
