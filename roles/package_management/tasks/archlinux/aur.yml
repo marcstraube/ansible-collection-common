@@ -14,12 +14,20 @@
     system: true
     state: present
 
+# Builds must run with the standard umask 022: under a hardened global
+# umask (0077), makepkg inherits the restrictive mask and PKGBUILDs that
+# repackage upstream archives without explicit install modes produce
+# packages whose files are unreadable/unexecutable for regular users.
+# The GECOS entry covers PAM login paths (pam_umask); the sudoers
+# runas-default below covers sudo/become paths, where sudo would
+# otherwise pass the caller's umask through.
 - name: AUR | Create builder user
   ansible.builtin.user:
     name: '{{ aur_builder_user }}'
     group: '{{ aur_builder_user }}'
     home: '{{ aur_builder_home }}'
     shell: '/usr/bin/nologin'
+    comment: 'umask=022'
     system: true
     create_home: true
     state: present
@@ -28,6 +36,17 @@
   ansible.builtin.lineinfile:
     path: '/etc/sudoers.d/99-{{ aur_builder_user }}'
     line: '{{ aur_builder_user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+    create: true
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'
+
+- name: AUR | Enforce standard build umask for the builder user
+  ansible.builtin.lineinfile:
+    path: '/etc/sudoers.d/99-{{ aur_builder_user }}'
+    line: 'Defaults>{{ aur_builder_user }} umask=0022, umask_override'
+    insertbefore: BOF
     create: true
     owner: root
     group: root

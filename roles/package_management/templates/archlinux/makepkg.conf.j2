@@ -5,6 +5,12 @@
 # /etc/makepkg.conf
 #
 
+# makepkg sources this file, so the umask applies to every build
+# regardless of the invoking user. Under a hardened login umask (0077),
+# extraction would otherwise strip group/other bits and those broken
+# modes end up inside the built packages.
+umask 0022
+
 #########################################################################
 # SOURCE ACQUISITION
 #########################################################################

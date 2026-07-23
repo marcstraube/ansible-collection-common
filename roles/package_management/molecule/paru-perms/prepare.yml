@@ -28,3 +28,14 @@
         shell: /usr/bin/nologin
         system: true
         create_home: true
+
+    # Recreate the legacy state earlier role versions left behind: default
+    # ACLs on the clone directory and a clone entry owned by root. Converge
+    # must strip the ACLs and adopt the entry for the builder.
+    - name: Prepare | Create clone directory with a legacy root-owned entry
+      ansible.builtin.shell: |
+        mkdir -p /var/cache/paru/clone/legacypkg
+        echo x > /var/cache/paru/clone/legacypkg/PKGBUILD
+        setfacl -m d:g::rwX /var/cache/paru/clone
+      args:
+        creates: /var/cache/paru/clone/legacypkg/PKGBUILD

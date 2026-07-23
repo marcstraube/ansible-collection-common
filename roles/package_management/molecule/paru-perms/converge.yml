@@ -14,14 +14,14 @@
         name: '{{ playbook_dir }}/../..'
         tasks_from: archlinux/paru.yml
 
-    # Reproduce the #228 scenario: aur_builder creates a build directory under
-    # a restrictive umask (as the hardening role sets). runuser is used so the
-    # nologin system user can act without a PAM/login shell. The `creates`
-    # guard keeps the idempotence run clean.
-    - name: Converge | Simulate aur_builder creating a build dir under umask 0077
+    # Simulate the builder creating a fresh entry under the enforced 022
+    # build umask (makepkg.conf / sudoers runas-default in the full role).
+    # runuser is used so the nologin system user can act without a
+    # PAM/login shell. The `creates` guard keeps the idempotence run clean.
+    - name: Converge | Simulate aur_builder creating a build dir
       ansible.builtin.command:
         cmd: >-
           runuser -u aur_builder -- bash -c
-          'umask 0077; mkdir -p {{ paru_clone_dir }}/testpkg;
+          'umask 0022; mkdir -p {{ paru_clone_dir }}/testpkg;
           echo x > {{ paru_clone_dir }}/testpkg/PKGBUILD'
         creates: '{{ paru_clone_dir }}/testpkg/PKGBUILD'

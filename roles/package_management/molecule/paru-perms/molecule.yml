@@ -1,12 +1,14 @@
 ---
-# Focused scenario for the shared paru clone-directory ACLs (issue #228).
-# Runs only tasks/archlinux/paru.yml (not the AUR helper build) on Arch, then
-# asserts that a build directory created by aur_builder under a restrictive
-# umask still inherits aur_shared group access via the default ACLs.
+# Focused scenario for the shared paru clone-directory permission model
+# (SGID + builder ownership, no ACLs — issue #286). Runs only
+# tasks/archlinux/paru.yml (not the AUR helper build) on Arch, then
+# asserts that legacy default ACLs are stripped, foreign-owned entries
+# are adopted by the builder, and new entries inherit aur_shared group
+# access through the SGID bit.
 driver:
   name: podman
 platforms:
-  - name: package-management-paru-acl-archlinux
+  - name: package-management-paru-perms-archlinux
     image: docker.io/marcstraube/archlinux-ansible:latest
     pre_build_image: true
     command: /usr/lib/systemd/systemd
@@ -24,7 +26,7 @@ provisioner:
     verify: verify.yml
   inventory:
     host_vars:
-      package-management-paru-acl-archlinux:
+      package-management-paru-perms-archlinux:
         ansible_python_interpreter: /usr/bin/python
   config_options:
     defaults:
