@@ -129,3 +129,33 @@ hardening_fs_vartmp_bind_enabled: true
 # and can break services that hold open files there. Intended for fresh
 # installs where /tmp is known to be empty.
 hardening_fs_tmp_force_tmpfs: false
+
+#
+# /proc hidepid
+#
+# Mount /proc with hidepid so unprivileged users cannot read foreign
+# process information (/proc/<pid>/cmdline exposes short-lived secrets
+# that tools accept as arguments). Opt-in: services that must see
+# foreign processes (privilege prompts) rely on the exemption group
+# below and are restarted when their drop-ins change.
+#
+# SERVER HARDENING ONLY: hidepid breaks desktop polkit authentication
+# agents (the agent cannot register its session) — see the role README.
+
+# Enable /proc hidepid mounting (disabling rolls the change back)
+hardening_proc_hidepid_enabled: false
+
+# hidepid mode: 2 = foreign processes fully invisible,
+# 1 = visible in listings but their /proc entries are not readable
+hardening_proc_hidepid_mode: 2
+
+# Exemption group granted full /proc visibility (gid=<group>)
+hardening_proc_hidepid_group: 'proc'
+
+# Non-root system services that need the exemption via a
+# SupplementaryGroups drop-in. Listed services are RESTARTED when their
+# drop-in changes. Root services (e.g. systemd-logind) never belong
+# here: root bypasses hidepid, and restarting logind under an active
+# graphical session severs the compositor's session devices.
+hardening_proc_hidepid_exempt_services:
+  - 'polkit'

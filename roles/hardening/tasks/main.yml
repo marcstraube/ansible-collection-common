@@ -38,3 +38,13 @@
   tags:
     - hardening
     - hardening:filesystem
+
+# No feature gate on the import: proc.yml also handles the rollback
+# when hardening_proc_hidepid_enabled is false.
+- name: Main | Import proc hidepid tasks
+  ansible.builtin.import_tasks: proc.yml
+  when:
+    - hardening_enabled | bool
+  tags:
+    - hardening
+    - hardening:proc

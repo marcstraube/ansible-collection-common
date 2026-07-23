@@ -83,6 +83,39 @@ existing data or breaking services that hold open files there. Set
 `hardening_fs_tmp_force_tmpfs: true` to opt in — appropriate for fresh
 installs where `/tmp` is known to be empty.
 
+### /proc hidepid
+
+| Variable                                 | Default                    | Description                                |
+|------------------------------------------|----------------------------|--------------------------------------------|
+| `hardening_proc_hidepid_enabled`         | `false`                    | Mount /proc with hidepid (opt-in)          |
+| `hardening_proc_hidepid_mode`            | `2`                        | `2` = invisible, `1` = listed not readable |
+| `hardening_proc_hidepid_group`           | `'proc'`                   | Exemption group with full /proc visibility |
+| `hardening_proc_hidepid_exempt_services` | `polkit`                   | Services granted the exemption via drop-in |
+
+Hiding foreign process information keeps short-lived secrets that tools
+accept as command-line arguments out of reach of unprivileged users.
+Non-root services that must see foreign processes break under hidepid —
+the role grants the exemption group through `SupplementaryGroups`
+drop-ins and restarts the listed services before the remount. Add
+further non-root services (e.g. monitoring agents that scan processes)
+to `hardening_proc_hidepid_exempt_services` as needed. Root services
+such as `systemd-logind` do not belong in the list: root bypasses
+hidepid, and restarting logind under an active graphical session severs
+the compositor's session devices. Drop-ins of services removed from the
+list are pruned. Disabling the toggle rolls the drop-ins, the fstab
+entry and the mount options back.
+
+> **Warning — server hardening only.** hidepid is incompatible with
+> desktop polkit authentication agents (KDE, XFCE, hyprpolkitagent and
+> other PolkitQt/GLib agents): the agent process runs as the desktop
+> user, fails to determine its own session under any hidepid level and
+> cannot register — all polkit authentication dialogs stop working.
+> This is a long-standing upstream limitation, not a configuration
+> issue. Enable the toggle on servers without a graphical session.
+> Adding a desktop user to the exemption group restores the agent but
+> defeats the purpose, as that user's processes regain full /proc
+> visibility.
+
 ## Tags
 
 | Tag                    | Scope                  |
@@ -91,6 +124,7 @@ installs where `/tmp` is known to be empty.
 | `hardening:kernel`     | Sysctl configuration   |
 | `hardening:modules`    | Module blacklisting    |
 | `hardening:filesystem` | Mount option hardening |
+| `hardening:proc`       | /proc hidepid mounting |
 
 ## Example Playbook
 

@@ -1,0 +1,164 @@
+---
+#
+# /proc hidepid — hide foreign process information from unprivileged users
+#
+# Order matters: the exemption group and the service drop-ins must be in
+# place and the services restarted BEFORE the remount, otherwise
+# privilege prompts break the moment hidepid takes effect. Only
+# non-root services belong in the exemption list — root bypasses
+# hidepid, and restarting root session infrastructure (systemd-logind)
+# under an active graphical session severs the compositor's devices.
+# Disabling the toggle rolls everything back (drop-ins, fstab entry,
+# remount without hidepid); the exemption group is left in place.
+#
+
+- name: Proc | Validate hidepid mode
+  ansible.builtin.assert:
+    that:
+      - hardening_proc_hidepid_mode | int in [1, 2]
+    fail_msg: 'hardening_proc_hidepid_mode must be 1 or 2'
+  when: hardening_proc_hidepid_enabled | bool
+
+- name: Proc | Create hidepid exemption group
+  ansible.builtin.group:
+    name: '{{ hardening_proc_hidepid_group }}'
+    system: true
+    state: present
+  when: hardening_proc_hidepid_enabled | bool
+
+- name: Proc | Create service drop-in directories
+  ansible.builtin.file:
+    path: '/etc/systemd/system/{{ item }}.service.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop: '{{ hardening_proc_hidepid_exempt_services }}'
+  when: hardening_proc_hidepid_enabled | bool
+
+- name: Proc | Deploy service exemption drop-ins
+  ansible.builtin.copy:
+    content: |
+      {{ ansible_managed | comment }}
+      [Service]
+      SupplementaryGroups={{ hardening_proc_hidepid_group }}
+    dest: '/etc/systemd/system/{{ item }}.service.d/10-hidepid-proc.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ hardening_proc_hidepid_exempt_services }}'
+  register: __hardening_proc_dropins
+  when: hardening_proc_hidepid_enabled | bool
+
+# Drop-ins of services that are no longer in the exemption list are
+# removed (the service keeps the group until its next restart or boot —
+# harmless, and deliberately no restart here).
+- name: Proc | Find existing hidepid drop-ins
+  ansible.builtin.find:
+    paths: '/etc/systemd/system'
+    patterns: '10-hidepid-proc.conf'
+    recurse: true
+  register: __hardening_proc_dropins_found
+  when: hardening_proc_hidepid_enabled | bool
+
+- name: Proc | Remove drop-ins of unlisted services
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop: >-
+    {{ __hardening_proc_dropins_found.files | default([])
+       | map(attribute='path')
+       | reject('search',
+                '/(' + (hardening_proc_hidepid_exempt_services
+                        | map('regex_escape') | join('|'))
+                + ')\.service\.d/')
+       | list }}
+  register: __hardening_proc_dropins_pruned
+  when: hardening_proc_hidepid_enabled | bool
+
+- name: Proc | Reload systemd after drop-in pruning  # noqa: no-handler
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when:
+    - hardening_proc_hidepid_enabled | bool
+    - __hardening_proc_dropins_pruned is changed
+    - not ansible_check_mode
+
+# Runs immediately, not as a handler: the exempted services must carry
+# the supplementary group before the remount below hides /proc entries.
+- name: Proc | Restart exempted services after drop-in change  # noqa: no-handler
+  ansible.builtin.systemd_service:
+    name: '{{ item.item }}'
+    state: restarted
+    daemon_reload: true
+  loop: '{{ __hardening_proc_dropins.results | default([]) }}'
+  loop_control:
+    label: '{{ item.item | default(item) }}'
+  when:
+    - hardening_proc_hidepid_enabled | bool
+    - item is changed
+    - not ansible_check_mode
+
+- name: Proc | Configure /proc fstab entry
+  ansible.posix.mount:
+    path: '/proc'
+    src: 'proc'
+    fstype: 'proc'
+    opts: >-
+      nosuid,nodev,noexec,hidepid={{ hardening_proc_hidepid_mode }},gid={{
+      hardening_proc_hidepid_group }}
+    state: present
+  register: __hardening_proc_fstab
+  when: hardening_proc_hidepid_enabled | bool
+
+# Skip in check mode: the prior task only registers the fstab change,
+# so a remount would still apply the old options. Skipped in containers:
+# their /proc is namespaced/masked by the runtime and cannot carry
+# hidepid; the fstab entry above still covers the real-host case.
+- name: Proc | Remount /proc with hidepid  # noqa: no-handler
+  ansible.posix.mount:
+    path: '/proc'
+    state: remounted
+  when:
+    - hardening_proc_hidepid_enabled | bool
+    - __hardening_proc_fstab is changed
+    - not ansible_check_mode
+    - ansible_facts['virtualization_type'] | default('') not in ['container', 'docker', 'podman', 'lxc']
+
+#
+# Rollback when disabled
+#
+
+- name: Proc | Remove service exemption drop-ins (disabled)
+  ansible.builtin.file:
+    path: '/etc/systemd/system/{{ item }}.service.d/10-hidepid-proc.conf'
+    state: absent
+  loop: '{{ hardening_proc_hidepid_exempt_services }}'
+  register: __hardening_proc_dropins_removed
+  when: not hardening_proc_hidepid_enabled | bool
+
+- name: Proc | Reload systemd after drop-in removal (disabled)  # noqa: no-handler
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when:
+    - not hardening_proc_hidepid_enabled | bool
+    - __hardening_proc_dropins_removed is changed
+    - not ansible_check_mode
+
+- name: Proc | Remove /proc fstab entry (disabled)
+  ansible.posix.mount:
+    path: '/proc'
+    state: absent_from_fstab
+  register: __hardening_proc_fstab_removed
+  when: not hardening_proc_hidepid_enabled | bool
+
+- name: Proc | Remount /proc without hidepid (disabled)  # noqa: no-handler
+  ansible.posix.mount:
+    path: '/proc'
+    opts: 'hidepid=off,gid=0'
+    state: remounted
+  when:
+    - not hardening_proc_hidepid_enabled | bool
+    - __hardening_proc_fstab_removed is changed
+    - not ansible_check_mode
+    - ansible_facts['virtualization_type'] | default('') not in ['container', 'docker', 'podman', 'lxc']
