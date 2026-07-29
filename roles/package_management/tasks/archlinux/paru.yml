@@ -73,6 +73,18 @@
     cmd: 'chown -R {{ aur_builder_user }}:aur_shared {{ paru_clone_dir }}'
   changed_when: false
 
+# chown alone does not repair modes: directories created under a hardened
+# umask (0077) stay 2700 and keep locking the aur_shared group out even
+# after ownership is corrected. Normalize them additively — group and
+# other gain read, X adds execute only on directories and already
+# executable files, so regular file exec bits survive. This matches what
+# the SGID bit plus the builder's enforced 022 umask produces for newly
+# created entries. changed_when is false like the ownership recovery above.
+- name: Paru | Normalize modes on existing clone entries
+  ansible.builtin.command:
+    cmd: 'chmod -R g+rX,o+rX {{ paru_clone_dir }}'
+  changed_when: false
+
 # git refuses to operate on repositories owned by another user
 # (CVE-2022-24765 safe.directory check). In the shared clone directory
 # that is the normal case: any aur_shared member may have cloned a
@@ -111,3 +123,30 @@
     owner: root
     group: root
     mode: '0644'
+
+# Manual paru runs must happen as the builder user, otherwise the shared
+# clone tree gains entries owned by the login user and locks the builder
+# out on the next Ansible run. The wrapper shadows /usr/bin/paru in PATH
+# and transparently re-executes it as the builder user via sudo, so a bare
+# "paru -Syu" is safe from any wheel account or as root.
+- name: Paru | Install manual-invocation wrapper
+  ansible.builtin.template:
+    src: 'archlinux/paru-wrapper.j2'
+    dest: '/usr/local/bin/paru'
+    owner: root
+    group: root
+    mode: '0755'
+
+# Companion rule for the wrapper: let wheel members run paru as the builder
+# user. Authentication is required on purpose (no NOPASSWD) — the same bar
+# as "sudo pacman", so a manual upgrade still asks for the caller's
+# password. root does not need this rule.
+- name: Paru | Allow wheel to run paru as the builder user
+  ansible.builtin.lineinfile:
+    path: '/etc/sudoers.d/99-{{ aur_builder_user }}'
+    line: '%wheel ALL=({{ aur_builder_user }}) /usr/bin/paru'
+    create: true
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'

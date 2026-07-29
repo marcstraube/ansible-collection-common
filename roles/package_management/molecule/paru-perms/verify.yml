@@ -47,6 +47,20 @@
           - __pm_legacy_stat.stat.gr_name == 'aur_shared'
         fail_msg: 'Legacy clone entry was not adopted by the builder'
 
+    - name: Verify | Stat the legacy directory
+      ansible.builtin.stat:
+        path: '{{ paru_clone_dir }}/legacypkg'
+      register: __pm_legacy_dir_stat
+
+    - name: Verify | Assert the legacy 0700 directory was made group-readable
+      ansible.builtin.assert:
+        that:
+          - __pm_legacy_dir_stat.stat.rgrp
+          - __pm_legacy_dir_stat.stat.xgrp
+        fail_msg: >-
+          Legacy directory kept its restrictive 0700 mode — chown alone does
+          not repair modes, so the aur_shared group stays locked out.
+
     - name: Verify | Stat the builder-created entry
       ansible.builtin.stat:
         path: '{{ paru_clone_dir }}/testpkg'
@@ -61,3 +75,40 @@
         fail_msg: >-
           Builder-created entry did not inherit aur_shared group access
           through the SGID bit under the enforced 022 umask.
+
+    - name: Verify | Stat the manual-invocation wrapper
+      ansible.builtin.stat:
+        path: /usr/local/bin/paru
+      register: __pm_wrapper_stat
+
+    - name: Verify | Read the wrapper contents
+      ansible.builtin.slurp:
+        src: /usr/local/bin/paru
+      register: __pm_wrapper_content
+
+    - name: Verify | Assert the wrapper re-executes paru as the builder user
+      ansible.builtin.assert:
+        that:
+          - __pm_wrapper_stat.stat.exists
+          - __pm_wrapper_stat.stat.executable
+          - "'sudo -u aur_builder' in (__pm_wrapper_content.content | b64decode)"
+          - "'/usr/bin/paru' in (__pm_wrapper_content.content | b64decode)"
+        fail_msg: >-
+          /usr/local/bin/paru wrapper is missing, not executable, or does not
+          re-execute /usr/bin/paru as the aur_builder user.
+
+    - name: Verify | Validate the builder sudoers file
+      ansible.builtin.command:
+        cmd: 'visudo -cf /etc/sudoers.d/99-aur_builder'
+      changed_when: false
+
+    - name: Verify | Read the builder sudoers file
+      ansible.builtin.slurp:
+        src: /etc/sudoers.d/99-aur_builder
+      register: __pm_sudoers_content
+
+    - name: Verify | Assert the wheel-to-builder paru rule is present
+      ansible.builtin.assert:
+        that:
+          - "'%wheel ALL=(aur_builder) /usr/bin/paru' in (__pm_sudoers_content.content | b64decode)"
+        fail_msg: 'The wheel-to-aur_builder paru sudoers rule is missing.'

@@ -1,0 +1,11 @@
+#!/bin/sh
+{{ ansible_managed | comment }}
+# Route manual/interactive paru calls through the dedicated build user so
+# the shared clone cache (owned by {{ aur_builder_user }}) stays consistent
+# and never gains entries owned by a login user. Regular users need the
+# matching "%wheel ... ({{ aur_builder_user }}) /usr/bin/paru" sudoers rule
+# and authenticate with their own password; root is allowed by default.
+# /usr/bin/paru is called by absolute path to avoid recursing into this
+# wrapper, which shadows the real binary earlier in PATH. -H points HOME at
+# the builder's home so paru does not try to write into the caller's home.
+exec sudo -u {{ aur_builder_user }} -H /usr/bin/paru "$@"

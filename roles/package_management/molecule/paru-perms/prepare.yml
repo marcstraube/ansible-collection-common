@@ -30,12 +30,15 @@
         create_home: true
 
     # Recreate the legacy state earlier role versions left behind: default
-    # ACLs on the clone directory and a clone entry owned by root. Converge
-    # must strip the ACLs and adopt the entry for the builder.
+    # ACLs on the clone directory and a clone entry owned by root. The entry
+    # is mode 0700 as a hardened 0077 umask would have left it, so converge
+    # must strip the ACLs, adopt the entry for the builder AND normalize its
+    # mode back to group-readable.
     - name: Prepare | Create clone directory with a legacy root-owned entry
       ansible.builtin.shell: |
         mkdir -p /var/cache/paru/clone/legacypkg
         echo x > /var/cache/paru/clone/legacypkg/PKGBUILD
+        chmod 0700 /var/cache/paru/clone/legacypkg
         setfacl -m d:g::rwX /var/cache/paru/clone
       args:
         creates: /var/cache/paru/clone/legacypkg/PKGBUILD
