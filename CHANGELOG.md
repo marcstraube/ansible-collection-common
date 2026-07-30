@@ -2,6 +2,13 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [2.3.1](https://github.com/marcstraube/ansible-collection-common/compare/v2.3.0...v2.3.1) (2026-07-30)
+
+
+### Bug Fixes
+
+* **package_management:** make the shared paru clone cache usable for manual upgrades ([#291](https://github.com/marcstraube/ansible-collection-common/issues/291)) ([2164d88](https://github.com/marcstraube/ansible-collection-common/commit/2164d88d67e298c97bbce055d52d5040e07ca272)), closes [#290](https://github.com/marcstraube/ansible-collection-common/issues/290)
+
 ## [2.3.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.2.1...v2.3.0) (2026-07-23)
 
 
