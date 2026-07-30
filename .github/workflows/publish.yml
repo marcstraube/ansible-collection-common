@@ -18,9 +18,11 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: .github/requirements-ci.txt
 
-      - name: Install Ansible
-        run: pip install ansible-core
+      - name: Install dependencies
+        run: pip install -r .github/requirements-ci.txt
 
       - name: Build and publish to Galaxy
         run: |
