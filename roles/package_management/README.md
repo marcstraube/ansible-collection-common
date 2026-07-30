@@ -102,11 +102,25 @@ overrides if needed.
 | `paru_search_by`        | `name-desc`             | Search by field                  |
 | `paru_shared_users`     | `[]`                    | Users sharing AUR clone cache    |
 
-The shared clone directory is group-owned by `aur_shared` with the SGID bit,
-and carries default ACLs granting the group `rwX`. This ensures packages that
-`aur_builder` clones can later be rebuilt by any `aur_shared` member even when
-a restrictive default umask (such as the `hardening` role's `0077`) would
-otherwise strip group permissions from newly created files.
+The shared clone directory is owned by the `aur_builder` user and group-owned
+by `aur_shared` with the SGID bit. All builds run as `aur_builder` under an
+enforced `022` umask (set through the user's GECOS `umask=` field and a
+sudoers `umask_override`), so cloned sources and built packages stay readable
+and executable for the `aur_shared` group even when a restrictive default
+umask (such as the `hardening` role's `0077`) is in effect. ACLs are
+deliberately **not** used: default ACLs make `libarchive`/`bsdtar` skip its
+final `chmod` during source extraction, which would bake the restrictive
+modes of the initial secure `open()` into the built packages. Because
+`makepkg` only chmods paths for their owner, the tree is owned by a single
+user; other `aur_shared` members get read/execute access (never write)
+through the SGID bit and the enforced umask.
+
+Manual upgrades must therefore run as the build user. The role installs a
+`/usr/local/bin/paru` wrapper that transparently re-executes `paru` as
+`aur_builder` via `sudo`, so `paru -Syu` works from any `wheel` account
+(authenticating with the caller's own password) or as `root`. Never invoke
+the real `/usr/bin/paru` directly as a login user — that would create clone
+entries owned by the wrong user and lock the builder out on the next run.
 
 ### Arch Linux - Tools
 
