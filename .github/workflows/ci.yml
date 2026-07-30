@@ -113,6 +113,18 @@ jobs:
         run: |
           ansible-galaxy collection install community.general community.crypto ansible.posix kewlfft.aur containers.podman
 
+      - name: Pin crun to a spec-compatible release
+        # ubuntu-latest ships crun versions that vary with the runner image
+        # rollout; crun < 1.14.3 cannot parse the OCI runtime spec v1.2.1
+        # config that podman 5.x writes, failing container create with
+        # "crun: unknown version specified". Pin a known-good static build.
+        run: |
+          CRUN_VERSION=1.28
+          sudo curl -fsSL -o /usr/bin/crun \
+            "https://github.com/containers/crun/releases/download/${CRUN_VERSION}/crun-${CRUN_VERSION}-linux-amd64"
+          sudo chmod +x /usr/bin/crun
+          crun --version
+
       - name: Run Molecule test
         working-directory: roles/${{ matrix.role }}
         run: molecule test
@@ -280,6 +292,18 @@ jobs:
       - name: Install collection dependencies
         run: |
           ansible-galaxy collection install community.general community.crypto ansible.posix kewlfft.aur containers.podman
+
+      - name: Pin crun to a spec-compatible release
+        # ubuntu-latest ships crun versions that vary with the runner image
+        # rollout; crun < 1.14.3 cannot parse the OCI runtime spec v1.2.1
+        # config that podman 5.x writes, failing container create with
+        # "crun: unknown version specified". Pin a known-good static build.
+        run: |
+          CRUN_VERSION=1.28
+          sudo curl -fsSL -o /usr/bin/crun \
+            "https://github.com/containers/crun/releases/download/${CRUN_VERSION}/crun-${CRUN_VERSION}-linux-amd64"
+          sudo chmod +x /usr/bin/crun
+          crun --version
 
       - name: Run Molecule test
         working-directory: roles/${{ matrix.role }}
