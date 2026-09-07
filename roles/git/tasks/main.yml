@@ -1,23 +1,29 @@
 ---
+# git_users takes precedence; only derive when the operator left it empty.
+- name: Main | Set user derivation guard
+  ansible.builtin.set_fact:
+    __git_derive_users: '{{ git_users | length == 0 }}'
+  when: git_enabled | bool
+  tags:
+    - always
+
 - name: Main | Derive git users from users_list (exclude system users)
   ansible.builtin.set_fact:
     git_users: >-
-      {{ (users_list | default([])
-          | selectattr('git', 'defined')
-          | selectattr('system', 'undefined') | list
-          + users_list | default([])
-          | selectattr('git', 'defined')
-          | selectattr('system', 'defined')
-          | rejectattr('system', 'equalto', true) | list)
-         | community.general.json_query(
-             '[].{username: name, git_name: comment, git_email: git.email, '
-             + 'git_signing_key: git.signing_key}'
-           ) }}
+      {{ git_users + [{
+           'username': item.name,
+           'git_name': item.comment | default(''),
+           'git_email': item.git.email | default(''),
+           'git_signing_key': item.git.signing_key | default('')
+         }] }}
+  loop: >-
+    {{ users_list | default([]) | selectattr('git', 'defined') | list }}
+  loop_control:
+    label: '{{ item.name }}'
   when:
     - git_enabled | bool
-    - git_users | length == 0
-    - users_list is defined
-    - users_list | length > 0
+    - __git_derive_users | default(false) | bool
+    - not (item.system | default(false) | bool)
   tags:
     - always
 
