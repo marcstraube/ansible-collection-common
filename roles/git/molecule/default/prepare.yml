@@ -1,0 +1,80 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # svcuser is a system account: the role must never write git config for it.
+    # plainuser carries no git attribute and must be excluded from derivation.
+    __prepare_users:
+      - name: 'testuser'
+        system: false
+      - name: 'svcuser'
+        system: true
+      - name: 'plainuser'
+        system: false
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Install EPEL repository (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Sudo PAM bypass — required for tasks using `become_user` on
+    # geerlingguy Rocky containers under GitHub-hosted runners
+    # (test container only).
+
+    - name: Prepare | Bypass sudo PAM stack (RedHat container)
+      ansible.builtin.copy:
+        content: |
+          #%PAM-1.0
+          auth       sufficient   pam_permit.so
+          account    sufficient   pam_permit.so
+          password   sufficient   pam_permit.so
+          session    sufficient   pam_permit.so
+        dest: /etc/pam.d/sudo
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Disable sudoers authentication (RedHat container)
+      ansible.builtin.copy:
+        content: 'Defaults !authenticate'
+        dest: /etc/sudoers.d/molecule-no-auth
+        owner: root
+        group: root
+        mode: '0440'
+        validate: 'visudo -cf %s'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Create test users
+      ansible.builtin.user:
+        name: '{{ item.name }}'
+        state: present
+        system: '{{ item.system }}'
+        home: '/home/{{ item.name }}'
+        create_home: true
+        shell: /bin/bash
+      loop: '{{ __prepare_users }}'
+      loop_control:
+        label: '{{ item.name }}'

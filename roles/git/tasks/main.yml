@@ -1,0 +1,58 @@
+---
+# git_users takes precedence; only derive when the operator left it empty.
+- name: Main | Set user derivation guard
+  ansible.builtin.set_fact:
+    __git_derive_users: '{{ git_users | length == 0 }}'
+  when: git_enabled | bool
+  tags:
+    - always
+
+- name: Main | Derive git users from users_list (exclude system users)
+  ansible.builtin.set_fact:
+    git_users: >-
+      {{ git_users + [{
+           'username': item.name,
+           'git_name': item.comment | default(''),
+           'git_email': item.git.email | default(''),
+           'git_signing_key': item.git.signing_key | default('')
+         }] }}
+  loop: >-
+    {{ users_list | default([]) | selectattr('git', 'defined') | list }}
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - git_enabled | bool
+    - __git_derive_users | default(false) | bool
+    - not (item.system | default(false) | bool)
+  tags:
+    - always
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - git
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: git_enabled | bool
+  tags:
+    - git
+    - git:install
+
+- name: Main | Import user configuration tasks
+  ansible.builtin.import_tasks: users.yml
+  when:
+    - git_enabled | bool
+    - git_users | length > 0
+  tags:
+    - git
+    - git:users

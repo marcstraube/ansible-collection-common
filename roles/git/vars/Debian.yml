@@ -1,0 +1,12 @@
+---
+#
+# Debian Variables
+#
+
+# Version control
+__git_packages:
+  - 'git'
+
+__git_lfs_package: 'git-lfs'
+__git_github_cli_package: 'gh'
+__git_gitlab_cli_package: ''  # not packaged in Debian
