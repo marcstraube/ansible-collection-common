@@ -215,6 +215,18 @@
     - nodejs
   when: nodejs_enabled | default(true) | bool
 
+- name: Base System | Include git role
+  ansible.builtin.include_role:
+    name: marcstraube.common.git
+    apply:
+      tags:
+        - base-system
+        - git
+  tags:
+    - base-system
+    - git
+  when: git_enabled | default(true) | bool
+
 - name: Base System | Include chrony role
   ansible.builtin.include_role:
     name: marcstraube.common.chrony

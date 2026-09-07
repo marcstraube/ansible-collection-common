@@ -1,0 +1,51 @@
+---
+#
+# Git User Configuration
+#
+
+- name: User Config | Configure user name
+  community.general.git_config:
+    name: user.name
+    value: '{{ __git_user.git_name }}'
+    scope: global
+  become: true
+  become_user: '{{ __git_user.username }}'
+  when: __git_user.git_name | default('', true) | length > 0
+
+- name: User Config | Configure user email
+  community.general.git_config:
+    name: user.email
+    value: '{{ __git_user.git_email }}'
+    scope: global
+  become: true
+  become_user: '{{ __git_user.username }}'
+  when: __git_user.git_email | default('', true) | length > 0
+
+- name: User Config | Configure signing key
+  community.general.git_config:
+    name: user.signingkey
+    value: '{{ __git_user.git_signing_key }}'
+    scope: global
+  become: true
+  become_user: '{{ __git_user.username }}'
+  when: __git_user.git_signing_key | default('', true) | length > 0
+
+- name: User Config | Enable commit signing
+  community.general.git_config:
+    name: commit.gpgsign
+    value: 'true'
+    scope: global
+  become: true
+  become_user: '{{ __git_user.username }}'
+  when: __git_user.git_signing_key | default('', true) | length > 0
+
+- name: User Config | Apply global git config
+  community.general.git_config:
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+    scope: global
+  loop: '{{ git_config | dict2items }}'
+  loop_control:
+    label: '{{ item.key }}'
+  become: true
+  become_user: '{{ __git_user.username }}'

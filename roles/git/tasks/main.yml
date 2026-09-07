@@ -1,0 +1,52 @@
+---
+- name: Main | Derive git users from users_list (exclude system users)
+  ansible.builtin.set_fact:
+    git_users: >-
+      {{ (users_list | default([])
+          | selectattr('git', 'defined')
+          | selectattr('system', 'undefined') | list
+          + users_list | default([])
+          | selectattr('git', 'defined')
+          | selectattr('system', 'defined')
+          | rejectattr('system', 'equalto', true) | list)
+         | community.general.json_query(
+             '[].{username: name, git_name: comment, git_email: git.email, '
+             + 'git_signing_key: git.signing_key}'
+           ) }}
+  when:
+    - git_enabled | bool
+    - git_users | length == 0
+    - users_list is defined
+    - users_list | length > 0
+  tags:
+    - always
+
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - git
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: git_enabled | bool
+  tags:
+    - git
+    - git:install
+
+- name: Main | Import user configuration tasks
+  ansible.builtin.import_tasks: users.yml
+  when:
+    - git_enabled | bool
+    - git_users | length > 0
+  tags:
+    - git
+    - git:users

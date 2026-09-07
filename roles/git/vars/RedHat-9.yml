@@ -1,0 +1,16 @@
+---
+#
+# RedHat 9 Variables
+#
+# vars/RedHat.yml targets the newest supported EL major. EL9 mirrors it
+# because include_vars uses with_first_found and loads only one file per
+# host. The package set is identical on both majors.
+#
+
+# Version control
+__git_packages:
+  - 'git'
+
+__git_lfs_package: 'git-lfs'
+__git_github_cli_package: 'gh'
+__git_gitlab_cli_package: ''  # not in EPEL 9/10

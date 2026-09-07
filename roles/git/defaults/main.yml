@@ -1,0 +1,56 @@
+---
+#
+# Role Control
+#
+
+# Enable the git role
+git_enabled: true
+
+#
+# Version Control Tooling
+#
+
+# Enable git-lfs support
+git_lfs_enabled: true
+
+# Enable GitHub CLI (gh)
+git_github_cli_enabled: true
+
+# Enable GitLab CLI (glab)
+git_gitlab_cli_enabled: true
+
+#
+# Global Configuration
+#
+
+# Git settings applied to the global scope of every configured user.
+# Add 'core.editor' here when a specific editor should be enforced; git
+# falls back to the EDITOR environment variable when it is unset.
+git_config:
+  init.defaultBranch: 'main'
+  pull.rebase: 'true'
+  push.autoSetupRemote: 'true'
+
+#
+# Per-User Configuration
+#
+
+# Users receiving git configuration. Leave empty to derive the list from
+# users_list entries carrying a 'git' attribute (system users excluded).
+#
+# Example:
+#   git_users:
+#     - username: 'johndoe'
+#       mode: 'managed'
+#       git_name: 'John Doe'
+#       git_email: 'johndoe@example.com'
+#       git_signing_key: 'YOUR_GPG_KEY_ID'
+#     - username: 'guest'
+#       mode: 'disabled'
+git_users: []
+
+# Default mode when a user entry has no 'mode' key
+# managed  — overwrite on every run
+# initial  — deploy only when the user was created in this run
+# disabled — skip user config entirely
+git_user_config_mode: 'initial'

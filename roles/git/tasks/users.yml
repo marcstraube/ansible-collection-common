@@ -1,0 +1,21 @@
+---
+# Loops over git_users entries.
+# Respects mode: managed | initial | disabled
+
+- name: Users | Deploy per-user git config
+  ansible.builtin.include_tasks:
+    file: user_config.yml
+    apply:
+      tags:
+        - git
+        - git:users
+  loop: '{{ git_users }}'
+  loop_control:
+    loop_var: __git_user
+    label: '{{ __git_user.username }}'
+  when:
+    - (__git_user.mode | default(git_user_config_mode)) != 'disabled'
+    - >-
+      (__git_user.mode | default(git_user_config_mode)) == 'managed'
+      or ((__git_user.mode | default(git_user_config_mode)) == 'initial'
+          and __git_user.username in (__users_newly_created | default([])))

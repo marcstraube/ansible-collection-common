@@ -1,0 +1,110 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    #
+    # Load OS-Specific Variables
+    #
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    #
+    # Package Verification
+    #
+
+    - name: Verify | Check git packages are installed
+      ansible.builtin.package:
+        name: '{{ __git_packages }}'
+        state: present
+      check_mode: true
+      register: __verify_git_packages
+
+    - name: Verify | Assert git packages were already installed
+      ansible.builtin.assert:
+        that:
+          - not __verify_git_packages.changed
+        fail_msg: 'git packages are not installed'
+
+    - name: Verify | Check git-lfs package is installed
+      ansible.builtin.package:
+        name: '{{ __git_lfs_package }}'
+        state: present
+      check_mode: true
+      register: __verify_git_lfs
+      when: __git_lfs_package | length > 0
+
+    - name: Verify | Assert git-lfs was already installed
+      ansible.builtin.assert:
+        that:
+          - not __verify_git_lfs.changed
+        fail_msg: '{{ __git_lfs_package }} is not installed'
+      when: __git_lfs_package | length > 0
+
+    - name: Verify | Check GitHub CLI package is installed
+      ansible.builtin.package:
+        name: '{{ __git_github_cli_package }}'
+        state: present
+      check_mode: true
+      register: __verify_github_cli
+      when: __git_github_cli_package | length > 0
+
+    - name: Verify | Assert GitHub CLI was already installed
+      ansible.builtin.assert:
+        that:
+          - not __verify_github_cli.changed
+        fail_msg: '{{ __git_github_cli_package }} is not installed'
+      when: __git_github_cli_package | length > 0
+
+    - name: Verify | GitLab CLI disabled — package not installed
+      ansible.builtin.package:
+        name: '{{ __git_gitlab_cli_package }}'
+        state: absent
+      check_mode: true
+      register: __verify_gitlab_cli
+      failed_when: __verify_gitlab_cli.changed
+      when: __git_gitlab_cli_package | length > 0
+
+    #
+    # Per-User Configuration Verification
+    #
+
+    - name: Verify | Read managed user gitconfig
+      ansible.builtin.slurp:
+        src: /home/testuser/.gitconfig
+      register: __verify_testuser_gitconfig
+
+    - name: Verify | Assert managed user config contains identity and settings
+      ansible.builtin.assert:
+        that:
+          - "'Test User' in __verify_testuser_gitconfig.content | b64decode"
+          - "'testuser@example.test' in __verify_testuser_gitconfig.content | b64decode"
+          - "'defaultBranch = main' in __verify_testuser_gitconfig.content | b64decode"
+        fail_msg: 'managed user gitconfig is missing expected entries'
+
+    - name: Verify | Check excluded user gitconfig absence
+      ansible.builtin.stat:
+        path: '/home/{{ item }}/.gitconfig'
+      loop:
+        - 'svcuser'
+        - 'plainuser'
+      register: __verify_excluded_gitconfig
+
+    - name: Verify | Assert system and attribute-less users received no config
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: '{{ item.item }} must not receive a gitconfig'
+      loop: '{{ __verify_excluded_gitconfig.results }}'
+      loop_control:
+        label: '{{ item.item }}'

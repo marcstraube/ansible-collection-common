@@ -1,0 +1,32 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    git_enabled: true
+    git_gitlab_cli_enabled: false
+    git_user_config_mode: 'managed'
+    git_config:
+      init.defaultBranch: 'main'
+      pull.rebase: 'true'
+    # git_users is deliberately left unset so the role derives it from
+    # users_list: testuser qualifies, svcuser is a system account and
+    # plainuser carries no git attribute.
+    users_list:
+      - name: 'testuser'
+        comment: 'Test User'
+        git:
+          email: 'testuser@example.test'
+      - name: 'svcuser'
+        comment: 'Service Account'
+        system: true
+        git:
+          email: 'svcuser@example.test'
+      - name: 'plainuser'
+        comment: 'Plain User'
+
+  tasks:
+    - name: Converge | Include git role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
