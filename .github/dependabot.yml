@@ -7,3 +7,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    # All actions are pinned to moving major tags, which already deliver patch
+    # and minor releases. Report major bumps only.
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-patch
+          - version-update:semver-minor
