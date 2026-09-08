@@ -63,15 +63,43 @@
 # the RPM keyring. The Ansible dnf module cannot handle the interactive GPG key
 # confirmation prompt and silently fails the transaction while reporting changed.
 # Import the key via rpm --import before installing epel-release.
-- name: Repos | Import distribution GPG key (Rocky/Alma)
+#
+# The ansible.builtin.rpm_key module cannot be used here: before importing, it
+# pipes the whole RPM keyring through gpg, which aborts on v6 key packets with
+# "packet(6) with unknown version 6". ansible-core 2.20 replaces that code path
+# with librpm, but the collection floor is 2.19. Query the keyring through rpm
+# itself instead, which needs no gpg at all, and derive changed state from
+# comparing it before and after the import.
+- name: Repos | Gather imported GPG keys before import (Rocky/Alma)  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    cmd: rpm -q gpg-pubkey --qf '%{version}\n'
+  register: __package_management_keys_before
+  changed_when: false
+  failed_when: false
+  when:
+    - dnf_epel_enabled | bool
+    - ansible_facts['distribution'] in ['Rocky', 'AlmaLinux']
+
+- name: Repos | Import distribution GPG key (Rocky/Alma)  # noqa: command-instead-of-module
   vars:
     __distro: "{{ ansible_facts['distribution'] }}"
     __distro_ver: "{{ ansible_facts['distribution_major_version'] }}"
-  ansible.builtin.rpm_key:
-    key: "/etc/pki/rpm-gpg/RPM-GPG-KEY-{{ __distro }}-{{ __distro_ver }}"
-    state: present
+  ansible.builtin.command:
+    cmd: "rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-{{ __distro }}-{{ __distro_ver }}"
+  changed_when: false
   retries: 5
   delay: 10
+  when:
+    - dnf_epel_enabled | bool
+    - ansible_facts['distribution'] in ['Rocky', 'AlmaLinux']
+
+- name: Repos | Report distribution GPG key import (Rocky/Alma)  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    cmd: rpm -q gpg-pubkey --qf '%{version}\n'
+  register: __package_management_keys_after
+  changed_when: >-
+    __package_management_keys_after.stdout !=
+    __package_management_keys_before.stdout
   when:
     - dnf_epel_enabled | bool
     - ansible_facts['distribution'] in ['Rocky', 'AlmaLinux']
