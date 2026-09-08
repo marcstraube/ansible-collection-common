@@ -113,12 +113,15 @@
     # sysctl Command Verification
     #
 
+    # Probe a single key instead of "sysctl -a": in an unprivileged container
+    # the latter returns rc 1 because some kernel keys (for example the
+    # AppArmor ones) are not readable, which says nothing about sysctl itself.
     - name: Verify | Test sysctl command works
       ansible.builtin.command:
-        cmd: sysctl -a
-      register: sysctl_all
+        cmd: sysctl -n kernel.ostype
+      register: sysctl_probe
       changed_when: false
-      failed_when: sysctl_all.rc != 0
+      failed_when: sysctl_probe.stdout != 'Linux'
 
     #
     # Package Verification
