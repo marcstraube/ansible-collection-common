@@ -138,7 +138,8 @@ jobs:
   # DETECT CHANGED ROLES
   # Determines which podman roles need molecule testing based on git diff.
   # Only substantive changes trigger tests (not README-only edits).
-  # Shared file changes (galaxy.yml, plugins/, meta/runtime.yml) test all roles.
+  # Shared file changes (galaxy.yml, requirements.yml, plugins/,
+  # meta/runtime.yml and this workflow) test all roles.
   # Vagrant roles (apparmor, auditd, hardening, hardware_tokens,
   # networkmanager, wireguard) require VMs and are tested locally.
   # On schedule / workflow_dispatch: full matrix (all roles × all platforms)
@@ -194,7 +195,7 @@ jobs:
               CHANGED=$(git diff --name-only "$BASE" "${{ github.sha }}")
 
               # Shared files that require testing all roles
-              if echo "$CHANGED" | grep -qE '^(galaxy\.yml|requirements\.yml|plugins/|meta/runtime\.yml)'; then
+              if echo "$CHANGED" | grep -qE '^(galaxy\.yml|requirements\.yml|plugins/|meta/runtime\.yml|\.github/workflows/ci\.yml)'; then
                 echo "Shared files changed — testing all roles"
                 ROLES="$ALL_PODMAN_ROLES"
               else
@@ -286,7 +287,7 @@ jobs:
           cache-dependency-path: .github/requirements-molecule.txt
 
       - name: Install dependencies
-        run: pip install "ansible-core~=2.17.0" -r .github/requirements-molecule.txt
+        run: pip install "ansible-core~=2.19.0" -r .github/requirements-molecule.txt
 
       - name: Install collection dependencies
         run: |
