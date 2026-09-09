@@ -70,6 +70,16 @@ overrides if needed.
 | `users_ssh_dir_mode`             | `0700`            | SSH directory permissions         |
 | `users_ssh_authorized_keys_mode` | `0600`            | Authorized keys file permissions  |
 | `users_create_ssh_dir`           | `true`            | Create `.ssh` directory for users |
+| `users_ssh_key_file_mode`        | `0600`            | Deployed private key permissions  |
+| `users_ssh_public_key_file_mode` | `0644`            | Deployed public key permissions   |
+
+Key files listed in a user's `ssh_key_files` are read from
+`{{ inventory_dir }}/files/ssh/` and written to the user's `.ssh` directory.
+Encrypt private key files with `ansible-vault encrypt` — the `copy` module
+decrypts a vault-encrypted source transparently, so the key stays encrypted at
+rest in the inventory. The public half is optional and named through
+`src_public`, which keeps the source filename free while the destination
+follows SSH convention as `<dest>.pub`.
 
 ### Password Policy
 
@@ -140,6 +150,11 @@ Each entry in `users_list` supports:
   ssh_key_bits: 4096
   ssh_key_comment: ''
   ssh_key_passphrase: ''
+  ssh_key_files:             # Deploy existing key files from the inventory
+    - src: 'deploy_key'              # <inventory>/files/ssh/deploy_key
+      src_public: 'deploy_key.pub'   # Optional public half
+      dest: 'id_ed25519'             # ~/.ssh/id_ed25519 (public: id_ed25519.pub)
+      mode: '0600'                   # Optional
   profile_image: ''          # Path to image file
   state: 'present'           # present, absent
 ```
@@ -181,11 +196,14 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - Use `users_password_salt` (stored in vault) for idempotent password hashing
 - Profile images use AccountsService and optionally `~/.face` symlinks for DM compatibility
 - Exclusive mode only affects regular users (UID 1000-59999), never system accounts
+- `ssh_key_files` deploys existing keys; `generate_ssh_key` creates a new pair on the target host
+- Deployed key files need the user's `.ssh` directory, which requires `users_create_ssh_dir`
 
 ## References
 
 - [useradd(8)](https://man7.org/linux/man-pages/man8/useradd.8.html) — user account creation man page
 - [login.defs(5)](https://man7.org/linux/man-pages/man5/login.defs.5.html) — shadow password suite configuration
+- [Ansible Vault](https://docs.ansible.com/ansible/latest/vault_guide/index.html) — encrypting files and variables
 
 ## License
 

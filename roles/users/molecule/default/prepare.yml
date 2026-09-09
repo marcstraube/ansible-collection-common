@@ -1,4 +1,28 @@
 ---
+# Runs against a single inventory host so the key pair is created once;
+# the implicit localhost has no inventory_dir to resolve the source path from.
+- name: Prepare SSH key files on the controller
+  hosts: all[0]
+  gather_facts: false
+
+  tasks:
+    - name: Prepare | Create inventory SSH key source directory
+      ansible.builtin.file:
+        path: '{{ inventory_dir }}/files/ssh'
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      become: false
+
+    - name: Prepare | Generate test key pair for deployment
+      ansible.builtin.command:
+        cmd: >-
+          ssh-keygen -t ed25519 -N '' -C 'keyfile-test@molecule'
+          -f {{ inventory_dir }}/files/ssh/molecule_test_key
+        creates: '{{ inventory_dir }}/files/ssh/molecule_test_key'
+      delegate_to: localhost
+      become: false
+
 - name: Prepare
   hosts: all
   gather_facts: true

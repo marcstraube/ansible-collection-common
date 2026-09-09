@@ -236,6 +236,62 @@
         fail_msg: 'authorized_keys should have exactly 2 keys (exclusive mode)'
 
     #
+    # SSH Key File Deployment Verification
+    #
+
+    - name: Verify | Check keyfileuser private key exists
+      ansible.builtin.stat:
+        path: /home/keyfileuser/.ssh/id_ed25519
+      register: keyfileuser_privkey
+      failed_when: not keyfileuser_privkey.stat.exists
+
+    - name: Verify | Check deployed private key permissions
+      ansible.builtin.assert:
+        that:
+          - keyfileuser_privkey.stat.mode == '0600'
+          - keyfileuser_privkey.stat.pw_name == 'keyfileuser'
+          - keyfileuser_privkey.stat.gr_name == 'keyfileuser'
+        fail_msg: 'Deployed private key has incorrect permissions'
+
+    - name: Verify | Check keyfileuser public key exists
+      ansible.builtin.stat:
+        path: /home/keyfileuser/.ssh/id_ed25519.pub
+      register: keyfileuser_pubkey
+      failed_when: not keyfileuser_pubkey.stat.exists
+
+    - name: Verify | Check deployed public key permissions
+      ansible.builtin.assert:
+        that:
+          - keyfileuser_pubkey.stat.mode == '0644'
+          - keyfileuser_pubkey.stat.pw_name == 'keyfileuser'
+          - keyfileuser_pubkey.stat.gr_name == 'keyfileuser'
+        fail_msg: 'Deployed public key has incorrect permissions'
+
+    - name: Verify | Derive public key from deployed private key
+      ansible.builtin.command:
+        cmd: 'ssh-keygen -y -f /home/keyfileuser/.ssh/id_ed25519'
+      register: keyfileuser_derived
+      changed_when: false
+
+    - name: Verify | Read deployed public key
+      ansible.builtin.slurp:
+        src: /home/keyfileuser/.ssh/id_ed25519.pub
+      register: keyfileuser_pubkey_content
+
+    - name: Verify | Check both deployed halves form one key pair
+      ansible.builtin.assert:
+        that:
+          - keyfileuser_derived.stdout.split()[1] ==
+            (keyfileuser_pubkey_content.content | b64decode).split()[1]
+        fail_msg: 'Deployed public key does not match the deployed private key'
+
+    - name: Verify | Check deployed public key keeps its comment
+      ansible.builtin.assert:
+        that:
+          - "'keyfile-test@molecule' in (keyfileuser_pubkey_content.content | b64decode)"
+        fail_msg: 'Deployed public key lost its comment'
+
+    #
     # Generated SSH Key Verification
     #
 

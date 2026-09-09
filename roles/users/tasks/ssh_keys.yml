@@ -31,3 +31,38 @@
     - item.state | default('present') == 'present'
     - item.ssh_keys is defined
     - item.ssh_keys | length > 0
+
+#
+# Key File Deployment
+#
+
+- name: SSH Keys | Deploy private key files
+  ansible.builtin.copy:
+    src: '{{ inventory_dir }}/files/ssh/{{ item.1.src }}'
+    dest: >-
+      {{ item.0.home | default(users_default_home_base + "/" + item.0.name) }}/{{
+        users_ssh_authorized_keys_dir }}/{{ item.1.dest }}
+    owner: '{{ item.0.name }}'
+    group: '{{ item.0.group | default(item.0.name) }}'
+    mode: '{{ item.1.mode | default(users_ssh_key_file_mode) }}'
+  loop: '{{ users_list | subelements("ssh_key_files", skip_missing=True) }}'
+  loop_control:
+    label: '{{ item.0.name }}: {{ item.1.dest }}'
+  when: item.0.state | default('present') == 'present'
+  no_log: true
+
+- name: SSH Keys | Deploy public key files
+  ansible.builtin.copy:
+    src: '{{ inventory_dir }}/files/ssh/{{ item.1.src_public }}'
+    dest: >-
+      {{ item.0.home | default(users_default_home_base + "/" + item.0.name) }}/{{
+        users_ssh_authorized_keys_dir }}/{{ item.1.dest }}.pub
+    owner: '{{ item.0.name }}'
+    group: '{{ item.0.group | default(item.0.name) }}'
+    mode: '{{ users_ssh_public_key_file_mode }}'
+  loop: '{{ users_list | subelements("ssh_key_files", skip_missing=True) }}'
+  loop_control:
+    label: '{{ item.0.name }}: {{ item.1.dest }}.pub'
+  when:
+    - item.0.state | default('present') == 'present'
+    - item.1.src_public is defined
