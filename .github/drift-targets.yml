@@ -19,11 +19,6 @@
 # entry when restoring the package.
 
 targets:
-  - role: aide
-    platform: archlinux
-    package: aide
-    source: aur
-    vars_file: vars/Archlinux.yml
   - role: gnupg
     platform: rocky-9
     package: paperkey
