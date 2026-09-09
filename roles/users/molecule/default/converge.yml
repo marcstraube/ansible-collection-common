@@ -56,6 +56,15 @@
         generate_ssh_key: true
         ssh_key_type: 'ed25519'
 
+      # User with deployed SSH key files
+      - name: 'keyfileuser'
+        comment: 'Key File User'
+        uid: 3008
+        ssh_key_files:
+          - src: 'molecule_test_key'
+            src_public: 'molecule_test_key.pub'
+            dest: 'id_ed25519'
+
       # System user
       - name: 'serviceuser'
         comment: 'Service Account'
