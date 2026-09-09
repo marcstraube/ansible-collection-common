@@ -190,17 +190,6 @@
   loop_control:
     label: '{{ item.name }}'
   no_log: true
-  register: __users_create_result
-
-- name: Users | Set list of newly created users
-  ansible.builtin.set_fact:
-    __users_newly_created: >-
-      {{ __users_create_result.results
-         | default([])
-         | selectattr('changed', 'equalto', true)
-         | map(attribute='item')
-         | map(attribute='name')
-         | list }}
 
 - name: Users | Set home directory permissions
   ansible.builtin.file:

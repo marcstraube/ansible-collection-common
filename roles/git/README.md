@@ -84,11 +84,11 @@ Each entry accepts `username`, an optional `mode`, and the optional identity
 keys `git_name`, `git_email` and `git_signing_key`. Providing `git_signing_key`
 also enables `commit.gpgsign` for that user.
 
-| Mode       | Behavior                                         |
-|------------|--------------------------------------------------|
-| `managed`  | Apply the configuration on every run             |
-| `initial`  | Apply only for users created during the same run |
-| `disabled` | Skip the user entirely                           |
+| Mode       | Behavior                                       |
+|------------|------------------------------------------------|
+| `managed`  | Apply the configuration on every run           |
+| `initial`  | Apply only when the user has no git config yet |
+| `disabled` | Skip the user entirely                         |
 
 ## Tags
 

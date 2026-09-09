@@ -9,6 +9,43 @@
     __gnupg_user_home: '{{ getent_passwd[gnupg_user.username][4] }}'
     __gnupg_user_uid: '{{ getent_passwd[gnupg_user.username][1] }}'
 
+# Mode semantics:
+#   managed  — reconcile every config file on each run
+#   initial  — write a file only when it is absent, preserve it after
+#   disabled — never write (gated in main.yml)
+# Each file decides on its own, so a user who keeps a hand-written
+# gpg.conf still receives a missing dirmngr.conf.
+- name: Configure | Stat existing per-user config files
+  ansible.builtin.stat:
+    path: '{{ item.path }}'
+  loop:
+    - key: 'gpg'
+      path: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}/gpg.conf'
+    - key: 'agent'
+      path: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}/gpg-agent.conf'
+    - key: 'scdaemon'
+      path: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}/scdaemon.conf'
+    - key: 'dirmngr'
+      path: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}/dirmngr.conf'
+    - key: 'ssh_env'
+      path: '{{ __gnupg_user_home }}/.config/environment.d/50-gpg-ssh.conf'
+  loop_control:
+    label: '{{ item.key }}'
+  register: __gnupg_config_stats
+
+- name: Configure | Build per-file deploy decision
+  ansible.builtin.set_fact:
+    __gnupg_user_managed: >-
+      {{ (gnupg_user.mode | default(gnupg_user_config_mode)) == 'managed' }}
+    __gnupg_should_deploy: >-
+      {{
+        dict(__gnupg_config_stats.results
+             | map(attribute='item.key')
+             | zip(__gnupg_config_stats.results
+                   | map(attribute='stat.exists')
+                   | map('ternary', false, true)))
+      }}
+
 - name: Configure | Ensure .gnupg directory exists
   ansible.builtin.file:
     path: '{{ __gnupg_user_home }}/{{ __gnupg_config_dir }}'
@@ -16,6 +53,10 @@
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
     mode: '0700'
+  when: >-
+    __gnupg_user_managed | bool
+    or ['gpg', 'agent', 'scdaemon', 'dirmngr']
+       | map('extract', __gnupg_should_deploy) | select | list | length > 0
 
 - name: Configure | Deploy gpg.conf
   ansible.builtin.template:
@@ -24,6 +65,7 @@
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
     mode: '0600'
+  when: __gnupg_user_managed | bool or __gnupg_should_deploy['gpg'] | default(true)
 
 - name: Configure | Deploy gpg-agent.conf
   ansible.builtin.template:
@@ -33,7 +75,9 @@
     group: '{{ gnupg_user.username }}'
     mode: '0600'
   notify: Reload GnuPG agent
-  when: gnupg_agent_enabled | default(true) | bool
+  when:
+    - gnupg_agent_enabled | default(true) | bool
+    - __gnupg_user_managed | bool or __gnupg_should_deploy['agent'] | default(true)
 
 - name: Configure | Deploy scdaemon.conf
   ansible.builtin.template:
@@ -43,7 +87,11 @@
     group: '{{ gnupg_user.username }}'
     mode: '0600'
   notify: Reload GnuPG scdaemon
-  when: gnupg_scdaemon_enabled | default(true) | bool
+  when:
+    - gnupg_scdaemon_enabled | default(true) | bool
+    - >-
+      __gnupg_user_managed | bool
+      or __gnupg_should_deploy['scdaemon'] | default(true)
 
 - name: Configure | Deploy dirmngr.conf
   ansible.builtin.template:
@@ -52,7 +100,11 @@
     owner: '{{ gnupg_user.username }}'
     group: '{{ gnupg_user.username }}'
     mode: '0600'
-  when: gnupg_dirmngr_enabled | default(true) | bool
+  when:
+    - gnupg_dirmngr_enabled | default(true) | bool
+    - >-
+      __gnupg_user_managed | bool
+      or __gnupg_should_deploy['dirmngr'] | default(true)
 
 - name: Configure | Create systemd user environment.d directory
   ansible.builtin.file:
@@ -64,6 +116,9 @@
   when:
     - gnupg_agent_enabled | default(true) | bool
     - gnupg_user.agent_ssh | default(gnupg_agent_ssh_enabled) | bool
+    - >-
+      __gnupg_user_managed | bool
+      or __gnupg_should_deploy['ssh_env'] | default(true)
 
 - name: Configure | Set SSH_AUTH_SOCK to gpg-agent socket
   ansible.builtin.copy:
@@ -77,6 +132,9 @@
   when:
     - gnupg_agent_enabled | default(true) | bool
     - gnupg_user.agent_ssh | default(gnupg_agent_ssh_enabled) | bool
+    - >-
+      __gnupg_user_managed | bool
+      or __gnupg_should_deploy['ssh_env'] | default(true)
 
 # failed_when: false — keyserver may be unreachable or key not found (non-fatal)
 - name: Configure | Import keys from keyserver

@@ -14,6 +14,48 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+### `editors`, `git`, `gnupg`, `multiplexer`, `package_management`, `shell` — `initial` now gates on config existence
+
+The `initial` value of `<role>_user_config_mode` previously acted only
+on users that `marcstraube.common.users` had created in the same run,
+via the internal `__users_newly_created` fact. It now decides per
+artifact: a config file is written when it is absent and left alone
+when it is present. `shell` writes into rc files that every
+distribution ships, so it tests for its own `blockinfile` marker
+instead of the file itself.
+
+This removes a silent failure: because the fact is only populated when
+the `users` role runs earlier in the same play, a tag-scoped or
+standalone run such as `--tags shell` left it empty, and `initial` —
+the default — deployed nothing at all.
+
+The three modes now form a spectrum: `managed` reconciles on every
+run, `initial` seeds once and preserves afterwards, `disabled` never
+writes.
+
+With no consumers left, `marcstraube.common.users` no longer sets the
+internal `__users_newly_created` fact. Playbooks or roles that read it
+must gate on the config artifact themselves.
+
+#### Required action
+
+On existing fleets, roles in `initial` mode now deploy config for
+established users that lack it, where the previous gating skipped
+them. Inventories that relied on `initial` never touching established
+users must pin the affected role explicitly:
+
+```yaml
+# never write, not even a missing config
+editors_user_config_mode: 'disabled'
+
+# or reconcile on every run
+editors_user_config_mode: 'managed'
+```
+
+The same applies to `git_user_config_mode`, `gnupg_user_config_mode`,
+`multiplexer_user_config_mode`, `makepkg_user_config_mode` and
+`shell_user_config_mode`.
+
 ### `base` — `zip` and `unzip` removed from the default packages
 
 `zip` and `unzip` were carried in `__base_default_packages` for all

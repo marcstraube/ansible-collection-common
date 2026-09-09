@@ -2,6 +2,42 @@
 #
 # Git User Configuration
 #
+# Called once per user from users.yml loop.
+# Variable: __git_user (the current git_users entry)
+#
+# Mode semantics:
+#   managed  — reconcile ~/.gitconfig on every run
+#   initial  — write only when ~/.gitconfig is absent, preserve it after
+#   disabled — never write (gated in users.yml)
+
+- name: User Config | Get user info
+  ansible.builtin.getent:
+    database: passwd
+    key: '{{ __git_user.username }}'
+
+- name: User Config | Set user facts
+  ansible.builtin.set_fact:
+    __git_user_home: '{{ getent_passwd[__git_user.username][4] }}'
+
+# git-config(1): --global writes to ~/.gitconfig, but falls back to
+# $XDG_CONFIG_HOME/git/config when that file exists and ~/.gitconfig
+# does not. Both locations therefore count as an existing config.
+- name: User Config | Stat existing gitconfig locations
+  ansible.builtin.stat:
+    path: '{{ item }}'
+  loop:
+    - '{{ __git_user_home }}/.gitconfig'
+    - '{{ __git_user_home }}/.config/git/config'
+  loop_control:
+    label: '{{ item }}'
+  register: __git_user_config_stats
+
+- name: User Config | Build deploy decision
+  ansible.builtin.set_fact:
+    __git_user_should_deploy: >-
+      {{ (__git_user.mode | default(git_user_config_mode)) == 'managed'
+         or not (__git_user_config_stats.results
+                 | map(attribute='stat.exists') | select | list | length > 0) }}
 
 - name: User Config | Configure user name
   community.general.git_config:
@@ -10,7 +46,9 @@
     scope: global
   become: true
   become_user: '{{ __git_user.username }}'
-  when: __git_user.git_name | default('', true) | length > 0
+  when:
+    - __git_user_should_deploy | bool
+    - __git_user.git_name | default('', true) | length > 0
 
 - name: User Config | Configure user email
   community.general.git_config:
@@ -19,7 +57,9 @@
     scope: global
   become: true
   become_user: '{{ __git_user.username }}'
-  when: __git_user.git_email | default('', true) | length > 0
+  when:
+    - __git_user_should_deploy | bool
+    - __git_user.git_email | default('', true) | length > 0
 
 - name: User Config | Configure signing key
   community.general.git_config:
@@ -28,7 +68,9 @@
     scope: global
   become: true
   become_user: '{{ __git_user.username }}'
-  when: __git_user.git_signing_key | default('', true) | length > 0
+  when:
+    - __git_user_should_deploy | bool
+    - __git_user.git_signing_key | default('', true) | length > 0
 
 - name: User Config | Enable commit signing
   community.general.git_config:
@@ -37,7 +79,9 @@
     scope: global
   become: true
   become_user: '{{ __git_user.username }}'
-  when: __git_user.git_signing_key | default('', true) | length > 0
+  when:
+    - __git_user_should_deploy | bool
+    - __git_user.git_signing_key | default('', true) | length > 0
 
 - name: User Config | Apply global git config
   community.general.git_config:
@@ -49,3 +93,4 @@
     label: '{{ item.key }}'
   become: true
   become_user: '{{ __git_user.username }}'
+  when: __git_user_should_deploy | bool

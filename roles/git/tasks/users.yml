@@ -15,7 +15,3 @@
     label: '{{ __git_user.username }}'
   when:
     - (__git_user.mode | default(git_user_config_mode)) != 'disabled'
-    - >-
-      (__git_user.mode | default(git_user_config_mode)) == 'managed'
-      or ((__git_user.mode | default(git_user_config_mode)) == 'initial'
-          and __git_user.username in (__users_newly_created | default([])))

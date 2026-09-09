@@ -287,9 +287,9 @@
         fail_msg: 'disableduser should not have .gnupg directory (mode: disabled)'
 
     #
-    # Initial Mode — Newly Created User (initialnewuser)
+    # Initial Mode — User Without Config (initialnewuser)
     #
-    # gnupg_user_config_mode=initial + user IN __users_newly_created
+    # gnupg_user_config_mode=initial + config file absent
     # → role MUST deploy the user's config.
     #
 
@@ -318,10 +318,12 @@
           - "'trust-model tofu+pgp' in (__verify_initialnew_gpg_conf.content | b64decode)"
 
     #
-    # Initial Mode — Existing User (initialexistuser)
+    # Initial Mode — User With Existing Config (initialexistuser)
     #
-    # gnupg_user_config_mode=initial + user NOT IN __users_newly_created
-    # → role MUST leave the user's pre-existing gpg.conf untouched.
+    # gnupg_user_config_mode=initial + config file already present
+    # → role MUST leave the user's pre-existing gpg.conf untouched,
+    #   while still seeding the config files that are absent. Gating is
+    #   per file, not per user.
     #
 
     - name: Verify | Check initialexistuser gpg.conf exists
@@ -348,15 +350,16 @@
           - "'Ansible managed' not in (__verify_initialexist_gpg_content.content | b64decode)"
           - "'trust-model tofu+pgp' not in (__verify_initialexist_gpg_content.content | b64decode)"
 
-    - name: Verify | Check initialexistuser has no gpg-agent.conf
+    - name: Verify | Check initialexistuser gpg-agent.conf
       ansible.builtin.stat:
         path: /home/initialexistuser/.gnupg/gpg-agent.conf
       register: __verify_initialexist_agent_conf
 
-    - name: Verify | Assert initialexistuser has no gpg-agent.conf
+    - name: Verify | Assert initialexistuser received the absent gpg-agent.conf
       ansible.builtin.assert:
         that:
-          - not __verify_initialexist_agent_conf.stat.exists
+          - __verify_initialexist_agent_conf.stat.exists
+          - __verify_initialexist_agent_conf.stat.pw_name == 'initialexistuser'
 
     #
     # Disabled Mode — Global (globaldisableduser)

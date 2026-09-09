@@ -59,6 +59,34 @@
 # Per-User makepkg.conf
 #
 
+- name: Makepkg | Stat existing per-user makepkg.conf
+  ansible.builtin.stat:
+    path: >-
+      {{ __makepkg_user.home
+         | default("/home/" + __makepkg_user.username) }}/.makepkg.conf
+  loop: '{{ makepkg_users }}'
+  loop_control:
+    loop_var: __makepkg_user
+    label: '{{ __makepkg_user.username }}'
+  register: __makepkg_user_config_stats
+  when:
+    - makepkg_users | length > 0
+    - (__makepkg_user.mode | default(makepkg_user_config_mode)) != 'disabled'
+
+- name: Makepkg | Build per-user deploy decision
+  ansible.builtin.set_fact:
+    __makepkg_should_deploy: >-
+      {{
+        dict(__makepkg_user_config_stats.results
+             | rejectattr('skipped', 'defined')
+             | map(attribute='__makepkg_user.username')
+             | zip(__makepkg_user_config_stats.results
+                   | rejectattr('skipped', 'defined')
+                   | map(attribute='stat.exists')
+                   | map('ternary', false, true)))
+      }}
+  when: makepkg_users | length > 0
+
 - name: Makepkg | Deploy user makepkg.conf
   ansible.builtin.template:
     src: 'archlinux/makepkg.user.conf.j2'
@@ -75,5 +103,4 @@
     - (__makepkg_user.mode | default(makepkg_user_config_mode)) != 'disabled'
     - >-
       (__makepkg_user.mode | default(makepkg_user_config_mode)) == 'managed'
-      or ((__makepkg_user.mode | default(makepkg_user_config_mode)) == 'initial'
-          and __makepkg_user.username in (__users_newly_created | default([])))
+      or __makepkg_should_deploy[__makepkg_user.username] | default(true)

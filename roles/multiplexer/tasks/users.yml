@@ -15,7 +15,3 @@
     label: '{{ __multiplexer_user.username }}'
   when:
     - (__multiplexer_user.mode | default(multiplexer_user_config_mode)) != 'disabled'
-    - >-
-      (__multiplexer_user.mode | default(multiplexer_user_config_mode)) == 'managed'
-      or ((__multiplexer_user.mode | default(multiplexer_user_config_mode)) == 'initial'
-          and __multiplexer_user.username in (__users_newly_created | default([])))
