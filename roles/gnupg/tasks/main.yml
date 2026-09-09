@@ -34,10 +34,6 @@
     - gnupg_enabled | bool
     - gnupg_users | length > 0
     - (gnupg_user.mode | default(gnupg_user_config_mode)) != 'disabled'
-    - >-
-      (gnupg_user.mode | default(gnupg_user_config_mode)) == 'managed'
-      or ((gnupg_user.mode | default(gnupg_user_config_mode)) == 'initial'
-          and gnupg_user.username in (__users_newly_created | default([])))
   tags:
     - gnupg
     - gnupg:configure

@@ -22,6 +22,40 @@
 # tmux
 #
 
+# Mode semantics:
+#   managed  — reconcile every config artifact on each run
+#   initial  — write an artifact only when it is absent, preserve it after
+#   disabled — never write (gated in users.yml)
+# Each artifact decides on its own, so a hand-tuned tmux.conf survives
+# while a missing zellij config is still seeded.
+- name: User Config | Stat existing per-user multiplexer configs
+  ansible.builtin.stat:
+    path: '{{ item.path }}'
+  loop:
+    - key: 'tmux'
+      path: '{{ __multiplexer_user_home }}/.config/tmux/tmux.conf'
+    - key: 'tpm'
+      path: '{{ __multiplexer_user_home }}/.tmux/plugins/tpm'
+    - key: 'zellij'
+      path: '{{ __multiplexer_user_home }}/.config/zellij/config.kdl'
+  loop_control:
+    label: '{{ item.key }}'
+  register: __multiplexer_config_stats
+
+- name: User Config | Build per-artifact deploy decision
+  ansible.builtin.set_fact:
+    __multiplexer_user_managed: >-
+      {{ (__multiplexer_user.mode
+          | default(multiplexer_user_config_mode)) == 'managed' }}
+    __multiplexer_should_deploy: >-
+      {{
+        dict(__multiplexer_config_stats.results
+             | map(attribute='item.key')
+             | zip(__multiplexer_config_stats.results
+                   | map(attribute='stat.exists')
+                   | map('ternary', false, true)))
+      }}
+
 - name: User Config | Build effective tmux config
   ansible.builtin.set_fact:
     __multiplexer_user_tmux_config: >-
@@ -42,6 +76,10 @@
   when:
     - multiplexer_tmux_enabled | bool
     - __multiplexer_user.tmux_config is defined or __multiplexer_user_tpm
+    - >-
+      __multiplexer_user_managed | bool
+      or __multiplexer_should_deploy['tmux'] | default(true)
+      or __multiplexer_should_deploy['tpm'] | default(true)
 
 - name: User Config | Deploy tmux config
   ansible.builtin.template:
@@ -56,6 +94,9 @@
   when:
     - multiplexer_tmux_enabled | bool
     - __multiplexer_user.tmux_config is defined
+    - >-
+      __multiplexer_user_managed | bool
+      or __multiplexer_should_deploy['tmux'] | default(true)
 
 - name: User Config | Ensure TPM directory
   ansible.builtin.file:
@@ -67,6 +108,9 @@
   when:
     - multiplexer_tmux_enabled | bool
     - __multiplexer_user_tpm
+    - >-
+      __multiplexer_user_managed | bool
+      or __multiplexer_should_deploy['tpm'] | default(true)
 
 - name: User Config | Clone TPM
   ansible.builtin.git:
@@ -81,6 +125,9 @@
   when:
     - multiplexer_tmux_enabled | bool
     - __multiplexer_user_tpm
+    - >-
+      __multiplexer_user_managed | bool
+      or __multiplexer_should_deploy['tpm'] | default(true)
 
 #
 # zellij
@@ -106,6 +153,9 @@
   when:
     - multiplexer_zellij_enabled | bool
     - __multiplexer_user.zellij_config is defined
+    - >-
+      __multiplexer_user_managed | bool
+      or __multiplexer_should_deploy['zellij'] | default(true)
 
 - name: User Config | Deploy zellij config
   ansible.builtin.template:
@@ -119,3 +169,6 @@
   when:
     - multiplexer_zellij_enabled | bool
     - __multiplexer_user.zellij_config is defined
+    - >-
+      __multiplexer_user_managed | bool
+      or __multiplexer_should_deploy['zellij'] | default(true)

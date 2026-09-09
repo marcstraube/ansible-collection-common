@@ -233,9 +233,9 @@
           - not __verify_disabled_zellij.stat.exists
 
     #
-    # Initial Mode — Newly Created User (initialnewuser)
+    # Initial Mode — User Without Config (initialnewuser)
     #
-    # multiplexer_user_config_mode=initial + user IN __users_newly_created
+    # multiplexer_user_config_mode=initial + config file absent
     # → role MUST deploy the user's config.
     #
 
@@ -263,9 +263,9 @@
           - "'prefix C-b' in (__verify_initialnew_tmux_content.content | b64decode)"
 
     #
-    # Initial Mode — Existing User (initialexistuser)
+    # Initial Mode — User With Existing Config (initialexistuser)
     #
-    # multiplexer_user_config_mode=initial + user NOT IN __users_newly_created
+    # multiplexer_user_config_mode=initial + config file already present
     # → role MUST leave the user's pre-existing tmux.conf untouched.
     #
 

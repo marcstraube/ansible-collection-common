@@ -355,9 +355,9 @@
           - not __verify_disabled_nano.stat.exists
 
     #
-    # Initial Mode — Newly Created User (initialnewuser)
+    # Initial Mode — User Without Config (initialnewuser)
     #
-    # editors_user_config_mode=initial + user IN __users_newly_created
+    # editors_user_config_mode=initial + config file absent
     # → role MUST deploy the user's config.
     #
 
@@ -385,9 +385,9 @@
           - "'set relativenumber' in (__verify_initialnew_vimrc_content.content | b64decode)"
 
     #
-    # Initial Mode — Existing User (initialexistuser)
+    # Initial Mode — User With Existing Config (initialexistuser)
     #
-    # editors_user_config_mode=initial + user NOT IN __users_newly_created
+    # editors_user_config_mode=initial + config file already present
     # → role MUST leave the user's pre-existing vimrc untouched.
     #
 

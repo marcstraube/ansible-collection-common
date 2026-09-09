@@ -15,7 +15,3 @@
     label: '{{ __editors_user.username }}'
   when:
     - (__editors_user.mode | default(editors_user_config_mode)) != 'disabled'
-    - >-
-      (__editors_user.mode | default(editors_user_config_mode)) == 'managed'
-      or ((__editors_user.mode | default(editors_user_config_mode)) == 'initial'
-          and __editors_user.username in (__users_newly_created | default([])))

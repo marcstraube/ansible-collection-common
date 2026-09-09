@@ -35,11 +35,6 @@
         state: present
         create_home: true
 
-    - name: Converge | Simulate newly created user fact
-      ansible.builtin.set_fact:
-        __users_newly_created:
-          - 'testuser'
-          - 'disableduser'
 
   tasks:
     - name: Converge | Include editors role  # noqa: role-name[path]
@@ -86,10 +81,6 @@
         group: initialexistuser
         mode: '0644'
 
-    - name: Converge | Mark only initialnewuser as newly created
-      ansible.builtin.set_fact:
-        __users_newly_created:
-          - 'initialnewuser'
 
   tasks:
     - name: Converge | Include editors role  # noqa: role-name[path]
@@ -124,10 +115,6 @@
         state: present
         create_home: true
 
-    - name: Converge | Mark global-disabled user as newly created
-      ansible.builtin.set_fact:
-        __users_newly_created:
-          - 'globaldisableduser'
 
   tasks:
     - name: Converge | Include editors role  # noqa: role-name[path]

@@ -235,20 +235,23 @@
         - initialnewuser
         - initialexistuser
 
+    # Carries the role's own marker with hand-edited content inside it.
+    # Under `initial` the role must recognize the marker and leave the
+    # block exactly as it is, so this fixture stays byte-identical
+    # across runs and the idempotence check holds.
     - name: Converge | Pre-seed existing user bashrc to prove it is left untouched
       ansible.builtin.copy:
         content: |
           # molecule-fixture: pre-existing user content
           alias ll='ls -la'
+          # BEGIN ANSIBLE MANAGED — zoxide init
+          eval "$(zoxide init bash)"  # molecule-fixture: user-edited
+          # END ANSIBLE MANAGED — zoxide init
         dest: /home/initialexistuser/.bashrc
         owner: initialexistuser
         group: initialexistuser
         mode: '0644'
 
-    - name: Converge | Mark only initialnewuser as newly created
-      ansible.builtin.set_fact:
-        __users_newly_created:
-          - 'initialnewuser'
 
   tasks:
     - name: Converge | Include shell role (initial mode)  # noqa: role-name[path]
@@ -282,10 +285,6 @@
         state: present
         create_home: true
 
-    - name: Converge | Mark global-disabled user as newly created
-      ansible.builtin.set_fact:
-        __users_newly_created:
-          - 'globaldisableduser'
 
   tasks:
     - name: Converge | Include shell role (disabled mode)  # noqa: role-name[path]

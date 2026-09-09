@@ -415,9 +415,9 @@
         - __shell_blesh_package | default('') | length > 0
 
     #
-    # Initial Mode — Newly Created User (initialnewuser)
+    # Initial Mode — User Without Config (initialnewuser)
     #
-    # shell_user_config_mode=initial + user IN __users_newly_created
+    # shell_user_config_mode=initial + rc file carries no role marker
     # → role MUST add the zoxide init blockinfile to the user's .bashrc.
     #
     # The deploy-check assertion is gated on zoxide availability —
@@ -448,10 +448,11 @@
       when: __shell_zoxide_package | default('') | length > 0
 
     #
-    # Initial Mode — Existing User (initialexistuser)
+    # Initial Mode — User With Existing Config (initialexistuser)
     #
-    # shell_user_config_mode=initial + user NOT IN __users_newly_created
-    # → role MUST leave the user's pre-existing .bashrc untouched.
+    # shell_user_config_mode=initial + rc file already carries the marker
+    # → role MUST leave the managed block as the user edited it, rather
+    #   than reconciling it back to the template content.
     #
 
     - name: Verify | Read initialexistuser .bashrc
@@ -466,8 +467,8 @@
             'molecule-fixture: pre-existing user content'
             in (__verify_initialexist_bashrc.content | b64decode)
           - >-
-            'ANSIBLE MANAGED — zoxide init'
-            not in (__verify_initialexist_bashrc.content | b64decode)
+            'molecule-fixture: user-edited'
+            in (__verify_initialexist_bashrc.content | b64decode)
 
     #
     # Disabled Mode — Global (globaldisableduser)
