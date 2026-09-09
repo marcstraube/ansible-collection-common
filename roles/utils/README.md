@@ -105,16 +105,16 @@ All other tools use the same package name on every supported distro.
 
 ### Archive / Compression
 
-| Variable                       | Default | Description                                                    |
-|--------------------------------|---------|----------------------------------------------------------------|
-| `utils_archive_tar_enabled`    | `true`  | POSIX tar (required on RHEL minimal; no-op on Arch/Debian)     |
-| `utils_archive_zstd_enabled`   | `true`  | Modern fast compressor (.zst, default Arch package format)     |
-| `utils_archive_zip_enabled`    | `true`  | zip — deprecated in `base`, will move here exclusively in v3   |
-| `utils_archive_unzip_enabled`  | `true`  | unzip — deprecated in `base`, will move here exclusively in v3 |
-| `utils_archive_p7zip_enabled`  | `false` | 7-Zip clone (RHEL: pulls p7zip + p7zip-plugins via EPEL)       |
-| `utils_archive_unrar_enabled`  | `false` | RAR extractor (Arch: AUR; non-free, see note \*)               |
-| `utils_archive_atool_enabled`  | `false` | Universal archive frontend (Arch/Debian/EL9; not in EPEL 10)   |
-| `utils_archive_pigz_enabled`   | `false` | Parallel gzip                                                  |
+| Variable                      | Default | Description                                                  |
+|-------------------------------|---------|--------------------------------------------------------------|
+| `utils_archive_tar_enabled`   | `true`  | POSIX tar (required on RHEL minimal; no-op on Arch/Debian)   |
+| `utils_archive_zstd_enabled`  | `true`  | Modern fast compressor (.zst, default Arch package format)   |
+| `utils_archive_zip_enabled`   | `true`  | zip — universal compressed archive format                    |
+| `utils_archive_unzip_enabled` | `true`  | unzip — counterpart to zip                                   |
+| `utils_archive_p7zip_enabled` | `false` | 7-Zip clone (RHEL: pulls p7zip + p7zip-plugins via EPEL)     |
+| `utils_archive_unrar_enabled` | `false` | RAR extractor (Arch: AUR; non-free, see note \*)             |
+| `utils_archive_atool_enabled` | `false` | Universal archive frontend (Arch/Debian/EL9; not in EPEL 10) |
+| `utils_archive_pigz_enabled`  | `false` | Parallel gzip                                                |
 
 (\*) `unrar` needs `apt_non_free_enabled` on Debian, `dnf_rpmfusion_nonfree_enabled` on RHEL; Arch builds from the AUR.
 

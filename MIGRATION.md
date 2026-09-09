@@ -14,6 +14,31 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+### `base` — `zip` and `unzip` removed from the default packages
+
+`zip` and `unzip` were carried in `__base_default_packages` for all
+three distributions while also being available through
+`utils_archive_zip_enabled` / `utils_archive_unzip_enabled`, which
+v2.1.0 introduced and where the duplication was marked deprecated.
+`base` no longer installs the two packages; the `utils` archive
+toggles are the only path.
+
+Deployments that run `utils` with its defaults are unaffected — both
+toggles default to `true`, so the same two packages are still
+installed.
+
+#### Required action
+
+Inventories that disable `utils` must add the packages to
+`base_extra_packages`:
+
+```yaml
+# Required only if you set utils_enabled: false
+base_extra_packages:
+  - zip
+  - unzip
+```
+
 ## v2.3.0 - 2026-07-23
 
 ## v2.2.0 - 2026-07-07

@@ -170,8 +170,6 @@
         - 'curl'
         - 'rsync'
         - 'tree'
-        - 'unzip'
-        - 'zip'
 
     - name: Verify | Check man-pages installed (Arch/RedHat)
       ansible.builtin.package:
