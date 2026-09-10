@@ -27,15 +27,21 @@ VBoxManage --version
 
 ## Test Platform
 
-- **OS**: Arch Linux (marcstraube/archlinux-ansible box)
-  - Based on generic/arch but more up-to-date
-  - Python3 pre-installed
 - **Driver**: Vagrant with VirtualBox provider
-- **VM Resources**: 1024 MB RAM, 2 CPUs
-- **Network Setup**:
-  - eth0: NAT (default Vagrant interface)
-  - eth1, eth2: Private networks (DHCP)
-  - wlan0-wlan3: Virtual WiFi radios using mac80211_hwsim kernel module
+
+| Platform      | Box                             | Resources       | Test Scope                           |
+|---------------|---------------------------------|-----------------|--------------------------------------|
+| Arch Linux    | `marcstraube/archlinux-ansible` | 1024 MB, 2 CPUs | Full set incl. WiFi, VPN, SMB, SSHFS |
+| Debian Trixie | `cloud-image/debian-13`         | 768 MB, 1 CPU   | Ethernet only                        |
+| Rocky 9       | `bento/rockylinux-9`            | 768 MB, 1 CPU   | Ethernet only                        |
+| Rocky 10      | `bento/rockylinux-10`           | 768 MB, 1 CPU   | Ethernet only                        |
+
+**Network setup:**
+
+- eth0: NAT (default Vagrant interface, all platforms)
+- eth1: Private network, DHCP (all platforms)
+- eth2: Private network, DHCP (Arch Linux only, for secondary connections)
+- wlan0-wlan3: Virtual WiFi radios using mac80211_hwsim kernel module (Arch Linux only)
 
 ## Test Coverage
 
@@ -64,14 +70,7 @@ connections using NetworkManager's `connection.secondaries` feature:
 - WiFi → VPN auto-connect
 - UUID resolution and configuration
 
-### 4. WiFi Auto-Toggle
-
-Tests the dispatcher script that automatically:
-
-- Turns off WiFi when Ethernet is connected
-- Turns WiFi back on when Ethernet disconnects
-
-### 5. DHCP Hostname Sending
+### 4. DHCP Hostname Sending
 
 Validates granular control over DHCP hostname sending:
 
@@ -79,7 +78,7 @@ Validates granular control over DHCP hostname sending:
 - Per-connection overrides
 - Correct nmcli property settings
 
-### 6. SMB/CIFS Share Auto-Mounting
+### 5. SMB/CIFS Share Auto-Mounting
 
 Tests automatic mounting of SMB shares with:
 
@@ -88,7 +87,7 @@ Tests automatic mounting of SMB shares with:
 - Correct dispatcher script generation
 - Mount/umount on connection up/down events
 
-### 7. SSHFS Share Auto-Mounting
+### 6. SSHFS Share Auto-Mounting
 
 Similar to SMB, validates SSHFS mounting with:
 
@@ -96,7 +95,7 @@ Similar to SMB, validates SSHFS mounting with:
 - Connection dependencies
 - Dispatcher script generation
 
-### 8. Unmanaged Devices
+### 7. Unmanaged Devices
 
 Verifies configuration of devices that NetworkManager should ignore:
 
@@ -104,7 +103,7 @@ Verifies configuration of devices that NetworkManager should ignore:
 - Interface name-based exclusion
 - Wildcard patterns (e.g., `veth*`)
 
-### 9. Dispatcher Scripts
+### 8. Dispatcher Scripts
 
 Validates all dispatcher scripts:
 
@@ -113,7 +112,7 @@ Validates all dispatcher scripts:
 - Proper event handling (up, down, vpn-up, vpn-down)
 - Pre-down script placement
 
-### 10. Idempotence
+### 9. Idempotence
 
 Ensures the role is fully idempotent by running converge twice and verifying no changes on the second run.
 
@@ -179,9 +178,6 @@ ls -la /etc/NetworkManager/dispatcher.d/
 
 # View dispatcher script content
 cat /etc/NetworkManager/dispatcher.d/30-mount-smb.sh
-
-# Check if WiFi toggle script is working
-cat /etc/NetworkManager/dispatcher.d/10-wifi-auto-toggle.sh
 
 # View Ansible-managed daemon configuration
 cat /etc/NetworkManager/conf.d/00-ansible.conf
@@ -288,10 +284,12 @@ lsmod | grep mac80211_hwsim
 iw dev
 ```
 
-Or use Vagrant directly:
+Or use Vagrant directly. Molecule creates the VM in an ephemeral directory below
+`~/.ansible/tmp/`, named `molecule.<checksum>.<scenario>` after the role directory:
 
 ```bash
-cd ~/.cache/molecule/marcstraube.networkmanager/default/
+ls -d ~/.ansible/tmp/molecule.*.default   # pick the one holding this role's Vagrantfile
+cd <ephemeral directory>
 vagrant ssh
 ```
 
@@ -320,7 +318,8 @@ cat /etc/NetworkManager/dispatcher.d/30-mount-smb.sh
 ### View Molecule Cache and VM Files
 
 ```bash
-cd ~/.cache/molecule/marcstraube.networkmanager/default/
+ls -d ~/.ansible/tmp/molecule.*.default   # pick the one holding this role's Vagrantfile
+cd <ephemeral directory>
 ls -la
 vagrant status
 ```
@@ -402,70 +401,12 @@ Then add verification in `verify.yml`:
 
 ## CI/CD Integration
 
-### GitHub Actions Example
-
-```yaml
-name: Molecule Test
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          pip install molecule molecule-plugins[vagrant] ansible-core
-
-      - name: Install VirtualBox
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y virtualbox virtualbox-ext-pack
-
-      - name: Install Vagrant
-        run: |
-          wget -O- https://apt.releases.hashicorp.com/gpg \
-            | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-            https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
-            | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt-get update && sudo apt-get install -y vagrant
-
-      - name: Run Molecule tests
-        run: molecule test
-        working-directory: roles/marcstraube.networkmanager
-```
-
-### GitLab CI Example
-
-```yaml
-test:
-  image: python:3.11
-  services:
-    - docker:dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-  before_script:
-    - apt-get update && apt-get install -y virtualbox vagrant
-    - pip install molecule molecule-plugins[vagrant] ansible-core
-  script:
-    - cd roles/marcstraube.networkmanager
-    - molecule test
-  tags:
-    - docker
-```
+This role is not covered by the collection's GitHub Actions workflow. Molecule runs
+there use the Podman driver, while this role needs a full virtual machine with
+VirtualBox for its virtual WiFi radios. `.github/workflows/ci.yml` therefore excludes
+the Vagrant-based roles (`apparmor`, `auditd`, `hardening`, `hardware_tokens`,
+`networkmanager`, `wireguard`) from the Molecule matrix — run their tests locally
+before committing.
 
 ## Test Maintenance
 
@@ -477,16 +418,9 @@ test:
    vagrant box update marcstraube/archlinux-ansible
    ```
 
-2. **Pin Ansible versions** in `requirements.txt`:
+2. **Review test variables** when adding new features to the role
 
-   ```text
-   ansible-core>=2.16,<2.17
-   molecule>=6.0
-   ```
-
-3. **Review test variables** when adding new features to the role
-
-4. **Update verify.yml** to test new functionality
+3. **Update verify.yml** to test new functionality
 
 ### Performance Optimization
 
@@ -552,7 +486,7 @@ which is loaded during Vagrant provisioning.
 │ molecule    │
 │  converge   │──→ converge.yml runs
 └─────────────┘    ├─ Ignores eth0 (Vagrant interface)
-                   └─ Applies marcstraube.networkmanager role
+                   └─ Applies marcstraube.common.networkmanager role
         │
         ▼
 ┌─────────────┐

@@ -17,7 +17,7 @@ This role provides comprehensive NetworkManager management:
 
 ## Requirements
 
-- **Ansible**: >= 2.17
+- ansible-core >= 2.19
 - **Collections**: `community.general`
 
 ## Supported Platforms
@@ -402,7 +402,6 @@ The resolved role must run before the networkmanager role in the playbook
 | `40-umount-sshfs.sh`            | `down`      | Unmount SSHFS shares                         |
 | `50-vpn-mount-smb.sh`           | `vpn-up`    | Mount SMB shares on VPN connect              |
 | `60-vpn-umount-smb.sh`          | `vpn-down`  | Unmount SMB shares on VPN disconnect         |
-| `10-wifi-auto-toggle.sh`        | `up`/`down` | Disable WiFi when ethernet connected         |
 | `pre-down.d/30-umount-smb.sh`   | `pre-down`  | Graceful SMB unmount                         |
 | `pre-down.d/30-umount-sshfs.sh` | `pre-down`  | Graceful SSHFS unmount                       |
 
