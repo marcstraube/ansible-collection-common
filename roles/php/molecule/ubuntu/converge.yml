@@ -1,0 +1,20 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    php_enabled: true
+    php_versions:
+      - version: 'auto'
+        extensions:
+          - curl
+          - mbstring
+        fpm: true
+    php_default_version: 'auto'
+    php_composer_enabled: true
+
+  tasks:
+    - name: Converge | Include php role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
