@@ -14,6 +14,8 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+## v3.0.0 - 2026-09-10
+
 ### `package_management` — `paru_shared_users` becomes `aur_shared_users`
 
 The shared AUR build infrastructure — the group and its member list — is not
