@@ -11,7 +11,7 @@
       paths:
         - 'vars'
   tags:
-    - nodejs
+    - always
 
 - name: Main | Validate install method
   ansible.builtin.assert:
@@ -20,7 +20,7 @@
     fail_msg: "nodejs_install_method must be one of: nodesource, package, nvm (got '{{ nodejs_install_method }}')"
   when: nodejs_enabled | bool
   tags:
-    - nodejs
+    - always
 
 - name: Main | Auto-fallback to package on Arch (NodeSource not supported)
   ansible.builtin.set_fact:
@@ -30,14 +30,14 @@
     - not __nodejs_nodesource_supported
     - nodejs_install_method == 'nodesource'
   tags:
-    - nodejs
+    - always
 
 - name: Main | Set effective install method
   ansible.builtin.set_fact:
     __nodejs_install_method: '{{ __nodejs_install_method | default(nodejs_install_method) }}'
   when: nodejs_enabled | bool
   tags:
-    - nodejs
+    - always
 
 - name: Main | Include NodeSource install tasks
   ansible.builtin.include_tasks:

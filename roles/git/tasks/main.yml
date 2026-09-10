@@ -39,7 +39,7 @@
       paths:
         - 'vars'
   tags:
-    - git
+    - always
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml

@@ -11,6 +11,8 @@
       paths:
         - 'vars'
       skip: true
+  tags:
+    - always
 
 - name: Main | Import kernel hardening tasks
   ansible.builtin.import_tasks: configure.yml

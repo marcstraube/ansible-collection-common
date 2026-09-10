@@ -15,8 +15,7 @@
       paths:
         - 'vars'
   tags:
-    - shell
-    - shell:vars
+    - always
 
 - name: Main | Validate Starship preset
   ansible.builtin.assert:
@@ -31,7 +30,7 @@
     - shell_starship_enabled | bool
     - shell_starship_config_enabled | bool
   tags:
-    - shell
+    - always
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml

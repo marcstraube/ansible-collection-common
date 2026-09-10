@@ -11,7 +11,7 @@
       paths:
         - 'vars'
   tags:
-    - pki
+    - always
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
@@ -78,8 +78,7 @@
     - pki_enabled | bool
     - pki_ca_enabled | bool
   tags:
-    - pki
-    - pki:ca
+    - always
 
 - name: Main | Import server certificate tasks
   ansible.builtin.import_tasks: server_certs.yml

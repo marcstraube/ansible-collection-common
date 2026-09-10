@@ -10,6 +10,7 @@ Multi-OS support: Arch Linux (primary), Debian Trixie, Rocky Linux 9/10.
 - **Facts:** `ansible_facts['os_family']` — never `ansible_os_family` (deprecated)
 - **Modules:** Always FQCN (`ansible.builtin.*`, `community.general.*`, `kewlfft.aur.*`)
 - **Roles:** `ansible.builtin.include_role` — never `import_role`
+  (exception: the entry task file, see [Sub-tags must be self-contained](#sub-tags-must-be-self-contained))
 - **Tasks:** `ansible.builtin.include_tasks` — never `import_tasks` for conditional dispatch
 - **Tag propagation:** Always `apply: tags:` when using `include_tasks` inside blocks
 - **Variables:** `<role>_<setting>`, internal: `__<role>_<setting>` (double underscore)
@@ -75,6 +76,32 @@ roles/<role_name>/
 - Service management: ternary manage pattern (one task, enabled/disabled)
 - Firewall management: ternary manage pattern + firewalld status check
 - AppArmor management: availability check before profile enforcement
+
+### Sub-tags must be self-contained
+
+A role exposes sub-tags (`<role>:<phase>`, e.g. `openssh:configure`) so a single
+stage can be run in isolation. For that to work, two rules apply:
+
+1. **The entry task file imports roles statically.** `playbooks/tasks/base_system.yml`
+   uses `import_role` (not `include_role`) for every role. A dynamic `include_role`
+   hides the role's inner sub-tags behind the include statement, so
+   `--tags openssh:configure` would skip the whole role. Static `import_role`
+   exposes inner tags to `--tags` and `--list-tags`.
+
+2. **Bootstrap tasks are tagged `always`.** Any task a sub-tag path depends on —
+   OS-var loaders (`include_vars`), capability detection, derived-fact `set_fact`s,
+   validation asserts — must carry `tags: [always]`, not the bare role tag.
+   Otherwise an isolated sub-tag run skips the loader and fails on undefined
+   `__<role>_*` vars. Feature work keeps `role` + sub-tag; only genuine setup
+   is `always`.
+
+```yaml
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found: ...
+  tags:
+    - always        # bootstrap — needed by every sub-tag path
+```
 
 ### Task Naming
 

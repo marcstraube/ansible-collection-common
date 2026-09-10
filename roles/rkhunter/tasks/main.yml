@@ -11,7 +11,7 @@
       paths:
         - 'vars'
   tags:
-    - rkhunter
+    - always
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml

@@ -11,6 +11,8 @@
       paths:
         - 'vars'
       skip: true
+  tags:
+    - always
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
