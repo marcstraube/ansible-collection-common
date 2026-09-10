@@ -43,13 +43,46 @@
 # Backports (Debian only)
 #
 
-- name: Repos | Enable Debian Backports
-  ansible.builtin.apt_repository:
-    repo: "deb http://deb.debian.org/debian {{ ansible_facts['distribution_release'] }}-backports main contrib non-free"
+# deb822_repository is implemented on top of python3-debian, which
+# Debian does not install by default.
+- name: Repos | Install deb822 prerequisites
+  ansible.builtin.apt:
+    name:
+      - 'ca-certificates'
+      - 'python3-debian'
     state: present
-    filename: 'backports'
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - (apt_backports_enabled | bool) or (apt_custom_repos | length > 0)
+
+- name: Repos | Enable Debian Backports
+  ansible.builtin.deb822_repository:
+    name: 'backports'
+    types: 'deb'
+    uris: 'http://deb.debian.org/debian'
+    suites: "{{ ansible_facts['distribution_release'] }}-backports"
+    components:
+      - 'main'
+      - 'contrib'
+      - 'non-free'
+    state: present
   retries: 5
   delay: 10
+  when:
+    - apt_backports_enabled | bool
+    - ansible_facts['distribution'] == 'Debian'
+  notify: 'apt configuration changed'
+
+# Earlier role versions wrote backports.list through apt_repository.
+# The deb822 module writes backports.sources instead, so the old file
+# has to go — otherwise apt reads the backports suite twice and warns
+# about the duplicate entry on every run.
+- name: Repos | Remove legacy Backports list entry
+  ansible.builtin.file:
+    path: '/etc/apt/sources.list.d/backports.list'
+    state: absent
   when:
     - apt_backports_enabled | bool
     - ansible_facts['distribution'] == 'Debian'
@@ -59,12 +92,69 @@
 # PPAs (Ubuntu only)
 #
 
-- name: Repos | Add PPAs
-  ansible.builtin.apt_repository:
-    repo: '{{ item }}'
-    state: present
+# deb822_repository has no 'ppa:' shorthand, so the entry is expanded
+# here. URI and suite follow from owner/name and the release, but the
+# signing key differs per PPA: Launchpad publishes its fingerprint
+# through the API, and the keyserver serves the key itself under that
+# fingerprint. signed_by takes the resulting URL directly.
+# check_mode: false — a read-only lookup that must run under --check,
+# otherwise the repository task has no fingerprint to work with.
+- name: Repos | Look up PPA signing key fingerprints
+  ansible.builtin.uri:
+    url: >-
+      {{ __apt_ppa_api_url }}/~{{ __apt_ppa_owner }}/+archive/ubuntu/{{ __apt_ppa_name }}
+    return_content: true
+  vars:
+    __apt_ppa_path: '{{ item | regex_replace("^ppa:", "") }}'
+    __apt_ppa_owner: '{{ __apt_ppa_path | split("/") | first }}'
+    __apt_ppa_name: '{{ __apt_ppa_path | split("/") | last }}'
+  register: __apt_ppa_lookup
   retries: 5
   delay: 10
+  loop: '{{ apt_ppas }}'
+  check_mode: false
+  when:
+    - apt_ppas | length > 0
+    - ansible_facts['distribution'] == 'Ubuntu'
+
+- name: Repos | Add PPAs
+  ansible.builtin.deb822_repository:
+    name: '{{ __apt_ppa_owner }}-ubuntu-{{ __apt_ppa_name }}'
+    types: 'deb'
+    uris: '{{ __apt_ppa_content_url }}/{{ __apt_ppa_owner }}/{{ __apt_ppa_name }}/ubuntu'
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: 'main'
+    signed_by: '{{ __apt_ppa_keyserver_url }}{{ item.json.signing_key_fingerprint }}'
+    state: present
+  vars:
+    __apt_ppa_path: '{{ item.item | regex_replace("^ppa:", "") }}'
+    __apt_ppa_owner: '{{ __apt_ppa_path | split("/") | first }}'
+    __apt_ppa_name: '{{ __apt_ppa_path | split("/") | last }}'
+  retries: 5
+  delay: 10
+  loop: '{{ __apt_ppa_lookup.results | default([]) }}'
+  loop_control:
+    label: '{{ item.item | default("") }}'
+  when:
+    - apt_ppas | length > 0
+    - ansible_facts['distribution'] == 'Ubuntu'
+    - item.json is defined
+  notify: 'apt configuration changed'
+
+# apt_repository named its file <owner>-ubuntu-<ppa>-<release>.list.
+# The deb822 module writes <owner>-ubuntu-<ppa>.sources, so the old file
+# would leave the PPA configured twice.
+- name: Repos | Remove legacy PPA list entries
+  ansible.builtin.file:
+    path: >-
+      /etc/apt/sources.list.d/{{ __apt_ppa_file }}.list
+    state: absent
+  vars:
+    __apt_ppa_path: '{{ item | regex_replace("^ppa:", "") }}'
+    __apt_ppa_release: "{{ ansible_facts['distribution_release'] }}"
+    __apt_ppa_file: '{{ __apt_ppa_owner }}-ubuntu-{{ __apt_ppa_name }}-{{ __apt_ppa_release }}'
+    __apt_ppa_owner: '{{ __apt_ppa_path | split("/") | first }}'
+    __apt_ppa_name: '{{ __apt_ppa_path | split("/") | last }}'
   loop: '{{ apt_ppas }}'
   when:
     - apt_ppas | length > 0
@@ -75,34 +165,61 @@
 # Custom Repositories
 #
 
-- name: Repos | Add custom repository GPG keys
-  ansible.builtin.get_url:
-    url: '{{ item.gpg_key }}'
-    dest: '/etc/apt/keyrings/{{ item.name }}.asc'
-    owner: root
-    group: root
-    mode: '0644'
-  retries: 5
-  delay: 10
-  loop: '{{ apt_custom_repos }}'
-  loop_control:
-    label: '{{ item.name }}'
-  when:
-    - apt_custom_repos | length > 0
-    - item.gpg_key is defined
-
-- name: Repos | Add custom repositories
-  ansible.builtin.apt_repository:
-    repo: '{{ item.repo }}'
+# signed_by takes the key URL from gpg_key directly — the module
+# downloads it and manages the keyring file, so no separate key task is
+# needed. Repositories without a key of their own omit gpg_key and fall
+# back to the system keyring, as before.
+# noqa args[module]: types comes from the inventory at run time, so the
+# rule cannot match it against the module's deb/deb-src choices.
+- name: Repos | Add custom repositories  # noqa: args[module]
+  ansible.builtin.deb822_repository:
+    name: '{{ item.name }}'
+    types: '{{ item.types | default(omit) }}'
+    uris: '{{ item.uris }}'
+    suites: '{{ item.suites }}'
+    components: '{{ item.components }}'
+    signed_by: '{{ item.gpg_key | default(omit) }}'
+    architectures: '{{ item.architectures | default(omit) }}'
     state: present
-    filename: '{{ item.name }}'
   retries: 5
   delay: 10
+  register: __apt_custom_repo_result
   loop: '{{ apt_custom_repos }}'
   loop_control:
     label: '{{ item.name }}'
   when: apt_custom_repos | length > 0
   notify: 'apt configuration changed'
+
+# Earlier role versions wrote <name>.list through apt_repository. The
+# module writes <name>.sources instead, so the stale entry would leave
+# the repository configured twice.
+- name: Repos | Remove legacy custom repository list entries
+  ansible.builtin.file:
+    path: '/etc/apt/sources.list.d/{{ item.name }}.list'
+    state: absent
+  loop: '{{ apt_custom_repos }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when: apt_custom_repos | length > 0
+  notify: 'apt configuration changed'
+
+# The keys were fetched to <name>.asc by a task this role no longer has;
+# the module manages its own keyring file now. Skip any path the module
+# just wrote in case it picked the same name.
+- name: Repos | Remove legacy custom repository keyrings
+  ansible.builtin.file:
+    path: '/etc/apt/keyrings/{{ item.name }}.asc'
+    state: absent
+  vars:
+    __apt_custom_repo_keyfiles: >-
+      {{ __apt_custom_repo_result.results | default([])
+         | map(attribute='key_filename', default='') | list }}
+  loop: '{{ apt_custom_repos }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - apt_custom_repos | length > 0
+    - ('/etc/apt/keyrings/' ~ item.name ~ '.asc') not in __apt_custom_repo_keyfiles
 
 - name: Repos | Flush handlers to update apt cache
   ansible.builtin.meta: flush_handlers

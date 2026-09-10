@@ -18,4 +18,6 @@ __nodejs_prerequisite_packages: []
 # Arch repos are current enough, NodeSource not needed
 __nodejs_nodesource_supported: false
 __nodejs_nodesource_key_url: ''
-__nodejs_nodesource_repo: ''
+__nodejs_nodesource_uris: ''
+__nodejs_nodesource_suites: ''
+__nodejs_nodesource_components: ''

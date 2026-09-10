@@ -21,6 +21,15 @@ __php_fpm_default_group: 'www-data'
 
 # Sury repository
 __php_sury_gpg_url: 'https://packages.sury.org/php/apt.gpg'
+
+# Sury PPA (Ubuntu). deb822_repository has no 'ppa:' shorthand, so the
+# entry is expanded from these coordinates and the signing key is
+# resolved through Launchpad — see tasks/repos.yml.
+__php_sury_ppa_owner: 'ondrej'
+__php_sury_ppa_name: 'php'
+__php_sury_ppa_api_url: 'https://api.launchpad.net/1.0'
+__php_sury_ppa_content_url: 'https://ppa.launchpadcontent.net'
+__php_sury_ppa_keyserver_url: 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x'
 __php_sury_repo_uris: 'https://packages.sury.org/php/'
 __php_sury_repo_suites: '{{ ansible_facts["distribution_release"] }}'
 __php_sury_repo_components: 'main'

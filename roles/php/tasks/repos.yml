@@ -27,13 +27,49 @@
   register: __php_sury_repo
   when: ansible_facts['distribution'] == 'Debian'
 
+# Launchpad publishes the fingerprint of the PPA's signing key through
+# its API; the keyserver serves the key itself under that fingerprint,
+# and signed_by takes the resulting URL.
+# check_mode: false — a read-only lookup that must run under --check,
+# otherwise the repository task has no fingerprint to work with.
+- name: Repos | Look up Sury PPA signing key fingerprint (Ubuntu)
+  ansible.builtin.uri:
+    url: >-
+      {{ __php_sury_ppa_api_url }}/~{{ __php_sury_ppa_owner }}/+archive/ubuntu/{{ __php_sury_ppa_name }}
+    return_content: true
+  register: __php_sury_ppa_lookup
+  retries: 5
+  delay: 10
+  check_mode: false
+  when: ansible_facts['distribution'] == 'Ubuntu'
+
 - name: Repos | Add Sury PHP PPA (Ubuntu)
-  ansible.builtin.apt_repository:
-    repo: 'ppa:ondrej/php'
+  ansible.builtin.deb822_repository:
+    name: '{{ __php_sury_ppa_owner }}-ubuntu-{{ __php_sury_ppa_name }}'
+    types: 'deb'
+    uris: '{{ __php_sury_ppa_content_url }}/{{ __php_sury_ppa_owner }}/{{ __php_sury_ppa_name }}/ubuntu'
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: 'main'
+    signed_by: '{{ __php_sury_ppa_keyserver_url }}{{ __php_sury_ppa_lookup.json.signing_key_fingerprint }}'
     state: present
   retries: 5
   delay: 10
   register: __php_sury_ppa
+  when:
+    - ansible_facts['distribution'] == 'Ubuntu'
+    - __php_sury_ppa_lookup.json is defined
+
+# apt_repository named its file ondrej-ubuntu-php-<release>.list. The
+# module writes ondrej-ubuntu-php.sources, so the old file would leave
+# the PPA configured twice.
+- name: Repos | Remove legacy Sury PPA list entry (Ubuntu)
+  ansible.builtin.file:
+    path: >-
+      /etc/apt/sources.list.d/{{ __php_sury_ppa_file }}.list
+    state: absent
+  vars:
+    __php_sury_ppa_release: "{{ ansible_facts['distribution_release'] }}"
+    __php_sury_ppa_file: '{{ __php_sury_ppa_owner }}-ubuntu-{{ __php_sury_ppa_name }}-{{ __php_sury_ppa_release }}'
   when: ansible_facts['distribution'] == 'Ubuntu'
 
 - name: Repos | Update apt cache after repo change

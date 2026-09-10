@@ -24,25 +24,37 @@
 # GPG Key & Repository (Debian)
 #
 
-- name: Install NodeSource | Add GPG key (Debian)
-  ansible.builtin.get_url:
-    url: '{{ __nodejs_nodesource_key_url }}'
-    dest: /etc/apt/keyrings/nodesource.asc
-    owner: root
-    group: root
-    mode: '0644'
+# signed_by takes the key URL directly — the module downloads it and
+# stores it beside the .sources file, so no separate key task is needed.
+- name: Install NodeSource | Add repository (Debian)
+  ansible.builtin.deb822_repository:
+    name: nodesource
+    types: deb
+    uris: '{{ __nodejs_nodesource_uris }}'
+    suites: '{{ __nodejs_nodesource_suites }}'
+    components: '{{ __nodejs_nodesource_components }}'
+    signed_by: '{{ __nodejs_nodesource_key_url }}'
+    state: present
   retries: 5
   delay: 10
+  register: __nodejs_nodesource_repo_result
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: Install NodeSource | Add repository (Debian)
-  ansible.builtin.apt_repository:
-    repo: '{{ __nodejs_nodesource_repo }}'
-    state: present
-    filename: nodesource
-  retries: 5
-  delay: 10
-  when: ansible_facts['os_family'] == 'Debian'
+# Earlier role versions wrote nodesource.list through apt_repository and
+# fetched the key to nodesource.asc. The deb822 module writes
+# nodesource.sources and manages its own key file, so the old pair has to
+# go — otherwise apt reads the NodeSource suite twice. The key file the
+# module just wrote is excluded in case it picked the same path.
+- name: Install NodeSource | Remove legacy repository files (Debian)
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - '/etc/apt/sources.list.d/nodesource.list'
+    - '/etc/apt/keyrings/nodesource.asc'
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - item != (__nodejs_nodesource_repo_result.key_filename | default(''))
 
 - name: Install NodeSource | Node.js packages (Debian)
   ansible.builtin.apt:
