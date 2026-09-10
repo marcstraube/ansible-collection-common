@@ -2,6 +2,41 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [3.0.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.3.1...v3.0.0) (2026-09-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* give yay the shared clone directory paru already had ([#321](https://github.com/marcstraube/ansible-collection-common/issues/321))
+* write Debian repositories in deb822 format ([#320](https://github.com/marcstraube/ansible-collection-common/issues/320))
+* gate initial user_config_mode on config existence ([#314](https://github.com/marcstraube/ansible-collection-common/issues/314))
+* **base:** remove zip and unzip from the default packages ([#313](https://github.com/marcstraube/ansible-collection-common/issues/313))
+
+### Features
+
+* expose role sub-tags from the base system task file ([#319](https://github.com/marcstraube/ansible-collection-common/issues/319)) ([b8be517](https://github.com/marcstraube/ansible-collection-common/commit/b8be5173c7ae50ffdaedf4bd3fc832ed0f793dfe)), closes [#311](https://github.com/marcstraube/ansible-collection-common/issues/311)
+* gate initial user_config_mode on config existence ([#314](https://github.com/marcstraube/ansible-collection-common/issues/314)) ([ff7dd64](https://github.com/marcstraube/ansible-collection-common/commit/ff7dd648aabe82649c44896a1066d02638e335df)), closes [#263](https://github.com/marcstraube/ansible-collection-common/issues/263)
+* **git:** add role for version control tooling ([#300](https://github.com/marcstraube/ansible-collection-common/issues/300)) ([4a0ee4a](https://github.com/marcstraube/ansible-collection-common/commit/4a0ee4aca2d7b716179a3ba72ea53ad7ee413fc5)), closes [#299](https://github.com/marcstraube/ansible-collection-common/issues/299)
+* give yay the shared clone directory paru already had ([#321](https://github.com/marcstraube/ansible-collection-common/issues/321)) ([f910ff9](https://github.com/marcstraube/ansible-collection-common/commit/f910ff91e91a91a2bf7e9b6130ec73d08a9ea06e)), closes [#229](https://github.com/marcstraube/ansible-collection-common/issues/229)
+* **users:** deploy SSH key files from the inventory ([#316](https://github.com/marcstraube/ansible-collection-common/issues/316)) ([24f4352](https://github.com/marcstraube/ansible-collection-common/commit/24f4352b4601d9a5c24b7387ab8fa8cd0c9bc2df)), closes [#315](https://github.com/marcstraube/ansible-collection-common/issues/315)
+
+
+### Bug Fixes
+
+* **aide:** restore AIDE package on Arch Linux ([#312](https://github.com/marcstraube/ansible-collection-common/issues/312)) ([97369bb](https://github.com/marcstraube/ansible-collection-common/commit/97369bb5cec3046e90dabc1760a9371ebd33b941)), closes [#297](https://github.com/marcstraube/ansible-collection-common/issues/297)
+* **package_management:** import distribution GPG key without rpm_key ([#308](https://github.com/marcstraube/ansible-collection-common/issues/308)) ([f22f181](https://github.com/marcstraube/ansible-collection-common/commit/f22f181a3c420d2953da83434a7418d926eeeec1)), closes [#307](https://github.com/marcstraube/ansible-collection-common/issues/307)
+
+
+### Code Refactoring
+
+* **base:** remove zip and unzip from the default packages ([#313](https://github.com/marcstraube/ansible-collection-common/issues/313)) ([2491c8f](https://github.com/marcstraube/ansible-collection-common/commit/2491c8fd49c6d274e1631c4b2d7e1ca161675fe4)), closes [#197](https://github.com/marcstraube/ansible-collection-common/issues/197)
+* write Debian repositories in deb822 format ([#320](https://github.com/marcstraube/ansible-collection-common/issues/320)) ([291c0b9](https://github.com/marcstraube/ansible-collection-common/commit/291c0b932bc10aa8bfc431647c56ea7cb2cdc2fd)), closes [#318](https://github.com/marcstraube/ansible-collection-common/issues/318)
+
+
+### Documentation
+
+* update stale role documentation for the current collection layout ([#317](https://github.com/marcstraube/ansible-collection-common/issues/317)) ([e6952a2](https://github.com/marcstraube/ansible-collection-common/commit/e6952a2e718e7373f3e23913643ca89ebb8254c6)), closes [#306](https://github.com/marcstraube/ansible-collection-common/issues/306)
+
 ## [2.3.1](https://github.com/marcstraube/ansible-collection-common/compare/v2.3.0...v2.3.1) (2026-07-30)
 
 
