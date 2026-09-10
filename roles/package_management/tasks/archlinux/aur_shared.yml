@@ -1,0 +1,44 @@
+---
+#
+# Shared AUR build infrastructure, independent of the helper in use.
+# Imported by both paru.yml and yay.yml.
+#
+
+# aur_shared_users takes precedence; only derive when the operator left
+# it empty.
+- name: AUR Shared | Derive shared users from wheel group (exclude system users)  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    aur_shared_users: >-
+      {{ (users_list
+          | selectattr('groups', 'defined')
+          | selectattr('groups', 'contains', 'wheel')
+          | selectattr('system', 'undefined') | list
+          + users_list
+          | selectattr('groups', 'defined')
+          | selectattr('groups', 'contains', 'wheel')
+          | selectattr('system', 'defined')
+          | rejectattr('system', 'equalto', true) | list)
+         | map(attribute='name') | list }}
+  when:
+    - aur_shared_users | length == 0
+    - users_list is defined
+    - users_list | length > 0
+
+- name: AUR Shared | Create shared AUR group
+  ansible.builtin.group:
+    name: '{{ aur_shared_group }}'
+    system: true
+    state: present
+
+- name: AUR Shared | Add aur_builder to shared AUR group
+  ansible.builtin.user:
+    name: '{{ aur_builder_user }}'
+    groups: '{{ aur_shared_group }}'
+    append: true
+
+- name: AUR Shared | Add users to shared AUR group
+  ansible.builtin.user:
+    name: '{{ item }}'
+    groups: '{{ aur_shared_group }}'
+    append: true
+  loop: '{{ aur_shared_users }}'

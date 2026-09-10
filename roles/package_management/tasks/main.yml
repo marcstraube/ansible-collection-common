@@ -39,6 +39,13 @@
         - package-management
         - package-management:configure
 
+    - name: Main | Import Yay tasks
+      ansible.builtin.import_tasks: archlinux/yay.yml
+      when: aur_helper == 'yay'
+      tags:
+        - package-management
+        - package-management:configure
+
     - name: Main | Import Tools tasks
       ansible.builtin.import_tasks: archlinux/tools.yml
       tags:

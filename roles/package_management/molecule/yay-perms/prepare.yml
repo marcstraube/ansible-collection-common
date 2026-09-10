@@ -1,0 +1,71 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Install ACL utilities
+      community.general.pacman:
+        name: acl
+        state: present
+      retries: 3
+      delay: 5
+
+    # yay.yml adds aur_builder to the shared group but does not create the
+    # user — that lives in aur.yml, which builds the helper and is out of
+    # scope for this scenario. Create it here so yay.yml can run standalone.
+    - name: Prepare | Create aur_builder user
+      ansible.builtin.user:
+        name: aur_builder
+        home: /var/cache/aur_builder
+        shell: /usr/bin/nologin
+        system: true
+        create_home: true
+
+    - name: Prepare | Create shared user
+      ansible.builtin.user:
+        name: sharinguser
+        home: /home/sharinguser
+        create_home: true
+
+    - name: Prepare | Create the shared user's yay config directory
+      ansible.builtin.file:
+        path: '/home/sharinguser/.config/yay'
+        state: directory
+        owner: 'sharinguser'
+        group: 'sharinguser'
+        mode: '0755'
+
+    # A config the user saved through `yay --save`. The role must keep
+    # these keys and only take ownership of buildDir.
+    - name: Prepare | Seed an existing yay config for the shared user
+      ansible.builtin.copy:
+        content: |
+          {
+              "buildDir": "/home/sharinguser/.cache/yay",
+              "sudoloop": true,
+              "cleanAfter": true
+          }
+        dest: '/home/sharinguser/.config/yay/config.json'
+        owner: 'sharinguser'
+        group: 'sharinguser'
+        mode: '0644'
+
+    # Recreate the legacy state earlier role versions left behind: default
+    # ACLs on the clone directory and a clone entry owned by root, mode 0700
+    # as a hardened 0077 umask would have left it.
+    - name: Prepare | Create clone directory with a legacy root-owned entry
+      ansible.builtin.shell: |
+        mkdir -p /var/cache/yay/clone/legacypkg
+        echo x > /var/cache/yay/clone/legacypkg/PKGBUILD
+        chmod 0700 /var/cache/yay/clone/legacypkg
+        setfacl -m d:g::rwX /var/cache/yay/clone
+      args:
+        creates: /var/cache/yay/clone/legacypkg/PKGBUILD

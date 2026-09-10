@@ -1,0 +1,13 @@
+#!/bin/sh
+{{ ansible_managed | comment }}
+# Route manual/interactive yay calls through the dedicated build user so
+# the shared clone cache (owned by {{ aur_builder_user }}) stays consistent
+# and never gains entries owned by a login user. Regular users need the
+# matching "%wheel ... ({{ aur_builder_user }}) /usr/bin/yay" sudoers rule
+# and authenticate with their own password; root is allowed by default.
+# /usr/bin/yay is called by absolute path to avoid recursing into this
+# wrapper, which shadows the real binary earlier in PATH. -H points HOME at
+# the builder's home so yay reads the builder's config.json. --builddir is
+# passed explicitly because yay has no system-wide configuration and a
+# caller may carry a different buildDir in their own config.
+exec sudo -u {{ aur_builder_user }} -H /usr/bin/yay --builddir {{ yay_clone_dir }} "$@"

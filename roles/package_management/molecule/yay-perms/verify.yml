@@ -1,0 +1,139 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    yay_clone_dir: '/var/cache/yay/clone'
+
+  tasks:
+    - name: Verify | Read ACL of the shared clone directory
+      ansible.builtin.command:
+        cmd: 'getfacl -p {{ yay_clone_dir }}'
+      register: __pm_clone_acl
+      changed_when: false
+
+    - name: Verify | Assert no default ACLs remain on the clone tree
+      ansible.builtin.assert:
+        that:
+          - "'default:' not in __pm_clone_acl.stdout"
+        fail_msg: >-
+          Default ACLs present on the shared clone directory — they make
+          libarchive/bsdtar skip its final chmod during source extraction
+          and broken modes end up inside built packages.
+
+    - name: Verify | Stat the shared clone directory
+      ansible.builtin.stat:
+        path: '{{ yay_clone_dir }}'
+      register: __pm_clone_stat
+
+    - name: Verify | Assert builder ownership and SGID mode
+      ansible.builtin.assert:
+        that:
+          - __pm_clone_stat.stat.pw_name == 'aur_builder'
+          - __pm_clone_stat.stat.gr_name == 'aur_shared'
+          - __pm_clone_stat.stat.mode == '2775'
+        fail_msg: 'Clone directory is not aur_builder:aur_shared with mode 2775'
+
+    - name: Verify | Assert the legacy root-owned entry was adopted
+      ansible.builtin.stat:
+        path: '{{ yay_clone_dir }}/legacypkg/PKGBUILD'
+      register: __pm_legacy_stat
+      failed_when:
+        - __pm_legacy_stat.stat.pw_name != 'aur_builder' or
+          __pm_legacy_stat.stat.gr_name != 'aur_shared'
+
+    - name: Verify | Stat the builder-created entry
+      ansible.builtin.stat:
+        path: '{{ yay_clone_dir }}/testpkg'
+      register: __pm_testpkg_stat
+
+    - name: Verify | Assert SGID group inheritance and group access
+      ansible.builtin.assert:
+        that:
+          - __pm_testpkg_stat.stat.gr_name == 'aur_shared'
+          - __pm_testpkg_stat.stat.rgrp
+          - __pm_testpkg_stat.stat.xgrp
+        fail_msg: >-
+          Builder-created entry did not inherit the shared group access
+          through the SGID bit under the enforced 022 umask.
+
+    #
+    # yay-specific: per-user configuration
+    #
+
+    - name: Verify | Read the builder's yay config
+      ansible.builtin.slurp:
+        src: /var/cache/aur_builder/.config/yay/config.json
+      register: __pm_builder_config
+
+    - name: Verify | Assert the builder config points at the shared tree
+      vars:
+        __pm_builder_json: '{{ __pm_builder_config.content | b64decode | from_json }}'
+      ansible.builtin.assert:
+        that:
+          - __pm_builder_json.buildDir == yay_clone_dir
+        fail_msg: >-
+          The builder's config.json does not point buildDir at the shared
+          clone directory, so kewlfft.aur builds would land elsewhere.
+
+    - name: Verify | Read the shared user's yay config
+      ansible.builtin.slurp:
+        src: /home/sharinguser/.config/yay/config.json
+      register: __pm_user_config
+
+    - name: Verify | Assert buildDir was merged without discarding user settings
+      vars:
+        __pm_user_json: '{{ __pm_user_config.content | b64decode | from_json }}'
+      ansible.builtin.assert:
+        that:
+          - __pm_user_json.buildDir == yay_clone_dir
+          - __pm_user_json.sudoloop
+          - __pm_user_json.cleanAfter
+        fail_msg: >-
+          The seeded config keys were lost — the role must merge buildDir
+          into an existing config.json instead of replacing it.
+
+    #
+    # yay-specific: manual invocation
+    #
+
+    - name: Verify | Stat the manual-invocation wrapper
+      ansible.builtin.stat:
+        path: /usr/local/bin/yay
+      register: __pm_wrapper_stat
+
+    - name: Verify | Read the wrapper contents
+      ansible.builtin.slurp:
+        src: /usr/local/bin/yay
+      register: __pm_wrapper_content
+
+    - name: Verify | Assert the wrapper re-executes yay as the builder user
+      vars:
+        __pm_wrapper: '{{ __pm_wrapper_content.content | b64decode }}'
+      ansible.builtin.assert:
+        that:
+          - __pm_wrapper_stat.stat.exists
+          - __pm_wrapper_stat.stat.executable
+          - "'sudo -u aur_builder' in __pm_wrapper"
+          - "'/usr/bin/yay' in __pm_wrapper"
+          - "'--builddir ' ~ yay_clone_dir in __pm_wrapper"
+        fail_msg: >-
+          /usr/local/bin/yay wrapper is missing, not executable, or does not
+          re-execute /usr/bin/yay as aur_builder with the shared --builddir.
+
+    - name: Verify | Validate the builder sudoers file
+      ansible.builtin.command:
+        cmd: 'visudo -cf /etc/sudoers.d/99-aur_builder'
+      changed_when: false
+
+    - name: Verify | Read the builder sudoers file
+      ansible.builtin.slurp:
+        src: /etc/sudoers.d/99-aur_builder
+      register: __pm_sudoers_content
+
+    - name: Verify | Assert the wheel-to-builder yay rule is present
+      ansible.builtin.assert:
+        that:
+          - "'%wheel ALL=(aur_builder) /usr/bin/yay' in (__pm_sudoers_content.content | b64decode)"
+        fail_msg: 'The wheel-to-aur_builder yay sudoers rule is missing.'

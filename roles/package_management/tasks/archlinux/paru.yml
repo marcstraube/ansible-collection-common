@@ -1,120 +1,19 @@
 ---
-- name: Paru | Derive shared users from wheel group (exclude system users)  # noqa: var-naming[no-role-prefix]
-  ansible.builtin.set_fact:
-    paru_shared_users: >-
-      {{ (users_list
-          | selectattr('groups', 'defined')
-          | selectattr('groups', 'contains', 'wheel')
-          | selectattr('system', 'undefined') | list
-          + users_list
-          | selectattr('groups', 'defined')
-          | selectattr('groups', 'contains', 'wheel')
-          | selectattr('system', 'defined')
-          | rejectattr('system', 'equalto', true) | list)
-         | map(attribute='name') | list }}
-  when:
-    - paru_shared_users | length == 0
-    - users_list is defined
-    - users_list | length > 0
+- name: Paru | Import shared AUR infrastructure tasks
+  ansible.builtin.import_tasks: archlinux/aur_shared.yml
 
-- name: Paru | Create shared AUR group
-  ansible.builtin.group:
-    name: aur_shared
-    system: true
-    state: present
-
-- name: Paru | Add aur_builder to shared AUR group
-  ansible.builtin.user:
-    name: '{{ aur_builder_user }}'
-    groups: aur_shared
-    append: true
-
-- name: Paru | Add users to shared AUR group
-  ansible.builtin.user:
-    name: '{{ item }}'
-    groups: aur_shared
-    append: true
-  loop: '{{ paru_shared_users }}'
-
-# Owned by the builder user: makepkg chmods paths inside the tree and
-# POSIX only permits that for the owner. Group access for the other
-# aur_shared members comes from the SGID bit plus the builder's
-# enforced 022 umask.
-- name: Paru | Create shared clone directory
-  ansible.builtin.file:
-    path: '{{ paru_clone_dir }}'
-    state: directory
-    owner: '{{ aur_builder_user }}'
-    group: aur_shared
-    mode: '2775'
-
-# NO ACLs on the clone tree: default ACLs make libarchive/bsdtar skip
-# its final chmod during source extraction (to avoid clobbering the
-# ACLs), so extracted files keep the restrictive modes of the initial
-# secure open() and those broken modes end up inside the built packages
-# (group/other lose read and execute). Group access for aur_shared
-# members comes from the SGID bit plus the builder's enforced 022 umask
-# instead. The recursive strip migrates hosts that carry ACLs from
-# earlier role versions; changed_when is false because it is a top-up
-# like the ownership recovery below.
-- name: Paru | Strip ACLs from shared clone directory
-  ansible.builtin.command:
-    cmd: 'setfacl -R -b {{ paru_clone_dir }}'
-  changed_when: false
-
-# makepkg chmods paths inside the clone tree and POSIX only permits that
-# for the owner — group write access does not help. Builds run as the
-# builder user, so normalise ownership of existing entries; clones
-# created interactively by other group members are adopted on the next
-# run. changed_when is false: this is a top-up like the ACL strip
-# above, newly built entries are owned by the builder anyway.
-- name: Paru | Recover ownership on existing clone entries
-  ansible.builtin.command:
-    cmd: 'chown -R {{ aur_builder_user }}:aur_shared {{ paru_clone_dir }}'
-  changed_when: false
-
-# chown alone does not repair modes: directories created under a hardened
-# umask (0077) stay 2700 and keep locking the aur_shared group out even
-# after ownership is corrected. Normalize them additively — group and
-# other gain read, X adds execute only on directories and already
-# executable files, so regular file exec bits survive. This matches what
-# the SGID bit plus the builder's enforced 022 umask produces for newly
-# created entries. changed_when is false like the ownership recovery above.
-- name: Paru | Normalize modes on existing clone entries
-  ansible.builtin.command:
-    cmd: 'chmod -R g+rX,o+rX {{ paru_clone_dir }}'
-  changed_when: false
-
-# git refuses to operate on repositories owned by another user
-# (CVE-2022-24765 safe.directory check). In the shared clone directory
-# that is the normal case: any aur_shared member may have cloned a
-# package first, while paru builds run as the builder user. Shared
-# write access inside the group is the deliberate design here (SGID),
-# so mark the clone tree as safe system-wide.
-- name: Paru | Mark shared clone directory as git-safe
-  community.general.git_config:
-    scope: system
-    name: safe.directory
-    value: '{{ paru_clone_dir }}/*'
-    add_mode: add
-
-# The module creates /etc/gitconfig subject to the root umask; under a
-# hardened umask (0077) that yields 0600 and git silently skips an
-# unreadable system config — the safe.directory entry would never reach
-# the builder user.
-- name: Paru | Ensure system gitconfig is world-readable
-  ansible.builtin.file:
-    path: /etc/gitconfig
-    owner: root
-    group: root
-    mode: '0644'
-
-- name: Paru | Disable Copy-on-Write on shared clone directory (BTRFS)
-  ansible.builtin.file:
-    path: '{{ paru_clone_dir }}'
-    attr: +C
-  # BTRFS attribute only works on BTRFS filesystems
-  failed_when: false
+- name: Paru | Include shared clone directory tasks
+  ansible.builtin.include_tasks:
+    file: archlinux/aur_clone_dir.yml
+    apply:
+      tags:
+        - package-management
+        - package-management:configure
+  vars:
+    __aur_clone_dir: '{{ paru_clone_dir }}'
+  tags:
+    - package-management
+    - package-management:configure
 
 - name: Paru | Deploy paru.conf
   ansible.builtin.template:

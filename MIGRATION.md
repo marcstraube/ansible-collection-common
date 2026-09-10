@@ -14,6 +14,35 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+### `package_management` — `paru_shared_users` becomes `aur_shared_users`
+
+The shared AUR build infrastructure — the group and its member list — is not
+specific to one helper, so the variables describing it lost their `paru_`
+prefix. `yay` now provides the same shared clone directory and group sharing
+that `paru` already had, and both use these variables.
+
+The clone directories stay per-helper. `paru_clone_dir` is unchanged and
+`yay_clone_dir` (`/var/cache/yay/clone`) is new, because paru and yay track
+VCS state differently and must not build in the same tree.
+
+#### Required action
+
+Rename the variable in your inventory:
+
+```yaml
+# Before
+paru_shared_users:
+  - 'johndoe'
+
+# After
+aur_shared_users:
+  - 'johndoe'
+```
+
+The group name is now configurable through `aur_shared_group` and still
+defaults to `aur_shared`, so hosts that do not set it keep their existing
+group.
+
 ### `package_management` — `apt_custom_repos` entries move to deb822 fields
 
 `ansible.builtin.apt_repository` is deprecated and will be removed in
