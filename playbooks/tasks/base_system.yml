@@ -3,64 +3,53 @@
 # Base System Tasks
 # =============================================================================
 # Task file for base system configuration — single source of truth.
-# Imported by playbooks/base.yml (standalone) and infra playbooks.
+# Import it from a play with `ansible.builtin.import_tasks`.
 #
 # All roles default to enabled — disable per host/group via inventory.
 # See each role's defaults/main.yml for available variables.
 #
 # Tag scheme:
-#   base-system   All roles in this file
-#   security      Security roles only (sysctl through hardware_tokens)
-#   <role-name>   Individual role (e.g., firewalld, docker)
+#   base-system     All roles in this file
+#   security        Security roles only (sysctl through hardware_tokens)
+#   <role-name>     Individual role (e.g., firewalld, docker)
+#   <role>:<phase>  Role sub-stage (e.g., openssh:configure, docker:install)
+#
+# Roles are imported statically (import_role) so their internal sub-tags are
+# exposed to --tags / --list-tags. Run `ansible-playbook … --list-tags` to see
+# the full set. Dynamic include_role would hide sub-tags behind the include.
 # =============================================================================
 
 #
 # Core System
 #
 
-- name: Base System | Include package_management role
-  ansible.builtin.include_role:
+- name: Base System | Import package_management role
+  ansible.builtin.import_role:
     name: marcstraube.common.package_management
-    apply:
-      tags:
-        - base-system
-        - package-management
   tags:
     - base-system
     - package-management
   when: package_management_enabled | default(true) | bool
 
-- name: Base System | Include base role
-  ansible.builtin.include_role:
+- name: Base System | Import base role
+  ansible.builtin.import_role:
     name: marcstraube.common.base
-    apply:
-      tags:
-        - base-system
-        - base
   tags:
     - base-system
     - base
   when: base_enabled | default(true) | bool
 
-- name: Base System | Include users role
-  ansible.builtin.include_role:
+- name: Base System | Import users role
+  ansible.builtin.import_role:
     name: marcstraube.common.users
-    apply:
-      tags:
-        - base-system
-        - users
   tags:
     - base-system
     - users
   when: users_enabled | default(true) | bool
 
-- name: Base System | Include sudo role
-  ansible.builtin.include_role:
+- name: Base System | Import sudo role
+  ansible.builtin.import_role:
     name: marcstraube.common.sudo
-    apply:
-      tags:
-        - base-system
-        - sudo
   tags:
     - base-system
     - sudo
@@ -70,89 +59,59 @@
 # Security Foundation
 #
 
-- name: Base System | Include sysctl role
-  ansible.builtin.include_role:
+- name: Base System | Import sysctl role
+  ansible.builtin.import_role:
     name: marcstraube.common.sysctl
-    apply:
-      tags:
-        - base-system
-        - security
-        - sysctl
   tags:
     - base-system
     - security
     - sysctl
   when: sysctl_enabled | default(true) | bool
 
-- name: Base System | Include pam_hardening role
-  ansible.builtin.include_role:
+- name: Base System | Import pam_hardening role
+  ansible.builtin.import_role:
     name: marcstraube.common.pam_hardening
-    apply:
-      tags:
-        - base-system
-        - security
-        - pam-hardening
   tags:
     - base-system
     - security
     - pam-hardening
   when: pam_hardening_enabled | default(true) | bool
 
-- name: Base System | Include openssh role
-  ansible.builtin.include_role:
+- name: Base System | Import openssh role
+  ansible.builtin.import_role:
     name: marcstraube.common.openssh
-    apply:
-      tags:
-        - base-system
-        - security
-        - openssh
   tags:
     - base-system
     - security
     - openssh
   when: openssh_enabled | default(true) | bool
 
-- name: Base System | Include hardening role
-  ansible.builtin.include_role:
+- name: Base System | Import hardening role
+  ansible.builtin.import_role:
     name: marcstraube.common.hardening
-    apply:
-      tags:
-        - base-system
-        - security
-        - hardening
   tags:
     - base-system
     - security
     - hardening
   when: hardening_enabled | default(true) | bool
 
-- name: Base System | Include apparmor role
-  ansible.builtin.include_role:
+- name: Base System | Import apparmor role
+  ansible.builtin.import_role:
     name: marcstraube.common.apparmor
-    apply:
-      tags:
-        - base-system
-        - security
-        - apparmor
   tags:
     - base-system
     - security
     - apparmor
   when: apparmor_enabled | default(true) | bool
 
-- name: Base System | Include firejail role
-  ansible.builtin.include_role:
+- name: Base System | Import firejail role
+  ansible.builtin.import_role:
     name: marcstraube.common.firejail
-    apply:
-      tags:
-        - base-system
-        - security
-        - firejail
   tags:
     - base-system
     - security
     - firejail
-  # Always include — the role dispatches install/configure (enabled=true) or
+  # Always imported — the role dispatches install/configure (enabled=true) or
   # cleanup (enabled=false) internally based on firejail_enabled.
 
 # NetworkManager runs before firewalld so interface-to-zone bindings
@@ -161,26 +120,17 @@
 # in the default zone — cutting SSH if the management interface's zone is the
 # only one allowing it. NM stays ahead of the remaining networking roles
 # (resolved/wireguard/etc.) which do not depend on it.
-- name: Base System | Include networkmanager role
-  ansible.builtin.include_role:
+- name: Base System | Import networkmanager role
+  ansible.builtin.import_role:
     name: marcstraube.common.networkmanager
-    apply:
-      tags:
-        - base-system
-        - networkmanager
   tags:
     - base-system
     - networkmanager
   when: networkmanager_enabled | default(true) | bool
 
-- name: Base System | Include firewalld role
-  ansible.builtin.include_role:
+- name: Base System | Import firewalld role
+  ansible.builtin.import_role:
     name: marcstraube.common.firewalld
-    apply:
-      tags:
-        - base-system
-        - security
-        - firewalld
   tags:
     - base-system
     - security
@@ -191,85 +141,57 @@
 # Languages & Tools
 #
 
-- name: Base System | Include python role
-  ansible.builtin.include_role:
+- name: Base System | Import python role
+  ansible.builtin.import_role:
     name: marcstraube.common.python
-    apply:
-      tags:
-        - base-system
-        - python
   tags:
     - base-system
     - python
   when: python_enabled | default(true) | bool
 
-- name: Base System | Include nodejs role
-  ansible.builtin.include_role:
+- name: Base System | Import nodejs role
+  ansible.builtin.import_role:
     name: marcstraube.common.nodejs
-    apply:
-      tags:
-        - base-system
-        - nodejs
   tags:
     - base-system
     - nodejs
   when: nodejs_enabled | default(true) | bool
 
-- name: Base System | Include git role
-  ansible.builtin.include_role:
+- name: Base System | Import git role
+  ansible.builtin.import_role:
     name: marcstraube.common.git
-    apply:
-      tags:
-        - base-system
-        - git
   tags:
     - base-system
     - git
   when: git_enabled | default(true) | bool
 
-- name: Base System | Include chrony role
-  ansible.builtin.include_role:
+- name: Base System | Import chrony role
+  ansible.builtin.import_role:
     name: marcstraube.common.chrony
-    apply:
-      tags:
-        - base-system
-        - chrony
   tags:
     - base-system
     - chrony
   when: chrony_enabled | default(true) | bool
 
-- name: Base System | Include mta role
-  ansible.builtin.include_role:
+- name: Base System | Import mta role
+  ansible.builtin.import_role:
     name: marcstraube.common.mta
-    apply:
-      tags:
-        - base-system
-        - mta
   tags:
     - base-system
     - mta
   when: mta_enabled | default(true) | bool
 
-- name: Base System | Include logrotate role
-  ansible.builtin.include_role:
+- name: Base System | Import logrotate role
+  ansible.builtin.import_role:
     name: marcstraube.common.logrotate
-    apply:
-      tags:
-        - base-system
-        - logrotate
   tags:
     - base-system
     - logrotate
   when: logrotate_enabled | default(true) | bool
 
-- name: Base System | Include editors role
-  ansible.builtin.include_role:
+- name: Base System | Import editors role
+  ansible.builtin.import_role:
     name: marcstraube.common.editors
-    apply:
-      tags:
-        - base-system
-        - editors
   tags:
     - base-system
     - editors
@@ -279,61 +201,41 @@
 # Networking
 #
 
-- name: Base System | Include resolved role
-  ansible.builtin.include_role:
+- name: Base System | Import resolved role
+  ansible.builtin.import_role:
     name: marcstraube.common.resolved
-    apply:
-      tags:
-        - base-system
-        - resolved
   tags:
     - base-system
     - resolved
   when: resolved_enabled | default(true) | bool
 
-- name: Base System | Include wireguard role
-  ansible.builtin.include_role:
+- name: Base System | Import wireguard role
+  ansible.builtin.import_role:
     name: marcstraube.common.wireguard
-    apply:
-      tags:
-        - base-system
-        - wireguard
   tags:
     - base-system
     - wireguard
   when: wireguard_enabled | default(true) | bool
 
-- name: Base System | Include avahi role
-  ansible.builtin.include_role:
+- name: Base System | Import avahi role
+  ansible.builtin.import_role:
     name: marcstraube.common.avahi
-    apply:
-      tags:
-        - base-system
-        - avahi
   tags:
     - base-system
     - avahi
   when: avahi_enabled | default(true) | bool
 
-- name: Base System | Include unbound role
-  ansible.builtin.include_role:
+- name: Base System | Import unbound role
+  ansible.builtin.import_role:
     name: marcstraube.common.unbound
-    apply:
-      tags:
-        - base-system
-        - unbound
   tags:
     - base-system
     - unbound
   when: unbound_enabled | default(true) | bool
 
-- name: Base System | Include snmp role
-  ansible.builtin.include_role:
+- name: Base System | Import snmp role
+  ansible.builtin.import_role:
     name: marcstraube.common.snmp
-    apply:
-      tags:
-        - base-system
-        - snmp
   tags:
     - base-system
     - snmp
@@ -343,133 +245,89 @@
 # Applications
 #
 
-- name: Base System | Include utils role
-  ansible.builtin.include_role:
+- name: Base System | Import utils role
+  ansible.builtin.import_role:
     name: marcstraube.common.utils
-    apply:
-      tags:
-        - base-system
-        - utils
   tags:
     - base-system
     - utils
   when: utils_enabled | default(true) | bool
 
-- name: Base System | Include multiplexer role
-  ansible.builtin.include_role:
+- name: Base System | Import multiplexer role
+  ansible.builtin.import_role:
     name: marcstraube.common.multiplexer
-    apply:
-      tags:
-        - base-system
-        - multiplexer
   tags:
     - base-system
     - multiplexer
   when: multiplexer_enabled | default(true) | bool
 
-- name: Base System | Include shell role
-  ansible.builtin.include_role:
+- name: Base System | Import shell role
+  ansible.builtin.import_role:
     name: marcstraube.common.shell
-    apply:
-      tags:
-        - base-system
-        - shell
   tags:
     - base-system
     - shell
   when: shell_enabled | default(true) | bool
 
-- name: Base System | Include fonts role
-  ansible.builtin.include_role:
+- name: Base System | Import fonts role
+  ansible.builtin.import_role:
     name: marcstraube.common.fonts
-    apply:
-      tags:
-        - base-system
-        - fonts
   tags:
     - base-system
     - fonts
   when: fonts_enabled | default(true) | bool
 
-- name: Base System | Include graphics role
-  ansible.builtin.include_role:
+- name: Base System | Import graphics role
+  ansible.builtin.import_role:
     name: marcstraube.common.graphics
-    apply:
-      tags:
-        - base-system
-        - graphics
   tags:
     - base-system
     - graphics
   when: graphics_enabled | default(true) | bool
 
-- name: Base System | Include energy_management role
-  ansible.builtin.include_role:
+- name: Base System | Import energy_management role
+  ansible.builtin.import_role:
     name: marcstraube.common.energy_management
-    apply:
-      tags:
-        - base-system
-        - energy-management
   tags:
     - base-system
     - energy-management
   when: energy_management_enabled | default(true) | bool
 
-- name: Base System | Include gnupg role
-  ansible.builtin.include_role:
+- name: Base System | Import gnupg role
+  ansible.builtin.import_role:
     name: marcstraube.common.gnupg
-    apply:
-      tags:
-        - base-system
-        - gnupg
   tags:
     - base-system
     - gnupg
   when: gnupg_enabled | default(true) | bool
 
-- name: Base System | Include docker role
-  ansible.builtin.include_role:
+- name: Base System | Import docker role
+  ansible.builtin.import_role:
     name: marcstraube.common.docker
-    apply:
-      tags:
-        - base-system
-        - docker
   tags:
     - base-system
     - docker
   when: docker_enabled | default(true) | bool
 
-- name: Base System | Include podman role
-  ansible.builtin.include_role:
+- name: Base System | Import podman role
+  ansible.builtin.import_role:
     name: marcstraube.common.podman
-    apply:
-      tags:
-        - base-system
-        - podman
   tags:
     - base-system
     - podman
   when: podman_enabled | default(true) | bool
 
-- name: Base System | Include php role
-  ansible.builtin.include_role:
+- name: Base System | Import php role
+  ansible.builtin.import_role:
     name: marcstraube.common.php
-    apply:
-      tags:
-        - base-system
-        - php
   tags:
     - base-system
     - php
   when: php_enabled | default(true) | bool
 
-- name: Base System | Include ansible role
-  ansible.builtin.include_role:
+- name: Base System | Import ansible role
+  ansible.builtin.import_role:
     name: marcstraube.common.ansible
-    apply:
-      tags:
-        - base-system
-        - ansible-tools
   tags:
     - base-system
     - ansible-tools
@@ -479,112 +337,72 @@
 # Security Scanning & Extras
 #
 
-- name: Base System | Include pki role
-  ansible.builtin.include_role:
+- name: Base System | Import pki role
+  ansible.builtin.import_role:
     name: marcstraube.common.pki
-    apply:
-      tags:
-        - base-system
-        - security
-        - pki
   tags:
     - base-system
     - security
     - pki
   when: pki_enabled | default(true) | bool
 
-- name: Base System | Include fail2ban role
-  ansible.builtin.include_role:
+- name: Base System | Import fail2ban role
+  ansible.builtin.import_role:
     name: marcstraube.common.fail2ban
-    apply:
-      tags:
-        - base-system
-        - security
-        - fail2ban
   tags:
     - base-system
     - security
     - fail2ban
   when: fail2ban_enabled | default(true) | bool
 
-- name: Base System | Include clamav role
-  ansible.builtin.include_role:
+- name: Base System | Import clamav role
+  ansible.builtin.import_role:
     name: marcstraube.common.clamav
-    apply:
-      tags:
-        - base-system
-        - security
-        - clamav
   tags:
     - base-system
     - security
     - clamav
   when: clamav_enabled | default(true) | bool
 
-- name: Base System | Include auditd role
-  ansible.builtin.include_role:
+- name: Base System | Import auditd role
+  ansible.builtin.import_role:
     name: marcstraube.common.auditd
-    apply:
-      tags:
-        - base-system
-        - security
-        - auditd
   tags:
     - base-system
     - security
     - auditd
   when: auditd_enabled | default(true) | bool
 
-- name: Base System | Include aide role
-  ansible.builtin.include_role:
+- name: Base System | Import aide role
+  ansible.builtin.import_role:
     name: marcstraube.common.aide
-    apply:
-      tags:
-        - base-system
-        - security
-        - aide
   tags:
     - base-system
     - security
     - aide
   when: aide_enabled | default(true) | bool
 
-- name: Base System | Include rkhunter role
-  ansible.builtin.include_role:
+- name: Base System | Import rkhunter role
+  ansible.builtin.import_role:
     name: marcstraube.common.rkhunter
-    apply:
-      tags:
-        - base-system
-        - security
-        - rkhunter
   tags:
     - base-system
     - security
     - rkhunter
   when: rkhunter_enabled | default(true) | bool
 
-- name: Base System | Include lynis role
-  ansible.builtin.include_role:
+- name: Base System | Import lynis role
+  ansible.builtin.import_role:
     name: marcstraube.common.lynis
-    apply:
-      tags:
-        - base-system
-        - security
-        - lynis
   tags:
     - base-system
     - security
     - lynis
   when: lynis_enabled | default(true) | bool
 
-- name: Base System | Include hardware_tokens role
-  ansible.builtin.include_role:
+- name: Base System | Import hardware_tokens role
+  ansible.builtin.import_role:
     name: marcstraube.common.hardware_tokens
-    apply:
-      tags:
-        - base-system
-        - security
-        - hardware-tokens
   tags:
     - base-system
     - security
@@ -595,13 +413,9 @@
 # Backup (explicit only — tagged 'never')
 #
 
-- name: Base System | Include restic role
-  ansible.builtin.include_role:
+- name: Base System | Import restic role
+  ansible.builtin.import_role:
     name: marcstraube.common.restic
-    apply:
-      tags:
-        - backup
-        - restic
   tags:
     - backup
     - restic

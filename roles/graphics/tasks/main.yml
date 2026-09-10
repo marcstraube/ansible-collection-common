@@ -11,7 +11,7 @@
       paths:
         - 'vars'
   tags:
-    - graphics
+    - always
 
 - name: Main | Import detect tasks
   ansible.builtin.import_tasks: detect.yml
@@ -19,6 +19,7 @@
     - graphics_enabled | bool
     - graphics_gpu == 'auto'
   tags:
+    - always
     - graphics
     - graphics:detect
 
@@ -44,7 +45,7 @@
       }}"
   when: graphics_enabled | bool
   tags:
-    - graphics
+    - always
 
 - name: Main | Import Intel tasks
   ansible.builtin.import_tasks: intel.yml

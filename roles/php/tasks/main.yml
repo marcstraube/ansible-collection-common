@@ -11,7 +11,7 @@
       paths:
         - 'vars'
   tags:
-    - php
+    - always
 
 - name: Main | Validate php_versions
   ansible.builtin.assert:
@@ -23,7 +23,7 @@
       must be listed in php_versions
   when: php_enabled | bool
   tags:
-    - php
+    - always
 
 - name: Main | Validate php_redhat_repo
   ansible.builtin.assert:
@@ -39,7 +39,7 @@
     - php_enabled | bool
     - ansible_facts['os_family'] == 'RedHat'
   tags:
-    - php
+    - always
 
 - name: Main | Import repository tasks
   ansible.builtin.import_tasks:

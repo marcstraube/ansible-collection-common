@@ -11,7 +11,7 @@
       paths:
         - 'vars'
   tags:
-    - sudo
+    - always
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml

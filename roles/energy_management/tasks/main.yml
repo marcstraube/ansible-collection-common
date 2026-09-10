@@ -11,7 +11,7 @@
       paths:
         - 'vars'
   tags:
-    - energy
+    - always
 
 - name: Main | Include logind tasks
   ansible.builtin.include_tasks:

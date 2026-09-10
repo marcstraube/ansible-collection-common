@@ -12,7 +12,7 @@
         - 'vars'
       skip: true
   tags:
-    - apparmor
+    - always
 
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
