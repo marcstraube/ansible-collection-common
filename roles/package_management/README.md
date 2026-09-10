@@ -100,27 +100,48 @@ overrides if needed.
 | `paru_provides`         | `true`                  | Search for provider packages     |
 | `paru_sort_by`          | `votes`                 | Sort search results              |
 | `paru_search_by`        | `name-desc`             | Search by field                  |
-| `paru_shared_users`     | `[]`                    | Users sharing AUR clone cache    |
+
+### Arch Linux - Shared AUR Build Infrastructure
+
+These apply to whichever helper `aur_helper` selects.
+
+| Variable           | Default                | Description                       |
+|--------------------|------------------------|-----------------------------------|
+| `aur_shared_group` | `aur_shared`           | Group owning the clone directory  |
+| `aur_shared_users` | `[]`                   | Users sharing the AUR clone cache |
+| `yay_clone_dir`    | `/var/cache/yay/clone` | Shared clone directory for yay    |
+
+`paru_clone_dir` and `yay_clone_dir` stay separate: the two helpers track VCS
+state differently, so they must not build in the same tree. Everything else —
+group, ownership, permissions, git `safe.directory` — is shared between them.
+
+Unlike paru, yay has no system-wide configuration file. It reads
+`~/.config/yay/config.json`, so the role writes `buildDir` there for the
+builder user and for every `aur_shared_users` entry, merging into an existing
+file rather than replacing it. The wrapper additionally passes `--builddir`,
+so a manual call lands in the shared tree regardless of the caller's own
+config.
 
 The shared clone directory is owned by the `aur_builder` user and group-owned
-by `aur_shared` with the SGID bit. All builds run as `aur_builder` under an
+by `aur_shared_group` with the SGID bit. All builds run as `aur_builder` under an
 enforced `022` umask (set through the user's GECOS `umask=` field and a
 sudoers `umask_override`), so cloned sources and built packages stay readable
-and executable for the `aur_shared` group even when a restrictive default
+and executable for the shared group even when a restrictive default
 umask (such as the `hardening` role's `0077`) is in effect. ACLs are
 deliberately **not** used: default ACLs make `libarchive`/`bsdtar` skip its
 final `chmod` during source extraction, which would bake the restrictive
 modes of the initial secure `open()` into the built packages. Because
 `makepkg` only chmods paths for their owner, the tree is owned by a single
-user; other `aur_shared` members get read/execute access (never write)
+user; other group members get read/execute access (never write)
 through the SGID bit and the enforced umask.
 
 Manual upgrades must therefore run as the build user. The role installs a
-`/usr/local/bin/paru` wrapper that transparently re-executes `paru` as
-`aur_builder` via `sudo`, so `paru -Syu` works from any `wheel` account
-(authenticating with the caller's own password) or as `root`. Never invoke
-the real `/usr/bin/paru` directly as a login user — that would create clone
-entries owned by the wrong user and lock the builder out on the next run.
+`/usr/local/bin/paru` or `/usr/local/bin/yay` wrapper that transparently
+re-executes the helper as `aur_builder` via `sudo`, so `paru -Syu` or
+`yay -Syu` works from any `wheel` account (authenticating with the caller's
+own password) or as `root`. Never invoke the real `/usr/bin/paru` or
+`/usr/bin/yay` directly as a login user — that would create clone entries
+owned by the wrong user and lock the builder out on the next run.
 
 ### Arch Linux - Tools
 

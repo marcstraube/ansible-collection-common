@@ -1,0 +1,29 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # Mirror the role defaults so the post-include simulation task can
+    # reference them (include_role defaults are not exposed to the play).
+    yay_clone_dir: '/var/cache/yay/clone'
+    aur_shared_users:
+      - 'sharinguser'
+
+  tasks:
+    - name: Converge | Run yay configuration tasks  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: archlinux/yay.yml
+
+    # Simulate the builder creating a fresh entry under the enforced 022
+    # build umask (makepkg.conf / sudoers runas-default in the full role).
+    # runuser is used so the nologin system user can act without a
+    # PAM/login shell. The `creates` guard keeps the idempotence run clean.
+    - name: Converge | Simulate aur_builder creating a build dir
+      ansible.builtin.command:
+        cmd: >-
+          runuser -u aur_builder -- bash -c
+          'umask 0022; mkdir -p {{ yay_clone_dir }}/testpkg;
+          echo x > {{ yay_clone_dir }}/testpkg/PKGBUILD'
+        creates: '{{ yay_clone_dir }}/testpkg/PKGBUILD'

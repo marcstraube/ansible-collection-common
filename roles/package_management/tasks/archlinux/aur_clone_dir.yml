@@ -1,0 +1,87 @@
+---
+#
+# Sets up one shared AUR clone directory. Included with __aur_clone_dir
+# pointing at the helper's tree, so paru and yay share this logic while
+# keeping separate directories — the two helpers track VCS state
+# differently and must not write into the same tree.
+#
+
+# Owned by the builder user: makepkg chmods paths inside the tree and
+# POSIX only permits that for the owner. Group access for the other
+# shared members comes from the SGID bit plus the builder's enforced
+# 022 umask.
+- name: AUR Clone Dir | Create shared clone directory
+  ansible.builtin.file:
+    path: '{{ __aur_clone_dir }}'
+    state: directory
+    owner: '{{ aur_builder_user }}'
+    group: '{{ aur_shared_group }}'
+    mode: '2775'
+
+# NO ACLs on the clone tree: default ACLs make libarchive/bsdtar skip
+# its final chmod during source extraction (to avoid clobbering the
+# ACLs), so extracted files keep the restrictive modes of the initial
+# secure open() and those broken modes end up inside the built packages
+# (group/other lose read and execute). Group access for the shared
+# members comes from the SGID bit plus the builder's enforced 022 umask
+# instead. The recursive strip migrates hosts that carry ACLs from
+# earlier role versions; changed_when is false because it is a top-up
+# like the ownership recovery below.
+- name: AUR Clone Dir | Strip ACLs from shared clone directory
+  ansible.builtin.command:
+    cmd: 'setfacl -R -b {{ __aur_clone_dir }}'
+  changed_when: false
+
+# makepkg chmods paths inside the clone tree and POSIX only permits that
+# for the owner — group write access does not help. Builds run as the
+# builder user, so normalise ownership of existing entries; clones
+# created interactively by other group members are adopted on the next
+# run. changed_when is false: this is a top-up like the ACL strip
+# above, newly built entries are owned by the builder anyway.
+- name: AUR Clone Dir | Recover ownership on existing clone entries
+  ansible.builtin.command:
+    cmd: 'chown -R {{ aur_builder_user }}:{{ aur_shared_group }} {{ __aur_clone_dir }}'
+  changed_when: false
+
+# chown alone does not repair modes: directories created under a hardened
+# umask (0077) stay 2700 and keep locking the shared group out even after
+# ownership is corrected. Normalize them additively — group and other
+# gain read, X adds execute only on directories and already executable
+# files, so regular file exec bits survive. This matches what the SGID
+# bit plus the builder's enforced 022 umask produces for newly created
+# entries. changed_when is false like the ownership recovery above.
+- name: AUR Clone Dir | Normalize modes on existing clone entries
+  ansible.builtin.command:
+    cmd: 'chmod -R g+rX,o+rX {{ __aur_clone_dir }}'
+  changed_when: false
+
+# git refuses to operate on repositories owned by another user
+# (CVE-2022-24765 safe.directory check). In the shared clone directory
+# that is the normal case: any group member may have cloned a package
+# first, while builds run as the builder user. Shared write access
+# inside the group is the deliberate design here (SGID), so mark the
+# clone tree as safe system-wide.
+- name: AUR Clone Dir | Mark shared clone directory as git-safe
+  community.general.git_config:
+    scope: system
+    name: safe.directory
+    value: '{{ __aur_clone_dir }}/*'
+    add_mode: add
+
+# The module creates /etc/gitconfig subject to the root umask; under a
+# hardened umask (0077) that yields 0600 and git silently skips an
+# unreadable system config — the safe.directory entry would never reach
+# the builder user.
+- name: AUR Clone Dir | Ensure system gitconfig is world-readable
+  ansible.builtin.file:
+    path: /etc/gitconfig
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: AUR Clone Dir | Disable Copy-on-Write on shared clone directory (BTRFS)
+  ansible.builtin.file:
+    path: '{{ __aur_clone_dir }}'
+    attr: +C
+  # BTRFS attribute only works on BTRFS filesystems
+  failed_when: false

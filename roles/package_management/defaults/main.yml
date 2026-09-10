@@ -348,6 +348,18 @@ aur_builder_user: 'aur_builder'
 aur_builder_home: '/var/cache/aur_builder'
 
 #
+# AUR Shared Build Infrastructure (helper-agnostic)
+#
+
+# Group owning the shared clone directories
+aur_shared_group: 'aur_shared'
+
+# Users to add to the shared AUR clone group (in addition to aur_builder)
+# These users can run the AUR helper manually and share the clone cache
+aur_shared_users: []
+# Example: ['johndoe']
+
+#
 # Paru Configuration
 #
 
@@ -419,11 +431,6 @@ paru_limit: 0
 # AUR completion cache refresh interval in days (0 = every time, -1 = never)
 paru_completion_interval: 7
 
-# Users to add to the shared AUR clone group (in addition to aur_builder)
-# These users can run paru manually and share the clone cache
-paru_shared_users: []
-# Example: ['johndoe']
-
 #
 # Paru - [bin] Section
 #
@@ -439,6 +446,19 @@ paru_sudo: ''
 
 # File manager for reviewing PKGBUILDs (empty = default)
 paru_file_manager: ''
+
+#
+# Yay Configuration
+#
+# yay has no system-wide configuration file — the build directory is
+# written to ~/.config/yay/config.json for the builder and every shared
+# user, and passed to manual invocations through the wrapper.
+#
+
+# Shared clone directory for AUR package sources
+# Kept separate from paru_clone_dir: the two helpers track VCS state
+# differently, so they must not share a tree
+yay_clone_dir: '/var/cache/yay/clone'
 
 #
 # Package Cache Cleanup
