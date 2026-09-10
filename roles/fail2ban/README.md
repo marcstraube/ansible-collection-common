@@ -12,7 +12,7 @@ and optional AppArmor confinement.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - No additional collections required
 
 ## Supported Platforms

@@ -14,7 +14,7 @@ directly or via the `logrotate_configs` list variable.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - systemd-based system (all supported platforms)
 
 ## Supported Platforms

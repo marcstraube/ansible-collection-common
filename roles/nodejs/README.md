@@ -12,7 +12,7 @@ smart AppStream/NodeSource selection on RedHat-family systems.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Collections: `community.general`
 
 ## Supported Platforms

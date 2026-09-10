@@ -4,7 +4,7 @@ Install and configure shells (Zsh, Fish, Bash) and Starship prompt with modern C
 
 ## Requirements
 
-None.
+- ansible-core >= 2.19
 
 ## Supported Platforms
 

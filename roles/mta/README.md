@@ -14,6 +14,7 @@ This role intentionally stays a **null client**. For a full inbound mail server
 
 ## Requirements
 
+- ansible-core >= 2.19
 - `community.general` collection (for the `alternatives` module)
 - A resolvable hostname/domain for a sensible envelope origin (override
   `mta_myhostname` / `mta_mydomain` if the facts are not usable)

@@ -4,7 +4,7 @@ Install and configure Podman container runtime with rootless support and Docker 
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - `kewlfft.aur` collection (for AUR packages on Arch Linux)
 
 ## Supported Platforms

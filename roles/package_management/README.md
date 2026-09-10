@@ -11,7 +11,7 @@ support for Rocky 10.
 
 ## Requirements
 
-- `ansible-core >= 2.17`
+- ansible-core >= 2.19
 - Collections: `community.general`, `kewlfft.aur` (Arch only)
 
 ## Supported Platforms

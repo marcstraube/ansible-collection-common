@@ -19,7 +19,7 @@ DNS, and connection lifecycle.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - `ansible.posix` collection (firewalld, sysctl)
 - `community.general` collection (modprobe)
 

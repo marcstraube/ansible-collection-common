@@ -24,6 +24,7 @@ This role handles three hardening areas:
 
 ## Requirements
 
+- ansible-core >= 2.19
 - `ansible.posix` collection (for `ansible.posix.mount`)
 
 ## Supported Platforms

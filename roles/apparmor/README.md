@@ -18,7 +18,7 @@ and handles OS differences internally.
 
 ## Requirements
 
-- **Ansible**: >= 2.17
+- ansible-core >= 2.19
 - **GRUB bootloader**: Required for kernel parameter configuration
 - **Kernel with AppArmor support**: All modern kernels include it
 

@@ -12,7 +12,7 @@ Includes systemd service hardening and BTRFS NoCOW for log directory.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Rocky Linux requires EPEL to be enabled before running this role.
   EPEL is managed by the `marcstraube.common.package_management` role.
 

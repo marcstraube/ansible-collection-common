@@ -13,7 +13,7 @@ use `auditctl --signal` for stop/reload operations.
 
 ## Requirements
 
-- **Ansible**: >= 2.17
+- ansible-core >= 2.19
 - **Kernel audit subsystem**: Required (available in all modern kernels)
 - **Full VM or bare metal**: Containers lack kernel audit support
 

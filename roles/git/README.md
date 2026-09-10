@@ -22,6 +22,7 @@ to.
 
 ## Requirements
 
+- ansible-core >= 2.19
 - `community.general` collection (for the `git_config` module)
 - EPEL enabled on EL hosts for `gh` and `git-lfs`
 

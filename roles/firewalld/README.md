@@ -11,7 +11,7 @@ definitions. This is the infrastructure-wide standard firewall role.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Collections: `ansible.posix`
 
 ## Supported Platforms

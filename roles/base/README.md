@@ -10,7 +10,7 @@ kernel/microcode (Arch), bootloader (GRUB/systemd-boot), sysctl, and systemd
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Collections: `community.general`, `ansible.posix`
 
 ## Supported Platforms

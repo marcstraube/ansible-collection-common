@@ -10,7 +10,7 @@ hybrid graphics (PRIME render offload), and NVIDIA RTD3 power management.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - `lspci` available on target (part of `pciutils`) when using `graphics_gpu: auto`
 - RPM Fusion repositories for NVIDIA on RHEL/Rocky
 - AUR helper for legacy NVIDIA drivers on Arch Linux
