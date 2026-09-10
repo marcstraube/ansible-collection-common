@@ -10,7 +10,7 @@ expiry monitoring.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Collections: `community.crypto`, `ansible.posix`
 - Python `cryptography` library on target hosts
 

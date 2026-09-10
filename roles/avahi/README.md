@@ -10,7 +10,7 @@ Installs and configures the Avahi daemon for mDNS (multicast DNS) and DNS-SD
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - `ansible.posix` collection (for firewalld integration)
 
 ## Supported Platforms

@@ -9,7 +9,7 @@ EL 10) automatically through OS-specific variable files.
 
 ## Requirements
 
-- **Ansible**: >= 2.17
+- ansible-core >= 2.19
 - **Collections**:
   - `kewlfft.aur` (Arch Linux only, for AUR package installation)
 

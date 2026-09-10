@@ -17,6 +17,7 @@ Manage system users, groups, SSH authorized keys, and profile images.
 
 ## Requirements
 
+- ansible-core >= 2.19
 - `ansible.posix` collection (for `authorized_key` module)
 
 ## Supported Platforms

@@ -15,6 +15,7 @@ see `marcstraube.desktop.filemanagers`.
 
 ## Requirements
 
+- ansible-core >= 2.19
 - `kewlfft.aur` collection (Arch Linux AUR packages only)
 - EPEL repository enabled on Rocky/RHEL (for btop, cowsay, figlet, etc.)
 

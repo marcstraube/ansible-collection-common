@@ -12,7 +12,7 @@ modern version at `/opt/pipx-bootstrap/bin/pipx`.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Collections: `kewlfft.aur` (Arch Linux AUR support)
 - EPEL must be enabled on RedHat-family systems before this role runs.
   The `package_management` role handles EPEL installation.

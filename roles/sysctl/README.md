@@ -27,7 +27,7 @@ This role manages **network-level** sysctl and performance tuning in
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - `community.general` collection (for `modprobe` module, Docker profile only)
 
 ## Supported Platforms

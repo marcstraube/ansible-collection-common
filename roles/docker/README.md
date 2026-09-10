@@ -4,7 +4,7 @@ Install and configure Docker CE container runtime with daemon management.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - On Arch Linux: Docker is available in the `extra` repository (no additional setup)
 - On Debian/RedHat: The role manages Docker CE repository setup automatically
 

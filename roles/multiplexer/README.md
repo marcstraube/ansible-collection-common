@@ -16,7 +16,7 @@ managed/initial/disabled modes.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - `git` on target hosts (only when TPM is enabled for a user)
 
 ## Supported Platforms

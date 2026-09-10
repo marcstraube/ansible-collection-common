@@ -12,7 +12,7 @@ report directory.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - EPEL repository on EL 9 (Rocky, Alma, RHEL)
 - EL 10 requires `lynis_install_method: 'git'` (not available in EPEL 10)
 

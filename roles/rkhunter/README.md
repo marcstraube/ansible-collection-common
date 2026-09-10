@@ -11,7 +11,7 @@ scheduled scans, and supports per-OS package manager detection.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - **Arch Linux**: Package in `extra` repository
 - **Debian Trixie**: Package in `main` repository
 - **Rocky 9**: Package in EPEL repository (requires `epel-release`)

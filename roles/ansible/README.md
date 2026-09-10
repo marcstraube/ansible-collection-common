@@ -12,7 +12,7 @@ RedHat-family systems.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Collections: `community.general`, `kewlfft.aur`
 - The `python` role must run before this role to provide pipx.
 - On Arch Linux, the `package_management` role must run first to set up the

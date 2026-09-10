@@ -8,7 +8,7 @@ power manager (PPD or TLP), battery charge thresholds, and backlight access.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Collections: `community.general`
 
 ## Supported Platforms

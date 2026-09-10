@@ -15,7 +15,7 @@ selected key types via an algorithm map, or can be overridden explicitly.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Collections: `community.crypto`, `community.general`
 - Optional: `ansible.posix` (for firewalld integration)
 

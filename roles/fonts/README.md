@@ -10,7 +10,7 @@ antialiasing, hinting, subpixel rendering, and font family preferences.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - No additional collections required
 
 ## Supported Platforms

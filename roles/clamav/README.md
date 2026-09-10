@@ -11,7 +11,7 @@ service units, config paths, and user/group settings.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - EPEL repository on RedHat/Rocky (installed automatically in molecule tests)
 
 ## Supported Platforms

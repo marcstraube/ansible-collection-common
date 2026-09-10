@@ -15,7 +15,7 @@ and full FPM pool templates.
 
 ## Requirements
 
-- ansible-core >= 2.17
+- ansible-core >= 2.19
 - Collections: `community.general`, `kewlfft.aur` (Arch only)
 - **Debian/Ubuntu**: Sury PHP repository is set up automatically by this role
 - **RHEL/Rocky**: Remi + EPEL repository via `package_management`
