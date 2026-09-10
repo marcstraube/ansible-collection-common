@@ -157,7 +157,7 @@ entries owned by the wrong user and lock the builder out on the next run.
 | `apt_backports_enabled`         | `false` | Enable Debian Backports                             |
 | `apt_non_free_enabled`          | `false` | Add `non-free` to Debian deb822 Components          |
 | `apt_non_free_firmware_enabled` | `false` | Add `non-free-firmware` to Debian deb822 Components |
-| `apt_custom_repos`              | `[]`    | Custom repository definitions                       |
+| `apt_custom_repos`              | `[]`    | Custom repository definitions (deb822 fields)       |
 
 ### RHEL/Rocky - DNF
 

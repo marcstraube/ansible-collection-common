@@ -1,0 +1,39 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Read PPA sources file
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/ondrej-ubuntu-php.sources
+      register: ppa_sources
+
+    - name: Verify | Assert PPA written in deb822 format with a resolved key
+      vars:
+        ppa_content: '{{ ppa_sources.content | b64decode }}'
+        ppa_uri: "URIs: https://ppa.launchpadcontent.net/ondrej/php/ubuntu"
+        ppa_suite: "Suites: {{ ansible_facts['distribution_release'] }}"
+      ansible.builtin.assert:
+        that:
+          - ppa_uri in ppa_content
+          - ppa_suite in ppa_content
+          - "'Components: main' in ppa_content"
+          - "'Signed-By: ' in ppa_content"
+        fail_msg: 'PPA sources file missing expected deb822 fields'
+
+    - name: Verify | Stat Debian-only Backports file
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/backports.sources
+      register: backports_on_ubuntu
+
+    - name: Verify | Assert Debian-only paths stayed inert
+      ansible.builtin.assert:
+        that:
+          - not backports_on_ubuntu.stat.exists
+        fail_msg: 'Debian Backports were configured on Ubuntu'
+
+    - name: Verify | Test package manager works
+      ansible.builtin.apt:
+        update_cache: true
+      changed_when: false

@@ -14,6 +14,47 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+### `package_management` — `apt_custom_repos` entries move to deb822 fields
+
+`ansible.builtin.apt_repository` is deprecated and will be removed in
+ansible-core 2.25. Every repository this collection manages on Debian
+and Ubuntu is now written with `ansible.builtin.deb822_repository`.
+
+`apt_custom_repos` carried a one-line `sources.list` string in `repo:`.
+The deb822 module takes the parts separately, so entries now specify
+`uris`, `suites` and `components`. The optional `gpg_key` becomes the
+repository's `signed_by` key, which the module downloads and stores
+itself — the role no longer writes `/etc/apt/keyrings/<name>.asc`.
+
+`apt_ppas` is unaffected: `ppa:owner/name` entries stay valid. The role
+expands them and resolves each PPA's signing key through Launchpad.
+
+The role removes the `.list` files and keyrings written by earlier
+versions, so a repository is not configured twice after the upgrade.
+
+#### Required action
+
+Rewrite `apt_custom_repos` entries:
+
+```yaml
+# Before
+apt_custom_repos:
+  - name: 'myrepo'
+    repo: 'deb [signed-by=/etc/apt/keyrings/myrepo.asc] https://repo.example.com stable main'
+    gpg_key: 'https://repo.example.com/gpg.key'
+
+# After
+apt_custom_repos:
+  - name: 'myrepo'
+    uris: 'https://repo.example.com'
+    suites: 'stable'
+    components: 'main'
+    gpg_key: 'https://repo.example.com/gpg.key'
+```
+
+`types` (default `deb`) and `architectures` are accepted as optional
+fields for `deb-src` entries or architecture-scoped repositories.
+
 ### `editors`, `git`, `gnupg`, `multiplexer`, `package_management`, `shell` — `initial` now gates on config existence
 
 The `initial` value of `<role>_user_config_mode` previously acted only

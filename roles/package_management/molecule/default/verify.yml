@@ -167,6 +167,60 @@
               - "'non-free-firmware' in components_line.stdout"
             fail_msg: "Components line missing non-free entries: {{ components_line.stdout }}"
 
+        - name: Verify | Read Backports sources file
+          ansible.builtin.slurp:
+            src: /etc/apt/sources.list.d/backports.sources
+          register: backports_sources
+
+        - name: Verify | Assert Backports written in deb822 format
+          vars:
+            backports_content: '{{ backports_sources.content | b64decode }}'
+            backports_suite: "Suites: {{ ansible_facts['distribution_release'] }}-backports"
+          ansible.builtin.assert:
+            that:
+              - backports_suite in backports_content
+              - "'URIs: http://deb.debian.org/debian' in backports_content"
+              - "'non-free' in backports_content"
+            fail_msg: 'backports.sources missing expected deb822 fields'
+
+        - name: Verify | Read custom repository sources file
+          ansible.builtin.slurp:
+            src: /etc/apt/sources.list.d/molecule-updates.sources
+          register: custom_repo_sources
+
+        - name: Verify | Assert custom repository written from deb822 fields
+          vars:
+            custom_repo_content: '{{ custom_repo_sources.content | b64decode }}'
+            custom_repo_suite: "Suites: {{ ansible_facts['distribution_release'] }}-updates"
+          ansible.builtin.assert:
+            that:
+              - custom_repo_suite in custom_repo_content
+              - "'URIs: http://deb.debian.org/debian' in custom_repo_content"
+              - "'Components: main' in custom_repo_content"
+            fail_msg: 'molecule-updates.sources missing expected deb822 fields'
+
+        - name: Verify | Stat legacy custom repository list entry
+          ansible.builtin.stat:
+            path: /etc/apt/sources.list.d/molecule-updates.list
+          register: custom_repo_legacy
+
+        - name: Verify | Assert legacy custom repository list entry is gone
+          ansible.builtin.assert:
+            that:
+              - not custom_repo_legacy.stat.exists
+            fail_msg: 'molecule-updates.list still present alongside the .sources file'
+
+        - name: Verify | Stat legacy Backports list entry
+          ansible.builtin.stat:
+            path: /etc/apt/sources.list.d/backports.list
+          register: backports_legacy
+
+        - name: Verify | Assert legacy Backports list entry is gone
+          ansible.builtin.assert:
+            that:
+              - not backports_legacy.stat.exists
+            fail_msg: 'backports.list still present alongside backports.sources'
+
     #
     # RedHat/Fedora Verification
     #

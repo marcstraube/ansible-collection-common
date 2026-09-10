@@ -1,0 +1,58 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Read Sury PPA sources file
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/ondrej-ubuntu-php.sources
+      register: sury_ppa_sources
+
+    - name: Verify | Assert PPA written in deb822 format
+      vars:
+        ppa_content: '{{ sury_ppa_sources.content | b64decode }}'
+        ppa_uri: 'URIs: https://ppa.launchpadcontent.net/ondrej/php/ubuntu'
+        ppa_suite: "Suites: {{ ansible_facts['distribution_release'] }}"
+      ansible.builtin.assert:
+        that:
+          - ppa_uri in ppa_content
+          - ppa_suite in ppa_content
+          - "'Components: main' in ppa_content"
+          - "'Signed-By: /etc/apt/keyrings/ondrej-ubuntu-php.asc' in ppa_content"
+        fail_msg: 'Sury PPA sources file missing expected deb822 fields'
+
+    - name: Verify | Stat fetched signing key
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/ondrej-ubuntu-php.asc
+      register: sury_ppa_key
+
+    - name: Verify | Assert signing key was fetched to the keyring directory
+      ansible.builtin.assert:
+        that:
+          - sury_ppa_key.stat.exists
+          - sury_ppa_key.stat.size > 0
+        fail_msg: 'Sury PPA signing key missing from the keyring directory'
+
+    - name: Verify | Stat legacy PPA list entry
+      ansible.builtin.stat:
+        path: "/etc/apt/sources.list.d/ondrej-ubuntu-php-{{ ansible_facts['distribution_release'] }}.list"
+      register: sury_ppa_legacy
+
+    - name: Verify | Assert legacy PPA list entry is gone
+      ansible.builtin.assert:
+        that:
+          - not sury_ppa_legacy.stat.exists
+        fail_msg: 'Legacy PPA list entry still present alongside the .sources file'
+
+    - name: Verify | Check PHP is installed from the PPA
+      ansible.builtin.command: php --version
+      register: php_version_out
+      changed_when: false
+
+    - name: Verify | Assert PHP runs
+      ansible.builtin.assert:
+        that:
+          - php_version_out.rc == 0
+          - "'PHP' in php_version_out.stdout"
+        fail_msg: 'PHP not runnable after converge'

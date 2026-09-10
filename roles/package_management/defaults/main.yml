@@ -531,12 +531,16 @@ apt_non_free_firmware_enabled: false
 # Example: ['ppa:ondrej/php', 'ppa:graphics-drivers/ppa']
 apt_ppas: []
 
-# Custom repositories
+# Custom repositories, written in deb822 format
 # Example:
 #   apt_custom_repos:
 #     - name: 'myrepo'
-#       repo: 'deb [signed-by=/etc/apt/keyrings/myrepo.asc] https://repo.example.com stable main'
-#       gpg_key: 'https://repo.example.com/gpg.key'  # optional
+#       uris: 'https://repo.example.com'
+#       suites: 'stable'
+#       components: 'main'
+#       gpg_key: 'https://repo.example.com/gpg.key'  # optional, becomes signed_by
+#       types: 'deb'                                 # optional, defaults to deb
+#       architectures: 'amd64'                       # optional
 apt_custom_repos: []
 
 #

@@ -53,17 +53,35 @@
         fail_msg: "NodeSource GPG key not found"
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Verify | Check NodeSource repository file exists (Debian)
-      ansible.builtin.stat:
-        path: /etc/apt/sources.list.d/nodesource.list
-      register: nodesource_repo_stat
+    - name: Verify | Read NodeSource repository file (Debian)
+      ansible.builtin.slurp:
+        src: /etc/apt/sources.list.d/nodesource.sources
+      register: nodesource_repo_sources
       when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Verify | Assert NodeSource repository exists (Debian)
+    - name: Verify | Assert NodeSource repository written in deb822 format (Debian)
+      vars:
+        nodesource_content: '{{ nodesource_repo_sources.content | b64decode }}'
       ansible.builtin.assert:
         that:
-          - nodesource_repo_stat.stat.exists
-        fail_msg: "NodeSource repository not configured"
+          - "'URIs: https://deb.nodesource.com/node_' in nodesource_content"
+          - "'Suites: nodistro' in nodesource_content"
+          - "'Components: main' in nodesource_content"
+          - "'Signed-By: ' in nodesource_content"
+        fail_msg: 'nodesource.sources missing expected deb822 fields'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Check legacy NodeSource list entry (Debian)
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/nodesource.list
+      register: nodesource_repo_legacy
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Assert legacy NodeSource list entry is gone (Debian)
+      ansible.builtin.assert:
+        that:
+          - not nodesource_repo_legacy.stat.exists
+        fail_msg: 'nodesource.list still present alongside nodesource.sources'
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Verify | Check NodeSource repository file exists (RedHat)

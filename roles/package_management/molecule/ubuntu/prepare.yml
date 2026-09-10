@@ -1,0 +1,11 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
