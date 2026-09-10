@@ -8,6 +8,7 @@
 # keyserver serves the key that signed_by consumes.
 #
 
+__apt_keyring_dir: '/etc/apt/keyrings'  # noqa: var-naming[no-role-prefix]
 __apt_ppa_api_url: 'https://api.launchpad.net/1.0'  # noqa: var-naming[no-role-prefix]
 __apt_ppa_content_url: 'https://ppa.launchpadcontent.net'  # noqa: var-naming[no-role-prefix]
 __apt_ppa_keyserver_url: 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x'  # noqa: var-naming[no-role-prefix]

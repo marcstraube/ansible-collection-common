@@ -27,11 +27,21 @@
   register: __php_sury_repo
   when: ansible_facts['distribution'] == 'Debian'
 
-# Launchpad publishes the fingerprint of the PPA's signing key through
-# its API; the keyserver serves the key itself under that fingerprint,
-# and signed_by takes the resulting URL.
+# The key is NOT passed to signed_by as a keyserver URL:
+# keyserver.ubuntu.com is a cluster whose nodes serialize the same key
+# differently, so the module would rewrite the keyring on every run and
+# never report converged. It is fetched once instead, and signed_by
+# points at the file. A rotated PPA key is therefore not picked up
+# automatically — remove the keyring file to force a refetch.
+- name: Repos | Stat Sury PPA signing key (Ubuntu)
+  ansible.builtin.stat:
+    path: '{{ __php_sury_ppa_keyring }}'
+  register: __php_sury_ppa_key_stat
+  check_mode: false
+  when: ansible_facts['distribution'] == 'Ubuntu'
+
 # check_mode: false — a read-only lookup that must run under --check,
-# otherwise the repository task has no fingerprint to work with.
+# otherwise the fetch task below has no fingerprint to work with.
 - name: Repos | Look up Sury PPA signing key fingerprint (Ubuntu)
   ansible.builtin.uri:
     url: >-
@@ -41,7 +51,22 @@
   retries: 5
   delay: 10
   check_mode: false
-  when: ansible_facts['distribution'] == 'Ubuntu'
+  when:
+    - ansible_facts['distribution'] == 'Ubuntu'
+    - not (__php_sury_ppa_key_stat.stat.exists | default(false))
+
+- name: Repos | Fetch Sury PPA signing key (Ubuntu)
+  ansible.builtin.get_url:
+    url: '{{ __php_sury_ppa_keyserver_url }}{{ __php_sury_ppa_lookup.json.signing_key_fingerprint }}'
+    dest: '{{ __php_sury_ppa_keyring }}'
+    owner: root
+    group: root
+    mode: '0644'
+  retries: 5
+  delay: 10
+  when:
+    - ansible_facts['distribution'] == 'Ubuntu'
+    - __php_sury_ppa_lookup.json is defined
 
 - name: Repos | Add Sury PHP PPA (Ubuntu)
   ansible.builtin.deb822_repository:
@@ -50,14 +75,12 @@
     uris: '{{ __php_sury_ppa_content_url }}/{{ __php_sury_ppa_owner }}/{{ __php_sury_ppa_name }}/ubuntu'
     suites: "{{ ansible_facts['distribution_release'] }}"
     components: 'main'
-    signed_by: '{{ __php_sury_ppa_keyserver_url }}{{ __php_sury_ppa_lookup.json.signing_key_fingerprint }}'
+    signed_by: '{{ __php_sury_ppa_keyring }}'
     state: present
   retries: 5
   delay: 10
   register: __php_sury_ppa
-  when:
-    - ansible_facts['distribution'] == 'Ubuntu'
-    - __php_sury_ppa_lookup.json is defined
+  when: ansible_facts['distribution'] == 'Ubuntu'
 
 # apt_repository named its file ondrej-ubuntu-php-<release>.list. The
 # module writes ondrej-ubuntu-php.sources, so the old file would leave

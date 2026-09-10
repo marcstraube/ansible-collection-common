@@ -1,0 +1,30 @@
+---
+- name: Converge | Ubuntu paths
+  hosts: all
+  gather_facts: true
+
+  vars:
+    package_management_enabled: true
+
+    apt_periodic_enabled: true
+    apt_periodic_update: 1
+    apt_install_recommends: true
+    apt_unattended_upgrades_enabled: false
+    apt_apt_file_enabled: true
+    apt_needrestart_enabled: true
+
+    # Debian-only toggles: enabled on purpose to prove they stay inert
+    # on Ubuntu, where debian.sources and deb.debian.org do not apply.
+    apt_non_free_enabled: true
+    apt_non_free_firmware_enabled: true
+    apt_backports_enabled: true
+
+    # The Ubuntu-only path: expanded from the ppa: shorthand, signing key
+    # resolved through the Launchpad API.
+    apt_ppas:
+      - 'ppa:ondrej/php'
+
+  tasks:
+    - name: Converge | Include package_management role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
