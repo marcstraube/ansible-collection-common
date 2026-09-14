@@ -30,3 +30,12 @@ opcache.memory_consumption = {{ __php_ini.opcache_memory_consumption | default(p
 opcache.max_accelerated_files = {{ __php_ini.opcache_max_accelerated_files | default(php_ini_opcache_max_accelerated_files) }}
 opcache.validate_timestamps = {{ __php_ini.opcache_validate_timestamps | default(php_ini_opcache_validate_timestamps) }}
 opcache.revalidate_freq = {{ __php_ini.opcache_revalidate_freq | default(php_ini_opcache_revalidate_freq) }}
+{% set __php_ini_extra = php_ini_extra_settings | combine(__php_ini.extra_settings | default({})) %}
+{% if __php_ini_extra %}
+
+[PHP]
+; Additional settings
+{% for __key, __value in __php_ini_extra | dictsort %}
+{{ __key }} = {{ __value }}
+{% endfor %}
+{% endif %}

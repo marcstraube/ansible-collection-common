@@ -103,6 +103,14 @@ php_ini_opcache_max_accelerated_files: 10000
 php_ini_opcache_validate_timestamps: 1
 php_ini_opcache_revalidate_freq: 2
 
+# Additional ini directives not covered by the variables above, as a dict of
+# directive name to value. Keys are written verbatim, so dotted names such as
+# session.save_path work without further mapping. Rendered after all settings
+# above, so a key listed here wins over the same directive set earlier.
+# Per-version overrides go into php_versions[].ini.extra_settings and are merged
+# on top of this dict.
+php_ini_extra_settings: {}
+
 #
 # PHP-FPM Pool Configuration (www.conf)
 #

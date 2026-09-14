@@ -123,6 +123,22 @@ untouched — only managed settings are overridden.
 | `php_ini_opcache_max_accelerated_files`  | `10000`                                | OPcache max cached files    |
 | `php_ini_opcache_validate_timestamps`    | `1`                                    | Check file timestamps       |
 | `php_ini_opcache_revalidate_freq`        | `2`                                    | Revalidation interval (sec) |
+| `php_ini_extra_settings`                 | `{}`                                   | Extra directives (dict)     |
+
+`php_ini_extra_settings` covers directives the variables above do not expose,
+for example:
+
+```yaml
+php_ini_extra_settings:
+  session.save_path: '/var/lib/php/session'
+  realpath_cache_size: '4096k'
+  zlib.output_compression: 'On'
+```
+
+Keys are written verbatim into the drop-in, so dotted directive names work
+unchanged. The block is rendered last, so an entry here overrides the same
+directive set by one of the variables above. Per-version values belong in
+`php_versions[].ini.extra_settings` and are merged on top of the global dict.
 
 ### PHP-FPM Pool Configuration (`www.conf`)
 
@@ -193,6 +209,8 @@ php_versions:
     fpm: true
     ini:
       memory_limit: '512M'
+      extra_settings:
+        realpath_cache_size: '8192k'
     fpm_pool:
       pm_max_children: 50
 
