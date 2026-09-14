@@ -196,6 +196,12 @@
         that:
           - "'memory_limit = 128M' in (__verify_auto_ini_content.content | b64decode)"
           - "'date.timezone = UTC' in (__verify_auto_ini_content.content | b64decode)"
+          - >-
+            'realpath_cache_size = 4096k'
+            in (__verify_auto_ini_content.content | b64decode)
+          - >-
+            'session.save_path = /var/lib/php/session'
+            in (__verify_auto_ini_content.content | b64decode)
         fail_msg: "php.ini drop-in content unexpected"
 
     - name: Verify | Check auto www.conf exists
@@ -243,6 +249,24 @@
         that:
           - __verify_second_ini_stat.stat.exists
         fail_msg: "Second version php.ini not found at {{ __verify_second_ini }}"
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Check second php.ini content
+      ansible.builtin.slurp:
+        src: '{{ __verify_second_ini }}'
+      register: __verify_second_ini_content
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Assert per-version extra settings override the global dict
+      ansible.builtin.assert:
+        that:
+          - >-
+            'realpath_cache_size = 8192k'
+            in (__verify_second_ini_content.content | b64decode)
+          - >-
+            'session.save_path = /var/lib/php/session'
+            in (__verify_second_ini_content.content | b64decode)
+        fail_msg: "Per-version extra_settings not merged onto the global dict"
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Verify | Check second www.conf exists

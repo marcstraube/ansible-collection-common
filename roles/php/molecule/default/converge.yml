@@ -13,6 +13,11 @@
         fpm: true
     php_default_version: 'auto'
     php_composer_enabled: true
+    # Directives with no dedicated php_ini_* variable, so the assertions can
+    # only pass if the extra_settings block itself is rendered.
+    php_ini_extra_settings:
+      realpath_cache_size: '4096k'
+      session.save_path: '/var/lib/php/session'
 
   pre_tasks:
     # Multi-version: add second PHP version on Debian.
@@ -32,6 +37,9 @@
               - curl
               - mbstring
             fpm: true
+            ini:
+              extra_settings:
+                realpath_cache_size: '8192k'
       when: ansible_facts['os_family'] == 'Debian'
 
   tasks:
