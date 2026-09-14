@@ -18,11 +18,16 @@ display_errors = {{ __php_ini.display_errors | default(php_ini_display_errors) }
 display_startup_errors = {{ __php_ini.display_startup_errors | default(php_ini_display_startup_errors) }}
 log_errors = {{ __php_ini.log_errors | default(php_ini_log_errors) }}
 
+; Security
+expose_php = {{ __php_ini.expose_php | default(php_ini_expose_php) }}
+
 [Date]
 date.timezone = {{ __php_ini.date_timezone | default(php_ini_date_timezone) }}
 
 [Session]
 session.gc_maxlifetime = {{ __php_ini.session_gc_maxlifetime | default(php_ini_session_gc_maxlifetime) }}
+session.use_strict_mode = {{ __php_ini.session_use_strict_mode | default(php_ini_session_use_strict_mode) }}
+session.cookie_httponly = {{ __php_ini.session_cookie_httponly | default(php_ini_session_cookie_httponly) }}
 
 [opcache]
 opcache.enable = {{ __php_ini.opcache_enable | default(php_ini_opcache_enable) }}
