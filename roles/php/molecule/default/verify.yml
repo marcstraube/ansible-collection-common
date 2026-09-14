@@ -202,6 +202,13 @@
           - >-
             'session.save_path = /var/lib/php/session'
             in (__verify_auto_ini_content.content | b64decode)
+          - "'expose_php = Off' in (__verify_auto_ini_content.content | b64decode)"
+          - >-
+            'session.use_strict_mode = 1'
+            in (__verify_auto_ini_content.content | b64decode)
+          - >-
+            'session.cookie_httponly = 1'
+            in (__verify_auto_ini_content.content | b64decode)
         fail_msg: "php.ini drop-in content unexpected"
 
     - name: Verify | Check auto www.conf exists

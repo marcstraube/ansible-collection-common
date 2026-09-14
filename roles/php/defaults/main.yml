@@ -90,11 +90,16 @@ php_ini_display_errors: 'Off'
 php_ini_display_startup_errors: 'Off'
 php_ini_log_errors: 'On'
 
+# Security
+php_ini_expose_php: 'Off'
+
 # Date/Time
 php_ini_date_timezone: 'UTC'
 
 # Session
 php_ini_session_gc_maxlifetime: 1440
+php_ini_session_use_strict_mode: 1
+php_ini_session_cookie_httponly: 1
 
 # OPcache
 php_ini_opcache_enable: 1

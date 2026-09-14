@@ -116,14 +116,23 @@ untouched — only managed settings are overridden.
 | `php_ini_display_errors`                 | `'Off'`                                | Display errors in output    |
 | `php_ini_display_startup_errors`         | `'Off'`                                | Display startup errors      |
 | `php_ini_log_errors`                     | `'On'`                                 | Log errors to file          |
+| `php_ini_expose_php`                     | `'Off'`                                | Expose PHP version header   |
 | `php_ini_date_timezone`                  | `'UTC'`                                | Default timezone            |
 | `php_ini_session_gc_maxlifetime`         | `1440`                                 | Session GC lifetime (sec)   |
+| `php_ini_session_use_strict_mode`        | `1`                                    | Reject client-made IDs      |
+| `php_ini_session_cookie_httponly`        | `1`                                    | Hide cookie from JavaScript |
 | `php_ini_opcache_enable`                 | `1`                                    | Enable OPcache              |
 | `php_ini_opcache_memory_consumption`     | `128`                                  | OPcache memory (MB)         |
 | `php_ini_opcache_max_accelerated_files`  | `10000`                                | OPcache max cached files    |
 | `php_ini_opcache_validate_timestamps`    | `1`                                    | Check file timestamps       |
 | `php_ini_opcache_revalidate_freq`        | `2`                                    | Revalidation interval (sec) |
 | `php_ini_extra_settings`                 | `{}`                                   | Extra directives (dict)     |
+
+Three of these defaults are stricter than PHP's own: `php_ini_expose_php`
+removes the header naming the exact PHP version, `php_ini_session_use_strict_mode`
+makes PHP regenerate session IDs a client invented rather than adopting them,
+and `php_ini_session_cookie_httponly` keeps the session cookie out of reach of
+JavaScript. Set any of them back to the PHP default through its own variable.
 
 `php_ini_extra_settings` covers directives the variables above do not expose,
 for example:
