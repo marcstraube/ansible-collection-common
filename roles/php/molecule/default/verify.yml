@@ -236,6 +236,50 @@
         fail_msg: "www.conf content unexpected"
 
     #
+    # FPM picks up ini changes (side_effect changed max_input_vars while the
+    # service was already running)
+    #
+
+    - name: Verify | Check ini content after side effect
+      ansible.builtin.slurp:
+        src: '{{ __verify_auto_ini }}'
+      register: __verify_reload_ini
+
+    - name: Verify | Assert side effect value was written
+      ansible.builtin.assert:
+        that:
+          - "'max_input_vars = 2000' in (__verify_reload_ini.content | b64decode)"
+        fail_msg: "side_effect value missing from {{ __verify_auto_ini }}"
+
+    # The reload itself is the evidence. Querying the socket is not portable:
+    # after a reload php-fpm keeps an inherited descriptor while the socket file
+    # under a tmpfs /run may be gone, and worker start times say nothing either,
+    # because a dynamic pool recycles them on its own.
+    - name: Verify | Stat the ini drop-in
+      ansible.builtin.stat:
+        path: '{{ __verify_auto_ini }}'
+      register: __verify_ini_stat
+
+    - name: Verify | Read the service log since the ini was written
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - '--unit={{ __verify_auto_fpm }}'
+          - '--since=@{{ __verify_ini_stat.stat.mtime }}'
+          - --no-pager
+      register: __verify_fpm_journal
+      changed_when: false
+
+    - name: Verify | Assert php-fpm was reloaded after the ini change
+      ansible.builtin.assert:
+        that:
+          - "'Reloading' in __verify_fpm_journal.stdout"
+        fail_msg: >-
+          No reload logged after {{ __verify_auto_ini }} was rewritten -- the
+          change reached the file but never the running configuration
+        success_msg: "php-fpm reloaded after the ini change"
+
+    #
     # Configuration — second version (Debian/RedHat only)
     #
 
