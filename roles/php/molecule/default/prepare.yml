@@ -59,3 +59,32 @@
       retries: 3
       delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
+
+    # Required by community.general.pids, which verify.yml uses to match
+    # php-fpm processes by name instead of by command line.
+    - name: Prepare | Install psutil
+      ansible.builtin.package:
+        name: "{{ 'python-psutil' if ansible_facts['os_family'] == 'Archlinux' else 'python3-psutil' }}"
+        state: present
+      retries: 3
+      delay: 5
+
+    # cgi-fcgi lets verify.yml ask a running FPM worker for its effective
+    # configuration, which is the only reliable way to tell a written ini from
+    # an applied one. Process start times are useless here: a dynamic pool
+    # recycles workers on its own.
+    - name: Prepare | Install a FastCGI client
+      ansible.builtin.package:
+        name: "{{ 'libfcgi-bin' if ansible_facts['os_family'] == 'Debian' else 'fcgi' }}"
+        state: present
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Deploy the FPM probe script
+      ansible.builtin.copy:
+        content: |
+          <?php echo 'max_input_vars=', ini_get('max_input_vars');
+        dest: /tmp/fpm-probe.php
+        owner: root
+        group: root
+        mode: '0644'

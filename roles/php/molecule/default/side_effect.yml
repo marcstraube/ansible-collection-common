@@ -1,0 +1,55 @@
+---
+# Re-runs the role against an already converged host with one changed ini value.
+# The first converge cannot catch a missing reload, because php-fpm is started
+# after the drop-in is written anyway.
+- name: Side Effect
+  hosts: all
+  gather_facts: true
+
+  vars:
+    php_enabled: true
+    php_versions:
+      - version: 'auto'
+        extensions:
+          - curl
+          - mbstring
+        fpm: true
+    php_default_version: 'auto'
+    php_composer_enabled: true
+    # Directives with no dedicated php_ini_* variable, so the assertions can
+    # only pass if the extra_settings block itself is rendered.
+    php_ini_extra_settings:
+      realpath_cache_size: '4096k'
+      session.save_path: '/var/lib/php/session'
+    # Changed while php-fpm is already running: the ini drop-in is rewritten and
+    # the workers must pick the new value up, which only happens if the role
+    # queues a reload. verify.yml asserts both the file content and the reload.
+    php_ini_max_input_vars: 2000
+
+  pre_tasks:
+    # Multi-version: add second PHP version on Debian.
+    # RedHat multi-version requires the Remi opt-in (AppStream streams are
+    # exclusive) and is exercised in a separate scenario.
+    # Arch multi-version requires AUR and cannot be tested in containers.
+    - name: Side Effect | Enable multi-version (Debian)
+      ansible.builtin.set_fact:
+        php_versions:
+          - version: 'auto'
+            extensions:
+              - curl
+              - mbstring
+            fpm: true
+          - version: '8.3'
+            extensions:
+              - curl
+              - mbstring
+            fpm: true
+            ini:
+              extra_settings:
+                realpath_cache_size: '8192k'
+      when: ansible_facts['os_family'] == 'Debian'
+
+  tasks:
+    - name: Side Effect | Include php role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

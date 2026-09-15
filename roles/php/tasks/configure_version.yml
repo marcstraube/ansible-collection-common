@@ -65,6 +65,18 @@
     group: root
     mode: '0644'
   loop: '{{ __php_conf_dirs }}'
+  register: __php_ini_result
+
+# FPM workers read php.ini at startup, so an ini change stays inert until the
+# service is reloaded -- while the CLI SAPI already reports the new value.
+- name: Configure Version | Queue FPM reload for ini change
+  ansible.builtin.set_fact:
+    __php_fpm_changed_services: "{{ __php_fpm_changed_services + [__php_fpm_service] }}"
+  when:
+    - __php_config_item.fpm | default(true) | bool
+    - __php_ini_result is changed
+  changed_when: true
+  notify: 'Reload PHP-FPM'
 
 # Deploy FPM pool configuration
 - name: Configure Version | Deploy www.conf

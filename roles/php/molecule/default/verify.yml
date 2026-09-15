@@ -236,6 +236,63 @@
         fail_msg: "www.conf content unexpected"
 
     #
+    # FPM picks up ini changes (side_effect changed max_input_vars while the
+    # service was already running)
+    #
+
+    - name: Verify | Check ini content after side effect
+      ansible.builtin.slurp:
+        src: '{{ __verify_auto_ini }}'
+      register: __verify_reload_ini
+
+    - name: Verify | Assert side effect value was written
+      ansible.builtin.assert:
+        that:
+          - "'max_input_vars = 2000' in (__verify_reload_ini.content | b64decode)"
+        fail_msg: "side_effect value missing from {{ __verify_auto_ini }}"
+
+    # Asks a running worker for its effective configuration. Anything derived
+    # from the file or from process start times would not distinguish a written
+    # ini from an applied one -- a dynamic pool recycles workers by itself.
+    - name: Verify | Find the FPM socket
+      ansible.builtin.find:
+        paths: /run
+        patterns: '*fpm*.sock'
+        file_type: any
+        recurse: true
+      register: __verify_fpm_socket
+
+    - name: Verify | Assert an FPM socket exists
+      ansible.builtin.assert:
+        that:
+          - __verify_fpm_socket.files | length > 0
+        fail_msg: "No php-fpm socket found, cannot query the running configuration"
+
+    - name: Verify | Ask a worker for its effective max_input_vars
+      ansible.builtin.command:
+        argv:
+          - cgi-fcgi
+          - -bind
+          - -connect
+          - '{{ __verify_fpm_socket.files[0].path }}'
+      environment:
+        SCRIPT_FILENAME: /tmp/fpm-probe.php
+        SCRIPT_NAME: /fpm-probe.php
+        REQUEST_METHOD: GET
+        QUERY_STRING: ''
+      register: __verify_fpm_probe
+      changed_when: false
+
+    - name: Verify | Assert the worker runs the changed value
+      ansible.builtin.assert:
+        that:
+          - "'max_input_vars=2000' in __verify_fpm_probe.stdout"
+        fail_msg: >-
+          The running worker reports {{ __verify_fpm_probe.stdout | regex_search('max_input_vars=[0-9]+') }}
+          instead of 2000 -- the ini change was written but never reloaded
+        success_msg: "php-fpm serves requests with the changed ini"
+
+    #
     # Configuration — second version (Debian/RedHat only)
     #
 
