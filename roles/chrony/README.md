@@ -93,6 +93,11 @@ Client-side NTS: add `nts` to server options (e.g., `options: 'iburst nts'`).
 | `chrony_nts_server_key`     | `''`              | TLS private key path      |
 | `chrony_ntsdumpdir`         | `/var/lib/chrony` | NTS cookie dump directory |
 
+When the `marcstraube.common.pki` role manages the NTS certificate and key, the
+restart handler of this role subscribes to that role's `Reload cert services`
+handler topic, so renewed material takes effect in the same run. chronyd reads
+both files at startup, which is why this is a restart rather than a reload.
+
 ### Hardware Timestamping
 
 | Variable                         | Default | Description                    |
