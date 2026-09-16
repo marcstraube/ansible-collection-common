@@ -78,7 +78,8 @@
           got {{ __verify_php_cli.stdout_lines[0] }}
 
     #
-    # Extension mapping — built-in extensions loaded without packages (Arch)
+    # Extension mapping — every configured extension must end up loaded,
+    # whether it needs a package, is compiled in, or needs an ini directive.
     #
 
     - name: Verify | Check loaded PHP modules
@@ -86,12 +87,22 @@
       register: __verify_php_modules
       changed_when: false
 
-    - name: Verify | Assert curl and mbstring loaded
+    # bcmath carries the weight here. curl is compiled in everywhere and
+    # mbstring arrives as a composer dependency on EL, so both stay loaded even
+    # when the extension map is wrong -- they cannot detect a regression. No
+    # package pulls bcmath in, and each platform reaches it by a different
+    # route: its own package on EL and Debian, a .so needing an ini directive on
+    # Arch. That makes it the one that actually exercises the mapping.
+    - name: Verify | Assert configured extensions loaded
       ansible.builtin.assert:
         that:
-          - "'curl' in __verify_php_modules.stdout"
-          - "'mbstring' in __verify_php_modules.stdout"
-        fail_msg: "Expected extensions not loaded"
+          - "'curl' in __verify_php_modules.stdout_lines"
+          - "'mbstring' in __verify_php_modules.stdout_lines"
+          - "'bcmath' in __verify_php_modules.stdout_lines"
+        fail_msg: >-
+          Configured extension missing from php -m:
+          {{ ['curl', 'mbstring', 'bcmath']
+             | reject('in', __verify_php_modules.stdout_lines) | list }}
 
     #
     # FPM service — auto version
