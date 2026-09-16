@@ -10,6 +10,7 @@
         extensions:
           - curl
           - mbstring
+          - bcmath
         fpm: true
     php_default_version: 'auto'
     php_composer_enabled: true
@@ -31,11 +32,13 @@
             extensions:
               - curl
               - mbstring
+              - bcmath
             fpm: true
           - version: '8.3'
             extensions:
               - curl
               - mbstring
+              - bcmath
             fpm: true
             ini:
               extra_settings:
