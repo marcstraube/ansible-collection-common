@@ -24,13 +24,56 @@ __php_fpm_default_group: 'http'
 # Values are concrete package names — used verbatim by the role.
 # Empty string '' = built into the core `php` package (no separate package).
 # Missing keys fall back to '<__php_extension_prefix><name>' (e.g. 'php-foo').
+# Extensions compiled into Arch's php binary. Everything else ships as a .so
+# that stays inert until an `extension=` directive loads it -- Arch leaves them
+# commented out in php.ini and adds nothing to conf.d, not even for separate
+# packages like php-gd. The role writes those directives itself; see
+# 10-ansible-extensions.ini.j2.
+__php_builtin_extensions:
+  - 'core'
+  - 'ctype'
+  - 'curl'
+  - 'date'
+  - 'dom'
+  - 'fileinfo'
+  - 'filter'
+  - 'hash'
+  - 'json'
+  - 'lexbor'
+  - 'libxml'
+  - 'mbstring'
+  - 'mysqlnd'
+  - 'opcache'
+  - 'openssl'
+  - 'pcntl'
+  - 'pcre'
+  - 'pdo'
+  - 'phar'
+  - 'posix'
+  - 'random'
+  - 'readline'
+  - 'reflection'
+  - 'session'
+  - 'simplexml'
+  - 'spl'
+  - 'standard'
+  - 'tokenizer'
+  - 'uri'
+  - 'xml'
+  - 'xmlreader'
+  - 'xmlwriter'
+  - 'zip'
+  - 'zlib'
+
 __php_extension_map_official:
   curl: ''
   mbstring: ''
   xml: ''
   zip: ''
   intl: ''
-  mysql: ''
+  # SQLite lives in its own package, not in the core php package.
+  pdo_sqlite: 'php-sqlite'
+  sqlite3: 'php-sqlite'
   mysqli: ''
   pdo_mysql: ''
   mysqlnd: ''
@@ -49,9 +92,7 @@ __php_extension_map_official:
   iconv: ''
   pcre: ''
   pdo: ''
-  pdo_sqlite: ''
   bcmath: ''
-  bz2: ''
   calendar: ''
   dba: ''
   exif: ''
@@ -68,6 +109,10 @@ __php_extension_map_official:
   sysvmsg: ''
   sysvsem: ''
   sysvshm: ''
+  # Deliberately absent: 'bz2' is not built for Arch's php at all, and 'mysql'
+  # was removed from PHP upstream years ago. Both used to map to '' here, which
+  # silently dropped them; now they fall through to a package name that does not
+  # resolve, so a play listing them fails visibly instead.
   opcache: ''
   gd: 'php-gd'
   imagick: 'php-imagick'

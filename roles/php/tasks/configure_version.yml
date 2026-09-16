@@ -67,6 +67,21 @@
   loop: '{{ __php_conf_dirs }}'
   register: __php_ini_result
 
+# Arch installs extension packages without enabling them: the .so files land on
+# disk, php.ini keeps them commented out, and nothing is written to conf.d --
+# not even by separate packages such as php-gd. Other platforms ship a drop-in
+# with the package, so this file is Arch-only.
+- name: Configure Version | Deploy extension directives (Arch)
+  ansible.builtin.template:
+    src: 10-ansible-extensions.ini.j2
+    dest: '{{ item }}/10-ansible-extensions.ini'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ __php_conf_dirs }}'
+  register: __php_ext_ini_result
+  when: ansible_facts['os_family'] == 'Archlinux'
+
 # FPM workers read php.ini at startup, so an ini change stays inert until the
 # service is reloaded -- while the CLI SAPI already reports the new value.
 - name: Configure Version | Queue FPM reload for ini change
@@ -74,7 +89,7 @@
     __php_fpm_changed_services: "{{ __php_fpm_changed_services + [__php_fpm_service] }}"
   when:
     - __php_config_item.fpm | default(true) | bool
-    - __php_ini_result is changed
+    - (__php_ini_result is changed) or (__php_ext_ini_result is defined and __php_ext_ini_result is changed)
   changed_when: true
   notify: 'Reload PHP-FPM'
 

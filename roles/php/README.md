@@ -98,6 +98,29 @@ Each entry in `php_versions` supports:
 | `ini`          | `{}`    | Per-version php.ini overrides (keys without `php_ini_` prefix)       |
 | `fpm_pool`     | `{}`    | Per-version FPM pool overrides (keys without `php_fpm_pool_` prefix) |
 
+#### How extensions are resolved
+
+`extensions` takes generic extension names. Each platform maps them to its own
+package layout in `vars/`:
+
+- an entry with a package name installs that package
+- an empty entry means the extension is compiled into the core php package, so
+  nothing is installed
+- a name absent from the map falls through to `<prefix><name>`
+
+The distinction matters because the platforms disagree. `mbstring` and `pdo` are
+separate packages on EL but compiled in on Arch; `openssl`, `pcre`, `session`
+and `filter` are compiled in on Debian and have no package of that name at all;
+the PDO drivers ship inside their database package on Debian.
+
+On Arch there is a second step. Arch installs an extension's `.so` file but
+leaves it disabled — `php.ini` keeps the directive commented out and nothing is
+written to `conf.d`, not even by separate packages such as `php-gd`. The role
+therefore writes `10-ansible-extensions.ini` into each config directory,
+carrying an `extension=` line for every configured extension that is not
+compiled into the binary. The file is rewritten on every run, so dropping an
+extension from the list removes its directive.
+
 ### PHP Configuration (php.ini)
 
 Deployed as drop-in override to `conf.d/99-ansible.ini`. Upstream php.ini stays

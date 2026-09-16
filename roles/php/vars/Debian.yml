@@ -5,6 +5,25 @@ __php_fpm_package: 'php{{ __php_ver }}-fpm'
 __php_extension_prefix: 'php{{ __php_ver }}-'
 __php_fpm_service: 'php{{ __php_ver }}-fpm'
 
+# Extension name mapping: generic name -> Debian package name.
+# Empty string = compiled into php<ver>-cli, no package of that name exists.
+# Missing keys fall back to '<__php_extension_prefix><name>'.
+# Without these entries the role asks for e.g. php<ver>-openssl, which Debian
+# does not ship, and the package task fails.
+__php_extension_map:
+  # Compiled into php<ver>-cli -- no package of that name exists
+  filter: ''
+  openssl: ''
+  pcntl: ''
+  pcre: ''
+  session: ''
+  sodium: ''
+  zlib: ''
+  # The PDO drivers ship inside their database package
+  pdo_mysql: 'php{{ __php_ver }}-mysql'
+  pdo_pgsql: 'php{{ __php_ver }}-pgsql'
+  pdo_sqlite: 'php{{ __php_ver }}-sqlite3'
+
 # Debian uses update-alternatives for default PHP version
 __php_has_alternatives: true
 
