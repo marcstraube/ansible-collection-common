@@ -1,0 +1,10 @@
+{{ ansible_managed | default('Ansible managed') | comment(decoration='; ') }}
+
+; Arch ships most extensions as .so files that stay inert until loaded here.
+; Extensions compiled into the php binary are skipped -- loading those a second
+; time makes PHP warn on every invocation.
+{% for __ext in __php_config_item.extensions | default([]) | sort %}
+{% if __ext not in __php_builtin_extensions %}
+extension={{ __ext }}
+{% endif %}
+{% endfor %}

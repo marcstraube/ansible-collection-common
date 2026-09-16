@@ -29,7 +29,6 @@ __php_fpm_default_group: 'apache'
 __php_extension_map:
   # Built into the core php package on AppStream
   curl: ''
-  mbstring: ''
   openssl: ''
   json: ''
   tokenizer: ''
@@ -39,8 +38,12 @@ __php_extension_map:
   filter: ''
   iconv: ''
   pcre: ''
-  pdo: ''
   phar: ''
+  # Shipped as separate AppStream packages, despite being core extensions
+  # upstream. php-pdo also arrives as a dependency of php-mysqlnd, which is why
+  # a host with a database extension appears to have it without asking.
+  mbstring: 'php-mbstring'
+  pdo: 'php-pdo'
   # Naming differences vs. generic extension names
   mysql: 'php-mysqlnd'
   mysqli: 'php-mysqlnd'
