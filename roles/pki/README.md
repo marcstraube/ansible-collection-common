@@ -191,6 +191,33 @@ Trusted CA dict keys: `name`, `cert` (inline content) or `src` (file path).
 | `pki:firewall` | Firewalld rules |
 | `pki:apparmor` | AppArmor profile |
 
+## Certificate Change Notifications
+
+Every task in this role that writes certificate material — server and client
+keys and certificates, chain files, deployed certificates, DH parameters and the
+CRL — notifies the handler topic `Reload cert services`. This topic is the
+contract consumers rely on; the role names no service itself and the inventory
+configures nothing.
+
+A role that reads certificate material subscribes by adding `listen` to its own
+reload or restart handler, keeping its own service conditionals:
+
+```yaml
+- name: Reload my service
+  ansible.builtin.systemd_service:
+    name: '{{ __myrole_service_name }}'
+    state: reloaded
+  listen: Reload cert services
+  when: myrole_service_enabled | bool
+```
+
+Only roles that actually run in the play react, and roles in other collections
+subscribe the same way without any change here. Within this collection `chrony`
+subscribes, because chronyd reads the NTS server certificate and key at startup.
+
+The role carries a listener of its own, so a host with no consumer at all does
+not fail: Ansible aborts a run when a notification reaches no handler.
+
 ## Example Playbook
 
 ```yaml

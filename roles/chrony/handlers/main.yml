@@ -5,10 +5,14 @@
   failed_when: false
   when: chrony_enabled | bool
 
+# Also subscribes to the pki role's 'Reload cert services' topic: chronyd reads
+# the NTS server certificate and key at startup, so renewed material only takes
+# effect after a restart.
 - name: Restart chrony
   ansible.builtin.systemd_service:
     name: '{{ __chrony_service_name }}'
     state: restarted
+  listen: Reload cert services
   when: chrony_service_enabled | bool
 
 - name: Reload chrony

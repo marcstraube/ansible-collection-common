@@ -23,3 +23,16 @@
     name: pki-cert-check.timer
     state: restarted
   when: pki_renewal_enabled | bool
+
+# Handler topic contract: every task in this role that writes certificate
+# material notifies 'Reload cert services'. Roles consuming that material
+# subscribe with `listen` on their own reload or restart handler, keeping their
+# own service conditionals. This role names no service and the inventory
+# configures nothing.
+#
+# Ansible aborts a run when a notification reaches no handler at all, so this
+# role carries a listener of its own for hosts without any consumer.
+- name: Cert services notified
+  ansible.builtin.debug:
+    msg: 'Certificate material changed — notifying consumers'
+  listen: Reload cert services

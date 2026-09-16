@@ -9,6 +9,7 @@
   loop: '{{ pki_deploy_certs + pki_deploy_certs_host }}'
   loop_control:
     label: '{{ item.name }}'
+  notify: Reload cert services
 
 - name: Deploy Certs | Deploy private key files
   ansible.builtin.copy:
@@ -21,6 +22,7 @@
   loop_control:
     label: '{{ item.name }}'
   no_log: true
+  notify: Reload cert services
 
 - name: Deploy Certs | Deploy certificate chain files
   ansible.builtin.copy:
@@ -33,3 +35,4 @@
   loop_control:
     label: '{{ item.name }}'
   when: item.src_chain is defined
+  notify: Reload cert services

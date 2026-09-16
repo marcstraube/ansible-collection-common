@@ -11,6 +11,7 @@
   loop_control:
     label: '{{ item.name }}'
   when: (item.key_type | default(pki_client_key_type)) == 'ec'
+  notify: Reload cert services
 
 - name: Client Certs | Generate client private keys (RSA)
   community.crypto.openssl_privatekey:
@@ -24,6 +25,7 @@
   loop_control:
     label: '{{ item.name }}'
   when: (item.key_type | default(pki_client_key_type)) == 'rsa'
+  notify: Reload cert services
 
 - name: Client Certs | Generate client private keys (Ed25519)
   community.crypto.openssl_privatekey:
@@ -36,6 +38,7 @@
   loop_control:
     label: '{{ item.name }}'
   when: (item.key_type | default(pki_client_key_type)) == 'ed25519'
+  notify: Reload cert services
 
 - name: Client Certs | Generate client CSRs
   community.crypto.openssl_csr:
@@ -73,6 +76,7 @@
   loop_control:
     label: '{{ item.name }}'
   when: pki_ca_enabled | bool
+  notify: Reload cert services
 
 - name: Client Certs | Export client certificates as PKCS12
   community.crypto.openssl_pkcs12:
@@ -95,3 +99,4 @@
     - item.export_pkcs12 | default(false)
     - item.pkcs12_passphrase is defined
     - pki_ca_enabled | bool
+  notify: Reload cert services
