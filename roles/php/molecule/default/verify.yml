@@ -220,6 +220,7 @@
           - >-
             'session.cookie_httponly = 1'
             in (__verify_auto_ini_content.content | b64decode)
+          - "'error_log = syslog' in (__verify_auto_ini_content.content | b64decode)"
         fail_msg: "php.ini drop-in content unexpected"
 
     - name: Verify | Check auto www.conf exists
@@ -244,6 +245,15 @@
           - "'[www]' in (__verify_auto_pool_content.content | b64decode)"
           - "'pm = dynamic' in (__verify_auto_pool_content.content | b64decode)"
           - "'pm.max_children = 5' in (__verify_auto_pool_content.content | b64decode)"
+          - >-
+            'catch_workers_output = yes'
+            in (__verify_auto_pool_content.content | b64decode)
+          - >-
+            'php_admin_value[error_log] = /var/log/php-fpm/www-error.log'
+            in (__verify_auto_pool_content.content | b64decode)
+          - >-
+            'php_admin_flag[log_errors] = on'
+            in (__verify_auto_pool_content.content | b64decode)
         fail_msg: "www.conf content unexpected"
 
     #

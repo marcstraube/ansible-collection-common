@@ -89,6 +89,13 @@ php_ini_error_reporting: 'E_ALL & ~E_DEPRECATED & ~E_STRICT'
 php_ini_display_errors: 'Off'
 php_ini_display_startup_errors: 'Off'
 php_ini_log_errors: 'On'
+# Where PHP writes those errors. This drop-in applies to every SAPI, CLI
+# included, so a file path would have to be writable by every user running php
+# on the command line. 'syslog' avoids that and still guarantees a destination;
+# set a file per pool through php_fpm_pool_admin_values when a dedicated log is
+# wanted. An empty value omits the directive and leaves the destination to the
+# distribution's own php.ini.
+php_ini_error_log: 'syslog'
 
 # Security
 php_ini_expose_php: 'Off'
@@ -146,6 +153,21 @@ php_fpm_pool_request_slowlog_timeout: 0
 
 # Security
 php_fpm_pool_security_limit_extensions: '.php'
+
+# Logging
+# Whether FPM captures worker stdout/stderr into its own error log. The FPM
+# default of 'no' discards it, which hides everything PHP writes outside the
+# php.ini error log — extension startup warnings and engine-level messages among
+# them. Enabling it sends that output to the FPM master log, where several pools
+# share one file and stray application output accumulates.
+php_fpm_pool_catch_workers_output: 'no'
+
+# Per-pool php_admin_value / php_admin_flag directives, as a mapping of
+# directive name to value. Unlike php.ini settings these are set per pool and
+# cannot be overridden by the application at runtime, which is what makes them
+# the right place for a pool-specific error_log.
+php_fpm_pool_admin_values: {}
+php_fpm_pool_admin_flags: {}
 
 #
 # Composer
