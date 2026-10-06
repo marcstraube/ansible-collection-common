@@ -44,7 +44,10 @@
     label: '{{ item.item.name }}'
   when:
     - item.item.key_id is defined
-    - "'[ultimate]' not in (item.stdout | default(''))"
+    # --lsign-key adds a signature line carrying the L marker. Testing for that
+    # line tells a signed key from an unsigned one; the trust level does not,
+    # because a locally signed key only reaches 'full', never 'ultimate'.
+    - item.stdout | default('') is not search('^sig\s+L\s', multiline=True)
   changed_when: true
 
 - name: Pacman | Deploy pacman.conf
