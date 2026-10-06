@@ -97,6 +97,31 @@
           /usr/local/bin/paru wrapper is missing, not executable, or does not
           re-execute /usr/bin/paru as the aur_builder user.
 
+    # The wrapper shadows /usr/bin/paru in PATH, so automation running the
+    # helper as the builder user reaches the wrapper too. Without the re-entry
+    # guard it would sudo a second time and be refused: the builder holds no
+    # sudoers rule for paru. Tracing the wrapper shows which branch is taken
+    # without needing the helper installed, which it is not in a container.
+    - name: Verify | Trace the wrapper invoked as the builder user
+      ansible.builtin.command:
+        cmd: 'runuser -u aur_builder -- sh -x /usr/local/bin/paru --version'
+      register: __pm_wrapper_trace
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert the traced wrapper execs the helper without sudo
+      vars:
+        __pm_trace: >-
+          {{ __pm_wrapper_trace.stdout | default('')
+             ~ __pm_wrapper_trace.stderr | default('') }}
+      ansible.builtin.assert:
+        that:
+          - "'exec sudo' not in __pm_trace"
+          - "'/usr/bin/paru --version' in __pm_trace"
+        fail_msg: >-
+          Traced as aur_builder, the wrapper still routed through sudo instead
+          of exec'ing the helper directly. Trace was: {{ __pm_trace }}
+
     - name: Verify | Validate the builder sudoers file
       ansible.builtin.command:
         cmd: 'visudo -cf /etc/sudoers.d/99-aur_builder'
