@@ -8,4 +8,13 @@
 # /usr/bin/paru is called by absolute path to avoid recursing into this
 # wrapper, which shadows the real binary earlier in PATH. -H points HOME at
 # the builder's home so paru does not try to write into the caller's home.
+#
+# When the caller already is the build user — automation that runs the helper
+# through become_user, for example — there is nothing to switch to, and sudo
+# would refuse: the builder carries no rule permitting paru, and the %wheel
+# rule does not apply to it. Exec the real binary directly in that case.
+if [ "$(id -un)" = '{{ aur_builder_user }}' ]; then
+    exec /usr/bin/paru "$@"
+fi
+
 exec sudo -u {{ aur_builder_user }} -H /usr/bin/paru "$@"

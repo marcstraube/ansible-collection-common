@@ -10,4 +10,13 @@
 # the builder's home so yay reads the builder's config.json. --builddir is
 # passed explicitly because yay has no system-wide configuration and a
 # caller may carry a different buildDir in their own config.
+#
+# When the caller already is the build user — automation that runs the helper
+# through become_user, for example — there is nothing to switch to, and sudo
+# would refuse: the builder carries no rule permitting yay, and the %wheel
+# rule does not apply to it. Exec the real binary directly in that case.
+if [ "$(id -un)" = '{{ aur_builder_user }}' ]; then
+    exec /usr/bin/yay --builddir {{ yay_clone_dir }} "$@"
+fi
+
 exec sudo -u {{ aur_builder_user }} -H /usr/bin/yay --builddir {{ yay_clone_dir }} "$@"
