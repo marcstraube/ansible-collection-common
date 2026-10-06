@@ -17,6 +17,8 @@ __openssh_host_keys_dir: '/etc/ssh'
 
 __openssh_sftp_server: '/usr/lib/openssh/sftp-server'
 
+__openssh_userdbctl: '/usr/bin/userdbctl'
+
 __openssh_ssh_audit_package: 'ssh-audit'
 
 __openssh_askpass_package: 'ssh-askpass'

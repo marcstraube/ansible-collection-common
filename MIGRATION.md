@@ -204,6 +204,32 @@ the role once on its own on affected hosts, then run the full play:
 ansible-playbook site.yml -l <host> --tags nodejs
 ```
 
+### `openssh` — the role now owns `AuthorizedKeysCommand`
+
+systemd (since v256) ships `/etc/ssh/sshd_config.d/20-systemd-userdb.conf`,
+which sets `AuthorizedKeysCommand` to `userdbctl ssh-authorized-keys`. sshd
+keeps the first value it reads, and that file sorted before the role's own
+setting, so a configured `openssh_server_authorized_keys_command` was silently
+ignored, and without one `userdbctl` ran as root on every public key login.
+
+The role now writes the directive to `15-authorized-keys.conf`, ahead of
+distribution drop-ins. Without a configured command it sets
+`AuthorizedKeysCommand none`. The drop-in ships with `systemd` on Arch Linux
+and with the optional `systemd-userdbd` package on Debian; Rocky Linux does not
+ship it.
+
+#### Required action
+
+None unless SSH keys come from systemd userdb records, for example
+systemd-homed accounts. Those keys are no longer accepted; to keep them:
+
+```yaml
+openssh_server_userdb_authorized_keys: true
+```
+
+With a command configured as well, `userdbctl` chains it, and it then runs as
+root instead of `openssh_server_authorized_keys_command_user`.
+
 ## v2.3.0 - 2026-07-23
 
 ## v2.2.0 - 2026-07-07

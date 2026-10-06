@@ -1,0 +1,25 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Create sshd privilege separation directory
+      ansible.builtin.file:
+        path: /run/sshd
+        state: directory
+        mode: '0755'
+
+    - name: Prepare | Create authorized keys command user
+      ansible.builtin.user:
+        name: akc
+        system: true
+        create_home: false
+        shell: /usr/bin/nologin

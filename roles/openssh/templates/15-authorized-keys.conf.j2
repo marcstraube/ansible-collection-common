@@ -1,0 +1,21 @@
+{{ ansible_managed | default('Ansible managed') | comment }}
+# Authorized keys command
+#
+# sshd keeps the first value it reads for each keyword. This file sorts before
+# drop-ins that distributions ship, such as systemd's 20-systemd-userdb.conf,
+# so the setting below is the one that applies.
+
+{% if openssh_server_userdb_authorized_keys | bool %}
+{%   set __userdb_command = __openssh_userdbctl ~ ' ssh-authorized-keys %u' %}
+{%   if openssh_server_authorized_keys_command | length > 0 %}
+{%     set __userdb_command = __userdb_command ~ ' --chain ' ~ openssh_server_authorized_keys_command %}
+{%   endif %}
+AuthorizedKeysCommand {{ __userdb_command }}
+AuthorizedKeysCommandUser root
+{% elif openssh_server_authorized_keys_command | length > 0 %}
+AuthorizedKeysCommand {{ openssh_server_authorized_keys_command }}
+AuthorizedKeysCommandUser {{ openssh_server_authorized_keys_command_user }}
+{% else %}
+AuthorizedKeysCommand none
+AuthorizedKeysCommandUser none
+{% endif %}

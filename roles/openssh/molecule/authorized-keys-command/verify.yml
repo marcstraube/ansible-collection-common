@@ -1,0 +1,30 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    # The competing drop-in must exist, or the override is not tested.
+    - name: Verify | Check systemd userdb drop-in
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config.d/20-systemd-userdb.conf
+      register: __openssh_userdb_dropin
+
+    - name: Verify | Assert systemd userdb drop-in is present
+      ansible.builtin.assert:
+        that:
+          - __openssh_userdb_dropin.stat.exists
+        fail_msg: 'systemd userdb drop-in missing, the override test is meaningless'
+
+    - name: Verify | Get effective sshd configuration
+      ansible.builtin.command:
+        cmd: sshd -T -C user=root,host=localhost,addr=127.0.0.1
+      register: __openssh_effective_config
+      changed_when: false
+
+    - name: Verify | Assert the configured command is effective
+      ansible.builtin.assert:
+        that:
+          - "'authorizedkeyscommand /usr/local/bin/akc-keys %u' in (__openssh_effective_config.stdout | lower)"
+          - "'authorizedkeyscommanduser akc' in (__openssh_effective_config.stdout | lower)"
+        fail_msg: 'The configured AuthorizedKeysCommand is not the effective one'

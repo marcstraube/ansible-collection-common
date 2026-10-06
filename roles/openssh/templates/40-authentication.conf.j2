@@ -22,10 +22,6 @@ UsePAM {{ openssh_server_use_pam | ternary('yes', 'no') }}
 # Authorized keys
 AuthorizedKeysFile {{ openssh_server_authorized_keys_file }}{% for file in openssh_server_authorized_keys_files %} {{ file }}{% endfor %}
 
-{% if openssh_server_authorized_keys_command | length > 0 %}
-AuthorizedKeysCommand {{ openssh_server_authorized_keys_command }}
-AuthorizedKeysCommandUser {{ openssh_server_authorized_keys_command_user }}
-{% endif %}
 {% if openssh_server_trusted_user_ca_keys | length > 0 %}
 
 TrustedUserCAKeys {{ openssh_server_trusted_user_ca_keys }}

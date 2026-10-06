@@ -1,0 +1,20 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    openssh_enabled: true
+
+    # The command under test; userdb stays disabled (default)
+    openssh_server_authorized_keys_command: '/usr/local/bin/akc-keys %u'
+    openssh_server_authorized_keys_command_user: 'akc'
+
+    # Disable slow or unrelated features
+    openssh_server_harden_moduli_enabled: false
+    openssh_ssh_audit_enabled: false
+
+  tasks:
+    - name: Converge | Include openssh role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
