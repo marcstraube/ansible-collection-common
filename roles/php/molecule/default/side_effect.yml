@@ -22,6 +22,13 @@
     php_ini_extra_settings:
       realpath_cache_size: '4096k'
       session.save_path: '/var/lib/php/session'
+    # Same pool settings as the converge, so the re-run keeps them in place and
+    # verify can assert they survive a second pass over an already running pool.
+    php_fpm_pool_catch_workers_output: 'yes'
+    php_fpm_pool_admin_values:
+      error_log: '/var/log/php-fpm/www-error.log'
+    php_fpm_pool_admin_flags:
+      log_errors: 'on'
     # Changed while php-fpm is already running: the ini drop-in is rewritten and
     # the workers must pick the new value up, which only happens if the role
     # queues a reload. verify.yml asserts both the file content and the reload.

@@ -14,6 +14,37 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+### `php` — PHP errors now have a defined log destination
+
+`log_errors` was already `On`, but the role never wrote an `error_log`
+directive, so where those errors ended up — if anywhere — depended on the
+distribution's own `php.ini`. On the RHEL family that ships commented out, and
+FPM discards worker output unless `catch_workers_output` is enabled, so hosts
+could run with error logging switched on and no log at all.
+
+`php_ini_error_log` now defaults to `syslog`. PHP errors from every SAPI,
+including CLI, are written to the system log from this release on. A file path is
+deliberately not the default: the drop-in applies to CLI as well, where a file
+under `/var/log` is not writable by ordinary users.
+
+#### Required action
+
+None for hosts that are content with syslog. To keep errors out of the system
+log, or to collect them in a file per pool instead:
+
+```yaml
+# Send the pool's errors to a dedicated file
+php_fpm_pool_admin_values:
+  error_log: '/var/log/php-fpm/www-error.log'
+
+# Or restore the previous behavior and omit the directive entirely
+php_ini_error_log: ''
+```
+
+Two further pool variables are new: `php_fpm_pool_catch_workers_output`
+(default `no`, the FPM default) and `php_fpm_pool_admin_flags`, the companion to
+`php_fpm_pool_admin_values` for boolean directives.
+
 ### `package_management` — `paru_shared_users` becomes `aur_shared_users`
 
 The shared AUR build infrastructure — the group and its member list — is not

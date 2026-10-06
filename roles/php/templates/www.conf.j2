@@ -61,3 +61,20 @@ request_slowlog_timeout = {{ __php_pool.request_slowlog_timeout | default(php_fp
 ; Limits the extensions of the main script FPM will allow to parse. This can
 ; prevent configuration mistakes on the web server side.
 security.limit_extensions = {{ __php_pool.security_limit_extensions | default(php_fpm_pool_security_limit_extensions) }}
+
+; Whether worker stdout/stderr is captured into the FPM error log. With this
+; disabled FPM discards it, including anything PHP writes outside the php.ini
+; error log.
+catch_workers_output = {{ __php_pool.catch_workers_output | default(php_fpm_pool_catch_workers_output) }}
+{% set __php_pool_admin_values = php_fpm_pool_admin_values | combine(__php_pool.admin_values | default({})) %}
+{% set __php_pool_admin_flags = php_fpm_pool_admin_flags | combine(__php_pool.admin_flags | default({})) %}
+{% if __php_pool_admin_values or __php_pool_admin_flags %}
+
+; Pool-level directives the application cannot override at runtime.
+{% for __key, __value in __php_pool_admin_values | dictsort %}
+php_admin_value[{{ __key }}] = {{ __value }}
+{% endfor %}
+{% for __key, __value in __php_pool_admin_flags | dictsort %}
+php_admin_flag[{{ __key }}] = {{ __value }}
+{% endfor %}
+{% endif %}

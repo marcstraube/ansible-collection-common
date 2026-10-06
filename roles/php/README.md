@@ -138,7 +138,8 @@ untouched — only managed settings are overridden.
 | `php_ini_error_reporting`                | `'E_ALL & ~E_DEPRECATED & ~E_STRICT'`  | Error reporting level       |
 | `php_ini_display_errors`                 | `'Off'`                                | Display errors in output    |
 | `php_ini_display_startup_errors`         | `'Off'`                                | Display startup errors      |
-| `php_ini_log_errors`                     | `'On'`                                 | Log errors to file          |
+| `php_ini_log_errors`                     | `'On'`                                 | Log errors                  |
+| `php_ini_error_log`                      | `'syslog'`                             | Error log destination       |
 | `php_ini_expose_php`                     | `'Off'`                                | Expose PHP version header   |
 | `php_ini_date_timezone`                  | `'UTC'`                                | Default timezone            |
 | `php_ini_session_gc_maxlifetime`         | `1440`                                 | Session GC lifetime (sec)   |
@@ -172,6 +173,29 @@ unchanged. The block is rendered last, so an entry here overrides the same
 directive set by one of the variables above. Per-version values belong in
 `php_versions[].ini.extra_settings` and are merged on top of the global dict.
 
+#### Error log destination
+
+`php_ini_error_log` defaults to `syslog` rather than a file. The drop-in is
+deployed to every SAPI directory, CLI included, so a file path would have to be
+writable by every user invoking `php` on the command line — otherwise those runs
+lose their errors and warn about the unwritable stream. Logging to syslog has no
+such requirement and guarantees that `log_errors` has somewhere to write.
+
+An empty value omits the directive entirely and leaves the destination to the
+distribution's own `php.ini`.
+
+For a dedicated file, set it per pool, where FPM runs as a known user:
+
+```yaml
+php_fpm_pool_admin_values:
+  error_log: '/var/log/php-fpm/www-error.log'
+```
+
+Pool directives take precedence over the php.ini drop-in and cannot be
+overridden by the application at runtime. Anything PHP writes outside this log —
+extension startup warnings, engine-level messages — reaches the FPM master log
+only with `php_fpm_pool_catch_workers_output` enabled; FPM discards it otherwise.
+
 ### PHP-FPM Pool Configuration (`www.conf`)
 
 Full template deployed for each version with FPM enabled.
@@ -194,6 +218,9 @@ Full template deployed for each version with FPM enabled.
 | `php_fpm_pool_request_terminate_timeout`   | `0`         | Request timeout (0=off)         |
 | `php_fpm_pool_request_slowlog_timeout`     | `0`         | Slowlog timeout (0=off)         |
 | `php_fpm_pool_security_limit_extensions`   | `'.php'`    | Allowed script extensions       |
+| `php_fpm_pool_catch_workers_output`        | `'no'`      | Capture worker output in log    |
+| `php_fpm_pool_admin_values`                | `{}`        | Pool `php_admin_value` mapping  |
+| `php_fpm_pool_admin_flags`                 | `{}`        | Pool `php_admin_flag` mapping   |
 
 ### Composer
 

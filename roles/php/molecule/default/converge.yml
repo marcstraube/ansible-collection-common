@@ -19,6 +19,13 @@
     php_ini_extra_settings:
       realpath_cache_size: '4096k'
       session.save_path: '/var/lib/php/session'
+    # Pool-level directives and worker output capture, so the assertions can
+    # only pass if the admin block and catch_workers_output are rendered.
+    php_fpm_pool_catch_workers_output: 'yes'
+    php_fpm_pool_admin_values:
+      error_log: '/var/log/php-fpm/www-error.log'
+    php_fpm_pool_admin_flags:
+      log_errors: 'on'
 
   pre_tasks:
     # Multi-version: add second PHP version on Debian.

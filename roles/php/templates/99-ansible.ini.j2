@@ -17,6 +17,10 @@ error_reporting = {{ __php_ini.error_reporting | default(php_ini_error_reporting
 display_errors = {{ __php_ini.display_errors | default(php_ini_display_errors) }}
 display_startup_errors = {{ __php_ini.display_startup_errors | default(php_ini_display_startup_errors) }}
 log_errors = {{ __php_ini.log_errors | default(php_ini_log_errors) }}
+{% set __php_ini_error_log = __php_ini.error_log | default(php_ini_error_log) %}
+{% if __php_ini_error_log %}
+error_log = {{ __php_ini_error_log }}
+{% endif %}
 
 ; Security
 expose_php = {{ __php_ini.expose_php | default(php_ini_expose_php) }}
