@@ -9,6 +9,7 @@
     nodejs_install_method: 'nodesource'
     nodejs_version: '24'
     nodejs_package_managers:
+      - pnpm
       - yarn
 
   tasks:

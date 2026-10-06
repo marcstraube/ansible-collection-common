@@ -1,24 +1,49 @@
 ---
-- name: Package Managers | Install pnpm
-  community.general.npm:
-    name: pnpm
-    global: true
-    state: present
-  retries: 3
-  delay: 5
-  environment: >-
-    {{
-      {'HTTP_PROXY': nodejs_npm_proxy, 'HTTPS_PROXY': nodejs_npm_proxy}
-      if nodejs_npm_proxy | length > 0
-      else {}
-    }}
-  when: "'pnpm' in nodejs_package_managers"
+# A package manager that ships as a distribution package is installed from the
+# distribution, and from npm only where the distribution has none. Mixing both
+# breaks pacman on Arch: an npm install leaves files under /usr/bin and
+# /usr/lib/node_modules that no package owns, and pacman refuses any
+# transaction that pulls the distribution package. An AUR build listing it as a
+# make dependency is enough to trigger that.
 
-- name: Package Managers | Install yarn
+- name: Package Managers | Gather installed packages
+  ansible.builtin.package_facts:
+
+# Hosts set up before the distribution package was used carry an npm-global
+# copy at the same paths. It has to go before the package can be installed.
+# Once the package is present it owns those paths, so the removal must not run
+# again: npm would delete the package's files.
+- name: Package Managers | Remove npm copies replaced by distribution packages
   community.general.npm:
-    name: yarn
+    name: '{{ item }}'
+    global: true
+    state: absent
+  loop: '{{ nodejs_package_managers }}'
+  vars:
+    __nodejs_pm_package: "{{ lookup('ansible.builtin.vars', '__nodejs_' ~ item ~ '_package', default='') }}"
+  when:
+    - __nodejs_pm_package | length > 0
+    - __nodejs_pm_package not in ansible_facts['packages']
+
+- name: Package Managers | Install from the distribution
+  ansible.builtin.package:
+    name: '{{ __nodejs_pm_package }}'
+    state: present
+  loop: '{{ nodejs_package_managers }}'
+  vars:
+    __nodejs_pm_package: "{{ lookup('ansible.builtin.vars', '__nodejs_' ~ item ~ '_package', default='') }}"
+  retries: 3
+  delay: 5
+  when: __nodejs_pm_package | length > 0
+
+- name: Package Managers | Install via npm
+  community.general.npm:
+    name: '{{ item }}'
     global: true
     state: present
+  loop: '{{ nodejs_package_managers }}'
+  vars:
+    __nodejs_pm_package: "{{ lookup('ansible.builtin.vars', '__nodejs_' ~ item ~ '_package', default='') }}"
   retries: 3
   delay: 5
   environment: >-
@@ -27,4 +52,4 @@
       if nodejs_npm_proxy | length > 0
       else {}
     }}
-  when: "'yarn' in nodejs_package_managers"
+  when: __nodejs_pm_package | length == 0
