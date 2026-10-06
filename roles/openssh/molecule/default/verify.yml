@@ -63,6 +63,7 @@
       register: __openssh_config_files
       loop:
         - '10-network.conf'
+        - '15-authorized-keys.conf'
         - '20-hostkeys.conf'
         - '30-crypto.conf'
         - '40-authentication.conf'
@@ -107,6 +108,38 @@
         that:
           - "'ChallengeResponseAuthentication' not in (__openssh_auth_content.content | b64decode)"
         fail_msg: 'Deprecated ChallengeResponseAuthentication still present'
+
+    #
+    # Authorized Keys Command
+    #
+
+    # On Arch Linux systemd ships 20-systemd-userdb.conf, which sets its own
+    # AuthorizedKeysCommand. Without it the check below would pass trivially.
+    - name: Verify | Check systemd userdb drop-in (Arch)
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config.d/20-systemd-userdb.conf
+      register: __openssh_userdb_dropin
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert systemd userdb drop-in is present (Arch)
+      ansible.builtin.assert:
+        that:
+          - __openssh_userdb_dropin.stat.exists
+        fail_msg: 'systemd userdb drop-in missing, the override test is meaningless'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Get effective sshd configuration
+      ansible.builtin.command:
+        cmd: sshd -T -C user=root,host=localhost,addr=127.0.0.1
+      register: __openssh_effective_config
+      changed_when: false
+
+    - name: Verify | Assert no authorized keys command is effective
+      ansible.builtin.assert:
+        that:
+          - "'authorizedkeyscommand none' in (__openssh_effective_config.stdout | lower)"
+          - "'authorizedkeyscommanduser none' in (__openssh_effective_config.stdout | lower)"
+        fail_msg: 'An AuthorizedKeysCommand is effective although none is configured'
 
     #
     # Crypto Config Content

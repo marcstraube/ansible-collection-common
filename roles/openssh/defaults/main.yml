@@ -385,6 +385,13 @@ openssh_server_authorized_keys_files: []
 openssh_server_authorized_keys_command: ''
 openssh_server_authorized_keys_command_user: ''
 
+# Accept SSH keys from systemd userdb records (e.g. systemd-homed accounts)
+# through userdbctl. When disabled, the role switches off the drop-in systemd
+# ships for this. When enabled together with a command, userdbctl chains it,
+# and the chained command runs as root instead of
+# openssh_server_authorized_keys_command_user.
+openssh_server_userdb_authorized_keys: false
+
 #
 # Certificate Authentication
 #

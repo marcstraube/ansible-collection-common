@@ -78,14 +78,24 @@ All variables are defined in `defaults/main.yml` with secure defaults.
 
 ### Authentication
 
-| Variable                                 | Default     | Description       |
-|------------------------------------------|-------------|-------------------|
-| `openssh_server_authentication_methods`  | `publickey` | Auth methods      |
-| `openssh_server_permit_root_login`       | `no`        | Root login policy |
-| `openssh_server_password_authentication` | `false`     | Password auth     |
-| `openssh_server_pubkey_authentication`   | `true`      | Public key auth   |
-| `openssh_server_use_pam`                 | `true`      | PAM integration   |
-| `openssh_server_max_auth_tries`          | `3`         | Max auth attempts |
+| Variable                                      | Default     | Description                                 |
+|-----------------------------------------------|-------------|---------------------------------------------|
+| `openssh_server_authentication_methods`       | `publickey` | Auth methods                                |
+| `openssh_server_permit_root_login`            | `no`        | Root login policy                           |
+| `openssh_server_password_authentication`      | `false`     | Password auth                               |
+| `openssh_server_pubkey_authentication`        | `true`      | Public key auth                             |
+| `openssh_server_use_pam`                      | `true`      | PAM integration                             |
+| `openssh_server_max_auth_tries`               | `3`         | Max auth attempts                           |
+| `openssh_server_authorized_keys_command`      | `''`        | Command that looks up authorized keys       |
+| `openssh_server_authorized_keys_command_user` | `''`        | User the command runs as                    |
+| `openssh_server_userdb_authorized_keys`       | `false`     | Accept keys from systemd userdb (userdbctl) |
+
+The role always sets `AuthorizedKeysCommand`, from `15-authorized-keys.conf`.
+That file sorts before drop-ins a distribution ships, such as systemd's
+`20-systemd-userdb.conf` on Arch Linux, and sshd keeps the first value it
+reads. Without a command and with userdb disabled the role writes
+`AuthorizedKeysCommand none`. With userdb enabled, `userdbctl` runs as root
+and chains a configured command after its own lookup.
 
 ### Access Control
 
@@ -233,9 +243,12 @@ mount and tunnel definitions remain inventory-driven and out of role scope.
 ```bash
 cd roles/openssh
 molecule test
+molecule test -s authorized-keys-command
 ```
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+(`authorized-keys-command`: Arch Linux only, the platform that ships systemd's
+userdb drop-in by default)
 
 ## Notes
 

@@ -39,6 +39,16 @@
     validate: 'sshd -t -f %s'
   notify: 'restart sshd'
 
+- name: Configure | SSH server - authorized keys command
+  ansible.builtin.template:
+    src: 15-authorized-keys.conf.j2
+    dest: '{{ __openssh_server_config_d_dir }}/15-authorized-keys.conf'
+    owner: root
+    group: root
+    mode: '0600'
+    validate: 'sshd -t -f %s'
+  notify: 'restart sshd'
+
 - name: Configure | SSH server - host keys
   ansible.builtin.template:
     src: 20-hostkeys.conf.j2
