@@ -182,6 +182,28 @@ base_extra_packages:
   - unzip
 ```
 
+### `nodejs` — `pnpm` and `yarn` come from the distribution on Arch Linux
+
+On Arch Linux `nodejs_package_managers` now installs `pnpm` and `yarn` from the
+official repositories instead of npm. Both packages own the paths an npm-global
+install writes to (`/usr/bin/<tool>`, `/usr/lib/node_modules/<tool>`), and pacman
+refuses to install them while those unowned files exist. The role removes an
+existing npm copy before it installs the package. Debian and Rocky Linux keep
+installing both through npm.
+
+#### Required action
+
+None if the `nodejs` role runs before anything else pulls in `pnpm` or `yarn`.
+
+If your play upgrades AUR packages earlier, for example a full system update in
+`pre_tasks`, that upgrade can pull `pnpm` in as a make dependency and fails with
+`conflicting files` before the `nodejs` role gets to remove the npm copy. Run
+the role once on its own on affected hosts, then run the full play:
+
+```bash
+ansible-playbook site.yml -l <host> --tags nodejs
+```
+
 ## v2.3.0 - 2026-07-23
 
 ## v2.2.0 - 2026-07-07
