@@ -44,3 +44,29 @@
       retries: 3
       delay: 5
       when: __prepare_packages[ansible_facts["os_family"]] | length > 0
+
+    # Reproduce a host the role set up while it still installed every package
+    # manager through npm: Node.js and npm from pacman, pnpm and yarn as
+    # npm-global copies. Converge has to migrate them to the distribution
+    # packages, which pacman refuses while those copies are present.
+    - name: Prepare | Install Node.js and npm (Arch)
+      community.general.pacman:
+        name:
+          - nodejs-lts-krypton
+          - npm
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Install pnpm and yarn via npm (Arch)
+      community.general.npm:
+        name: '{{ item }}'
+        global: true
+        state: present
+      loop:
+        - pnpm
+        - yarn
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'

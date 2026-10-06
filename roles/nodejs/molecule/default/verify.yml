@@ -137,3 +137,46 @@
         that:
           - "yarn_version_check.stdout is match('^[0-9]+\\.[0-9]+\\.[0-9]+')"
         fail_msg: "yarn version output unexpected: {{ yarn_version_check.stdout }}"
+
+    - name: Verify | Check pnpm is installed
+      ansible.builtin.command: "{{ npm_global_prefix.stdout | trim }}/bin/pnpm --version"
+      register: pnpm_version_check
+      changed_when: false
+      failed_when: pnpm_version_check.rc != 0
+
+    - name: Verify | Assert pnpm version output
+      ansible.builtin.assert:
+        that:
+          - "pnpm_version_check.stdout is match('^[0-9]+\\.[0-9]+\\.[0-9]+')"
+        fail_msg: "pnpm version output unexpected: {{ pnpm_version_check.stdout }}"
+
+    #
+    # Package manager source (Arch: distribution packages, not npm copies)
+    #
+
+    - name: Verify | Look up the owning package of each package manager (Arch)
+      ansible.builtin.command:
+        argv:
+          - pacman
+          - -Qqo
+          - '/usr/bin/{{ item }}'
+      loop:
+        - pnpm
+        - yarn
+      register: pm_owner_check
+      changed_when: false
+      failed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert package managers belong to their distribution packages (Arch)
+      ansible.builtin.assert:
+        that:
+          - item.rc == 0
+          - item.stdout | trim == item.item
+        fail_msg: >-
+          /usr/bin/{{ item.item }} is not owned by the {{ item.item }} package
+          (rc={{ item.rc }}): {{ item.stdout }} {{ item.stderr }}
+      loop: "{{ pm_owner_check.results | default([]) }}"
+      loop_control:
+        label: '{{ item.item }}'
+      when: ansible_facts['os_family'] == 'Archlinux'

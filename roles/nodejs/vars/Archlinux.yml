@@ -21,3 +21,8 @@ __nodejs_nodesource_key_url: ''
 __nodejs_nodesource_uris: ''
 __nodejs_nodesource_suites: ''
 __nodejs_nodesource_components: ''
+
+# Package managers shipped as distribution packages. An empty string means the
+# tool is installed through npm instead.
+__nodejs_pnpm_package: 'pnpm'
+__nodejs_yarn_package: 'yarn'

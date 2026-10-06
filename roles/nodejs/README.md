@@ -52,9 +52,22 @@ overrides if needed.
 
 ### Package Managers
 
-| Variable                  | Default | Description                                          |
-|---------------------------|---------|------------------------------------------------------|
-| `nodejs_package_managers` | `[]`    | Additional package managers via npm (`pnpm`, `yarn`) |
+| Variable                  | Default | Description                                  |
+|---------------------------|---------|----------------------------------------------|
+| `nodejs_package_managers` | `[]`    | Additional package managers (`pnpm`, `yarn`) |
+
+Each package manager comes from the distribution where it is packaged, and from
+npm otherwise:
+
+| Tool   | Arch Linux             | Debian | Rocky Linux |
+|--------|------------------------|--------|-------------|
+| `pnpm` | distribution (`pnpm`)  | npm    | npm         |
+| `yarn` | distribution (`yarn`)  | npm    | npm         |
+
+On Arch Linux an npm-global copy and the distribution package claim the same
+paths, and pacman refuses to install the package while unowned files sit there.
+The role removes an existing npm copy before installing the package, so hosts
+set up with an npm-installed package manager migrate on the next run.
 
 ### NVM Settings
 
