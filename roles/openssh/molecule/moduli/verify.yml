@@ -1,0 +1,156 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __verify_moduli_file: /etc/ssh/moduli
+    __verify_minimum_size: 3071
+
+  tasks:
+    #
+    # Filtered by the role
+    #
+
+    - name: Verify | Count weak moduli
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          awk '/^[0-9]/ && $5 + 0 < {{ __verify_minimum_size }}' {{ __verify_moduli_file }} | wc -l
+        executable: /bin/bash
+      register: __verify_weak
+      changed_when: false
+
+    - name: Verify | Count remaining moduli
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          grep -c '^[0-9]' {{ __verify_moduli_file }} || true
+        executable: /bin/bash
+      register: __verify_remaining
+      changed_when: false
+
+    - name: Verify | Assert only strong moduli remain
+      ansible.builtin.assert:
+        that:
+          - __verify_weak.stdout | int == 0
+          - __verify_remaining.stdout | int > 0
+        fail_msg: >-
+          weak={{ __verify_weak.stdout }} remaining={{ __verify_remaining.stdout }}
+
+    - name: Verify | Find leftover moduli backups
+      ansible.builtin.find:
+        paths: /etc/ssh
+        patterns: 'moduli.*~'
+      register: __verify_backups
+
+    - name: Verify | Assert no moduli backups were left behind
+      ansible.builtin.assert:
+        that:
+          - __verify_backups.matched == 0
+
+    #
+    # Arch Linux: pacman hook re-filters after a package reinstall
+    #
+
+    - name: Verify | Pacman hook (Arch)
+      when: ansible_facts['os_family'] == 'Archlinux'
+      block:
+        - name: Verify | Stat hook and filter script
+          ansible.builtin.stat:
+            path: '{{ item }}'
+          register: __verify_hook_files
+          loop:
+            - /etc/pacman.d/hooks/openssh-moduli.hook
+            - /usr/local/sbin/openssh-moduli-filter
+
+        - name: Verify | Assert hook and filter script are installed
+          ansible.builtin.assert:
+            that:
+              - item.stat.exists
+            fail_msg: '{{ item.item }} missing'
+          loop: '{{ __verify_hook_files.results }}'
+          loop_control:
+            label: '{{ item.item }}'
+
+        # Reinstalling restores the unfiltered upstream file, exactly like an
+        # upgrade does, and runs the hook in the same transaction.
+        - name: Verify | Reinstall openssh
+          ansible.builtin.command:
+            cmd: pacman -S --noconfirm openssh
+          register: __verify_reinstall
+          changed_when: false
+
+        - name: Verify | Count weak moduli after reinstall
+          ansible.builtin.shell:
+            cmd: >-
+              set -o pipefail &&
+              awk '/^[0-9]/ && $5 + 0 < {{ __verify_minimum_size }}' {{ __verify_moduli_file }} | wc -l
+            executable: /bin/bash
+          register: __verify_weak_after
+          changed_when: false
+
+        - name: Verify | Assert the hook filtered the reinstalled file
+          ansible.builtin.assert:
+            that:
+              - "'Removing weak Diffie-Hellman moduli' in __verify_reinstall.stdout"
+              - __verify_weak_after.stdout | int == 0
+            fail_msg: >-
+              weak moduli after reinstall: {{ __verify_weak_after.stdout }}
+
+        #
+        # Failsafe: an input without any strong modulus is left untouched
+        #
+
+        - name: Verify | Back up the filtered moduli file
+          ansible.builtin.copy:
+            src: '{{ __verify_moduli_file }}'
+            dest: /tmp/moduli.verify-backup
+            remote_src: true
+            mode: '0644'
+
+        - name: Verify | Write a moduli file with weak moduli only
+          ansible.builtin.copy:
+            dest: '{{ __verify_moduli_file }}'
+            content: |
+              # Time Type Tests Tries Size Generator Modulus
+              20260101000000 2 6 100 2047 2 F3718C7E
+              20260101000001 2 6 100 2047 5 F3718C7F
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Verify | Checksum the weak-only file
+          ansible.builtin.stat:
+            path: '{{ __verify_moduli_file }}'
+            checksum_algorithm: sha256
+          register: __verify_weak_only_before
+
+        - name: Verify | Run the filter script on the weak-only file
+          ansible.builtin.command:
+            cmd: /usr/local/sbin/openssh-moduli-filter
+          register: __verify_failsafe
+          changed_when: false
+          failed_when: false
+
+        - name: Verify | Checksum after the filter run
+          ansible.builtin.stat:
+            path: '{{ __verify_moduli_file }}'
+            checksum_algorithm: sha256
+          register: __verify_weak_only_after
+
+        - name: Verify | Restore the filtered moduli file
+          ansible.builtin.copy:
+            src: /tmp/moduli.verify-backup
+            dest: '{{ __verify_moduli_file }}'
+            remote_src: true
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Verify | Assert the failsafe kept the file and failed
+          ansible.builtin.assert:
+            that:
+              - __verify_failsafe.rc != 0
+              - "'file left unchanged' in __verify_failsafe.stderr"
+              - __verify_weak_only_before.stat.checksum == __verify_weak_only_after.stat.checksum

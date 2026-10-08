@@ -122,6 +122,19 @@ and chains a configured command after its own lookup.
 | `openssh_server_harden_moduli_enabled` | `true`  | Remove weak DH moduli   |
 | `openssh_server_moduli_minimum_size`   | `3071`  | Minimum moduli bit size |
 
+The filter keeps `/etc/ssh/moduli` untouched if no modulus of the minimum size
+would remain, because an empty file makes sshd fall back to a built-in, smaller
+group.
+
+On Arch Linux the `openssh` package does not protect `/etc/ssh/moduli` and
+restores the unfiltered file on every install or upgrade, including manual
+ones. The role therefore installs a pacman hook
+(`/etc/pacman.d/hooks/openssh-moduli.hook`) that runs
+`/usr/local/sbin/openssh-moduli-filter` right after the transaction. New moduli
+from upstream are kept, only the small ones are removed. Debian and Rocky Linux
+keep the filtered file across upgrades on their own. With
+`openssh_server_harden_moduli_enabled: false` the hook and script are removed.
+
 ### Penalty System (OpenSSH 9.8+)
 
 | Variable                                   | Default | Description   |
@@ -244,6 +257,7 @@ mount and tunnel definitions remain inventory-driven and out of role scope.
 cd roles/openssh
 molecule test
 molecule test -s authorized-keys-command
+molecule test -s moduli
 ```
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10

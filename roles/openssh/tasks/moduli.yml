@@ -1,34 +1,107 @@
 ---
-- name: Moduli | Check for weak moduli
-  ansible.builtin.shell:
-    cmd: "set -o pipefail && awk '$5 < {{ openssh_server_moduli_minimum_size }}' {{ __openssh_moduli_file }} | wc -l"
-    executable: /bin/bash
-  register: __openssh_weak_moduli
-  changed_when: false
-  failed_when: false
-
 - name: Moduli | Remove weak Diffie-Hellman moduli
-  when: __openssh_weak_moduli.stdout | int > 0
+  when: openssh_server_harden_moduli_enabled | bool
   block:
-    - name: Moduli | Filter weak moduli to temporary file
+    - name: Moduli | Check for weak moduli
       ansible.builtin.shell:
         cmd: >-
-          awk '$5 >= {{ openssh_server_moduli_minimum_size }}'
-          {{ __openssh_moduli_file }} > {{ __openssh_moduli_file }}.safe
-      changed_when: true
+          set -o pipefail &&
+          awk '/^[0-9]/ && $5 + 0 < {{ openssh_server_moduli_minimum_size }}'
+          {{ __openssh_moduli_file }} | wc -l
+        executable: /bin/bash
+      register: __openssh_weak_moduli
+      changed_when: false
+      failed_when: false
 
-    - name: Moduli | Install hardened moduli file
-      ansible.builtin.copy:
-        src: '{{ __openssh_moduli_file }}.safe'
-        remote_src: true
-        dest: '{{ __openssh_moduli_file }}'
-        owner: root
-        group: root
-        mode: '0644'
-        backup: true
-      notify: 'restart sshd'
+    - name: Moduli | Filter weak moduli
+      when: __openssh_weak_moduli.stdout | int > 0
+      block:
+        - name: Moduli | Filter weak moduli to temporary file
+          ansible.builtin.shell:
+            cmd: >-
+              awk '/^#/ || $5 + 0 >= {{ openssh_server_moduli_minimum_size }}'
+              {{ __openssh_moduli_file }} > {{ __openssh_moduli_file }}.safe
+          changed_when: true
 
-    - name: Moduli | Remove temporary moduli file
-      ansible.builtin.file:
-        path: '{{ __openssh_moduli_file }}.safe'
-        state: absent
+        - name: Moduli | Count remaining moduli
+          ansible.builtin.shell:
+            cmd: >-
+              set -o pipefail &&
+              grep -c '^[0-9]' {{ __openssh_moduli_file }}.safe || true
+            executable: /bin/bash
+          register: __openssh_remaining_moduli
+          changed_when: false
+
+        # An empty moduli file makes sshd fall back to a built-in, smaller
+        # group, which is weaker than keeping the unfiltered file.
+        - name: Moduli | Assert moduli remain after filtering
+          ansible.builtin.assert:
+            that:
+              - __openssh_remaining_moduli.stdout | int > 0
+            fail_msg: >-
+              No modulus of at least {{ openssh_server_moduli_minimum_size }} bits in
+              {{ __openssh_moduli_file }}. The file was left unchanged; lower
+              openssh_server_moduli_minimum_size or regenerate the moduli.
+            quiet: true
+
+        - name: Moduli | Install hardened moduli file
+          ansible.builtin.copy:
+            src: '{{ __openssh_moduli_file }}.safe'
+            remote_src: true
+            dest: '{{ __openssh_moduli_file }}'
+            owner: root
+            group: root
+            mode: '0644'
+          notify: 'restart sshd'
+
+      always:
+        - name: Moduli | Remove temporary moduli file
+          ansible.builtin.file:
+            path: '{{ __openssh_moduli_file }}.safe'
+            state: absent
+
+# Arch Linux restores the unfiltered moduli file on every openssh install or
+# upgrade, including manual ones. The hook filters it again right away.
+- name: Moduli | Manage moduli filter script (Arch)
+  ansible.builtin.template:
+    src: openssh-moduli-filter.j2
+    dest: '{{ __openssh_moduli_filter_script }}'
+    owner: root
+    group: root
+    mode: '0755'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - openssh_server_harden_moduli_enabled | bool
+
+- name: Moduli | Ensure pacman hooks directory exists (Arch)
+  ansible.builtin.file:
+    path: '{{ __openssh_moduli_hook_file | dirname }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - openssh_server_harden_moduli_enabled | bool
+
+- name: Moduli | Manage moduli pacman hook (Arch)
+  ansible.builtin.template:
+    src: openssh-moduli.hook.j2
+    dest: '{{ __openssh_moduli_hook_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - openssh_server_harden_moduli_enabled | bool
+
+- name: Moduli | Remove moduli pacman hook and filter script (Arch)
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - '{{ __openssh_moduli_hook_file }}'
+    - '{{ __openssh_moduli_filter_script }}'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - not openssh_server_harden_moduli_enabled | bool

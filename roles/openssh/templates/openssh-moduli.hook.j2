@@ -1,0 +1,13 @@
+{{ ansible_managed | comment }}
+# Re-filter the Diffie-Hellman moduli after openssh restores the upstream file.
+
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = openssh
+
+[Action]
+Description = Removing weak Diffie-Hellman moduli...
+When = PostTransaction
+Exec = {{ __openssh_moduli_filter_script }}
