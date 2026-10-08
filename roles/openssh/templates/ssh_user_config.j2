@@ -1,0 +1,11 @@
+{#- Content of the role-managed block at the top of ~/.ssh/config -#}
+{% from 'ssh_config_host.j2' import host_block %}
+{% for host in __openssh_client_user.hosts | default([]) %}
+{{ host_block(host) }}
+{% endfor %}
+{#- Always close with Host *: user lines below the block that precede their
+    own first Host line must keep applying to all hosts. #}
+Host *
+{% for line in __openssh_client_user.extra | default([]) %}
+    {{ line }}
+{% endfor %}

@@ -421,6 +421,58 @@ openssh_client_strict_host_key_checking: 'ask'
 # Visual host key
 openssh_client_visual_host_key: false
 
+# Extra ssh_config lines appended to the global Host * block
+openssh_client_extra_config: []
+# Example:
+#   - 'AddKeysToAgent yes'
+#   - 'ServerAliveInterval 60'
+
+# System-wide Host blocks, written to ssh_config.d/10-hosts.conf. The file
+# is read before the distribution and role defaults, so its values win.
+# Keys: name (Host patterns, space-separated), hostname, port, user,
+# identity_file, identities_only, identity_agent, proxy_jump, extra (list).
+openssh_client_hosts: []
+# Example:
+#   - name: 'deploy-target'
+#     hostname: '10.0.0.5'
+#     user: 'deploy'
+#     identity_file: '~/.ssh/deploy_key'
+#     identities_only: true
+#     proxy_jump: 'gateway'
+#     extra:
+#       - 'ServerAliveInterval 30'
+
+#
+# Per-User Client Configuration
+#
+
+# Users receiving a role-managed block in ~/.ssh/config. Each entry takes
+# 'hosts' (same shape as openssh_client_hosts) and 'extra' (lines for a
+# trailing Host * section). Leave empty to derive the list from users_list
+# entries carrying an 'ssh_client' attribute (system users excluded).
+#
+# Example:
+#   openssh_client_users:
+#     - username: 'johndoe'
+#       mode: 'managed'
+#       hosts:
+#         - name: 'gateway'
+#           hostname: 'gw.example.com'
+#           user: 'johndoe'
+#       extra:
+#         - 'AddKeysToAgent yes'
+#     - username: 'guest'
+#       mode: 'disabled'
+openssh_client_users: []
+
+# Default mode when a user entry has no 'mode' key. The role only owns a
+# marked block at the top of ~/.ssh/config; content outside it is never
+# touched.
+# managed  — reconcile the block on every run
+# initial  — write the block only when it is absent, preserve it after
+# disabled — skip user config entirely
+openssh_client_user_config_mode: 'initial'
+
 #
 # SSH Agent
 #

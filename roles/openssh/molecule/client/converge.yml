@@ -1,0 +1,76 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    openssh_enabled: true
+
+    # Disable unrelated features
+    openssh_server_harden_moduli_enabled: false
+    openssh_ssh_audit_enabled: false
+
+    # Global client config
+    openssh_client_extra_config:
+      - 'ServerAliveInterval 60'
+
+    # ServerAliveInterval is also set globally above (99-defaults.conf);
+    # the host block is read first and must win.
+    openssh_client_hosts:
+      - name: 'deploy-target'
+        hostname: '10.0.0.5'
+        port: 2222
+        user: 'deploy'
+        identity_file: '~/.ssh/deploy_key'
+        identities_only: true
+        proxy_jump: 'gateway'
+        extra:
+          - 'ServerAliveInterval 30'
+      - name: 'agent-host'
+        identity_agent: '/run/agent.sock'
+
+    # Per-user config derived from users_list (openssh_client_users empty)
+    users_list:
+      - name: 'alice'
+        ssh_client:
+          mode: 'managed'
+          hosts:
+            - name: 'gateway'
+              hostname: 'gw.example.com'
+              identities_only: true
+          extra:
+            - 'AddKeysToAgent yes'
+      - name: 'bob'
+        ssh_client:
+          hosts:
+            - name: 'gateway'
+              hostname: 'gw.example.com'
+      - name: 'carol'
+        ssh_client:
+          hosts:
+            - name: 'gateway'
+              hostname: 'gw.example.com'
+      - name: 'dave'
+        ssh_client:
+          hosts:
+            - name: 'gateway'
+              hostname: 'gw.example.com'
+      - name: 'erin'
+        ssh_client:
+          mode: 'disabled'
+          hosts:
+            - name: 'gateway'
+              hostname: 'gw.example.com'
+      - name: 'frank'
+      - name: 'sysuser'
+        system: true
+        ssh_client:
+          mode: 'managed'
+          hosts:
+            - name: 'gateway'
+              hostname: 'gw.example.com'
+
+  tasks:
+    - name: Converge | Include openssh role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

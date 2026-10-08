@@ -1,4 +1,31 @@
 ---
+# openssh_client_users takes precedence; only derive when the operator left
+# it empty.
+- name: Main | Set client user derivation guard
+  ansible.builtin.set_fact:
+    __openssh_client_derive_users: '{{ openssh_client_users | length == 0 }}'
+  when:
+    - openssh_enabled | bool
+    - openssh_client_enabled | bool
+  tags:
+    - always
+
+- name: Main | Derive client users from users_list (exclude system users)
+  ansible.builtin.set_fact:
+    openssh_client_users: >-
+      {{ openssh_client_users + [{'username': item.name} | combine(item.ssh_client)] }}
+  loop: >-
+    {{ users_list | default([]) | selectattr('ssh_client', 'defined') | list }}
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - openssh_enabled | bool
+    - openssh_client_enabled | bool
+    - __openssh_client_derive_users | default(false) | bool
+    - not (item.system | default(false) | bool)
+  tags:
+    - always
+
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:

@@ -1,0 +1,7 @@
+{{ ansible_managed | default('Ansible managed') | comment }}
+# SSH client Host blocks
+{% from 'ssh_config_host.j2' import host_block %}
+{% for host in openssh_client_hosts %}
+
+{{ host_block(host) }}
+{%- endfor %}

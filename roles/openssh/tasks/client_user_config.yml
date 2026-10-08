@@ -1,0 +1,78 @@
+---
+#
+# SSH Client User Configuration
+#
+# Called once per user from the client.yml loop.
+# Variable: __openssh_client_user (the current openssh_client_users entry)
+#
+# The role owns only a marked block at the top of ~/.ssh/config; content
+# outside it is never touched.
+#
+# Mode semantics:
+#   managed  — reconcile the block on every run
+#   initial  — write the block only when its marker is absent
+#   disabled — never write (gated in client.yml)
+
+- name: Client User Config | Get user info
+  ansible.builtin.getent:
+    database: passwd
+    key: '{{ __openssh_client_user.username }}'
+
+- name: Client User Config | Set user facts
+  ansible.builtin.set_fact:
+    __openssh_client_user_home: "{{ ansible_facts['getent_passwd'][__openssh_client_user.username][4] }}"
+    __openssh_client_user_gid: "{{ ansible_facts['getent_passwd'][__openssh_client_user.username][2] }}"
+
+- name: Client User Config | Stat ~/.ssh/config
+  ansible.builtin.stat:
+    path: '{{ __openssh_client_user_home }}/.ssh/config'
+  register: __openssh_client_user_config_stat
+
+# ~/.ssh/config exists without the block in many setups, so the file's
+# existence cannot drive 'initial'; the role's own marker does.
+- name: Client User Config | Read ~/.ssh/config for marker detection
+  ansible.builtin.slurp:
+    src: '{{ __openssh_client_user_home }}/.ssh/config'
+  register: __openssh_client_user_config_content
+  when:
+    - __openssh_client_user_config_stat.stat.exists
+    - (__openssh_client_user.mode | default(openssh_client_user_config_mode)) == 'initial'
+
+- name: Client User Config | Build deploy decision
+  ansible.builtin.set_fact:
+    __openssh_client_user_should_deploy: >-
+      {{ (__openssh_client_user.mode | default(openssh_client_user_config_mode)) == 'managed'
+         or not __openssh_client_user_config_stat.stat.exists
+         or ('# BEGIN ANSIBLE MANAGED — openssh client'
+             not in (__openssh_client_user_config_content.content | b64decode)) }}
+
+- name: Client User Config | Stat ~/.ssh
+  ansible.builtin.stat:
+    path: '{{ __openssh_client_user_home }}/.ssh'
+  register: __openssh_client_user_ssh_dir
+  when: __openssh_client_user_should_deploy | bool
+
+# Create only when missing — never alter the mode of an existing directory.
+- name: Client User Config | Create ~/.ssh if missing
+  ansible.builtin.file:
+    path: '{{ __openssh_client_user_home }}/.ssh'
+    state: directory
+    owner: '{{ __openssh_client_user.username }}'
+    group: '{{ __openssh_client_user_gid }}'
+    mode: '0700'
+  when:
+    - __openssh_client_user_should_deploy | bool
+    - not __openssh_client_user_ssh_dir.stat.exists
+
+# The mode is only set for a new file; an existing file keeps its mode.
+- name: Client User Config | Manage block in ~/.ssh/config
+  ansible.builtin.blockinfile:
+    path: '{{ __openssh_client_user_home }}/.ssh/config'
+    block: "{{ lookup('ansible.builtin.template', 'ssh_user_config.j2') }}"
+    marker: '# {mark} ANSIBLE MANAGED — openssh client'
+    insertbefore: BOF
+    create: true
+    owner: '{{ __openssh_client_user.username }}'
+    group: '{{ __openssh_client_user_gid }}'
+    mode: "{{ omit if __openssh_client_user_config_stat.stat.exists else '0600' }}"
+  when: __openssh_client_user_should_deploy | bool

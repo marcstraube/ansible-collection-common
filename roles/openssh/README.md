@@ -157,12 +157,72 @@ keep the filtered file across upgrades on their own. With
 
 ### Client Configuration
 
-| Variable                                  | Default                    | Description                     |
-|-------------------------------------------|----------------------------|---------------------------------|
-| `openssh_client_enabled`                  | `true`                     | Enable SSH client configuration |
-| `openssh_client_global_known_hosts`       | `/etc/ssh/ssh_known_hosts` | Global known hosts file         |
-| `openssh_client_hash_known_hosts`         | `true`                     | Hash known hosts                |
-| `openssh_client_strict_host_key_checking` | `ask`                      | Strict host key checking        |
+| Variable                                  | Default                    | Description                        |
+|-------------------------------------------|----------------------------|------------------------------------|
+| `openssh_client_enabled`                  | `true`                     | Enable SSH client configuration    |
+| `openssh_client_global_known_hosts`       | `/etc/ssh/ssh_known_hosts` | Global known hosts file            |
+| `openssh_client_hash_known_hosts`         | `true`                     | Hash known hosts                   |
+| `openssh_client_strict_host_key_checking` | `ask`                      | Strict host key checking           |
+| `openssh_client_extra_config`             | `[]`                       | Extra lines for the `Host *` block |
+| `openssh_client_hosts`                    | `[]`                       | System-wide `Host` blocks          |
+
+`openssh_client_hosts` is written to `ssh_config.d/10-hosts.conf`, which is
+read before the distribution and role defaults; ssh uses the first value it
+reads, so these per-host settings win. The file is removed when the list is
+empty. Each entry takes `name` (Host patterns, space-separated) and any of
+`hostname`, `port`, `user`, `identity_file`, `identities_only`,
+`identity_agent`, `proxy_jump`, plus a free-form `extra` list:
+
+```yaml
+openssh_client_hosts:
+  - name: 'deploy-target'
+    hostname: '10.0.0.5'
+    user: 'deploy'
+    identity_file: '~/.ssh/deploy_key'
+    identities_only: true
+    proxy_jump: 'gateway'
+    extra:
+      - 'ServerAliveInterval 30'
+```
+
+### Per-User Client Configuration
+
+| Variable                          | Default   | Description                                    |
+|-----------------------------------|-----------|------------------------------------------------|
+| `openssh_client_users`            | `[]`      | Users receiving a block in `~/.ssh/config`     |
+| `openssh_client_user_config_mode` | `initial` | Default mode: `managed`, `initial`, `disabled` |
+
+The role owns only a marked block at the top of `~/.ssh/config`
+(`# BEGIN/END ANSIBLE MANAGED — openssh client`); hosts added by hand outside
+the block are kept in every mode. The block holds the user's `hosts` (same
+keys as `openssh_client_hosts`) and always ends with a `Host *` section
+carrying the user's `extra` lines, so global lines below the block keep
+applying to all hosts. Because the block comes first, its values win over
+manual entries for the same host.
+
+- `managed` reconciles the block on every run.
+- `initial` writes the block only when its marker is absent; a block edited
+  by hand stays as it is.
+- `disabled` skips the user.
+
+A missing `~/.ssh` is created with mode `0700` and a new `~/.ssh/config` with
+`0600`; existing modes are not changed.
+
+When `openssh_client_users` is empty, it is derived from `users_list` entries
+carrying an `ssh_client` attribute (system users excluded):
+
+```yaml
+users_list:
+  - name: 'johndoe'
+    ssh_client:
+      mode: 'managed'
+      hosts:
+        - name: 'gateway'
+          hostname: 'gw.example.com'
+          identity_file: '~/.ssh/id_ed25519'
+      extra:
+        - 'AddKeysToAgent yes'
+```
 
 ### SSH Agent
 
@@ -257,6 +317,7 @@ mount and tunnel definitions remain inventory-driven and out of role scope.
 cd roles/openssh
 molecule test
 molecule test -s authorized-keys-command
+molecule test -s client
 molecule test -s moduli
 ```
 

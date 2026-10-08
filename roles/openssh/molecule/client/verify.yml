@@ -1,0 +1,208 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __openssh_verify_marker_begin: '# BEGIN ANSIBLE MANAGED — openssh client'
+    __openssh_verify_carol_config: |
+      # BEGIN ANSIBLE MANAGED — openssh client
+      Host gateway
+          HostName carol-edited.example.com
+
+      Host *
+      # END ANSIBLE MANAGED — openssh client
+    __openssh_verify_erin_config: |
+      Host erinhost
+          HostName erin.example.com
+
+  tasks:
+    #
+    # System-wide client config
+    #
+
+    - name: Verify | Check system-wide Host blocks file
+      ansible.builtin.stat:
+        path: /etc/ssh/ssh_config.d/10-hosts.conf
+      register: __openssh_verify_hosts_conf
+
+    - name: Verify | Assert system-wide Host blocks file
+      ansible.builtin.assert:
+        that:
+          - __openssh_verify_hosts_conf.stat.exists
+          - __openssh_verify_hosts_conf.stat.mode == '0644'
+        fail_msg: '10-hosts.conf missing or wrong mode'
+
+    - name: Verify | Get effective client config as root
+      ansible.builtin.command:
+        cmd: 'ssh -G {{ item }}'
+      loop:
+        - 'deploy-target'
+        - 'agent-host'
+        - 'unlisted-host'
+      register: __openssh_verify_root_g
+      changed_when: false
+
+    - name: Verify | Assert deploy-target Host block is effective
+      ansible.builtin.assert:
+        that:
+          - "'hostname 10.0.0.5' in __openssh_verify_root_g.results[0].stdout_lines"
+          - "'port 2222' in __openssh_verify_root_g.results[0].stdout_lines"
+          - "'user deploy' in __openssh_verify_root_g.results[0].stdout_lines"
+          - "'identitiesonly yes' in __openssh_verify_root_g.results[0].stdout_lines"
+          - "'proxyjump gateway' in __openssh_verify_root_g.results[0].stdout_lines"
+          # Host block wins over the global value from 99-defaults.conf
+          - "'serveraliveinterval 30' in __openssh_verify_root_g.results[0].stdout_lines"
+          - __openssh_verify_root_g.results[0].stdout is search('(?m)^identityfile .*deploy_key$')
+        fail_msg: 'deploy-target settings not effective'
+
+    - name: Verify | Assert agent-host Host block is effective
+      ansible.builtin.assert:
+        that:
+          - "'identityagent /run/agent.sock' in __openssh_verify_root_g.results[1].stdout_lines"
+        fail_msg: 'agent-host IdentityAgent not effective'
+
+    - name: Verify | Assert global extra config is effective
+      ansible.builtin.assert:
+        that:
+          - "'serveraliveinterval 60' in __openssh_verify_root_g.results[2].stdout_lines"
+        fail_msg: 'openssh_client_extra_config not effective'
+
+    #
+    # alice — managed, existing config with manual entries
+    #
+
+    - name: Verify | Read alice ~/.ssh/config
+      ansible.builtin.slurp:
+        src: /home/alice/.ssh/config
+      register: __openssh_verify_alice_config
+
+    - name: Verify | Stat alice ~/.ssh and ~/.ssh/config
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - /home/alice/.ssh
+        - /home/alice/.ssh/config
+      register: __openssh_verify_alice_stat
+
+    - name: Verify | Get effective client config for alice
+      ansible.builtin.command:
+        cmd: 'runuser -u alice -- ssh -G {{ item }}'
+      loop:
+        - 'gateway'
+        - 'myown'
+        - 'unlisted-host'
+      register: __openssh_verify_alice_g
+      changed_when: false
+
+    - name: Verify | Assert alice block and manual entries
+      ansible.builtin.assert:
+        that:
+          - (__openssh_verify_alice_config.content | b64decode).startswith(__openssh_verify_marker_begin)
+          - "'HostName manual.example.com' in (__openssh_verify_alice_config.content | b64decode)"
+          # Existing modes are kept
+          - __openssh_verify_alice_stat.results[0].stat.mode == '0750'
+          - __openssh_verify_alice_stat.results[1].stat.mode == '0644'
+          # The role block comes first, so its value wins for gateway
+          - "'hostname gw.example.com' in __openssh_verify_alice_g.results[0].stdout_lines"
+          - "'identitiesonly yes' in __openssh_verify_alice_g.results[0].stdout_lines"
+          - "'addkeystoagent true' in __openssh_verify_alice_g.results[0].stdout_lines"
+          # Manual host still works
+          - "'hostname myown.example.com' in __openssh_verify_alice_g.results[1].stdout_lines"
+          # Her global line keeps applying to all hosts behind the closing Host *
+          - "'serveraliveinterval 15' in __openssh_verify_alice_g.results[0].stdout_lines"
+          - "'serveraliveinterval 15' in __openssh_verify_alice_g.results[2].stdout_lines"
+        fail_msg: 'alice ~/.ssh/config not as expected'
+
+    #
+    # bob — initial, no ~/.ssh
+    #
+
+    - name: Verify | Stat bob ~/.ssh and ~/.ssh/config
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - /home/bob/.ssh
+        - /home/bob/.ssh/config
+      register: __openssh_verify_bob_stat
+
+    - name: Verify | Get effective client config for bob
+      ansible.builtin.command:
+        cmd: 'runuser -u bob -- ssh -G gateway'
+      register: __openssh_verify_bob_g
+      changed_when: false
+
+    - name: Verify | Assert bob ~/.ssh created
+      ansible.builtin.assert:
+        that:
+          - __openssh_verify_bob_stat.results[0].stat.mode == '0700'
+          - __openssh_verify_bob_stat.results[0].stat.pw_name == 'bob'
+          - __openssh_verify_bob_stat.results[1].stat.mode == '0600'
+          - __openssh_verify_bob_stat.results[1].stat.pw_name == 'bob'
+          - "'hostname gw.example.com' in __openssh_verify_bob_g.stdout_lines"
+        fail_msg: 'bob ~/.ssh/config not created as expected'
+
+    #
+    # carol — initial, hand-edited role block
+    # erin — disabled
+    #
+
+    - name: Verify | Read carol and erin ~/.ssh/config
+      ansible.builtin.slurp:
+        src: '/home/{{ item }}/.ssh/config'
+      loop:
+        - 'carol'
+        - 'erin'
+      register: __openssh_verify_untouched
+
+    - name: Verify | Assert carol and erin configs are untouched
+      ansible.builtin.assert:
+        that:
+          - (__openssh_verify_untouched.results[0].content | b64decode) == __openssh_verify_carol_config
+          - (__openssh_verify_untouched.results[1].content | b64decode) == __openssh_verify_erin_config
+        fail_msg: 'initial block or disabled user config was modified'
+
+    #
+    # dave — initial, existing config without a role block
+    #
+
+    - name: Verify | Read dave ~/.ssh/config
+      ansible.builtin.slurp:
+        src: /home/dave/.ssh/config
+      register: __openssh_verify_dave_config
+
+    - name: Verify | Get effective client config for dave
+      ansible.builtin.command:
+        cmd: 'runuser -u dave -- ssh -G {{ item }}'
+      loop:
+        - 'gateway'
+        - 'myown'
+      register: __openssh_verify_dave_g
+      changed_when: false
+
+    - name: Verify | Assert dave block inserted above his config
+      ansible.builtin.assert:
+        that:
+          - (__openssh_verify_dave_config.content | b64decode).startswith(__openssh_verify_marker_begin)
+          - "'hostname gw.example.com' in __openssh_verify_dave_g.results[0].stdout_lines"
+          - "'hostname myown.example.com' in __openssh_verify_dave_g.results[1].stdout_lines"
+        fail_msg: 'dave ~/.ssh/config not as expected'
+
+    #
+    # frank — no ssh_client attribute; sysuser — system user
+    #
+
+    - name: Verify | Stat frank and sysuser ~/.ssh/config
+      ansible.builtin.stat:
+        path: '/home/{{ item }}/.ssh/config'
+      loop:
+        - 'frank'
+        - 'sysuser'
+      register: __openssh_verify_skipped
+
+    - name: Verify | Assert no config for frank and sysuser
+      ansible.builtin.assert:
+        that:
+          - not __openssh_verify_skipped.results[0].stat.exists
+          - not __openssh_verify_skipped.results[1].stat.exists
+        fail_msg: 'config written for a user without ssh_client or a system user'
