@@ -1,0 +1,44 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+#
+# Remove Diffie-Hellman moduli smaller than {{ openssh_server_moduli_minimum_size }} bits from
+# {{ __openssh_moduli_file }}.
+#
+# Run by the openssh pacman hook: the package does not list the moduli file in
+# its backup array, so every install or upgrade restores the unfiltered
+# upstream file. New moduli from upstream are kept, only the small ones go.
+#
+# Failsafe: the file is only replaced if at least one modulus remains.
+# Otherwise it is left as it is and the script exits non-zero, because an
+# empty file makes sshd fall back to a built-in, smaller group.
+
+set -euo pipefail
+
+moduli_file='{{ __openssh_moduli_file }}'
+minimum_size='{{ openssh_server_moduli_minimum_size }}'
+
+if [[ ! -f "${moduli_file}" ]]; then
+    echo "openssh-moduli-filter: ${moduli_file} not found" >&2
+    exit 1
+fi
+
+tmp_file="$(mktemp "${moduli_file}.XXXXXX")"
+trap 'rm -f "${tmp_file}"' EXIT
+
+# Keep comment lines and every modulus at or above the minimum size (field 5).
+awk -v min="${minimum_size}" '/^#/ || ($5 + 0 >= min)' "${moduli_file}" > "${tmp_file}"
+
+if ! grep -q '^[0-9]' "${tmp_file}"; then
+    echo "openssh-moduli-filter: no modulus of at least ${minimum_size} bits in ${moduli_file}, file left unchanged" >&2
+    exit 1
+fi
+
+if cmp -s "${tmp_file}" "${moduli_file}"; then
+    exit 0
+fi
+
+chown root:root "${tmp_file}"
+chmod 0644 "${tmp_file}"
+mv -f "${tmp_file}" "${moduli_file}"
+trap - EXIT
+echo "openssh-moduli-filter: removed moduli smaller than ${minimum_size} bits from ${moduli_file}"

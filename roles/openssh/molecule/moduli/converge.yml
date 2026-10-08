@@ -1,0 +1,19 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    openssh_enabled: true
+
+    # The feature under test (role defaults, set explicitly for clarity)
+    openssh_server_harden_moduli_enabled: true
+    openssh_server_moduli_minimum_size: 3071
+
+    # Disable unrelated features
+    openssh_ssh_audit_enabled: false
+
+  tasks:
+    - name: Converge | Include openssh role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

@@ -11,6 +11,10 @@ __openssh_client_config_file: '/etc/ssh/ssh_config'
 __openssh_client_config_d_dir: '/etc/ssh/ssh_config.d'
 
 __openssh_moduli_file: '/etc/ssh/moduli'
+# The openssh package overwrites the moduli file on every upgrade (not in its
+# backup array), so a pacman hook filters it again right afterwards.
+__openssh_moduli_filter_script: '/usr/local/sbin/openssh-moduli-filter'
+__openssh_moduli_hook_file: '/etc/pacman.d/hooks/openssh-moduli.hook'
 
 __openssh_host_keys_dir: '/etc/ssh'
 

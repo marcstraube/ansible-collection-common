@@ -27,11 +27,11 @@
     - openssh
     - openssh:hostkeys
 
+# Not gated on openssh_server_harden_moduli_enabled: with hardening disabled the
+# tasks still run to remove the Arch Linux pacman hook.
 - name: Main | Import moduli tasks
   ansible.builtin.import_tasks: moduli.yml
-  when:
-    - openssh_enabled | bool
-    - openssh_server_harden_moduli_enabled | bool
+  when: openssh_enabled | bool
   tags:
     - openssh
     - openssh:configure
