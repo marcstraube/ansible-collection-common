@@ -1,0 +1,119 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Enable EPEL repository (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Create sshd privilege separation directory
+      ansible.builtin.file:
+        path: /run/sshd
+        state: directory
+        mode: '0755'
+
+    #
+    # Test users with the ~/.ssh/config states the client tasks must handle
+    #
+
+    - name: Prepare | Create test users
+      ansible.builtin.user:
+        name: '{{ item }}'
+        create_home: true
+      loop:
+        - 'alice'
+        - 'bob'
+        - 'carol'
+        - 'dave'
+        - 'erin'
+        - 'frank'
+
+    - name: Prepare | Create system test user
+      ansible.builtin.user:
+        name: 'sysuser'
+        system: true
+        create_home: true
+        home: '/home/sysuser'
+
+    # alice keeps a non-default mode the role must not change
+    - name: Prepare | Create ~/.ssh directories
+      ansible.builtin.file:
+        path: '/home/{{ item.user }}/.ssh'
+        state: directory
+        owner: '{{ item.user }}'
+        group: '{{ item.user }}'
+        mode: '{{ item.mode }}'
+      loop:
+        - {user: 'alice', mode: '0750'}
+        - {user: 'carol', mode: '0700'}
+        - {user: 'dave', mode: '0700'}
+        - {user: 'erin', mode: '0700'}
+
+    # alice (managed): a global line before the first Host, a manual entry
+    # for a host the role also manages, and a host of her own
+    # carol (initial): a role block she edited by hand
+    # dave (initial): an existing config without a role block
+    # erin (disabled): an existing config
+    - name: Prepare | Write existing ~/.ssh/config files
+      ansible.builtin.copy:
+        dest: '/home/{{ item.user }}/.ssh/config'
+        content: '{{ item.content }}'
+        owner: '{{ item.user }}'
+        group: '{{ item.user }}'
+        mode: '0644'
+      loop:
+        - user: 'alice'
+          content: |
+            ServerAliveInterval 15
+
+            Host gateway
+                HostName manual.example.com
+
+            Host myown
+                HostName myown.example.com
+        - user: 'carol'
+          content: |
+            # BEGIN ANSIBLE MANAGED — openssh client
+            Host gateway
+                HostName carol-edited.example.com
+
+            Host *
+            # END ANSIBLE MANAGED — openssh client
+        - user: 'dave'
+          content: |
+            Host myown
+                HostName myown.example.com
+        - user: 'erin'
+          content: |
+            Host erinhost
+                HostName erin.example.com
+      loop_control:
+        label: '{{ item.user }}'

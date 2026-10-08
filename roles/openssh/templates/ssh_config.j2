@@ -38,3 +38,9 @@ Host *
 
     HostKeyAlgorithms {{ _hka | join(',') }}
 {% endif %}
+{% if openssh_client_extra_config | length > 0 %}
+
+{%   for line in openssh_client_extra_config %}
+    {{ line }}
+{%   endfor %}
+{% endif %}

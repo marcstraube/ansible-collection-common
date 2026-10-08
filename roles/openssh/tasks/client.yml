@@ -14,3 +14,34 @@
     owner: root
     group: root
     mode: '0644'
+
+# Numbered before the distribution and role defaults: ssh uses the first
+# value it reads, so per-host settings must come first to take effect.
+- name: Client | Configure system-wide Host blocks
+  ansible.builtin.template:
+    src: ssh_config_hosts.j2
+    dest: '{{ __openssh_client_config_d_dir }}/10-hosts.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  when: openssh_client_hosts | length > 0
+
+- name: Client | Remove system-wide Host blocks
+  ansible.builtin.file:
+    path: '{{ __openssh_client_config_d_dir }}/10-hosts.conf'
+    state: absent
+  when: openssh_client_hosts | length == 0
+
+- name: Client | Deploy per-user client config
+  ansible.builtin.include_tasks:
+    file: client_user_config.yml
+    apply:
+      tags:
+        - openssh
+        - openssh:client
+  loop: '{{ openssh_client_users }}'
+  loop_control:
+    loop_var: __openssh_client_user
+    label: '{{ __openssh_client_user.username }}'
+  when:
+    - (__openssh_client_user.mode | default(openssh_client_user_config_mode)) != 'disabled'

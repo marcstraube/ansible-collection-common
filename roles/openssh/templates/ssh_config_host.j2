@@ -1,0 +1,28 @@
+{#- Shared Host block macro for 10-hosts.conf and the per-user block -#}
+{% macro host_block(host) %}
+Host {{ host.name }}
+{% if host.hostname is defined %}
+    HostName {{ host.hostname }}
+{% endif %}
+{% if host.port is defined %}
+    Port {{ host.port }}
+{% endif %}
+{% if host.user is defined %}
+    User {{ host.user }}
+{% endif %}
+{% if host.identity_file is defined %}
+    IdentityFile {{ host.identity_file }}
+{% endif %}
+{% if host.identities_only is defined %}
+    IdentitiesOnly {{ host.identities_only | bool | ternary('yes', 'no') }}
+{% endif %}
+{% if host.identity_agent is defined %}
+    IdentityAgent {{ host.identity_agent }}
+{% endif %}
+{% if host.proxy_jump is defined %}
+    ProxyJump {{ host.proxy_jump }}
+{% endif %}
+{% for line in host.extra | default([]) %}
+    {{ line }}
+{% endfor %}
+{% endmacro %}

@@ -355,6 +355,17 @@
           - __openssh_client_conf.stat.exists
         fail_msg: 'Client config missing'
 
+    - name: Verify | Check system-wide Host blocks file
+      ansible.builtin.stat:
+        path: /etc/ssh/ssh_config.d/10-hosts.conf
+      register: __openssh_client_hosts_conf
+
+    - name: Verify | Assert no Host blocks file without openssh_client_hosts
+      ansible.builtin.assert:
+        that:
+          - not __openssh_client_hosts_conf.stat.exists
+        fail_msg: '10-hosts.conf written although openssh_client_hosts is empty'
+
     #
     # Optional SSH Client Tools
     #
