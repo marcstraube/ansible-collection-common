@@ -33,6 +33,8 @@
     podman_userns_mode: 'auto'
     podman_label: true
     podman_seccomp_enabled: true
+    podman_nopasswd_sudo_users:
+      - 'johndoe'
 
   tasks:
     - name: Converge | Include podman role  # noqa: role-name[path]

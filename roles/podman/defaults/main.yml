@@ -57,6 +57,22 @@ podman_rootless_users: []
 podman_subid_count: 65536
 
 #
+# Passwordless sudo
+#
+
+# Users allowed to run /usr/bin/podman through sudo without a password,
+# written to /etc/sudoers.d/60-role-podman (removed when empty). Needed by
+# tools that call "sudo podman" non-interactively, such as minikube's
+# podman driver.
+#
+# WARNING: this grants effective root. podman can start privileged
+# containers with host mounts, so every listed user can reach root.
+# Prefer rootless podman (podman_rootless_users) where the tool supports it.
+podman_nopasswd_sudo_users: []
+# Example:
+#   - 'johndoe'
+
+#
 # Registries (registries.conf)
 #
 
