@@ -52,6 +52,22 @@ overrides if needed.
 | `podman_rootless_users` | `[]`    | Users to configure for rootless podman |
 | `podman_subid_count`    | `65536` | Default subuid/subgid range size       |
 
+### Passwordless sudo
+
+| Variable                     | Default | Description                                         |
+|------------------------------|---------|-----------------------------------------------------|
+| `podman_nopasswd_sudo_users` | `[]`    | Users allowed to run `sudo podman` without password |
+
+Some tools call `sudo podman` non-interactively and stop at a password
+prompt otherwise, for example minikube's podman driver. Listed users get
+`NOPASSWD: /usr/bin/podman` in `/etc/sudoers.d/60-role-podman`, validated
+with `visudo`. An empty list removes the file. The `NN-role-<role>` name
+keeps the file in place when the `sudo` role purges unmanaged drop-ins.
+
+> **Warning:** this grants effective root. podman can start privileged
+> containers with host mounts, so every listed user can reach root. Prefer
+> rootless podman (`podman_rootless_users`) where the tool supports it.
+
 ### Registries (registries.conf V2)
 
 | Variable                    | Default                          | Description                          |
@@ -128,6 +144,7 @@ for security — override only per container where required.
 | `podman:install`   | Package installation and BTRFS |
 | `podman:configure` | Configuration files            |
 | `podman:rootless`  | Rootless user setup            |
+| `podman:sudo`      | Passwordless sudo for podman   |
 | `podman:service`   | Systemd services and timers    |
 
 ## Example Playbook

@@ -1,0 +1,18 @@
+---
+# Passwordless sudo for podman, e.g. for minikube's podman driver. The file
+# is validated with visudo so a malformed entry cannot lock sudo.
+- name: Sudo | Allow listed users to run podman without password
+  ansible.builtin.template:
+    src: sudoers-podman.j2
+    dest: '{{ __podman_sudoers_file }}'
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  when: podman_nopasswd_sudo_users | length > 0
+
+- name: Sudo | Remove passwordless podman sudoers file
+  ansible.builtin.file:
+    path: '{{ __podman_sudoers_file }}'
+    state: absent
+  when: podman_nopasswd_sudo_users | length == 0

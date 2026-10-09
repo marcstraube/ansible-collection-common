@@ -1,0 +1,6 @@
+{{ ansible_managed | comment }}
+# Passwordless podman through sudo. Grants effective root: podman can start
+# privileged containers with host mounts.
+{% for user in podman_nopasswd_sudo_users %}
+{{ user }} ALL=(ALL) NOPASSWD: {{ __podman_binary }}
+{% endfor %}

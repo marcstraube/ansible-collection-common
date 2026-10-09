@@ -238,6 +238,44 @@
         fail_msg: 'Prune service content incorrect'
 
     #
+    # Passwordless sudo
+    #
+
+    - name: Verify | Stat podman sudoers file
+      ansible.builtin.stat:
+        path: /etc/sudoers.d/60-role-podman
+      register: __podman_sudoers_stat
+
+    - name: Verify | Assert podman sudoers file permissions
+      ansible.builtin.assert:
+        that:
+          - __podman_sudoers_stat.stat.exists
+          - __podman_sudoers_stat.stat.mode == '0440'
+          - __podman_sudoers_stat.stat.pw_name == 'root'
+          - __podman_sudoers_stat.stat.gr_name == 'root'
+        fail_msg: '/etc/sudoers.d/60-role-podman is missing or has wrong permissions'
+
+    - name: Verify | Validate podman sudoers syntax
+      ansible.builtin.command:
+        cmd: visudo -cf /etc/sudoers.d/60-role-podman
+      changed_when: false
+
+    - name: Verify | Read podman sudoers file
+      ansible.builtin.slurp:
+        src: /etc/sudoers.d/60-role-podman
+      register: __podman_sudoers_content
+
+    - name: Verify | Assert podman sudoers entries
+      ansible.builtin.assert:
+        that:
+          - "'Ansible managed' in (__podman_sudoers_content.content | b64decode)"
+          - "'johndoe ALL=(ALL) NOPASSWD: /usr/bin/podman' in (__podman_sudoers_content.content | b64decode)"
+          - "'olduser' not in (__podman_sudoers_content.content | b64decode)"
+        fail_msg: >-
+          The podman sudoers file must grant listed users passwordless podman
+          and drop users no longer listed.
+
+    #
     # Functional Tests
     #
 
