@@ -42,7 +42,7 @@
 # password. root does not need this rule.
 - name: Paru | Allow wheel to run paru as the builder user
   ansible.builtin.lineinfile:
-    path: '/etc/sudoers.d/99-{{ aur_builder_user }}'
+    path: '{{ __package_management_sudoers_file }}'
     line: '%wheel ALL=({{ aur_builder_user }}) /usr/bin/paru'
     create: true
     owner: root

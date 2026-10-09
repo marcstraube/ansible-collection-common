@@ -135,9 +135,11 @@ sudo_always_set_home: true
 # Extra defaults to add (raw sudoers format)
 sudo_extra_defaults: []
 
-# Remove unmanaged sudoers.d files
+# Remove unmanaged sudoers.d files. Drop-ins written by other roles of
+# this collection (named NN-role-<role>[-<purpose>]) are always kept.
 sudo_purge_sudoers_d_enabled: false
 
-# Files to never remove from sudoers.d (only when purge enabled)
+# Further files to never remove from sudoers.d (only when purge enabled),
+# e.g. drop-ins from packages or other tooling
 sudo_keep_sudoers_files:
   - 'README'

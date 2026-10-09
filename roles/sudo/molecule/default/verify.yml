@@ -327,6 +327,29 @@
         fail_msg: 'monitoring sudoers file incorrect'
 
     #
+    # Purge
+    #
+
+    - name: Verify | Stat seeded sudoers.d drop-ins
+      ansible.builtin.stat:
+        path: '/etc/sudoers.d/{{ item }}'
+      loop:
+        - '99-role-package_management'
+        - '60-role-podman-minikube'
+        - '40-unmanaged'
+      register: __sudo_seeded_files
+
+    - name: Verify | Check purge kept role-owned and removed unmanaged drop-ins
+      ansible.builtin.assert:
+        that:
+          - __sudo_seeded_files.results[0].stat.exists
+          - __sudo_seeded_files.results[1].stat.exists
+          - not __sudo_seeded_files.results[2].stat.exists
+        fail_msg: >-
+          Purge must keep NN-role-* drop-ins of other roles and remove
+          unmanaged files.
+
+    #
     # All Sudoers Files Validation
     #
 

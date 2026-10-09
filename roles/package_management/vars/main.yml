@@ -12,3 +12,12 @@ __apt_keyring_dir: '/etc/apt/keyrings'  # noqa: var-naming[no-role-prefix]
 __apt_ppa_api_url: 'https://api.launchpad.net/1.0'  # noqa: var-naming[no-role-prefix]
 __apt_ppa_content_url: 'https://ppa.launchpadcontent.net'  # noqa: var-naming[no-role-prefix]
 __apt_ppa_keyserver_url: 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x'  # noqa: var-naming[no-role-prefix]
+
+#
+# sudoers drop-in (Arch Linux AUR builder)
+#
+# Named after the owning role (NN-role-<role>) so the sudo role's purge of
+# sudoers.d leaves it in place. 99 keeps it last in the read order.
+#
+
+__package_management_sudoers_file: '/etc/sudoers.d/99-role-package_management'

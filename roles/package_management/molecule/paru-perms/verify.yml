@@ -124,12 +124,12 @@
 
     - name: Verify | Validate the builder sudoers file
       ansible.builtin.command:
-        cmd: 'visudo -cf /etc/sudoers.d/99-aur_builder'
+        cmd: 'visudo -cf /etc/sudoers.d/99-role-package_management'
       changed_when: false
 
     - name: Verify | Read the builder sudoers file
       ansible.builtin.slurp:
-        src: /etc/sudoers.d/99-aur_builder
+        src: /etc/sudoers.d/99-role-package_management
       register: __pm_sudoers_content
 
     - name: Verify | Assert the wheel-to-builder paru rule is present

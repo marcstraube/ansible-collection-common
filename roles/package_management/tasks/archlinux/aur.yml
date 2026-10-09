@@ -34,7 +34,7 @@
 
 - name: AUR | Allow builder to run pacman without password
   ansible.builtin.lineinfile:
-    path: '/etc/sudoers.d/99-{{ aur_builder_user }}'
+    path: '{{ __package_management_sudoers_file }}'
     line: '{{ aur_builder_user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman'
     create: true
     owner: root
@@ -44,7 +44,7 @@
 
 - name: AUR | Enforce standard build umask for the builder user
   ansible.builtin.lineinfile:
-    path: '/etc/sudoers.d/99-{{ aur_builder_user }}'
+    path: '{{ __package_management_sudoers_file }}'
     line: 'Defaults>{{ aur_builder_user }} umask=0022, umask_override'
     insertbefore: BOF
     create: true
