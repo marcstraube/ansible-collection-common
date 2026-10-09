@@ -60,10 +60,14 @@
     label: '{{ item.name }}'
   when: sudo_sudoers_files | length > 0
 
+# Drop-ins named NN-role-<role>[-<purpose>] belong to other roles of the
+# collection; they are excluded here so the purge leaves them in place
+# regardless of the order in which the roles run.
 - name: Configure | Find unmanaged sudoers.d files
   ansible.builtin.find:
     paths: '/etc/sudoers.d'
     patterns: '*'
+    excludes: '*-role-*'
     file_type: file
   register: __sudo_existing_files
   when: sudo_purge_sudoers_d_enabled | bool

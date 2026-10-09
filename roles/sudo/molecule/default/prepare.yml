@@ -25,3 +25,23 @@
       retries: 3
       delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
+
+    # Drop-ins as other roles of the collection write them (NN-role-<role>
+    # and NN-role-<role>-<purpose>), plus one file nobody manages. The
+    # purge in converge must keep the former and remove the latter.
+    - name: Prepare | Seed role-owned and unmanaged sudoers.d drop-ins
+      ansible.builtin.copy:
+        content: "{{ item.content }}\n"
+        dest: '/etc/sudoers.d/{{ item.name }}'
+        owner: root
+        group: root
+        mode: '0440'
+      loop:
+        - name: '99-role-package_management'
+          content: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+        - name: '60-role-podman-minikube'
+          content: 'johndoe ALL=(ALL) NOPASSWD: /usr/bin/podman'
+        - name: '40-unmanaged'
+          content: 'johndoe ALL=(ALL) /usr/bin/true'
+      loop_control:
+        label: '{{ item.name }}'

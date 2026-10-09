@@ -86,6 +86,32 @@ overrides if needed.
 | `sudo_purge_sudoers_d_enabled` | `false`               | Remove unmanaged sudoers.d files |
 | `sudo_keep_sudoers_files`      | `['README']`          | Files to keep when purging       |
 
+## sudoers.d Drop-ins
+
+The role writes its drop-ins under fixed name prefixes:
+
+| File                    | Source               |
+|-------------------------|----------------------|
+| `20-user-<name>`        | `sudo_users`         |
+| `30-group-<name>`       | `sudo_groups`        |
+| `50-<name>`             | `sudo_sudoers_files` |
+
+Other roles of this collection that need a sudoers rule write their own
+drop-in named `NN-role-<role>` or `NN-role-<role>-<purpose>`, where `NN` sets
+the read order and `<role>` is the owning role (for example
+`99-role-package_management`).
+
+With `sudo_purge_sudoers_d_enabled: true`, every other file in
+`/etc/sudoers.d` is removed, except:
+
+- files matching `*-role-*`, regardless of the order in which the roles run
+- files listed in `sudo_keep_sudoers_files`, for drop-ins from packages or
+  other tooling
+
+Avoid names starting with `role-` for `sudo_sudoers_files` entries: the
+resulting `50-role-<name>` matches the pattern above, so it is no longer
+purged once the entry is removed from the list.
+
 ## Tags
 
 | Tag              | Scope                      |

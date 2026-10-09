@@ -230,6 +230,45 @@ openssh_server_userdb_authorized_keys: true
 With a command configured as well, `userdbctl` chains it, and it then runs as
 root instead of `openssh_server_authorized_keys_command_user`.
 
+### `package_management` — the AUR builder sudoers drop-in is renamed
+
+On Arch Linux, the role wrote the AUR builder's sudoers rules to
+`/etc/sudoers.d/99-<aur_builder_user>`. The `sudo` role's purge
+(`sudo_purge_sudoers_d_enabled`) did not recognize that file and removed it on
+every run.
+
+The rules now live in `/etc/sudoers.d/99-role-package_management`. The `sudo`
+role keeps every drop-in named `NN-role-<role>` when it purges. The role does
+not remove the old file: its name depended on `aur_builder_user`, so earlier
+renames may have left more than one.
+
+#### Required action
+
+Remove the old drop-ins once the role has written the new file. With the
+default builder user:
+
+```bash
+sudo rm /etc/sudoers.d/99-aur_builder
+```
+
+Also remove files named after builder users you used before. If you listed the
+old file in `sudo_keep_sudoers_files` to protect it from the purge, drop that
+entry:
+
+```yaml
+# Before
+sudo_keep_sudoers_files:
+  - 'README'
+  - '99-aur_builder'
+
+# After
+sudo_keep_sudoers_files:
+  - 'README'
+```
+
+With `sudo_purge_sudoers_d_enabled: true` and no such entry, the `sudo` role
+already removes the old file.
+
 ## v2.3.0 - 2026-07-23
 
 ## v2.2.0 - 2026-07-07

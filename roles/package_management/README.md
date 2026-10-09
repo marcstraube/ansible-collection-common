@@ -143,6 +143,11 @@ own password) or as `root`. Never invoke the real `/usr/bin/paru` or
 `/usr/bin/yay` directly as a login user — that would create clone entries
 owned by the wrong user and lock the builder out on the next run.
 
+All sudoers rules for the builder (passwordless `pacman`, the enforced umask,
+and the wrapper rule for `wheel`) live in
+`/etc/sudoers.d/99-role-package_management`. The `NN-role-<role>` name keeps
+the file in place when the `sudo` role purges unmanaged drop-ins.
+
 ### Arch Linux - Tools
 
 | Variable                          | Default | Description                          |
