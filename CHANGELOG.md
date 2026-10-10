@@ -2,6 +2,58 @@
 
 All notable changes to this collection will be documented in this file.
 
+## [3.0.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.3.1...v3.0.0) (2026-10-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* give yay the shared clone directory paru already had ([#321](https://github.com/marcstraube/ansible-collection-common/issues/321))
+* write Debian repositories in deb822 format ([#320](https://github.com/marcstraube/ansible-collection-common/issues/320))
+* gate initial user_config_mode on config existence ([#314](https://github.com/marcstraube/ansible-collection-common/issues/314))
+* **base:** remove zip and unzip from the default packages ([#313](https://github.com/marcstraube/ansible-collection-common/issues/313))
+
+### Features
+
+* expose role sub-tags from the base system task file ([#319](https://github.com/marcstraube/ansible-collection-common/issues/319)) ([b8be517](https://github.com/marcstraube/ansible-collection-common/commit/b8be5173c7ae50ffdaedf4bd3fc832ed0f793dfe)), closes [#311](https://github.com/marcstraube/ansible-collection-common/issues/311)
+* gate initial user_config_mode on config existence ([#314](https://github.com/marcstraube/ansible-collection-common/issues/314)) ([ff7dd64](https://github.com/marcstraube/ansible-collection-common/commit/ff7dd648aabe82649c44896a1066d02638e335df)), closes [#263](https://github.com/marcstraube/ansible-collection-common/issues/263)
+* **git:** add role for version control tooling ([#300](https://github.com/marcstraube/ansible-collection-common/issues/300)) ([4a0ee4a](https://github.com/marcstraube/ansible-collection-common/commit/4a0ee4aca2d7b716179a3ba72ea53ad7ee413fc5)), closes [#299](https://github.com/marcstraube/ansible-collection-common/issues/299)
+* give yay the shared clone directory paru already had ([#321](https://github.com/marcstraube/ansible-collection-common/issues/321)) ([f910ff9](https://github.com/marcstraube/ansible-collection-common/commit/f910ff91e91a91a2bf7e9b6130ec73d08a9ea06e)), closes [#229](https://github.com/marcstraube/ansible-collection-common/issues/229)
+* **gnupg:** enable SSH support without exporting SSH_AUTH_SOCK ([#357](https://github.com/marcstraube/ansible-collection-common/issues/357)) ([47fe41f](https://github.com/marcstraube/ansible-collection-common/commit/47fe41f3be09d3e53fc83ff392070fc34b2f7c29))
+* **openssh:** add Host blocks and per-user client config ([#352](https://github.com/marcstraube/ansible-collection-common/issues/352)) ([93518ee](https://github.com/marcstraube/ansible-collection-common/commit/93518eeffdfa0b436d1f4b3b501342ab1a702522))
+* **php:** add php_ini_extra_settings for arbitrary ini directives ([#326](https://github.com/marcstraube/ansible-collection-common/issues/326)) ([19f01db](https://github.com/marcstraube/ansible-collection-common/commit/19f01db5179509e8a9dafcbf4b8af9658c89d3b6)), closes [#324](https://github.com/marcstraube/ansible-collection-common/issues/324)
+* **php:** harden expose_php and session ini defaults ([#327](https://github.com/marcstraube/ansible-collection-common/issues/327)) ([c2ed94a](https://github.com/marcstraube/ansible-collection-common/commit/c2ed94aa0309f887685b2e1b22c641c2f1cf5cad)), closes [#325](https://github.com/marcstraube/ansible-collection-common/issues/325)
+* **pki:** notify consumers when certificate material changes ([#330](https://github.com/marcstraube/ansible-collection-common/issues/330)) ([2ea0cd2](https://github.com/marcstraube/ansible-collection-common/commit/2ea0cd238a7ead87de94e240af79cf0e1b7c4eb8)), closes [#323](https://github.com/marcstraube/ansible-collection-common/issues/323)
+* **podman:** add passwordless sudo for podman ([#355](https://github.com/marcstraube/ansible-collection-common/issues/355)) ([17dffb4](https://github.com/marcstraube/ansible-collection-common/commit/17dffb4d0d709919f0bc9c250f1aab6184d5e701))
+* **users:** deploy SSH key files from the inventory ([#316](https://github.com/marcstraube/ansible-collection-common/issues/316)) ([24f4352](https://github.com/marcstraube/ansible-collection-common/commit/24f4352b4601d9a5c24b7387ab8fa8cd0c9bc2df)), closes [#315](https://github.com/marcstraube/ansible-collection-common/issues/315)
+
+
+### Bug Fixes
+
+* **aide:** restore AIDE package on Arch Linux ([#312](https://github.com/marcstraube/ansible-collection-common/issues/312)) ([97369bb](https://github.com/marcstraube/ansible-collection-common/commit/97369bb5cec3046e90dabc1760a9371ebd33b941)), closes [#297](https://github.com/marcstraube/ansible-collection-common/issues/297)
+* **firewalld:** enable custom services in the run that defines them ([#359](https://github.com/marcstraube/ansible-collection-common/issues/359)) ([c254b3b](https://github.com/marcstraube/ansible-collection-common/commit/c254b3bf4e70b6015d1c6e125b7a66a71703a422))
+* **nodejs:** install package managers from the distribution on Arch ([#344](https://github.com/marcstraube/ansible-collection-common/issues/344)) ([e136ca1](https://github.com/marcstraube/ansible-collection-common/commit/e136ca18c319adbbb8da5cfea1144d9e5bfd7e97)), closes [#343](https://github.com/marcstraube/ansible-collection-common/issues/343)
+* **openssh:** keep moduli filtered across openssh upgrades on Arch ([#349](https://github.com/marcstraube/ansible-collection-common/issues/349)) ([dd639b5](https://github.com/marcstraube/ansible-collection-common/commit/dd639b57fed1c8526f33223d7014f050ab3f014d)), closes [#348](https://github.com/marcstraube/ansible-collection-common/issues/348)
+* **openssh:** own AuthorizedKeysCommand ahead of distribution drop-ins ([#347](https://github.com/marcstraube/ansible-collection-common/issues/347)) ([b3ca6cc](https://github.com/marcstraube/ansible-collection-common/commit/b3ca6cc3fb0499b8aed384c4431bfcd7d6e71417)), closes [#346](https://github.com/marcstraube/ansible-collection-common/issues/346)
+* **package_management:** import distribution GPG key without rpm_key ([#308](https://github.com/marcstraube/ansible-collection-common/issues/308)) ([f22f181](https://github.com/marcstraube/ansible-collection-common/commit/f22f181a3c420d2953da83434a7418d926eeeec1)), closes [#307](https://github.com/marcstraube/ansible-collection-common/issues/307)
+* **package_management:** let the AUR helper wrappers exec directly when called by the builder ([#340](https://github.com/marcstraube/ansible-collection-common/issues/340)) ([01467e7](https://github.com/marcstraube/ansible-collection-common/commit/01467e7c879ec7e502fe8ea42693c2a8e1d73591)), closes [#338](https://github.com/marcstraube/ansible-collection-common/issues/338)
+* **package_management:** stop re-signing custom repository keys on every run ([#342](https://github.com/marcstraube/ansible-collection-common/issues/342)) ([e0edee8](https://github.com/marcstraube/ansible-collection-common/commit/e0edee8e7c7d58023ff2aad157058a433a498e61)), closes [#341](https://github.com/marcstraube/ansible-collection-common/issues/341)
+* **php:** give PHP errors a defined log destination ([#339](https://github.com/marcstraube/ansible-collection-common/issues/339)) ([f9f8267](https://github.com/marcstraube/ansible-collection-common/commit/f9f826724af79115dbb2cd43743194513422fd04)), closes [#337](https://github.com/marcstraube/ansible-collection-common/issues/337)
+* **php:** install and enable the extensions each platform actually needs ([#332](https://github.com/marcstraube/ansible-collection-common/issues/332)) ([c5a53fe](https://github.com/marcstraube/ansible-collection-common/commit/c5a53fe94baf1ffdca73f590ff0106ce5e3e56dd)), closes [#331](https://github.com/marcstraube/ansible-collection-common/issues/331)
+* **php:** reload PHP-FPM after the ini drop-in changes ([#329](https://github.com/marcstraube/ansible-collection-common/issues/329)) ([e3a5f0b](https://github.com/marcstraube/ansible-collection-common/commit/e3a5f0bba45437acc2fa64b67dbfb1874206e0c4)), closes [#328](https://github.com/marcstraube/ansible-collection-common/issues/328)
+* **sudo:** keep sudoers drop-ins of other collection roles on purge ([#354](https://github.com/marcstraube/ansible-collection-common/issues/354)) ([5f822b7](https://github.com/marcstraube/ansible-collection-common/commit/5f822b78df56645759c97c6040ae388a6fd864e6))
+
+
+### Code Refactoring
+
+* **base:** remove zip and unzip from the default packages ([#313](https://github.com/marcstraube/ansible-collection-common/issues/313)) ([2491c8f](https://github.com/marcstraube/ansible-collection-common/commit/2491c8fd49c6d274e1631c4b2d7e1ca161675fe4)), closes [#197](https://github.com/marcstraube/ansible-collection-common/issues/197)
+* write Debian repositories in deb822 format ([#320](https://github.com/marcstraube/ansible-collection-common/issues/320)) ([291c0b9](https://github.com/marcstraube/ansible-collection-common/commit/291c0b932bc10aa8bfc431647c56ea7cb2cdc2fd)), closes [#318](https://github.com/marcstraube/ansible-collection-common/issues/318)
+
+
+### Documentation
+
+* **nodejs:** document the pnpm/yarn migration on Arch Linux ([#345](https://github.com/marcstraube/ansible-collection-common/issues/345)) ([dc3f58e](https://github.com/marcstraube/ansible-collection-common/commit/dc3f58ea8a8e786e913fe6074148a8683c9fb471)), closes [#343](https://github.com/marcstraube/ansible-collection-common/issues/343)
+* update stale role documentation for the current collection layout ([#317](https://github.com/marcstraube/ansible-collection-common/issues/317)) ([e6952a2](https://github.com/marcstraube/ansible-collection-common/commit/e6952a2e718e7373f3e23913643ca89ebb8254c6)), closes [#306](https://github.com/marcstraube/ansible-collection-common/issues/306)
+
 ## [2.3.1](https://github.com/marcstraube/ansible-collection-common/compare/v2.3.0...v2.3.1) (2026-07-30)
 
 
