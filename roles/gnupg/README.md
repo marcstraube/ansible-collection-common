@@ -81,6 +81,7 @@ overrides if needed.
 | `gnupg_agent_default_cache_ttl_ssh`   | `1800`  | SSH key cache TTL (seconds)           |
 | `gnupg_agent_max_cache_ttl_ssh`       | `7200`  | SSH key max cache TTL (seconds)       |
 | `gnupg_agent_ssh_enabled`             | `false` | Enable SSH support via GPG agent      |
+| `gnupg_agent_ssh_auth_sock_enabled`   | `true`  | Export `SSH_AUTH_SOCK` when SSH is on |
 | `gnupg_agent_pinentry`                | `''`    | Pinentry program (empty = OS default) |
 | `gnupg_agent_pinentry_timeout`        | `0`     | Pinentry timeout (0 = none)           |
 | `gnupg_agent_allow_loopback_pinentry` | `true`  | Allow loopback pinentry               |
@@ -171,6 +172,30 @@ overrides if needed.
         default_key: '0x1234567890ABCDEF'
         agent_ssh: true
 ```
+
+### SSH via gpg-agent for Selected Hosts Only
+
+`agent_ssh` turns on `enable-ssh-support`. By default the role also writes
+`~/.config/environment.d/50-gpg-ssh.conf`, which points `SSH_AUTH_SOCK` at
+gpg-agent for the whole session. To keep another agent as the session default
+and use gpg-agent only for hosts that select its socket in `~/.ssh/config`,
+turn the export off:
+
+```yaml
+gnupg_users:
+  - username: 'johndoe'
+    mode: 'managed'
+    agent_ssh: true
+    ssh_auth_sock: false
+```
+
+```text
+Host example.org
+    IdentityAgent ${XDG_RUNTIME_DIR}/gnupg/S.gpg-agent.ssh
+```
+
+In `managed` mode the role removes an existing `50-gpg-ssh.conf` once the
+export is off.
 
 ## Testing
 
