@@ -11,6 +11,8 @@
     firewalld_services:
       - 'ssh'
       - 'http'
+      # Custom service defined below — must be usable in the same run
+      - 'myapp'
     firewalld_services_disabled:
       - 'cockpit'
     firewalld_ports:

@@ -108,6 +108,11 @@
     label: '{{ item.name }}'
   notify: Reload firewalld
 
+# firewalld only loads new service files on reload; enabling a custom
+# service in the same run fails with INVALID_SERVICE otherwise.
+- name: Configure | Flush handlers for custom service availability
+  ansible.builtin.meta: flush_handlers
+
 #
 # Services - Default Zone
 #
