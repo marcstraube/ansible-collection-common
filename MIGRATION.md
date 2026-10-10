@@ -14,6 +14,8 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+## v3.0.0 - 2026-10-10
+
 ### `php` — PHP errors now have a defined log destination
 
 `log_errors` was already `On`, but the role never wrote an `error_log`
