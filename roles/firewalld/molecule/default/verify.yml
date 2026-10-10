@@ -138,6 +138,20 @@
       changed_when: false
       failed_when: __verify_custom_srcport.rc != 0
 
+    - name: Verify | Check custom service is enabled in public zone (runtime)
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --query-service=myapp
+      register: __verify_custom_runtime
+      changed_when: false
+      failed_when: __verify_custom_runtime.rc != 0
+
+    - name: Verify | Check custom service is enabled in public zone (permanent)
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --query-service=myapp --permanent
+      register: __verify_custom_permanent
+      changed_when: false
+      failed_when: __verify_custom_permanent.rc != 0
+
     #
     # Purge
     #
@@ -153,10 +167,11 @@
         that:
           - "'ssh' in __verify_purge.stdout.split()"
           - "'http' in __verify_purge.stdout.split()"
+          - "'myapp' in __verify_purge.stdout.split()"
           - "'dhcpv6-client' not in __verify_purge.stdout.split()"
         fail_msg: >-
           Public zone has unexpected services: {{ __verify_purge.stdout }}.
-          Expected only ssh and http after purge.
+          Expected only ssh, http and myapp after purge.
 
     #
     # Version-Conditional Checks (firewalld 2.x+)
