@@ -37,6 +37,12 @@
   ansible.builtin.set_fact:
     __gnupg_user_managed: >-
       {{ (gnupg_user.mode | default(gnupg_user_config_mode)) == 'managed' }}
+    __gnupg_user_ssh_auth_sock: >-
+      {{
+        gnupg_agent_enabled | default(true) | bool
+        and gnupg_user.agent_ssh | default(gnupg_agent_ssh_enabled) | bool
+        and gnupg_user.ssh_auth_sock | default(gnupg_agent_ssh_auth_sock_enabled) | bool
+      }}
     __gnupg_should_deploy: >-
       {{
         dict(__gnupg_config_stats.results
@@ -114,8 +120,7 @@
     group: '{{ gnupg_user.username }}'
     mode: '0755'
   when:
-    - gnupg_agent_enabled | default(true) | bool
-    - gnupg_user.agent_ssh | default(gnupg_agent_ssh_enabled) | bool
+    - __gnupg_user_ssh_auth_sock | bool
     - >-
       __gnupg_user_managed | bool
       or __gnupg_should_deploy['ssh_env'] | default(true)
@@ -130,11 +135,20 @@
     group: '{{ gnupg_user.username }}'
     mode: '0644'
   when:
-    - gnupg_agent_enabled | default(true) | bool
-    - gnupg_user.agent_ssh | default(gnupg_agent_ssh_enabled) | bool
+    - __gnupg_user_ssh_auth_sock | bool
     - >-
       __gnupg_user_managed | bool
       or __gnupg_should_deploy['ssh_env'] | default(true)
+
+# managed owns the file: drop one left from an earlier run once the export
+# is disabled, so SSH_AUTH_SOCK no longer points at gpg-agent.
+- name: Configure | Remove SSH_AUTH_SOCK export
+  ansible.builtin.file:
+    path: '{{ __gnupg_user_home }}/.config/environment.d/50-gpg-ssh.conf'
+    state: absent
+  when:
+    - __gnupg_user_managed | bool
+    - not __gnupg_user_ssh_auth_sock | bool
 
 # failed_when: false — keyserver may be unreachable or key not found (non-fatal)
 - name: Configure | Import keys from keyserver

@@ -22,6 +22,10 @@
       - username: disableduser
         mode: 'disabled'
         agent_ssh: false
+      - username: socklessuser
+        mode: 'managed'
+        agent_ssh: true
+        ssh_auth_sock: false
 
   pre_tasks:
     - name: Converge | Create test user
@@ -29,6 +33,32 @@
         name: testuser
         state: present
         create_home: true
+
+    - name: Converge | Create SSH-without-export test user
+      ansible.builtin.user:
+        name: socklessuser
+        state: present
+        create_home: true
+
+    - name: Converge | Ensure socklessuser environment.d directory
+      ansible.builtin.file:
+        path: /home/socklessuser/.config/environment.d
+        state: directory
+        owner: socklessuser
+        group: socklessuser
+        mode: '0755'
+
+    - name: Converge | Pre-seed stale SSH_AUTH_SOCK export to prove removal
+      ansible.builtin.copy:
+        content: |
+          SSH_AUTH_SOCK=/run/user/0/gnupg/S.gpg-agent.ssh
+        dest: /home/socklessuser/.config/environment.d/50-gpg-ssh.conf
+        owner: socklessuser
+        group: socklessuser
+        mode: '0644'
+      # Re-seeding on the idempotence run would report a change.
+      tags:
+        - molecule-idempotence-notest
 
     - name: Converge | Create disabled test user
       ansible.builtin.user:

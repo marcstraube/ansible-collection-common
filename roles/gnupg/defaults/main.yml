@@ -86,6 +86,11 @@ gnupg_agent_max_cache_ttl_ssh: 7200         # Maximum: 2 hours
 # Enable SSH support via GPG agent
 gnupg_agent_ssh_enabled: false
 
+# Export SSH_AUTH_SOCK for the user session (environment.d) when SSH support
+# is enabled. Disable it to serve SSH through gpg-agent only for hosts that
+# select its socket via IdentityAgent in ~/.ssh/config.
+gnupg_agent_ssh_auth_sock_enabled: true
+
 # Pinentry program (auto-detected from OS default if empty)
 # Options: pinentry-curses, pinentry-tty, pinentry-gtk-2, pinentry-qt, pinentry-gnome3
 gnupg_agent_pinentry: ''
@@ -213,6 +218,7 @@ gnupg_users: []
 #     mode: 'managed'
 #     default_key: '0x1234567890ABCDEF'
 #     agent_ssh: true
+#     ssh_auth_sock: true
 
 # Default config mode when user entry has no 'mode' key
 # Options: managed, initial, disabled

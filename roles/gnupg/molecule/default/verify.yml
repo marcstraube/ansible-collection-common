@@ -246,6 +246,28 @@
           - not root_ssh_env.stat.exists
         fail_msg: 'root should not have SSH environment file (agent_ssh: false)'
 
+    - name: Verify | Read socklessuser gpg-agent.conf content
+      ansible.builtin.slurp:
+        src: /home/socklessuser/.gnupg/gpg-agent.conf
+      register: socklessuser_agent_conf_content
+
+    - name: Verify | Assert socklessuser gpg-agent.conf has SSH support
+      ansible.builtin.assert:
+        that:
+          - "'enable-ssh-support' in socklessuser_agent_conf_content.content | b64decode"
+        fail_msg: 'socklessuser gpg-agent.conf missing SSH support (agent_ssh: true)'
+
+    - name: Verify | Check socklessuser SSH environment file
+      ansible.builtin.stat:
+        path: /home/socklessuser/.config/environment.d/50-gpg-ssh.conf
+      register: socklessuser_ssh_env
+
+    - name: Verify | Assert stale SSH environment file was removed
+      ansible.builtin.assert:
+        that:
+          - not socklessuser_ssh_env.stat.exists
+        fail_msg: 'socklessuser SSH environment file present (ssh_auth_sock: false)'
+
     #
     # Functional Tests
     #
