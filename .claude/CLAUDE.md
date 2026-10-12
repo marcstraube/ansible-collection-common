@@ -67,7 +67,7 @@ roles/<role_name>/
 
 ### Task Patterns
 
-- `main.yml` loads OS-specific vars with `include_vars` + `with_first_found` (4-level lookup)
+- `main.yml` loads OS-specific vars with `include_vars` + `with_first_found` (5-level lookup, minor version first)
 - `import_tasks` for phase files — `when: <role>_enabled | bool` **required** on every import
 - `include_tasks` for dynamic dispatch — `<role>_enabled | bool` + feature toggle
 - `include_vars` has no `when` — loading variables is harmless
