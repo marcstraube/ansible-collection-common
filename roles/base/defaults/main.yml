@@ -71,6 +71,18 @@ base_ntp_servers: []
 base_ntp_fallback_servers: []
 
 #
+# Login Message
+#
+
+# Text shown by pam_motd on interactive logins, written to /etc/motd.d/ansible.
+# Empty removes the file; /etc/motd and other drop-ins are never touched.
+# Example:
+#   base_motd_content: |
+#     This host is managed by Ansible. Manual changes to configuration files
+#     are overwritten on the next run.
+base_motd_content: ''
+
+#
 # Keyboard
 #
 

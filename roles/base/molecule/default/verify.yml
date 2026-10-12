@@ -112,6 +112,101 @@
       failed_when: base_timezone_check.stdout != 'Europe/Berlin'
 
     #
+    # Login Message Verification
+    #
+
+    - name: Verify | Stat motd drop-in
+      ansible.builtin.stat:
+        path: /etc/motd.d/ansible
+      register: base_motd_dropin
+
+    - name: Verify | Read motd drop-in
+      ansible.builtin.slurp:
+        src: /etc/motd.d/ansible
+      register: base_motd_dropin_content
+
+    - name: Verify | Check motd drop-in content and mode
+      ansible.builtin.assert:
+        that:
+          - base_motd_dropin.stat.mode == '0644'
+          - base_motd_dropin.stat.pw_name == 'root'
+          - (base_motd_dropin_content.content | b64decode) is search('managed by Ansible')
+        fail_msg: '/etc/motd.d/ansible has unexpected content or mode'
+
+    - name: Verify | Read /etc/motd fixture
+      ansible.builtin.slurp:
+        src: /etc/motd
+      register: base_motd_fixture_content
+
+    - name: Verify | Read foreign motd drop-in fixture
+      ansible.builtin.slurp:
+        src: /etc/motd.d/other
+      register: base_motd_other_content
+
+    - name: Verify | Check /etc/motd and foreign drop-in are untouched
+      ansible.builtin.assert:
+        that:
+          - (base_motd_fixture_content.content | b64decode) == "distribution motd fixture\n"
+          - (base_motd_other_content.content | b64decode) == "foreign drop-in fixture\n"
+        fail_msg: 'The role modified /etc/motd or a foreign drop-in'
+
+    - name: Verify | Run motd tasks with empty content  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: motd.yml
+      vars:
+        base_motd_content: ''
+
+    - name: Verify | Stat motd drop-in after removal
+      ansible.builtin.stat:
+        path: /etc/motd.d/ansible
+      register: base_motd_dropin_removed
+
+    - name: Verify | Stat motd directory after removal
+      ansible.builtin.stat:
+        path: /etc/motd.d
+      register: base_motd_dir_after_removal
+
+    - name: Verify | Check motd drop-in removed and directory kept
+      ansible.builtin.assert:
+        that:
+          - not base_motd_dropin_removed.stat.exists
+          - base_motd_dir_after_removal.stat.isdir
+        fail_msg: 'Empty base_motd_content did not remove only /etc/motd.d/ansible'
+
+    # Arch Linux and Debian ship no /etc/motd.d; prepare.yml created it for the
+    # fixtures. Remove it to prove the role creates the directory itself.
+    - name: Verify | Remove motd directory
+      ansible.builtin.file:
+        path: /etc/motd.d
+        state: absent
+
+    - name: Verify | Run motd tasks without existing directory  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: motd.yml
+      vars:
+        base_motd_content: "recreated\n"
+
+    - name: Verify | Stat motd directory after recreation
+      ansible.builtin.stat:
+        path: /etc/motd.d
+      register: base_motd_dir_recreated
+
+    - name: Verify | Read motd drop-in after recreation
+      ansible.builtin.slurp:
+        src: /etc/motd.d/ansible
+      register: base_motd_dropin_recreated
+
+    - name: Verify | Check motd directory and drop-in recreated
+      ansible.builtin.assert:
+        that:
+          - base_motd_dir_recreated.stat.isdir
+          - base_motd_dir_recreated.stat.mode == '0755'
+          - (base_motd_dropin_recreated.content | b64decode) == "recreated\n"
+        fail_msg: 'The role did not create /etc/motd.d and the drop-in'
+
+    #
     # Keyboard Verification
     #
 

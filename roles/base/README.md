@@ -62,6 +62,15 @@ overrides if needed.
 | `base_ntp_servers`          | `[]`    | NTP servers                                   |
 | `base_ntp_fallback_servers` | `[]`    | Fallback NTP servers                          |
 
+### Login Message
+
+| Variable            | Default | Description                                     |
+|---------------------|---------|-------------------------------------------------|
+| `base_motd_content` | `''`    | Text of `/etc/motd.d/ansible`; empty removes it |
+
+The message is shown by `pam_motd` on interactive SSH logins. `/etc/motd` and
+other files in `/etc/motd.d/` stay untouched.
+
 ### Keyboard
 
 | Variable            | Default        | Description          |
@@ -135,6 +144,7 @@ distributions, and to `systemd-boot` on Arch Linux (set via
 | `base:hostname`   | Hostname and machine-info                 |
 | `base:locale`     | Locale generation and configuration       |
 | `base:timezone`   | Timezone and NTP                          |
+| `base:motd`       | Login message in /etc/motd.d              |
 | `base:keyboard`   | Console and X11 keyboard                  |
 | `base:packages`   | Package installation/removal              |
 | `base:sysctl`     | Kernel parameter tuning                   |

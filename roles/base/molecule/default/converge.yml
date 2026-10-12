@@ -15,6 +15,10 @@
     base_timezone: 'Europe/Berlin'
     base_ntp_enabled: false
 
+    base_motd_content: |
+      This host is managed by Ansible. Manual changes are overwritten on the
+      next run.
+
     base_keymap: 'us'
     base_xkb_layout: 'us'
 
