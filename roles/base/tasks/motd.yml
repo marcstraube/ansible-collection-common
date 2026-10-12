@@ -1,0 +1,27 @@
+---
+# pam_motd prints /etc/motd and every file in /etc/motd.d/ on interactive
+# logins. The role owns a single drop-in and leaves the distribution's
+# /etc/motd and any other drop-ins alone.
+- name: Motd | Create motd drop-in directory
+  ansible.builtin.file:
+    path: '/etc/motd.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: base_motd_content | length > 0
+
+- name: Motd | Deploy login message
+  ansible.builtin.copy:
+    content: '{{ base_motd_content }}'
+    dest: '/etc/motd.d/ansible'
+    owner: root
+    group: root
+    mode: '0644'
+  when: base_motd_content | length > 0
+
+- name: Motd | Remove login message
+  ansible.builtin.file:
+    path: '/etc/motd.d/ansible'
+    state: absent
+  when: base_motd_content | length == 0

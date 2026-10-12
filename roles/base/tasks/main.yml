@@ -34,6 +34,13 @@
     - base
     - base:timezone
 
+- name: Main | Import motd tasks
+  ansible.builtin.import_tasks: motd.yml
+  when: base_enabled | bool
+  tags:
+    - base
+    - base:motd
+
 - name: Main | Import keyboard tasks
   ansible.builtin.import_tasks: keyboard.yml
   when: base_enabled | bool

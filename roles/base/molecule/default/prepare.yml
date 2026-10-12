@@ -46,6 +46,32 @@
       delay: 5
       when: __prepare_packages[ansible_facts["os_family"]] | length > 0
 
+    # Fixtures for the motd tasks: a distribution /etc/motd and a foreign
+    # drop-in. verify.yml asserts both survive the role unchanged.
+    - name: Prepare | Create /etc/motd fixture
+      ansible.builtin.copy:
+        content: "distribution motd fixture\n"
+        dest: /etc/motd
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Prepare | Create /etc/motd.d fixture directory
+      ansible.builtin.file:
+        path: /etc/motd.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Prepare | Create foreign motd drop-in fixture
+      ansible.builtin.copy:
+        content: "foreign drop-in fixture\n"
+        dest: /etc/motd.d/other
+        owner: root
+        group: root
+        mode: '0644'
+
     - name: Prepare | Replace curl-minimal with curl on RedHat (Docker image conflict)
       ansible.builtin.dnf:
         name:
