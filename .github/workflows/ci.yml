@@ -141,7 +141,7 @@ jobs:
   # Shared file changes (galaxy.yml, requirements.yml, plugins/,
   # meta/runtime.yml and this workflow) test all roles.
   # Vagrant roles (apparmor, auditd, hardening, hardware_tokens,
-  # networkmanager, wireguard) require VMs and are tested locally.
+  # networkmanager, storage, wireguard) require VMs and are tested locally.
   # On schedule / workflow_dispatch: full matrix (all roles × all platforms)
   # to catch upstream package drift.
   # =============================================================================

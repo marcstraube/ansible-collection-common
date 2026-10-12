@@ -1,0 +1,119 @@
+---
+#
+# btrfs Layout
+#
+# One btrfs filesystem; the top level stays unmounted and each subvolume
+# is mounted on its own path.
+#
+
+- name: Layout BTRFS | Create filesystem
+  community.general.filesystem:
+    fstype: btrfs
+    dev: '{{ __storage_fs_device }}'
+    opts: '-L {{ __storage_volume.name }}'
+  when: __storage_format | bool
+
+- name: Layout BTRFS | Probe filesystem
+  ansible.builtin.command:
+    cmd: 'blkid --probe --output export {{ __storage_fs_device }}'
+  register: __storage_blkid
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Layout BTRFS | Set filesystem facts
+  ansible.builtin.set_fact:
+    __storage_fs: >-
+      {{ dict(__storage_blkid.stdout_lines | select('search', '=')
+              | map('split', '=', 1)) }}
+
+- name: Layout BTRFS | Assert btrfs filesystem
+  ansible.builtin.assert:
+    that:
+      - __storage_fs.TYPE | default('') == 'btrfs'
+    fail_msg: >-
+      Volume '{{ __storage_volume.name }}': {{ __storage_fs_device }} holds
+      '{{ __storage_fs.TYPE | default('no filesystem') }}', not btrfs. Set
+      `format: true` (and `force: true`) to reformat it.
+    quiet: true
+
+# Subvolumes are created below the top level (subvolid=5), which is mounted
+# only for this step. Missing parent path components ('@' in '@/data')
+# become plain directories.
+- name: Layout BTRFS | Set top-level mount point
+  ansible.builtin.set_fact:
+    __storage_toplevel: '/run/storage-{{ __storage_volume.name }}'
+
+- name: Layout BTRFS | Create subvolumes
+  block:
+    - name: Layout BTRFS | Create top-level mount point
+      ansible.builtin.file:
+        path: '{{ __storage_toplevel }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    # A temporary mount without an fstab entry; ansible.posix.mount
+    # (state: ephemeral) would report a change on every run.
+    - name: Layout BTRFS | Mount top level  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: >-
+          mount -t btrfs -o subvolid=5
+          {{ __storage_fs_device }} {{ __storage_toplevel }}
+      changed_when: false
+      check_mode: false
+
+    - name: Layout BTRFS | Create missing subvolumes
+      ansible.builtin.command:
+        cmd: >-
+          btrfs subvolume create --parents
+          {{ __storage_toplevel }}/{{ item.name | regex_replace('^/', '') }}
+        creates: '{{ __storage_toplevel }}/{{ item.name | regex_replace("^/", "") }}'
+      loop: '{{ __storage_volume.subvolumes }}'
+      loop_control:
+        label: '{{ item.name }}'
+  always:
+    - name: Layout BTRFS | Unmount top level
+      ansible.builtin.command:
+        cmd: 'umount {{ __storage_toplevel }}'
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+- name: Layout BTRFS | Mount subvolumes
+  ansible.posix.mount:
+    path: '{{ item.path }}'
+    src: 'UUID={{ __storage_fs.UUID }}'
+    fstype: btrfs
+    opts: >-
+      {{ [__storage_volume.mount_options | default(''),
+          item.mount_options | default(''),
+          'subvol=/' ~ (item.name | regex_replace('^/', ''))]
+         | select | join(',') }}
+    state: mounted
+  loop: '{{ __storage_volume.subvolumes }}'
+  loop_control:
+    label: '{{ item.path }}'
+  notify: Reload storage systemd units
+
+- name: Layout BTRFS | Set mount point ownership
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: directory
+    owner: '{{ item.owner | default(omit) }}'
+    group: '{{ item.group | default(omit) }}'
+    mode: '{{ item.mode | default(omit) }}'
+  loop: '{{ __storage_volume.subvolumes }}'
+  loop_control:
+    label: '{{ item.path }}'
+
+- name: Layout BTRFS | Include snapper tasks
+  ansible.builtin.include_tasks:
+    file: snapper.yml
+  loop: >-
+    {{ __storage_volume.subvolumes
+       | selectattr('snapper', 'defined') | selectattr('snapper') | list }}
+  loop_control:
+    loop_var: __storage_subvolume
+    label: '{{ __storage_subvolume.path }}'

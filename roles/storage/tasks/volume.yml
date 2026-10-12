@@ -1,0 +1,190 @@
+---
+#
+# Volume Facts
+#
+# A volume set up by this role is found again by its GPT partition label,
+# so `format` only ever acts on a device the role has not provisioned yet.
+#
+
+- name: Volume | Set volume facts
+  ansible.builtin.set_fact:
+    __storage_format: '{{ __storage_volume.format | default(false) | bool }}'
+    __storage_force: '{{ __storage_volume.force | default(false) | bool }}'
+    __storage_luks: '{{ __storage_volume.luks.enabled | default(false) | bool }}'
+    __storage_partition: >-
+      /dev/disk/by-partlabel/{{ __storage_partlabel_prefix }}{{ __storage_volume.name }}
+    __storage_luks_name: >-
+      {{ __storage_volume.luks.name
+         | default(__storage_luks_name_prefix ~ __storage_volume.name) }}
+
+- name: Volume | Check device
+  ansible.builtin.stat:
+    path: '{{ __storage_volume.device }}'
+  register: __storage_device_stat
+
+- name: Volume | Assert device exists
+  ansible.builtin.assert:
+    that:
+      - __storage_device_stat.stat.exists
+    fail_msg: "Volume '{{ __storage_volume.name }}': device {{ __storage_volume.device }} not found."
+    quiet: true
+
+- name: Volume | Check provisioned partition
+  ansible.builtin.stat:
+    path: '{{ __storage_partition }}'
+  register: __storage_partition_stat
+
+#
+# Format Safety
+#
+
+- name: Volume | Prepare a new volume
+  when:
+    - __storage_format | bool
+    - not __storage_partition_stat.stat.exists
+  block:
+    - name: Volume | Read block devices on target
+      ansible.builtin.command:
+        cmd: >-
+          lsblk --json --list --paths
+          --output NAME,TYPE,FSTYPE,PTTYPE,MOUNTPOINTS
+          {{ __storage_volume.device }}
+      register: __storage_lsblk
+      changed_when: false
+      check_mode: false
+
+    - name: Volume | Parse block devices on target
+      ansible.builtin.set_fact:
+        __storage_blockdevices: '{{ (__storage_lsblk.stdout | from_json).blockdevices }}'
+
+    # Signatures: filesystem/LUKS/LVM types and partition tables. In use:
+    # opened children (LUKS, LVM, RAID) or anything mounted. lsblk reports
+    # "not mounted" as [] (util-linux >= 2.42) or [null] (older).
+    - name: Volume | Evaluate existing content
+      ansible.builtin.set_fact:
+        __storage_signatures: >-
+          {{ ((__storage_blockdevices | selectattr('fstype', 'string')
+               | map(attribute='fstype') | list)
+              + (__storage_blockdevices | selectattr('pttype', 'string')
+                 | map(attribute='pttype') | list))
+             | unique }}
+        __storage_in_use: >-
+          {{ ((__storage_blockdevices
+               | rejectattr('type', 'in', ['disk', 'loop', 'part'])
+               | map(attribute='name') | list)
+              + (__storage_blockdevices
+                 | rejectattr('mountpoints', 'in', [[], [none]])
+                 | map(attribute='name') | list))
+             | unique }}
+        __storage_partitions: >-
+          {{ __storage_blockdevices | selectattr('type', 'equalto', 'part')
+             | map(attribute='name') | list }}
+
+    - name: Volume | Refuse a device in use
+      ansible.builtin.assert:
+        that:
+          - __storage_in_use | length == 0
+        fail_msg: >-
+          Volume '{{ __storage_volume.name }}': {{ __storage_volume.device }}
+          is in use ({{ __storage_in_use | join(', ') }}). Unmount and close
+          it before formatting.
+        quiet: true
+
+    - name: Volume | Refuse a device with existing content
+      ansible.builtin.assert:
+        that:
+          - __storage_signatures | length == 0 or __storage_force | bool
+        fail_msg: >-
+          Volume '{{ __storage_volume.name }}': {{ __storage_volume.device }}
+          is not blank (found: {{ __storage_signatures | join(', ') }}). Set
+          `force: true` to wipe it, or `format: false` to use the existing
+          content.
+        quiet: true
+
+    - name: Volume | Wipe existing signatures
+      ansible.builtin.command:
+        cmd: 'wipefs --all {{ item }}'
+      loop: '{{ __storage_partitions + [__storage_volume.device] }}'
+      when:
+        - __storage_force | bool
+        - __storage_signatures | length > 0
+      changed_when: true
+
+    - name: Volume | Create GPT partition
+      community.general.parted:
+        device: '{{ __storage_volume.device }}'
+        label: gpt
+        number: 1
+        name: '{{ __storage_partlabel_prefix }}{{ __storage_volume.name }}'
+        part_start: '0%'
+        part_end: '100%'
+        state: present
+      register: __storage_parted
+
+    # The partition must exist before the next tasks; a handler would run too late.
+    - name: Volume | Wait for partition device links  # noqa: no-handler
+      ansible.builtin.command:
+        cmd: udevadm settle
+      changed_when: false
+      when: __storage_parted is changed
+
+    # The new partition may start where an earlier one did and still carry
+    # its signature; it is empty by definition here.
+    - name: Volume | Clear signatures on the new partition  # noqa: no-handler
+      ansible.builtin.command:
+        cmd: 'wipefs --all {{ __storage_partition }}'
+      when: __storage_parted is changed
+      changed_when: true
+
+- name: Volume | Set target device
+  ansible.builtin.set_fact:
+    __storage_target: >-
+      {{ __storage_partition
+         if (__storage_format | bool or __storage_partition_stat.stat.exists)
+         else __storage_volume.device }}
+
+- name: Volume | Check target device
+  ansible.builtin.stat:
+    path: '{{ __storage_target }}'
+  register: __storage_target_stat
+
+#
+# Encryption, Layout, Mounts
+#
+# In check mode the partition of a new volume does not exist yet; there is
+# nothing further to compare against.
+#
+
+- name: Volume | Set up volume content
+  when: __storage_target_stat.stat.exists
+  block:
+    - name: Volume | Include LUKS tasks
+      ansible.builtin.include_tasks:
+        file: luks.yml
+      when: __storage_luks | bool
+
+    - name: Volume | Set filesystem device
+      ansible.builtin.set_fact:
+        __storage_fs_device: >-
+          {{ ('/dev/mapper/' ~ __storage_luks_name)
+             if __storage_luks | bool else __storage_target }}
+
+    - name: Volume | Check filesystem device
+      ansible.builtin.stat:
+        path: '{{ __storage_fs_device }}'
+      register: __storage_fs_device_stat
+
+    - name: Volume | Include layout tasks
+      ansible.builtin.include_tasks:
+        file: 'layout_{{ __storage_volume.layout }}.yml'
+      when: __storage_fs_device_stat.stat.exists
+
+- name: Volume | Report skipped volume in check mode
+  ansible.builtin.debug:
+    msg: >-
+      Volume '{{ __storage_volume.name }}': the partition or the opened LUKS
+      container does not exist yet; filesystem and mounts are set up on a
+      real run.
+  when: >-
+    not __storage_target_stat.stat.exists
+    or not __storage_fs_device_stat.stat.exists | default(false)

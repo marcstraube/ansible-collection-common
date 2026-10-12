@@ -1,0 +1,32 @@
+---
+#
+# OS-Independent Variables
+#
+
+# GPT partition label prefix; a volume's partition is found again via
+# /dev/disk/by-partlabel/<prefix><name>
+__storage_partlabel_prefix: 'storage-'
+
+# Default LUKS mapper name and LVM volume group prefixes
+__storage_luks_name_prefix: 'crypt_'
+__storage_vg_name_prefix: 'vg_'
+
+# Keyfile directory; systemd-cryptsetup looks up <mapper name>.key here
+__storage_luks_keyfile_dir: '/etc/cryptsetup-keys.d'
+
+# Size of generated LUKS keyfiles in bytes
+__storage_luks_keyfile_size: 4096
+
+# Default crypttab options
+__storage_luks_options: 'luks'
+
+# Supported layouts
+__storage_layouts:
+  - 'btrfs'
+  - 'lvm'
+  - 'ext4'
+
+# snapper timers serving all snapper configs
+__storage_snapper_timers:
+  - 'snapper-timeline.timer'
+  - 'snapper-cleanup.timer'

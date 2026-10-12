@@ -1,0 +1,323 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __verify_disk_dir: '/var/lib/molecule-storage'
+    __verify_passphrase: 'molecule-test-passphrase'  # pragma: allowlist secret
+    __verify_btrfs: "{{ ansible_facts['os_family'] != 'RedHat' }}"
+    __verify_luks_volumes: "{{ (['crypt_mbtrfs'] if __verify_btrfs | bool else []) + ['crypt_mlvm'] }}"
+
+  tasks:
+    #
+    # Tools
+    #
+
+    - name: Verify | Gather package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Verify | Assert filesystem tools are installed
+      ansible.builtin.assert:
+        that:
+          - "'cryptsetup' in ansible_facts.packages"
+          - "'lvm2' in ansible_facts.packages"
+          - "'e2fsprogs' in ansible_facts.packages"
+          - "'ntfs-3g' in ansible_facts.packages"
+          - "'exfatprogs' in ansible_facts.packages"
+        quiet: true
+
+    - name: Verify | Assert btrfs tools and snapper are installed
+      ansible.builtin.assert:
+        that:
+          - "'btrfs-progs' in ansible_facts.packages"
+          - "'snapper' in ansible_facts.packages"
+        quiet: true
+      when: __verify_btrfs | bool
+
+    #
+    # LUKS
+    #
+
+    - name: Verify | Read crypttab
+      ansible.builtin.slurp:
+        src: /etc/crypttab
+      register: __verify_crypttab
+
+    - name: Verify | Assert crypttab entries use the keyfiles
+      ansible.builtin.assert:
+        that:
+          - (__verify_crypttab.content | b64decode)
+            is search('(?m)^' ~ item ~ '\s+UUID=\S+\s+/etc/cryptsetup-keys.d/' ~ item ~ '.key\s')
+        fail_msg: 'crypttab entry for {{ item }} missing or wrong'
+        quiet: true
+      loop: '{{ __verify_luks_volumes }}'
+
+    - name: Verify | Assert crypttab options
+      ansible.builtin.assert:
+        that:
+          - (__verify_crypttab.content | b64decode) is search('(?m)^crypt_mlvm\s.*\sluks,discard$')
+        quiet: true
+
+    - name: Verify | Check keyfiles
+      ansible.builtin.stat:
+        path: '/etc/cryptsetup-keys.d/{{ item }}.key'
+      register: __verify_keyfiles
+      loop: '{{ __verify_luks_volumes }}'
+
+    - name: Verify | Assert keyfiles are root-only
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.mode == '0400'
+          - item.stat.pw_name == 'root'
+          - item.stat.size == 4096
+        quiet: true
+      loop: '{{ __verify_keyfiles.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Verify | Read LUKS headers
+      ansible.builtin.command:
+        cmd: 'cryptsetup luksDump /dev/disk/by-partlabel/storage-{{ item | regex_replace("^crypt_", "") }}'
+      register: __verify_luks_dump
+      loop: '{{ __verify_luks_volumes }}'
+      changed_when: false
+
+    - name: Verify | Assert LUKS2 with passphrase and keyfile slots
+      ansible.builtin.assert:
+        that:
+          - item.stdout is search('Version:\s+2')
+          - item.stdout | regex_findall('(?m)^\s+\d+: luks2$') | length == 2
+        fail_msg: '{{ item.item }}: expected LUKS2 with exactly two keyslots'
+        quiet: true
+      loop: '{{ __verify_luks_dump.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Verify | Test that the passphrase still unlocks
+      ansible.builtin.command:
+        cmd: >-
+          cryptsetup open --test-passphrase --key-file -
+          /dev/disk/by-partlabel/storage-{{ item | regex_replace("^crypt_", "") }}
+        stdin: '{{ __verify_passphrase }}'
+        stdin_add_newline: false
+      loop: '{{ __verify_luks_volumes }}'
+      changed_when: false
+      no_log: true
+
+    #
+    # btrfs
+    #
+
+    - name: Verify | btrfs layout
+      when: __verify_btrfs | bool
+      block:
+        - name: Verify | Read btrfs mounts
+          ansible.builtin.command:
+            cmd: 'findmnt --noheadings --output FSTYPE,OPTIONS {{ item }}'
+          register: __verify_btrfs_mounts
+          loop:
+            - '/mnt/molecule/data'
+            - '/mnt/molecule/cache'
+          changed_when: false
+
+        - name: Verify | Assert subvolumes are mounted with their options
+          ansible.builtin.assert:
+            that:
+              - __verify_btrfs_mounts.results[0].stdout is search('^btrfs\s')
+              - __verify_btrfs_mounts.results[0].stdout is search('subvol=/@/data')
+              - __verify_btrfs_mounts.results[0].stdout is search('compress-force=zstd:3')
+              - __verify_btrfs_mounts.results[1].stdout is search('subvol=/@/cache')
+              - __verify_btrfs_mounts.results[1].stdout is search('noexec')
+            quiet: true
+
+        - name: Verify | Check data mount point
+          ansible.builtin.stat:
+            path: /mnt/molecule/data
+          register: __verify_data_dir
+
+        - name: Verify | Assert data mount point ownership
+          ansible.builtin.assert:
+            that:
+              - __verify_data_dir.stat.pw_name == 'vagrant'
+              - __verify_data_dir.stat.gr_name == 'vagrant'
+              - __verify_data_dir.stat.mode == '0750'
+            quiet: true
+
+        - name: Verify | Read snapper config
+          ansible.builtin.slurp:
+            src: /etc/snapper/configs/mnt_molecule_data
+          register: __verify_snapper_config
+
+        - name: Verify | Assert snapper settings
+          ansible.builtin.assert:
+            that:
+              - (__verify_snapper_config.content | b64decode) is search('(?m)^SUBVOLUME="/mnt/molecule/data"$')
+              - (__verify_snapper_config.content | b64decode) is search('(?m)^TIMELINE_LIMIT_DAILY="14"$')
+              - (__verify_snapper_config.content | b64decode) is search('(?m)^TIMELINE_LIMIT_HOURLY="5"$')
+            quiet: true
+
+        - name: Verify | Check snapper timers
+          ansible.builtin.systemd_service:
+            name: '{{ item }}'
+          register: __verify_snapper_timers
+          loop:
+            - snapper-timeline.timer
+            - snapper-cleanup.timer
+
+        - name: Verify | Assert snapper timers are enabled
+          ansible.builtin.assert:
+            that:
+              - item.status.UnitFileState == 'enabled'
+              - item.status.ActiveState == 'active'
+            quiet: true
+          loop: '{{ __verify_snapper_timers.results }}'
+          loop_control:
+            label: '{{ item.item }}'
+
+    #
+    # LVM
+    #
+
+    - name: Verify | Read LVM mounts
+      ansible.builtin.command:
+        cmd: 'findmnt --noheadings --output SOURCE,FSTYPE,OPTIONS {{ item }}'
+      register: __verify_lvm_mounts
+      loop:
+        - '/mnt/molecule/restic'
+        - '/mnt/molecule/archive'
+      changed_when: false
+
+    - name: Verify | Assert logical volumes are mounted ext4
+      ansible.builtin.assert:
+        that:
+          - item.stdout is search('^/dev/mapper/vg_mlvm-')
+          - item.stdout is search('\sext4\s')
+          - item.stdout is search('nosuid')
+        quiet: true
+      loop: '{{ __verify_lvm_mounts.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Verify | Check restic mount point
+      ansible.builtin.stat:
+        path: /mnt/molecule/restic
+      register: __verify_restic_dir
+
+    - name: Verify | Assert restic mount point permissions
+      ansible.builtin.assert:
+        that:
+          - __verify_restic_dir.stat.mode == '0700'
+        quiet: true
+
+    #
+    # ext4 with force
+    #
+
+    - name: Verify | Read ext4 mount
+      ansible.builtin.command:
+        cmd: 'findmnt --noheadings --output SOURCE,FSTYPE /mnt/molecule/scratch'
+      register: __verify_ext4_mount
+      changed_when: false
+
+    - name: Verify | Assert forced volume was repartitioned and mounted
+      ansible.builtin.assert:
+        that:
+          - __verify_ext4_mount.stdout is search('\sext4$')
+          - __verify_ext4_mount.stdout is search('p1\s')
+        quiet: true
+
+    #
+    # Persistence
+    #
+
+    - name: Verify | Read fstab
+      ansible.builtin.slurp:
+        src: /etc/fstab
+      register: __verify_fstab
+
+    - name: Verify | Assert fstab entries by UUID
+      ansible.builtin.assert:
+        that:
+          - (__verify_fstab.content | b64decode) is search('(?m)^UUID=\S+\s+' ~ item ~ '\s')
+        quiet: true
+      loop: >-
+        {{ (['/mnt/molecule/data', '/mnt/molecule/cache'] if __verify_btrfs | bool else [])
+           + ['/mnt/molecule/restic', '/mnt/molecule/archive', '/mnt/molecule/scratch'] }}
+
+    #
+    # Format Safety
+    #
+    # A device with content and `format: true` but no `force` must be
+    # refused and left untouched.
+    #
+
+    - name: Verify | Look up refusal test disk
+      ansible.builtin.command:
+        cmd: 'losetup --noheadings --output NAME --associated {{ __verify_disk_dir }}/refuse.img'
+      register: __verify_refuse_disk
+      changed_when: false
+
+    - name: Verify | Run role against a non-blank device
+      block:
+        - name: Verify | Include storage role with a non-blank device  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            storage_volumes:
+              - name: 'mrefuse'
+                device: '{{ __verify_refuse_disk.stdout }}'
+                format: true
+                layout: 'ext4'
+                path: '/mnt/molecule/refuse'
+
+        - name: Verify | Fail when the role did not refuse
+          ansible.builtin.fail:
+            msg: 'The role formatted a non-blank device without force.'
+      rescue:
+        - name: Verify | Assert refusal reason
+          ansible.builtin.assert:
+            that:
+              - ansible_failed_result.msg | default('') is search('is not blank')
+            quiet: true
+
+    - name: Verify | Run role with btrfs on EL
+      when: not __verify_btrfs | bool
+      block:
+        - name: Verify | Include storage role with a btrfs volume  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            storage_volumes:
+              - name: 'mbtrfsel'
+                device: '{{ __verify_refuse_disk.stdout }}'
+                layout: 'btrfs'
+                subvolumes:
+                  - name: '@/data'
+                    path: '/mnt/molecule/btrfsel'
+
+        - name: Verify | Fail when btrfs was not rejected on EL
+          ansible.builtin.fail:
+            msg: 'The role accepted a btrfs volume on EL.'
+      rescue:
+        - name: Verify | Assert btrfs rejection reason
+          ansible.builtin.assert:
+            that:
+              - ansible_failed_result.results | default([])
+                | selectattr('msg', 'defined') | map(attribute='msg') | join(' ')
+                is search('does not ship btrfs')
+            quiet: true
+
+    - name: Verify | Probe refusal test disk
+      ansible.builtin.command:
+        cmd: 'blkid --probe --output value --match-tag TYPE {{ __verify_refuse_disk.stdout }}'
+      register: __verify_refuse_type
+      changed_when: false
+
+    - name: Verify | Assert refusal test disk is untouched
+      ansible.builtin.assert:
+        that:
+          - __verify_refuse_type.stdout == 'ext4'
+        quiet: true

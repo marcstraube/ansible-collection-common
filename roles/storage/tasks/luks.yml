@@ -1,0 +1,119 @@
+---
+#
+# LUKS2 Container
+#
+# The passphrase stays in its keyslot as the recovery key. The role adds a
+# random keyfile in a keyslot of its own, so the passphrase is never
+# written to disk; crypttab unlocks the volume with the keyfile at boot.
+#
+
+- name: LUKS | Set keyfile path
+  ansible.builtin.set_fact:
+    __storage_keyfile: '{{ __storage_luks_keyfile_dir }}/{{ __storage_luks_name }}.key'
+
+- name: LUKS | Check for LUKS header
+  ansible.builtin.command:
+    cmd: 'cryptsetup isLuks {{ __storage_target }}'
+  register: __storage_is_luks
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: LUKS | Assert existing volume is LUKS
+  ansible.builtin.assert:
+    that:
+      - __storage_is_luks.rc == 0
+    fail_msg: >-
+      Volume '{{ __storage_volume.name }}': {{ __storage_target }} has no
+      LUKS header. Set `format: true` to create one.
+    quiet: true
+  when: not __storage_format | bool
+
+- name: LUKS | Create LUKS2 container
+  community.crypto.luks_device:
+    device: '{{ __storage_target }}'
+    state: present
+    type: luks2
+    label: '{{ __storage_luks_name }}'
+    passphrase: '{{ __storage_volume.luks.passphrase }}'
+  when:
+    - __storage_format | bool
+    - __storage_is_luks.rc != 0
+  no_log: true
+
+- name: LUKS | Create keyfile directory
+  ansible.builtin.file:
+    path: '{{ __storage_luks_keyfile_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: LUKS | Generate keyfile
+  ansible.builtin.shell:
+    cmd: >-
+      umask 077 &&
+      head -c {{ __storage_luks_keyfile_size }} /dev/urandom
+      > {{ __storage_keyfile }}
+    creates: '{{ __storage_keyfile }}'
+
+- name: LUKS | Set keyfile permissions
+  ansible.builtin.file:
+    path: '{{ __storage_keyfile }}'
+    owner: root
+    group: root
+    mode: '0400'
+  when: not ansible_check_mode
+
+- name: LUKS | Test keyfile against the container
+  ansible.builtin.command:
+    cmd: >-
+      cryptsetup open --test-passphrase
+      --key-file {{ __storage_keyfile }} {{ __storage_target }}
+  register: __storage_keyfile_test
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: LUKS | Assert passphrase for adding the keyfile
+  ansible.builtin.assert:
+    that:
+      - __storage_volume.luks.passphrase | default('') | length > 0
+    fail_msg: >-
+      Volume '{{ __storage_volume.name }}': the keyfile is not enrolled yet.
+      Set `luks.passphrase` once so the role can add it in its own keyslot.
+    quiet: true
+  when: __storage_keyfile_test.rc | default(0) != 0
+  no_log: true
+
+- name: LUKS | Add keyfile in its own keyslot
+  community.crypto.luks_device:
+    device: '{{ __storage_target }}'
+    passphrase: '{{ __storage_volume.luks.passphrase }}'
+    new_keyfile: '{{ __storage_keyfile }}'
+    state: present
+  when: __storage_keyfile_test.rc | default(0) != 0
+  no_log: true
+
+- name: LUKS | Read container UUID
+  ansible.builtin.command:
+    cmd: 'cryptsetup luksUUID {{ __storage_target }}'
+  register: __storage_luks_uuid
+  changed_when: false
+  check_mode: false
+
+- name: LUKS | Configure crypttab entry
+  community.general.crypttab:
+    name: '{{ __storage_luks_name }}'
+    backing_device: 'UUID={{ __storage_luks_uuid.stdout }}'
+    password: '{{ __storage_keyfile }}'
+    opts: '{{ __storage_volume.luks.options | default(__storage_luks_options) }}'
+    state: present
+  notify: Reload storage systemd units
+
+- name: LUKS | Open container
+  community.crypto.luks_device:
+    device: '{{ __storage_target }}'
+    state: opened
+    name: '{{ __storage_luks_name }}'
+    keyfile: '{{ __storage_keyfile }}'

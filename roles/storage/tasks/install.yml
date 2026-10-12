@@ -1,0 +1,55 @@
+---
+#
+# Volume Tools
+#
+# Installed when at least one volume needs them (see validate.yml).
+#
+
+- name: Install | Volume tools
+  ansible.builtin.package:
+    name: >-
+      {{ (([__storage_parted_package] if __storage_needs_parted | bool else [])
+          + ([__storage_cryptsetup_package] if __storage_needs_luks | bool else [])
+          + ([__storage_btrfs_package] if __storage_needs_btrfs | bool else [])
+          + ([__storage_lvm_package] if __storage_needs_lvm | bool else [])
+          + ([__storage_ext4_package] if __storage_needs_ext4 | bool else [])
+          + ([__storage_snapper_package] if __storage_needs_snapper | bool else []))
+         | select | list }}
+    state: present
+  when: storage_volumes | length > 0
+  retries: 3
+  delay: 5
+
+#
+# Filesystem Tools
+#
+
+- name: Install | NTFS tools
+  ansible.builtin.package:
+    name: '{{ __storage_ntfs_package }}'
+    state: present
+  when:
+    - storage_ntfs_enabled | bool
+    - __storage_ntfs_package | default('') | length > 0
+  retries: 3
+  delay: 5
+
+- name: Install | exFAT tools
+  ansible.builtin.package:
+    name: '{{ __storage_exfat_package }}'
+    state: present
+  when:
+    - storage_exfat_enabled | bool
+    - __storage_exfat_package | default('') | length > 0
+  retries: 3
+  delay: 5
+
+- name: Install | LVM tools
+  ansible.builtin.package:
+    name: '{{ __storage_lvm_package }}'
+    state: present
+  when:
+    - storage_lvm_enabled | bool
+    - __storage_lvm_package | default('') | length > 0
+  retries: 3
+  delay: 5

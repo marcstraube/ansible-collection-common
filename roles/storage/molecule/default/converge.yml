@@ -1,0 +1,95 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __converge_disk_dir: '/var/lib/molecule-storage'
+    __converge_passphrase: 'molecule-test-passphrase'  # pragma: allowlist secret
+
+    storage_ntfs_enabled: true
+    storage_exfat_enabled: true
+    storage_lvm_enabled: true
+
+  pre_tasks:
+    - name: Converge | Look up test disks
+      ansible.builtin.command:
+        cmd: >-
+          losetup --noheadings --output NAME
+          --associated {{ __converge_disk_dir }}/{{ item }}.img
+      register: __converge_loops
+      loop:
+        - 'luks-btrfs'
+        - 'luks-lvm'
+        - 'ext4-force'
+      changed_when: false
+      check_mode: false
+
+    - name: Converge | Map test disks
+      ansible.builtin.set_fact:
+        __converge_disks: >-
+          {{ dict(__converge_loops.results | map(attribute='item')
+                  | zip(__converge_loops.results | map(attribute='stdout'))) }}
+
+    # btrfs is not available on EL; the other layouts run everywhere.
+    - name: Converge | Define test volumes
+      ansible.builtin.set_fact:
+        storage_volumes: >-
+          {{ ([__converge_btrfs_volume]
+              if ansible_facts['os_family'] != 'RedHat' else [])
+             + [__converge_lvm_volume, __converge_ext4_volume] }}
+      vars:
+        __converge_btrfs_volume:
+          name: 'mbtrfs'
+          device: '{{ __converge_disks["luks-btrfs"] }}'
+          format: true
+          luks:
+            enabled: true
+            passphrase: '{{ __converge_passphrase }}'
+          layout: 'btrfs'
+          mount_options: 'compress-force=zstd:3,nodev,nosuid'
+          subvolumes:
+            - name: '@/data'
+              path: '/mnt/molecule/data'
+              owner: 'vagrant'
+              group: 'vagrant'
+              mode: '0750'
+              snapper: true
+              snapper_settings:
+                TIMELINE_LIMIT_DAILY: '14'
+            - name: '@/cache'
+              path: '/mnt/molecule/cache'
+              mount_options: 'noexec'
+        __converge_lvm_volume:
+          name: 'mlvm'
+          device: '{{ __converge_disks["luks-lvm"] }}'
+          format: true
+          luks:
+            enabled: true
+            passphrase: '{{ __converge_passphrase }}'
+            options: 'luks,discard'
+          layout: 'lvm'
+          mount_options: 'nodev,nosuid'
+          logical_volumes:
+            - name: 'restic'
+              size: '300m'
+              path: '/mnt/molecule/restic'
+              owner: 'root'
+              group: 'root'
+              mode: '0700'
+            - name: 'archive'
+              size: '100%FREE'
+              path: '/mnt/molecule/archive'
+        __converge_ext4_volume:
+          name: 'mext4'
+          device: '{{ __converge_disks["ext4-force"] }}'
+          format: true
+          force: true
+          layout: 'ext4'
+          path: '/mnt/molecule/scratch'
+          mode: '1777'
+
+  tasks:
+    - name: Converge | Include storage role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

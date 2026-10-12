@@ -1,0 +1,101 @@
+---
+#
+# LVM Layout
+#
+# One volume group on the volume; each logical volume carries an ext4
+# filesystem with its own mount path.
+#
+
+- name: Layout LVM | Set volume group name
+  ansible.builtin.set_fact:
+    __storage_vg_name: >-
+      {{ __storage_volume.vg_name
+         | default(__storage_vg_name_prefix ~ __storage_volume.name) }}
+
+- name: Layout LVM | Check volume group
+  ansible.builtin.command:
+    cmd: 'vgs --noheadings {{ __storage_vg_name }}'
+  register: __storage_vgs
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Layout LVM | Assert existing volume group
+  ansible.builtin.assert:
+    that:
+      - __storage_vgs.rc == 0
+    fail_msg: >-
+      Volume '{{ __storage_volume.name }}': volume group
+      {{ __storage_vg_name }} not found. Set `vg_name` to the existing
+      volume group, or `format: true` to create one.
+    quiet: true
+  when: not __storage_format | bool
+
+- name: Layout LVM | Create volume group
+  community.general.lvg:
+    vg: '{{ __storage_vg_name }}'
+    pvs: '{{ __storage_fs_device }}'
+    state: present
+  when: __storage_format | bool
+
+# Logical volumes grow when their size is raised; they never shrink.
+- name: Layout LVM | Create logical volumes
+  community.general.lvol:
+    vg: '{{ __storage_vg_name }}'
+    lv: '{{ item.name }}'
+    size: '{{ item.size }}'
+    resizefs: true
+    shrink: false
+    state: present
+  loop: '{{ __storage_volume.logical_volumes }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+# A logical volume without a filesystem was just created by the role;
+# one with another filesystem makes the module fail instead of formatting.
+- name: Layout LVM | Create filesystems
+  community.general.filesystem:
+    fstype: ext4
+    dev: '/dev/{{ __storage_vg_name }}/{{ item.name }}'
+    opts: '-L {{ item.name }}'
+  loop: '{{ __storage_volume.logical_volumes }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Layout LVM | Read filesystem UUIDs
+  ansible.builtin.command:
+    cmd: >-
+      blkid --probe --output value --match-tag UUID
+      /dev/{{ __storage_vg_name }}/{{ item.name }}
+  register: __storage_lv_uuids
+  loop: '{{ __storage_volume.logical_volumes }}'
+  loop_control:
+    label: '{{ item.name }}'
+  changed_when: false
+  check_mode: false
+
+- name: Layout LVM | Mount logical volumes
+  ansible.posix.mount:
+    path: '{{ item.item.path }}'
+    src: 'UUID={{ item.stdout }}'
+    fstype: ext4
+    opts: >-
+      {{ [__storage_volume.mount_options | default(''),
+          item.item.mount_options | default('')]
+         | select | join(',') | default('defaults', true) }}
+    state: mounted
+  loop: '{{ __storage_lv_uuids.results }}'
+  loop_control:
+    label: '{{ item.item.path }}'
+  notify: Reload storage systemd units
+
+- name: Layout LVM | Set mount point ownership
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: directory
+    owner: '{{ item.owner | default(omit) }}'
+    group: '{{ item.group | default(omit) }}'
+    mode: '{{ item.mode | default(omit) }}'
+  loop: '{{ __storage_volume.logical_volumes }}'
+  loop_control:
+    label: '{{ item.path }}'

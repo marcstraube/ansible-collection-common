@@ -37,6 +37,7 @@ user management, editors, and more.
 | **fonts**             | System and Nerd Fonts                                     |
 | **energy_management** | Power management (logind, PPD/TLP/tuned)                  |
 | **graphics**          | GPU drivers (Intel, NVIDIA, AMD)                          |
+| **storage**           | Data disks (LUKS2, btrfs/snapper, LVM, ext4), fs tools    |
 
 ### Package Management
 

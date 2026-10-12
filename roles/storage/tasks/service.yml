@@ -1,0 +1,16 @@
+---
+#
+# Snapper Timers
+#
+# The timers ship with snapper and serve every snapper config on the host,
+# including ones this role does not manage. The role makes sure they run
+# when it sets up snapper configs and leaves them alone otherwise.
+#
+
+- name: Service | Enable snapper timers
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    enabled: true
+    state: started
+  loop: '{{ __storage_snapper_timers }}'
+  when: __storage_needs_snapper | default(false) | bool

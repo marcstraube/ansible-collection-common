@@ -1,0 +1,38 @@
+---
+#
+# Snapper Config
+#
+# One snapper config per subvolume, named after its mount path unless set.
+#
+
+- name: Snapper | Set config facts
+  ansible.builtin.set_fact:
+    __storage_snapper_config: >-
+      {{ __storage_subvolume.snapper_config
+         | default(__storage_subvolume.path | regex_replace('^/', '')
+                   | regex_replace('/', '_')) }}
+
+- name: Snapper | Create config
+  ansible.builtin.command:
+    cmd: >-
+      snapper --config {{ __storage_snapper_config }}
+      create-config {{ __storage_subvolume.path }}
+    creates: '/etc/snapper/configs/{{ __storage_snapper_config }}'
+
+- name: Snapper | Check config
+  ansible.builtin.stat:
+    path: '/etc/snapper/configs/{{ __storage_snapper_config }}'
+  register: __storage_snapper_config_stat
+
+- name: Snapper | Apply config settings
+  ansible.builtin.lineinfile:
+    path: '/etc/snapper/configs/{{ __storage_snapper_config }}'
+    regexp: '^{{ item.key }}='
+    line: '{{ item.key }}="{{ item.value }}"'
+  loop: >-
+    {{ storage_snapper_settings
+       | combine(__storage_subvolume.snapper_settings | default({}))
+       | dict2items }}
+  loop_control:
+    label: '{{ item.key }}'
+  when: __storage_snapper_config_stat.stat.exists

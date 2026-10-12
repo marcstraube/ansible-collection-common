@@ -1,0 +1,54 @@
+---
+#
+# ext4 Layout
+#
+# A single ext4 filesystem on the volume with one mount path.
+#
+
+- name: Layout Ext4 | Create filesystem
+  community.general.filesystem:
+    fstype: ext4
+    dev: '{{ __storage_fs_device }}'
+    opts: '-L {{ __storage_volume.name }}'
+  when: __storage_format | bool
+
+- name: Layout Ext4 | Probe filesystem
+  ansible.builtin.command:
+    cmd: 'blkid --probe --output export {{ __storage_fs_device }}'
+  register: __storage_blkid
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Layout Ext4 | Set filesystem facts
+  ansible.builtin.set_fact:
+    __storage_fs: >-
+      {{ dict(__storage_blkid.stdout_lines | select('search', '=')
+              | map('split', '=', 1)) }}
+
+- name: Layout Ext4 | Assert ext4 filesystem
+  ansible.builtin.assert:
+    that:
+      - __storage_fs.TYPE | default('') == 'ext4'
+    fail_msg: >-
+      Volume '{{ __storage_volume.name }}': {{ __storage_fs_device }} holds
+      '{{ __storage_fs.TYPE | default('no filesystem') }}', not ext4. Set
+      `format: true` (and `force: true`) to reformat it.
+    quiet: true
+
+- name: Layout Ext4 | Mount filesystem
+  ansible.posix.mount:
+    path: '{{ __storage_volume.path }}'
+    src: 'UUID={{ __storage_fs.UUID }}'
+    fstype: ext4
+    opts: '{{ __storage_volume.mount_options | default("defaults", true) }}'
+    state: mounted
+  notify: Reload storage systemd units
+
+- name: Layout Ext4 | Set mount point ownership
+  ansible.builtin.file:
+    path: '{{ __storage_volume.path }}'
+    state: directory
+    owner: '{{ __storage_volume.owner | default(omit) }}'
+    group: '{{ __storage_volume.group | default(omit) }}'
+    mode: '{{ __storage_volume.mode | default(omit) }}'

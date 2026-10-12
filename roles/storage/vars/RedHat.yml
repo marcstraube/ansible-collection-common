@@ -1,0 +1,17 @@
+---
+#
+# RedHat-Specific Variables
+#
+
+# Package names (ntfs-3g from EPEL)
+__storage_parted_package: 'parted'
+__storage_cryptsetup_package: 'cryptsetup'
+__storage_btrfs_package: ''
+__storage_lvm_package: 'lvm2'
+__storage_ext4_package: 'e2fsprogs'
+__storage_snapper_package: ''
+__storage_ntfs_package: 'ntfs-3g'
+__storage_exfat_package: 'exfatprogs'
+
+# The EL kernel does not ship btrfs
+__storage_btrfs_supported: false
