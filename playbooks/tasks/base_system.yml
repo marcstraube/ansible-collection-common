@@ -47,6 +47,15 @@
     - users
   when: users_enabled | default(true) | bool
 
+# After users: mount points may be owned by accounts the users role creates.
+- name: Base System | Import storage role
+  ansible.builtin.import_role:
+    name: marcstraube.common.storage
+  tags:
+    - base-system
+    - storage
+  when: storage_enabled | default(true) | bool
+
 - name: Base System | Import sudo role
   ansible.builtin.import_role:
     name: marcstraube.common.sudo

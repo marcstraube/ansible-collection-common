@@ -1,0 +1,126 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __prepare_disk_dir: '/var/lib/molecule-storage'
+    # Loop-backed test disks; `preformat` puts an ext4 signature on the disk
+    # to exercise the format safety checks.
+    __prepare_disks:
+      - name: 'luks-btrfs'
+        preformat: false
+      - name: 'luks-lvm'
+        preformat: false
+      - name: 'ext4-force'
+        preformat: true
+      - name: 'refuse'
+        preformat: true
+
+  tasks:
+    #
+    # Package Cache
+    #
+
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    # A kernel upgrade removes the modules of the running kernel; loop,
+    # dm-crypt and btrfs are loaded on demand, so boot the new kernel.
+    - name: Prepare | Check modules of the running kernel
+      ansible.builtin.stat:
+        path: '/usr/lib/modules/{{ ansible_facts["kernel"] }}'
+      register: __prepare_kernel_modules
+
+    - name: Prepare | Reboot into the upgraded kernel
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+      when: not __prepare_kernel_modules.stat.exists
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Enable EPEL (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Install mkfs for pre-formatted test disks
+      ansible.builtin.package:
+        name: e2fsprogs
+        state: present
+      retries: 3
+      delay: 5
+
+    #
+    # Test Disks
+    #
+
+    - name: Prepare | Create test disk directory
+      ansible.builtin.file:
+        path: '{{ __prepare_disk_dir }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Prepare | Create sparse disk images
+      ansible.builtin.command:
+        cmd: 'truncate --size 1G {{ __prepare_disk_dir }}/{{ item.name }}.img'
+        creates: '{{ __prepare_disk_dir }}/{{ item.name }}.img'
+      loop: '{{ __prepare_disks }}'
+      loop_control:
+        label: '{{ item.name }}'
+
+    - name: Prepare | Check loop devices
+      ansible.builtin.command:
+        cmd: >-
+          losetup --noheadings --output NAME
+          --associated {{ __prepare_disk_dir }}/{{ item.name }}.img
+      register: __prepare_loop_check
+      loop: '{{ __prepare_disks }}'
+      loop_control:
+        label: '{{ item.name }}'
+      changed_when: false
+
+    - name: Prepare | Attach loop devices with partition scanning
+      ansible.builtin.command:
+        cmd: >-
+          losetup --find --partscan --show
+          {{ __prepare_disk_dir }}/{{ item.item.name }}.img
+      register: __prepare_loop_attach
+      loop: '{{ __prepare_loop_check.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'
+      when: item.stdout | length == 0
+      changed_when: true
+
+    - name: Prepare | Put an ext4 signature on pre-formatted disks
+      community.general.filesystem:
+        fstype: ext4
+        dev: '{{ item.stdout }}'
+      loop: '{{ __prepare_loop_attach.results }}'
+      loop_control:
+        label: '{{ item.item.item.name }}'
+      when:
+        - item is changed
+        - item.item.item.preformat | bool

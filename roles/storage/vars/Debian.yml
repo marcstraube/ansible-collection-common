@@ -1,0 +1,17 @@
+---
+#
+# Debian-Specific Variables
+#
+
+# Package names
+__storage_parted_package: 'parted'
+__storage_cryptsetup_package: 'cryptsetup'
+__storage_btrfs_package: 'btrfs-progs'
+__storage_lvm_package: 'lvm2'
+__storage_ext4_package: 'e2fsprogs'
+__storage_snapper_package: 'snapper'
+__storage_ntfs_package: 'ntfs-3g'
+__storage_exfat_package: 'exfatprogs'
+
+# The kernel supports btrfs
+__storage_btrfs_supported: true

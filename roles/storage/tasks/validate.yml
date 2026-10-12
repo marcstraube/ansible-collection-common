@@ -1,0 +1,132 @@
+---
+#
+# Volume Definitions
+#
+# Fail before touching any disk when a volume definition is incomplete.
+#
+
+- name: Validate | Assert volume names are unique
+  ansible.builtin.assert:
+    that:
+      - storage_volumes | map(attribute='name') | list | unique | length
+        == storage_volumes | length
+    fail_msg: 'storage_volumes: volume names must be unique.'
+    quiet: true
+
+- name: Validate | Assert volume definitions
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name is match('^[a-z0-9_-]+$')
+      - item.device is defined
+      - item.device is match('^/dev/')
+      - item.layout | default('') in __storage_layouts
+      - not (item.force | default(false) | bool)
+        or (item.format | default(false) | bool)
+    fail_msg: >-
+      storage_volumes entry '{{ item.name | default('?') }}' is invalid:
+      it needs a name ([a-z0-9_-]+), a device under /dev/, a layout
+      ({{ __storage_layouts | join(', ') }}), and `force` only together
+      with `format`.
+    quiet: true
+  loop: '{{ storage_volumes }}'
+  loop_control:
+    label: '{{ item.name | default("?") }}'
+
+- name: Validate | Assert btrfs is supported on this platform
+  ansible.builtin.assert:
+    that:
+      - __storage_btrfs_supported | bool
+    fail_msg: >-
+      Volume '{{ item.name }}' uses the btrfs layout, but the
+      {{ ansible_facts['os_family'] }} kernel does not ship btrfs.
+      Use the lvm or ext4 layout on this platform.
+    quiet: true
+  loop: '{{ storage_volumes | selectattr("layout", "equalto", "btrfs") | list }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Validate | Assert btrfs subvolumes
+  ansible.builtin.assert:
+    that:
+      - item.subvolumes | default([]) | length > 0
+      - item.subvolumes | selectattr('name', 'undefined') | list | length == 0
+      - item.subvolumes | selectattr('path', 'undefined') | list | length == 0
+    fail_msg: >-
+      Volume '{{ item.name }}' (btrfs) needs `subvolumes`, each with a
+      name and a path.
+    quiet: true
+  loop: '{{ storage_volumes | selectattr("layout", "equalto", "btrfs") | list }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Validate | Assert LVM logical volumes
+  ansible.builtin.assert:
+    that:
+      - item.logical_volumes | default([]) | length > 0
+      - item.logical_volumes | selectattr('name', 'undefined') | list | length == 0
+      - item.logical_volumes | selectattr('size', 'undefined') | list | length == 0
+      - item.logical_volumes | selectattr('path', 'undefined') | list | length == 0
+    fail_msg: >-
+      Volume '{{ item.name }}' (lvm) needs `logical_volumes`, each with a
+      name, a size and a path.
+    quiet: true
+  loop: '{{ storage_volumes | selectattr("layout", "equalto", "lvm") | list }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Validate | Assert ext4 mount path
+  ansible.builtin.assert:
+    that:
+      - item.path is defined
+    fail_msg: "Volume '{{ item.name }}' (ext4) needs a `path`."
+    quiet: true
+  loop: '{{ storage_volumes | selectattr("layout", "equalto", "ext4") | list }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Validate | Assert LUKS passphrase for new containers
+  ansible.builtin.assert:
+    that:
+      - item.luks.passphrase | default('') | length > 0
+    fail_msg: >-
+      Volume '{{ item.name }}' formats a new LUKS container and needs
+      `luks.passphrase`.
+    quiet: true
+  loop: >-
+    {{ storage_volumes
+       | selectattr('format', 'defined') | selectattr('format')
+       | selectattr('luks', 'defined')
+       | selectattr('luks.enabled', 'defined') | selectattr('luks.enabled')
+       | list }}
+  loop_control:
+    label: '{{ item.name }}'
+  no_log: true
+
+#
+# Required Tools
+#
+
+- name: Validate | Determine required tools
+  ansible.builtin.set_fact:
+    __storage_needs_parted: >-
+      {{ storage_volumes | selectattr('format', 'defined')
+         | selectattr('format') | list | length > 0 }}
+    __storage_needs_luks: >-
+      {{ storage_volumes | selectattr('luks', 'defined')
+         | selectattr('luks.enabled', 'defined') | selectattr('luks.enabled')
+         | list | length > 0 }}
+    __storage_needs_btrfs: >-
+      {{ storage_volumes | selectattr('layout', 'equalto', 'btrfs')
+         | list | length > 0 }}
+    __storage_needs_lvm: >-
+      {{ storage_volumes | selectattr('layout', 'equalto', 'lvm')
+         | list | length > 0 }}
+    __storage_needs_ext4: >-
+      {{ storage_volumes | selectattr('layout', 'in', ['lvm', 'ext4'])
+         | list | length > 0 }}
+    __storage_needs_snapper: >-
+      {{ storage_volumes | selectattr('layout', 'equalto', 'btrfs')
+         | map(attribute='subvolumes') | flatten
+         | selectattr('snapper', 'defined') | selectattr('snapper')
+         | list | length > 0 }}
