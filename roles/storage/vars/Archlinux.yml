@@ -13,5 +13,8 @@ __storage_snapper_package: 'snapper'
 __storage_ntfs_package: 'ntfs-3g'
 __storage_exfat_package: 'exfatprogs'
 
+# File listing the snapper configs (SNAPPER_CONFIGS)
+__storage_snapper_sysconfig: '/etc/conf.d/snapper'
+
 # The kernel supports btrfs
 __storage_btrfs_supported: true

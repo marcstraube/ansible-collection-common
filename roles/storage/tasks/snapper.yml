@@ -12,12 +12,64 @@
          | default(__storage_subvolume.path | regex_replace('^/', '')
                    | regex_replace('/', '_')) }}
 
+- name: Snapper | Check existing config
+  ansible.builtin.stat:
+    path: '/etc/snapper/configs/{{ __storage_snapper_config }}'
+  register: __storage_snapper_existing
+
+- name: Snapper | Check snapshot subvolume
+  ansible.builtin.stat:
+    path: '{{ __storage_subvolume.path }}/.snapshots'
+  register: __storage_snapper_snapshots
+  when: not __storage_snapper_existing.stat.exists
+
 - name: Snapper | Create config
   ansible.builtin.command:
     cmd: >-
       snapper --config {{ __storage_snapper_config }}
       create-config {{ __storage_subvolume.path }}
-    creates: '/etc/snapper/configs/{{ __storage_snapper_config }}'
+  changed_when: true
+  when:
+    - not __storage_snapper_existing.stat.exists
+    - not __storage_snapper_snapshots.stat.exists
+
+# A volume kept across a reinstall still has its .snapshots subvolume while the
+# system lost the config. create-config refuses an existing subvolume, so the
+# config is written the way create-config writes it; the old snapshots stay.
+- name: Snapper | Register config for an existing snapshot subvolume
+  when:
+    - not __storage_snapper_existing.stat.exists
+    - __storage_snapper_snapshots.stat.exists
+  block:
+    - name: Snapper | Copy config template
+      ansible.builtin.copy:
+        src: /usr/share/snapper/config-templates/default
+        remote_src: true
+        dest: '/etc/snapper/configs/{{ __storage_snapper_config }}'
+        owner: root
+        group: root
+        mode: '0640'
+
+    - name: Snapper | Set the subvolume in the config
+      ansible.builtin.lineinfile:
+        path: '/etc/snapper/configs/{{ __storage_snapper_config }}'
+        regexp: '^SUBVOLUME='
+        line: 'SUBVOLUME="{{ __storage_subvolume.path }}"'
+
+    - name: Snapper | Read the registered configs
+      ansible.builtin.shell:
+        cmd: >-
+          . {{ __storage_snapper_sysconfig }} && printf '%s' "$SNAPPER_CONFIGS"
+      register: __storage_snapper_registered
+      changed_when: false
+
+    - name: Snapper | Register the config
+      ansible.builtin.lineinfile:
+        path: '{{ __storage_snapper_sysconfig }}'
+        regexp: '^SNAPPER_CONFIGS='
+        line: >-
+          SNAPPER_CONFIGS="{{ (__storage_snapper_registered.stdout.split()
+                               + [__storage_snapper_config]) | unique | join(' ') }}"
 
 - name: Snapper | Check config
   ansible.builtin.stat:

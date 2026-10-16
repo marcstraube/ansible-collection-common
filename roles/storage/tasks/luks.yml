@@ -5,6 +5,9 @@
 # The passphrase stays in its keyslot as the recovery key. The role adds a
 # random keyfile in a keyslot of its own, so the passphrase is never
 # written to disk; crypttab unlocks the volume with the keyfile at boot.
+# The keyfile always takes the same keyslot: a system reinstall loses the
+# file, and the stale slot is cleared before the new keyfile is enrolled,
+# so repeated reinstalls do not accumulate dead keyslots.
 #
 # `__storage_keyfile` is the path as the target system sees it (crypttab);
 # `__storage_keyfile_path` is where the file is reached from here.
@@ -15,6 +18,7 @@
     __storage_keyfile: '{{ __storage_luks_keyfile_dir }}/{{ __storage_luks_name }}.key'
     __storage_keyfile_path: >-
       {{ __storage_path_prefix }}{{ __storage_luks_keyfile_dir }}/{{ __storage_luks_name }}.key
+    __storage_keyslot: '{{ __storage_volume.luks.keyslot | default(__storage_luks_keyslot) | int }}'
 
 - name: LUKS | Check for LUKS header
   ansible.builtin.command:
@@ -91,11 +95,34 @@
   when: __storage_keyfile_test.rc | default(0) != 0
   no_log: true
 
+- name: LUKS | Read the keyslots
+  ansible.builtin.command:
+    cmd: 'cryptsetup luksDump {{ __storage_target }}'
+  register: __storage_luks_dump
+  changed_when: false
+  check_mode: false
+  when: __storage_keyfile_test.rc | default(0) != 0
+
+# A previous keyfile, lost with the old system, still occupies the slot.
+- name: LUKS | Clear the stale keyfile slot
+  community.crypto.luks_device:
+    device: '{{ __storage_target }}'
+    passphrase: '{{ __storage_volume.luks.passphrase }}'
+    remove_keyslot: '{{ __storage_keyslot }}'
+    state: present
+  when:
+    - __storage_keyfile_test.rc | default(0) != 0
+    - >-
+      __storage_luks_dump.stdout
+      is search('(?m)^\s+' ~ __storage_keyslot ~ ': luks2$')
+  no_log: true
+
 - name: LUKS | Add keyfile in its own keyslot
   community.crypto.luks_device:
     device: '{{ __storage_target }}'
     passphrase: '{{ __storage_volume.luks.passphrase }}'
     new_keyfile: '{{ __storage_keyfile_path }}'
+    new_keyslot: '{{ __storage_keyslot }}'
     state: present
   when: __storage_keyfile_test.rc | default(0) != 0
   no_log: true

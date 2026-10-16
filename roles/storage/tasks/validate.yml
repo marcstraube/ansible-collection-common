@@ -127,6 +127,23 @@
     label: '{{ item.name }}'
   no_log: true
 
+# Slot 0 holds the passphrase; LUKS2 offers slots 0-31
+- name: Validate | Assert LUKS keyslot for the keyfile
+  ansible.builtin.assert:
+    that:
+      - item.luks.keyslot | default(1) | int >= 1
+      - item.luks.keyslot | default(1) | int <= 31
+    fail_msg: >-
+      Volume '{{ item.name }}': `luks.keyslot` must be between 1 and 31.
+    quiet: true
+  loop: >-
+    {{ storage_volumes
+       | selectattr('luks', 'defined')
+       | selectattr('luks.enabled', 'defined') | selectattr('luks.enabled')
+       | list }}
+  loop_control:
+    label: '{{ item.name }}'
+
 #
 # Required Tools
 #
