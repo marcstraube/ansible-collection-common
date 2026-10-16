@@ -1,5 +1,29 @@
 ---
 #
+# Installer Mode
+#
+# The new system must be mounted with its /etc in place before the role
+# writes crypttab and keyfiles into it.
+#
+
+- name: Validate | Check the new system in installer mode
+  ansible.builtin.stat:
+    path: '{{ __storage_path_prefix }}/etc'
+  register: __storage_chroot_etc
+  when: storage_installer_mode | bool
+
+- name: Validate | Assert the new system is mounted
+  ansible.builtin.assert:
+    that:
+      - __storage_path_prefix | length > 0
+      - __storage_chroot_etc.stat.isdir | default(false)
+    fail_msg: >-
+      storage_installer_mode needs the new system mounted at
+      {{ storage_chroot_path }} with its /etc in place.
+    quiet: true
+  when: storage_installer_mode | bool
+
+#
 # Volume Definitions
 #
 # Fail before touching any disk when a volume definition is incomplete.
@@ -130,3 +154,20 @@
          | map(attribute='subvolumes') | flatten
          | selectattr('snapper', 'defined') | selectattr('snapper')
          | list | length > 0 }}
+
+- name: Validate | Determine required packages
+  ansible.builtin.set_fact:
+    __storage_packages: >-
+      {{ (([__storage_parted_package] if __storage_needs_parted | bool else [])
+          + ([__storage_cryptsetup_package] if __storage_needs_luks | bool else [])
+          + ([__storage_btrfs_package] if __storage_needs_btrfs | bool else [])
+          + ([__storage_lvm_package] if __storage_needs_lvm | bool else [])
+          + ([__storage_ext4_package] if __storage_needs_ext4 | bool else [])
+          + ([__storage_snapper_package] if __storage_needs_snapper | bool else []))
+         | select | list }}
+
+# The installer installs these into the new system; the role cannot.
+- name: Validate | Export packages for the installer
+  ansible.builtin.set_fact:
+    storage_installer_packages: '{{ __storage_packages }}'
+  when: storage_installer_mode | bool

@@ -1,9 +1,12 @@
 ---
 # systemd generates mount and cryptsetup units from fstab and crypttab;
-# reload so it picks up new entries before the next boot.
+# reload so it picks up new entries before the next boot. In installer mode
+# the entries belong to the new system, not the running one.
 - name: Reload storage systemd units
   ansible.builtin.systemd_service:
     daemon_reload: true
   # Container-safety for molecule
   failed_when: false
-  when: storage_enabled | bool
+  when:
+    - storage_enabled | bool
+    - not storage_installer_mode | bool

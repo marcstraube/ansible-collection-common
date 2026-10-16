@@ -1,0 +1,48 @@
+---
+#
+# Mount
+#
+# One mount point of a volume (`__storage_mount`: path, src, fstype, opts).
+# On an installed system the mount is persisted in fstab. In installer mode
+# the filesystem is only mounted below the new system; the installer's
+# fstab generation records it, so the role must not write fstab there.
+#
+
+- name: Mount | Mount and persist in fstab
+  ansible.posix.mount:
+    path: '{{ __storage_mount.path }}'
+    src: '{{ __storage_mount.src }}'
+    fstype: '{{ __storage_mount.fstype }}'
+    opts: '{{ __storage_mount.opts }}'
+    state: mounted
+  notify: Reload storage systemd units
+  when: not storage_installer_mode | bool
+
+- name: Mount | Mount below the new system
+  when: storage_installer_mode | bool
+  block:
+    - name: Mount | Check mount point
+      ansible.builtin.command:
+        cmd: 'mountpoint -q {{ __storage_path_prefix }}{{ __storage_mount.path }}'
+      register: __storage_mountpoint
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    # The run on the installed system applies the configured ownership.
+    - name: Mount | Create mount point
+      ansible.builtin.file:
+        path: '{{ __storage_path_prefix }}{{ __storage_mount.path }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      when: __storage_mountpoint.rc != 0
+
+    - name: Mount | Mount filesystem  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: >-
+          mount -t {{ __storage_mount.fstype }} -o {{ __storage_mount.opts }}
+          {{ __storage_mount.src }} {{ __storage_path_prefix }}{{ __storage_mount.path }}
+      when: __storage_mountpoint.rc != 0
+      changed_when: true

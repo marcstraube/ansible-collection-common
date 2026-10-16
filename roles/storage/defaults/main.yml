@@ -69,6 +69,22 @@ storage_volumes: []
 #     mode: '1777'
 
 #
+# Installer Mode
+#
+# Set by an installer role that runs from a live medium with the new system
+# mounted below `storage_chroot_path`. The role then writes crypttab and
+# keyfiles into that tree and mounts the volumes below it; it leaves fstab
+# to the installer's fstab generation and skips packages, snapper and
+# systemd. The packages the new system needs are exported in the fact
+# `storage_installer_packages` for the installer to install.
+
+# Operate on a system mounted below storage_chroot_path
+storage_installer_mode: false
+
+# Mount point of the new system in installer mode
+storage_chroot_path: '/mnt'
+
+#
 # Snapper
 #
 # Settings for the snapper configs of btrfs subvolumes with `snapper: true`.

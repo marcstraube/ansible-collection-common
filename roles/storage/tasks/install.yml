@@ -7,16 +7,9 @@
 
 - name: Install | Volume tools
   ansible.builtin.package:
-    name: >-
-      {{ (([__storage_parted_package] if __storage_needs_parted | bool else [])
-          + ([__storage_cryptsetup_package] if __storage_needs_luks | bool else [])
-          + ([__storage_btrfs_package] if __storage_needs_btrfs | bool else [])
-          + ([__storage_lvm_package] if __storage_needs_lvm | bool else [])
-          + ([__storage_ext4_package] if __storage_needs_ext4 | bool else [])
-          + ([__storage_snapper_package] if __storage_needs_snapper | bool else []))
-         | select | list }}
+    name: '{{ __storage_packages }}'
     state: present
-  when: storage_volumes | length > 0
+  when: __storage_packages | length > 0
   retries: 3
   delay: 5
 

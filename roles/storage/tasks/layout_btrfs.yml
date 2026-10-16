@@ -81,22 +81,25 @@
       failed_when: false
       check_mode: false
 
-- name: Layout BTRFS | Mount subvolumes
-  ansible.posix.mount:
-    path: '{{ item.path }}'
-    src: 'UUID={{ __storage_fs.UUID }}'
-    fstype: btrfs
-    opts: >-
-      {{ [__storage_volume.mount_options | default(''),
-          item.mount_options | default(''),
-          'subvol=/' ~ (item.name | regex_replace('^/', ''))]
-         | select | join(',') }}
-    state: mounted
+- name: Layout BTRFS | Include mount tasks
+  ansible.builtin.include_tasks:
+    file: mount.yml
   loop: '{{ __storage_volume.subvolumes }}'
   loop_control:
     label: '{{ item.path }}'
-  notify: Reload storage systemd units
+  vars:
+    __storage_mount:
+      path: '{{ item.path }}'
+      src: 'UUID={{ __storage_fs.UUID }}'
+      fstype: 'btrfs'
+      opts: >-
+        {{ [__storage_volume.mount_options | default(''),
+            item.mount_options | default(''),
+            'subvol=/' ~ (item.name | regex_replace('^/', ''))]
+           | select | join(',') }}
 
+# Ownership needs the final users and groups; in installer mode the run on
+# the installed system applies it.
 - name: Layout BTRFS | Set mount point ownership
   ansible.builtin.file:
     path: '{{ item.path }}'
@@ -107,7 +110,10 @@
   loop: '{{ __storage_volume.subvolumes }}'
   loop_control:
     label: '{{ item.path }}'
+  when: not storage_installer_mode | bool
 
+# snapper needs the running system; in installer mode the configs are
+# created when the role runs again on the installed system.
 - name: Layout BTRFS | Include snapper tasks
   ansible.builtin.include_tasks:
     file: snapper.yml
@@ -117,3 +123,4 @@
   loop_control:
     loop_var: __storage_subvolume
     label: '{{ __storage_subvolume.path }}'
+  when: not storage_installer_mode | bool

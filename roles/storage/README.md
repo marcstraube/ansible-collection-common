@@ -28,6 +28,10 @@ The role also installs tools for filesystems it does not set up itself: NTFS
 (dual boot, external disks), exFAT and LVM. For VeraCrypt volumes, see
 `marcstraube.desktop.security_apps`.
 
+An installer role can run the role from a live medium against the new system
+mounted below a chroot path, so a volume (for example `/home`) is in place
+before the first boot (see [Installer Mode](#installer-mode)).
+
 ## Requirements
 
 - ansible-core >= 2.19
@@ -120,6 +124,16 @@ LVM logical volume (`logical_volumes`):
 
 Keys are snapper config variables (`TIMELINE_CREATE`, `TIMELINE_LIMIT_DAILY`,
 `NUMBER_LIMIT`, ...); see `defaults/main.yml` for the full default.
+
+### Installer Mode
+
+| Variable                 | Default | Description                                                  |
+| ------------------------ | ------- | ------------------------------------------------------------ |
+| `storage_installer_mode` | `false` | Operate on a new system mounted below `storage_chroot_path`  |
+| `storage_chroot_path`    | `/mnt`  | Mount point of the new system in installer mode              |
+
+In installer mode the role sets the fact `storage_installer_packages`: the
+packages the new system needs for its volumes (see [Installer Mode](#installer-mode)).
 
 ### Filesystem Tools
 
@@ -230,7 +244,8 @@ Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 The scenario uses loop devices inside the VM: LUKS2 + btrfs + snapper (Arch,
 Debian), LUKS2 + LVM + ext4, ext4 over an existing filesystem with `force`,
-refusal of a non-blank device without `force`, and rejection of btrfs on EL.
+LUKS2 + ext4 in installer mode below a chroot directory, refusal of a
+non-blank device without `force`, and rejection of btrfs on EL.
 
 ## Notes
 
@@ -263,6 +278,34 @@ refusal of a non-blank device without `force`, and rejection of btrfs on EL.
 The role also refuses to format a device that is mounted or has opened
 children (LUKS, LVM, RAID). A volume set up by this role is recognized by its
 partition label, so `format: true` can stay in the inventory.
+
+### Installer Mode
+
+With `storage_installer_mode: true` the role runs on a live medium (Arch ISO,
+for example) against the new system mounted at `storage_chroot_path`:
+
+- Partitioning, LUKS and filesystems are set up on the live system as usual.
+- The keyfile goes to `<chroot>/etc/cryptsetup-keys.d/`, the crypttab entry to
+  `<chroot>/etc/crypttab`; both refer to paths as the new system sees them.
+- Mount points are mounted below the chroot path. The role does not write
+  fstab there: the installer's fstab generation (`genfstab` on Arch) records
+  the mounts along with the system's own.
+- Packages are not installed; the live medium ships the tools. The role sets
+  the fact `storage_installer_packages` with the packages the new system
+  needs, and the installer installs them into the new system.
+- snapper configs, snapper timers and the systemd reload are skipped. The
+  installer runs the role again on the installed system after the first boot;
+  that run finds the volume in place, applies the mount point ownership and
+  adds snapper and the timers. It also rewrites the fstab entry in the role's
+  own format once.
+- The OS-specific variables come from the live medium, so it must share the
+  os_family of the new system.
+- `owner`, `group` and `mode` of mount points are not applied; the run on the
+  installed system sets them once its users and groups exist.
+
+An installer typically runs the role once in this mode after the base system
+is installed into the chroot and before it generates fstab, and once more on
+the installed system.
 
 ### Other Notes
 

@@ -5,6 +5,7 @@
 
   vars:
     __verify_disk_dir: '/var/lib/molecule-storage'
+    __verify_chroot: '/mnt/molecule/chroot'
     __verify_passphrase: 'molecule-test-passphrase'  # pragma: allowlist secret
     __verify_btrfs: "{{ ansible_facts['os_family'] != 'RedHat' }}"
     __verify_luks_volumes: "{{ (['crypt_mbtrfs'] if __verify_btrfs | bool else []) + ['crypt_mlvm'] }}"
@@ -246,6 +247,65 @@
       loop: >-
         {{ (['/mnt/molecule/data', '/mnt/molecule/cache'] if __verify_btrfs | bool else [])
            + ['/mnt/molecule/restic', '/mnt/molecule/archive', '/mnt/molecule/scratch'] }}
+
+    #
+    # Installer Mode
+    #
+    # crypttab and keyfile belong to the chroot; the live system's fstab and
+    # crypttab stay untouched.
+    #
+
+    - name: Verify | Read chroot crypttab
+      ansible.builtin.slurp:
+        src: '{{ __verify_chroot }}/etc/crypttab'
+      register: __verify_chroot_crypttab
+
+    - name: Verify | Assert chroot crypttab entry uses the keyfile path of the new system
+      ansible.builtin.assert:
+        that:
+          - (__verify_chroot_crypttab.content | b64decode)
+            is search('(?m)^crypt_minst\s+UUID=\S+\s+/etc/cryptsetup-keys.d/crypt_minst.key\s')
+          - (__verify_crypttab.content | b64decode) is not search('crypt_minst')
+          - (__verify_fstab.content | b64decode) is not search('/srv/inst')
+        quiet: true
+
+    - name: Verify | Check chroot keyfile
+      ansible.builtin.stat:
+        path: '{{ __verify_chroot }}/etc/cryptsetup-keys.d/crypt_minst.key'
+      register: __verify_chroot_keyfile
+
+    - name: Verify | Assert chroot keyfile is root-only
+      ansible.builtin.assert:
+        that:
+          - __verify_chroot_keyfile.stat.exists
+          - __verify_chroot_keyfile.stat.mode == '0400'
+          - __verify_chroot_keyfile.stat.size == 4096
+        quiet: true
+
+    - name: Verify | Read installer mode mount
+      ansible.builtin.command:
+        cmd: 'findmnt --noheadings --output SOURCE,FSTYPE {{ __verify_chroot }}/srv/inst'
+      register: __verify_chroot_mount
+      changed_when: false
+
+    - name: Verify | Assert volume is mounted below the chroot
+      ansible.builtin.assert:
+        that:
+          - __verify_chroot_mount.stdout is search('^/dev/mapper/crypt_minst\s+ext4$')
+        quiet: true
+
+    - name: Verify | Check installer mode mount point
+      ansible.builtin.stat:
+        path: '{{ __verify_chroot }}/srv/inst'
+      register: __verify_chroot_dir
+
+    # The configured mode 0750 is left to the run on the installed system.
+    - name: Verify | Assert installer mode leaves the mount point to the system run
+      ansible.builtin.assert:
+        that:
+          - __verify_chroot_dir.stat.mode == '0755'
+          - __verify_chroot_dir.stat.pw_name == 'root'
+        quiet: true
 
     #
     # Format Safety

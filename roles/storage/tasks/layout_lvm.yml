@@ -74,21 +74,24 @@
   changed_when: false
   check_mode: false
 
-- name: Layout LVM | Mount logical volumes
-  ansible.posix.mount:
-    path: '{{ item.item.path }}'
-    src: 'UUID={{ item.stdout }}'
-    fstype: ext4
-    opts: >-
-      {{ [__storage_volume.mount_options | default(''),
-          item.item.mount_options | default('')]
-         | select | join(',') | default('defaults', true) }}
-    state: mounted
+- name: Layout LVM | Include mount tasks
+  ansible.builtin.include_tasks:
+    file: mount.yml
   loop: '{{ __storage_lv_uuids.results }}'
   loop_control:
     label: '{{ item.item.path }}'
-  notify: Reload storage systemd units
+  vars:
+    __storage_mount:
+      path: '{{ item.item.path }}'
+      src: 'UUID={{ item.stdout }}'
+      fstype: 'ext4'
+      opts: >-
+        {{ [__storage_volume.mount_options | default(''),
+            item.item.mount_options | default('')]
+           | select | join(',') | default('defaults', true) }}
 
+# Ownership needs the final users and groups; in installer mode the run on
+# the installed system applies it.
 - name: Layout LVM | Set mount point ownership
   ansible.builtin.file:
     path: '{{ item.path }}'
@@ -99,3 +102,4 @@
   loop: '{{ __storage_volume.logical_volumes }}'
   loop_control:
     label: '{{ item.path }}'
+  when: not storage_installer_mode | bool
