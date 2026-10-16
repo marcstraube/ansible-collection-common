@@ -6,10 +6,15 @@
 # random keyfile in a keyslot of its own, so the passphrase is never
 # written to disk; crypttab unlocks the volume with the keyfile at boot.
 #
+# `__storage_keyfile` is the path as the target system sees it (crypttab);
+# `__storage_keyfile_path` is where the file is reached from here.
+#
 
-- name: LUKS | Set keyfile path
+- name: LUKS | Set keyfile paths
   ansible.builtin.set_fact:
     __storage_keyfile: '{{ __storage_luks_keyfile_dir }}/{{ __storage_luks_name }}.key'
+    __storage_keyfile_path: >-
+      {{ __storage_path_prefix }}{{ __storage_luks_keyfile_dir }}/{{ __storage_luks_name }}.key
 
 - name: LUKS | Check for LUKS header
   ansible.builtin.command:
@@ -43,7 +48,7 @@
 
 - name: LUKS | Create keyfile directory
   ansible.builtin.file:
-    path: '{{ __storage_luks_keyfile_dir }}'
+    path: '{{ __storage_path_prefix }}{{ __storage_luks_keyfile_dir }}'
     state: directory
     owner: root
     group: root
@@ -54,12 +59,12 @@
     cmd: >-
       umask 077 &&
       head -c {{ __storage_luks_keyfile_size }} /dev/urandom
-      > {{ __storage_keyfile }}
-    creates: '{{ __storage_keyfile }}'
+      > {{ __storage_keyfile_path }}
+    creates: '{{ __storage_keyfile_path }}'
 
 - name: LUKS | Set keyfile permissions
   ansible.builtin.file:
-    path: '{{ __storage_keyfile }}'
+    path: '{{ __storage_keyfile_path }}'
     owner: root
     group: root
     mode: '0400'
@@ -69,7 +74,7 @@
   ansible.builtin.command:
     cmd: >-
       cryptsetup open --test-passphrase
-      --key-file {{ __storage_keyfile }} {{ __storage_target }}
+      --key-file {{ __storage_keyfile_path }} {{ __storage_target }}
   register: __storage_keyfile_test
   changed_when: false
   failed_when: false
@@ -90,7 +95,7 @@
   community.crypto.luks_device:
     device: '{{ __storage_target }}'
     passphrase: '{{ __storage_volume.luks.passphrase }}'
-    new_keyfile: '{{ __storage_keyfile }}'
+    new_keyfile: '{{ __storage_keyfile_path }}'
     state: present
   when: __storage_keyfile_test.rc | default(0) != 0
   no_log: true
@@ -108,6 +113,7 @@
     backing_device: 'UUID={{ __storage_luks_uuid.stdout }}'
     password: '{{ __storage_keyfile }}'
     opts: '{{ __storage_volume.luks.options | default(__storage_luks_options) }}'
+    path: '{{ __storage_path_prefix }}/etc/crypttab'
     state: present
   notify: Reload storage systemd units
 
@@ -116,4 +122,4 @@
     device: '{{ __storage_target }}'
     state: opened
     name: '{{ __storage_luks_name }}'
-    keyfile: '{{ __storage_keyfile }}'
+    keyfile: '{{ __storage_keyfile_path }}'

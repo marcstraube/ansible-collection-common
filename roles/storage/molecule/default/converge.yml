@@ -5,6 +5,7 @@
 
   vars:
     __converge_disk_dir: '/var/lib/molecule-storage'
+    __converge_chroot: '/mnt/molecule/chroot'
     __converge_passphrase: 'molecule-test-passphrase'  # pragma: allowlist secret
 
     storage_ntfs_enabled: true
@@ -22,6 +23,7 @@
         - 'luks-btrfs'
         - 'luks-lvm'
         - 'ext4-force'
+        - 'installer'
       changed_when: false
       check_mode: false
 
@@ -93,3 +95,42 @@
     - name: Converge | Include storage role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    #
+    # Installer Mode
+    #
+    # A directory stands in for the new system an installer has mounted.
+    #
+
+    - name: Converge | Create chroot directory
+      ansible.builtin.file:
+        path: '{{ __converge_chroot }}/etc'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Converge | Include storage role in installer mode  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        storage_installer_mode: true
+        storage_chroot_path: '{{ __converge_chroot }}'
+        storage_volumes:
+          - name: 'minst'
+            device: '{{ __converge_disks["installer"] }}'
+            format: true
+            luks:
+              enabled: true
+              passphrase: '{{ __converge_passphrase }}'
+            layout: 'ext4'
+            path: '/srv/inst'
+            mode: '0750'
+
+    - name: Converge | Assert the installer package list
+      ansible.builtin.assert:
+        that:
+          - "'cryptsetup' in storage_installer_packages"
+          - "'e2fsprogs' in storage_installer_packages"
+          - "'parted' in storage_installer_packages"
+        quiet: true

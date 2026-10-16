@@ -14,6 +14,8 @@
         preformat: false
       - name: 'ext4-force'
         preformat: true
+      - name: 'installer'
+        preformat: false
       - name: 'refuse'
         preformat: true
 
