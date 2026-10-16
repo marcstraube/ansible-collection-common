@@ -9,6 +9,9 @@
     __verify_passphrase: 'molecule-test-passphrase'  # pragma: allowlist secret
     __verify_btrfs: "{{ ansible_facts['os_family'] != 'RedHat' }}"
     __verify_luks_volumes: "{{ (['crypt_mbtrfs'] if __verify_btrfs | bool else []) + ['crypt_mlvm'] }}"
+    __verify_snapper_sysconfig:
+      Archlinux: '/etc/conf.d/snapper'
+      Debian: '/etc/default/snapper'
 
   tasks:
     #
@@ -91,7 +94,8 @@
         that:
           - item.stdout is search('Version:\s+2')
           - item.stdout | regex_findall('(?m)^\s+\d+: luks2$') | length == 2
-        fail_msg: '{{ item.item }}: expected LUKS2 with exactly two keyslots'
+          - item.stdout is search('(?m)^\s+1: luks2$')
+        fail_msg: '{{ item.item }}: expected LUKS2 with exactly two keyslots, the keyfile in slot 1'
         quiet: true
       loop: '{{ __verify_luks_dump.results }}'
       loop_control:
@@ -107,6 +111,15 @@
       loop: '{{ __verify_luks_volumes }}'
       changed_when: false
       no_log: true
+
+    - name: Verify | Test that the keyfiles unlock
+      ansible.builtin.command:
+        cmd: >-
+          cryptsetup open --test-passphrase
+          --key-file /etc/cryptsetup-keys.d/{{ item }}.key
+          /dev/disk/by-partlabel/storage-{{ item | regex_replace("^crypt_", "") }}
+      loop: '{{ __verify_luks_volumes }}'
+      changed_when: false
 
     #
     # btrfs
@@ -158,6 +171,20 @@
               - (__verify_snapper_config.content | b64decode) is search('(?m)^SUBVOLUME="/mnt/molecule/data"$')
               - (__verify_snapper_config.content | b64decode) is search('(?m)^TIMELINE_LIMIT_DAILY="14"$')
               - (__verify_snapper_config.content | b64decode) is search('(?m)^TIMELINE_LIMIT_HOURLY="5"$')
+            quiet: true
+
+        - name: Verify | Read the registered snapper configs
+          ansible.builtin.shell:
+            cmd: >-
+              . {{ __verify_snapper_sysconfig[ansible_facts['os_family']] }}
+              && printf '%s' "$SNAPPER_CONFIGS"
+          register: __verify_snapper_registered
+          changed_when: false
+
+        - name: Verify | Assert the config survived the simulated reinstall
+          ansible.builtin.assert:
+            that:
+              - "'mnt_molecule_data' in __verify_snapper_registered.stdout.split()"
             quiet: true
 
         - name: Verify | Check snapper timers

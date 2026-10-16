@@ -17,6 +17,9 @@ __storage_luks_keyfile_dir: '/etc/cryptsetup-keys.d'
 # Size of generated LUKS keyfiles in bytes
 __storage_luks_keyfile_size: 4096
 
+# Keyslot for the keyfile; slot 0 holds the passphrase set at creation
+__storage_luks_keyslot: 1
+
 # Default crypttab options
 __storage_luks_options: 'luks'
 

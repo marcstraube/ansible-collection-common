@@ -22,7 +22,9 @@ The role sets up data disks on an installed system, end to end:
 
 Existing volumes work as well: with `format: false` the role opens and mounts
 what is there, adds the keyfile slot to an existing LUKS container, and
-creates missing subvolumes or logical volumes.
+creates missing subvolumes or logical volumes. A subvolume that already has
+a `.snapshots` subvolume, for example after the system was reinstalled, gets
+its snapper config registered again; the old snapshots stay.
 
 The role also installs tools for filesystems it does not set up itself: NTFS
 (dual boot, external disks), exFAT and LVM. For VeraCrypt volumes, see
@@ -81,6 +83,7 @@ Each volume:
 | `luks.passphrase` | with `format` | Recovery passphrase; also needed once to enroll the keyfile                    |
 | `luks.name`       | no            | Mapper name (default `crypt_<name>`)                                           |
 | `luks.options`    | no (`luks`)   | crypttab options, e.g. `luks,discard`                                          |
+| `luks.keyslot`    | no (`1`)      | Keyslot for the keyfile; slot `0` holds the passphrase                         |
 | `mount_options`   | no            | Mount options for all mount points of the volume                               |
 | `subvolumes`      | `btrfs`       | List of subvolumes (below)                                                     |
 | `vg_name`         | no            | Volume group name for `lvm` (default `vg_<name>`)                              |
@@ -255,12 +258,19 @@ non-blank device without `force`, and rejection of btrfs on EL.
   keyslot as the recovery key.
 - The role generates a random 4096-byte keyfile
   `/etc/cryptsetup-keys.d/<mapper name>.key` (root, `0400`) and adds it in a
-  keyslot of its own; the passphrase is never written to disk.
+  keyslot of its own, slot `1` unless `luks.keyslot` says otherwise; the
+  passphrase is never written to disk.
 - crypttab unlocks the volume with that keyfile at boot. The keyfile lives on
   the root filesystem, so it is only readable once that is unlocked; encrypt
   the root filesystem as well.
 - Once the keyfile is enrolled, the role tests it on every run and needs the
   passphrase only to enroll a missing keyfile again.
+- After the system was reinstalled, the keyfile is gone while its keyslot is
+  still occupied. The role clears that slot with the passphrase and enrolls
+  the new keyfile there, so the container keeps exactly two slots in use:
+  the passphrase and the current keyfile.
+- For a container not created by the role, pick a free `luks.keyslot`; the
+  role clears the configured slot whenever its keyfile does not unlock.
 - To revoke the keyfile, remove its keyslot
   (`cryptsetup luksRemoveKey --key-file <keyfile> <device>`) and delete the
   file; the passphrase keeps working.

@@ -25,6 +25,7 @@ storage_volumes: []
 #       passphrase: '{{ vault_storage_data_passphrase }}'
 #       name: 'crypt_data'              # optional mapper name
 #       options: 'luks,discard'         # optional crypttab options
+#       keyslot: 1                      # optional keyslot for the keyfile
 #     layout: 'btrfs'                   # btrfs | lvm | ext4
 #     mount_options: 'compress-force=zstd:3,ssd,nodev,nosuid'
 #     subvolumes:                       # layout btrfs

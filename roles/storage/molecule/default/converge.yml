@@ -7,6 +7,9 @@
     __converge_disk_dir: '/var/lib/molecule-storage'
     __converge_chroot: '/mnt/molecule/chroot'
     __converge_passphrase: 'molecule-test-passphrase'  # pragma: allowlist secret
+    __converge_snapper_sysconfig:
+      Archlinux: '/etc/conf.d/snapper'
+      Debian: '/etc/default/snapper'
 
     storage_ntfs_enabled: true
     storage_exfat_enabled: true
@@ -95,6 +98,53 @@
     - name: Converge | Include storage role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    #
+    # Kept volume after a reinstall
+    #
+    # The system lost the snapper config and the keyfile while the subvolume
+    # keeps its .snapshots and the container its keyslots; the role must
+    # register the config again and re-enroll the keyfile in the same slot.
+    #
+
+    # The marker keeps the simulation out of the idempotence run.
+    - name: Converge | Check the reinstall marker
+      ansible.builtin.stat:
+        path: '{{ __converge_disk_dir }}/.reinstall-simulated'
+      register: __converge_reinstall_marker
+
+    - name: Converge | Simulate a reinstall without the snapper config and the keyfile
+      when:
+        - ansible_facts['os_family'] != 'RedHat'
+        - not __converge_reinstall_marker.stat.exists
+      block:
+        - name: Converge | Remove the snapper config
+          ansible.builtin.file:
+            path: /etc/snapper/configs/mnt_molecule_data
+            state: absent
+
+        - name: Converge | Unregister the snapper config
+          ansible.builtin.replace:
+            path: '{{ __converge_snapper_sysconfig[ansible_facts["os_family"]] }}'
+            regexp: '^SNAPPER_CONFIGS=.*$'
+            replace: 'SNAPPER_CONFIGS=""'
+
+        - name: Converge | Remove the keyfile
+          ansible.builtin.file:
+            path: /etc/cryptsetup-keys.d/crypt_mbtrfs.key
+            state: absent
+
+        - name: Converge | Include storage role again  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+
+        - name: Converge | Set the reinstall marker
+          ansible.builtin.file:
+            path: '{{ __converge_disk_dir }}/.reinstall-simulated'
+            state: touch
+            owner: root
+            group: root
+            mode: '0644'
 
     #
     # Installer Mode
