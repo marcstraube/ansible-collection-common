@@ -1,0 +1,9 @@
+{{ ansible_managed | default('Ansible managed') | comment }}
+#
+# Rootless podman storage for {{ item.username }}
+# The system storage.conf sets a non-default graphroot, which podman 6
+# applies to rootless users as well. This file keeps the per-user default.
+# See containers-storage.conf(5) for details.
+
+[storage]
+graphroot = "{{ ansible_facts['getent_passwd'][item.username][4] }}/.local/share/containers/storage"

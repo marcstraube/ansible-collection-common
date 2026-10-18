@@ -64,7 +64,13 @@ The subvolume is created only when the directory is missing or empty. An
 existing user with populated storage keeps a plain directory; to move such a
 user onto a subvolume, run `podman system reset` as that user (or move the
 directory aside, run the role, and move the contents back). Homes on other
-filesystems are left as they are.
+filesystems are left as they are, and so is a user whose own
+`~/.config/containers/storage.conf` points `graphroot` elsewhere; that layout
+stays with the user.
+
+With a custom `podman_storage_root` the role also writes
+`~/.config/containers/storage.conf` for each listed user, see
+[Storage](#storage-storageconf).
 
 ### Passwordless sudo
 
@@ -98,7 +104,22 @@ keeps the file in place when the `sudo` role purges unmanaged drop-ins.
 |--------------------------|-------------------------------|-------------------------------------------|
 | `podman_storage_driver`  | `overlay`                     | Storage driver (overlay, vfs, btrfs, zfs) |
 | `podman_storage_root`    | `/var/lib/containers/storage` | Root storage location                     |
+| `podman_storage_runroot` | `/run/containers/storage`     | Temporary storage location                |
 | `podman_storage_options` | `{overlay: {mountopt: ...}}`  | Storage driver options                    |
+
+How `graphroot` and `runroot` reach `/etc/containers/storage.conf` depends on
+the podman version. Podman before 6 requires both keys once the file exists
+and does not apply them to rootless users, so the role always writes them
+there. Podman 6 applies a `graphroot` or `runroot` from the system file to
+rootless users as well, so from podman 6 on the role writes them only when
+they differ from the defaults above; podman then uses its built-in values for
+root and the per-user paths for rootless users. With a custom
+`podman_storage_root` the role writes
+`~/.config/containers/storage.conf` for every user in `podman_rootless_users`,
+pointing at `~/.local/share/containers/storage`. An existing per-user file is
+never overwritten, so a user's own `graphroot` stays in place. Rootless users
+outside that list, and every rootless user on a system with a custom
+`podman_storage_runroot`, need their own `~/.config/containers/storage.conf`.
 
 ### Network
 
