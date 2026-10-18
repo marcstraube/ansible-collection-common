@@ -27,10 +27,3 @@
   tags:
     - firejail
     - firejail:configure
-
-- name: Main | Import cleanup tasks
-  ansible.builtin.import_tasks: cleanup.yml
-  when: not firejail_enabled | bool
-  tags:
-    - firejail
-    - firejail:cleanup

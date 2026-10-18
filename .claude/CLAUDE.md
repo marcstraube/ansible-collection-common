@@ -117,8 +117,6 @@ service and security roles to `false`. Inventory `group_vars` hold overrides onl
 - **`include_role` mirrors the role default:** `when: <role>_enabled | default(<role default>) | bool`.
   The condition runs before the role loads, so the `default()` is needed there
   and must match the role default.
-- `firejail` is imported without a condition: the role dispatches on
-  `firejail_enabled` internally (install/configure vs. cleanup).
 
 ### Task Naming
 

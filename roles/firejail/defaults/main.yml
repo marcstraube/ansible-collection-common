@@ -9,11 +9,6 @@
 # apps more than it adds defense-in-depth. Opt in explicitly per host/group.
 firejail_enabled: false
 
-# When firejail_enabled is false, remove the firejail package as part of
-# cleanup. Set to false to keep the binary installed for manual `firejail <cmd>`
-# invocations while disabling the firecfg auto-wrap layer.
-firejail_remove_package: true
-
 #
 # Application Exclusions
 #
