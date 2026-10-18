@@ -24,7 +24,7 @@ jobs:
   # =============================================================================
   load-targets:
     name: Load drift targets
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.parse.outputs.matrix }}
       has_targets: ${{ steps.parse.outputs.has_targets }}
@@ -64,7 +64,7 @@ jobs:
     name: Probe ${{ matrix.role }}/${{ matrix.package }} on ${{ matrix.platform }}
     needs: load-targets
     if: needs.load-targets.outputs.has_targets == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
       contents: read
