@@ -1,0 +1,19 @@
+---
+# kubectl comes from the pkgs.k8s.io repository (repos.yml), helm from EPEL
+# (enabled by the package_management role), minikube from the upstream .rpm
+# release pinned by kubernetes_minikube_version.
+__kubernetes_packages:
+  kubectl:
+    - 'kubectl'
+  helm:
+    - 'helm'
+  minikube: []
+
+# pkgs.k8s.io publishes one repository per minor release
+__kubernetes_kubectl_repo_url: 'https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_kubectl_version }}/rpm/'
+__kubernetes_kubectl_gpg_url: '{{ __kubernetes_kubectl_repo_url }}repodata/repomd.xml.key'
+
+__kubernetes_minikube_release_url: 'https://storage.googleapis.com/minikube/releases/v{{ kubernetes_minikube_version }}'
+__kubernetes_minikube_package_url: >-
+  {{ __kubernetes_minikube_release_url }}/minikube-{{
+    kubernetes_minikube_version }}-0.x86_64.rpm

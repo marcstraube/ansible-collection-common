@@ -1,0 +1,57 @@
+---
+#
+# minikube User Configuration
+#
+# Called once per user from users.yml loop.
+# Variable: __kubernetes_user (the current kubernetes_users entry)
+#
+# Mode semantics:
+#   managed  — reconcile ~/.minikube/config/config.json on every run
+#   initial  — write only when the file is absent, preserve it after
+#   disabled — never write (gated in users.yml)
+
+- name: User Config | Get user info
+  ansible.builtin.getent:
+    database: passwd
+    key: '{{ __kubernetes_user.username }}'
+
+- name: User Config | Set user facts
+  ansible.builtin.set_fact:
+    __kubernetes_user_home: "{{ ansible_facts['getent_passwd'][__kubernetes_user.username][4] }}"
+    __kubernetes_user_gid: "{{ ansible_facts['getent_passwd'][__kubernetes_user.username][2] }}"
+
+- name: User Config | Stat existing minikube config
+  ansible.builtin.stat:
+    path: >-
+      {{ __kubernetes_user_home }}/{{ __kubernetes_minikube_config_dir }}/{{ __kubernetes_minikube_config_file }}
+  register: __kubernetes_user_config_stat
+
+- name: User Config | Build deploy decision
+  ansible.builtin.set_fact:
+    __kubernetes_user_should_deploy: >-
+      {{ (__kubernetes_user.mode | default(kubernetes_user_config_mode)) == 'managed'
+         or not __kubernetes_user_config_stat.stat.exists }}
+
+# Both levels are created explicitly: a parent the file module creates on
+# the way would belong to root and lock the user out of ~/.minikube.
+- name: User Config | Create minikube config directories
+  ansible.builtin.file:
+    path: '{{ __kubernetes_user_home }}/{{ item }}'
+    state: directory
+    owner: '{{ __kubernetes_user.username }}'
+    group: '{{ __kubernetes_user_gid }}'
+    mode: '0755'
+  loop:
+    - '{{ __kubernetes_minikube_config_dir | dirname }}'
+    - '{{ __kubernetes_minikube_config_dir }}'
+  when: __kubernetes_user_should_deploy | bool
+
+- name: User Config | Deploy minikube config
+  ansible.builtin.template:
+    src: minikube-config.json.j2
+    dest: >-
+      {{ __kubernetes_user_home }}/{{ __kubernetes_minikube_config_dir }}/{{ __kubernetes_minikube_config_file }}
+    owner: '{{ __kubernetes_user.username }}'
+    group: '{{ __kubernetes_user_gid }}'
+    mode: '0644'
+  when: __kubernetes_user_should_deploy | bool

@@ -1,0 +1,55 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - always
+
+- name: Main | Validate minikube drivers
+  ansible.builtin.assert:
+    that:
+      - kubernetes_minikube_driver in __kubernetes_minikube_drivers
+      - >-
+        kubernetes_users
+        | map(attribute='minikube_driver', default=kubernetes_minikube_driver)
+        | difference(__kubernetes_minikube_drivers) | length == 0
+    fail_msg: >-
+      kubernetes_minikube_driver and every per-user minikube_driver must be one
+      of: {{ __kubernetes_minikube_drivers | join(', ') }}
+  when: kubernetes_enabled | bool
+  tags:
+    - always
+
+- name: Main | Import repository tasks
+  ansible.builtin.import_tasks: repos.yml
+  when:
+    - kubernetes_enabled | bool
+    - ansible_facts['os_family'] != 'Archlinux'
+  tags:
+    - kubernetes
+    - kubernetes:install
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: kubernetes_enabled | bool
+  tags:
+    - kubernetes
+    - kubernetes:install
+
+- name: Main | Import user configuration tasks
+  ansible.builtin.import_tasks: users.yml
+  when:
+    - kubernetes_enabled | bool
+    - kubernetes_minikube_enabled | bool
+    - kubernetes_users | length > 0
+  tags:
+    - kubernetes
+    - kubernetes:users

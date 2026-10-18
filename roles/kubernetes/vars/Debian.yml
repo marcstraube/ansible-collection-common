@@ -1,0 +1,25 @@
+---
+# kubectl and helm come from vendor repositories (repos.yml); minikube from
+# the upstream .deb release pinned by kubernetes_minikube_version.
+__kubernetes_packages:
+  kubectl:
+    - 'kubectl'
+  helm:
+    - 'helm'
+  minikube: []
+
+__kubernetes_apt_prerequisites:
+  - 'ca-certificates'
+  - 'python3-debian'
+
+# pkgs.k8s.io publishes one flat repository per minor release
+__kubernetes_kubectl_repo_url: 'https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_kubectl_version }}/deb/'
+__kubernetes_kubectl_gpg_url: '{{ __kubernetes_kubectl_repo_url }}Release.key'
+
+__kubernetes_helm_repo_url: 'https://packages.buildkite.com/helm-linux/helm-debian/any/'
+__kubernetes_helm_gpg_url: 'https://packages.buildkite.com/helm-linux/helm-debian/gpgkey'
+
+__kubernetes_minikube_release_url: 'https://storage.googleapis.com/minikube/releases/v{{ kubernetes_minikube_version }}'
+__kubernetes_minikube_package_url: >-
+  {{ __kubernetes_minikube_release_url }}/minikube_{{
+    kubernetes_minikube_version }}-0_amd64.deb

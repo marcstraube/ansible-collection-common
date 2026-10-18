@@ -1,0 +1,9 @@
+---
+__kubernetes_minikube_config_dir: '.minikube/config'
+__kubernetes_minikube_config_file: 'config.json'
+
+# Drivers the role writes into the user config. kvm2 needs libvirt, which
+# no role in the collection provides yet.
+__kubernetes_minikube_drivers:
+  - 'docker'
+  - 'podman'

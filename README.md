@@ -87,15 +87,16 @@ user management, editors, and more.
 
 ### Services & Infrastructure
 
-| Role          | Description              |
-| ------------- | ------------------------ |
-| **chrony**    | NTP time synchronization |
-| **logrotate** | Log rotation             |
-| **mta**       | Send-only mail (Postfix) |
-| **docker**    | Docker container runtime |
-| **podman**    | Podman container runtime |
-| **snmp**      | SNMP monitoring agent    |
-| **restic**    | Backup with restic       |
+| Role           | Description                                         |
+| -------------- | --------------------------------------------------- |
+| **chrony**     | NTP time synchronization                            |
+| **logrotate**  | Log rotation                                        |
+| **mta**        | Send-only mail (Postfix)                            |
+| **docker**     | Docker container runtime                            |
+| **podman**     | Podman container runtime                            |
+| **kubernetes** | Kubernetes client tooling (kubectl, helm, minikube) |
+| **snmp**       | SNMP monitoring agent                               |
+| **restic**     | Backup with restic                                  |
 
 ## Installation
 
