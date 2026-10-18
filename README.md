@@ -47,7 +47,7 @@ user management, editors, and more.
 | **nodejs**             | Node.js and NVM                                |
 | **php**                | PHP interpreter and extensions                 |
 | **python**             | Python interpreter and tools                   |
-| **ansible**            | Ansible, Molecule and linting tools            |
+| **ansible_tools**      | Ansible, Molecule and linting tools            |
 
 ### Networking
 

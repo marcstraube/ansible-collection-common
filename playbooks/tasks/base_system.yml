@@ -334,13 +334,13 @@
     - php
   when: php_enabled | default(true) | bool
 
-- name: Base System | Import ansible role
+- name: Base System | Import ansible_tools role
   ansible.builtin.import_role:
-    name: marcstraube.common.ansible
+    name: marcstraube.common.ansible_tools
   tags:
     - base-system
     - ansible-tools
-  when: ansible_enabled | default(true) | bool
+  when: ansible_tools_enabled | bool
 
 #
 # Security Scanning & Extras

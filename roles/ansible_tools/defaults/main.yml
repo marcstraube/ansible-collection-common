@@ -3,7 +3,7 @@
 # Role Control
 #
 
-# Enable the ansible role
+# Enable the ansible_tools role
 ansible_tools_enabled: true
 
 #
