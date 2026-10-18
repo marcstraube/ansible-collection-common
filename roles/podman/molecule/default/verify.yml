@@ -238,6 +238,47 @@
         fail_msg: 'Prune service content incorrect'
 
     #
+    # Rootless user
+    #
+
+    - name: Verify | Read subuid file
+      ansible.builtin.slurp:
+        src: /etc/subuid
+      register: __podman_subuid_content
+
+    - name: Verify | Assert rootless user has a subuid range
+      ansible.builtin.assert:
+        that:
+          - "'johndoe:100000:65536' in (__podman_subuid_content.content | b64decode)"
+        fail_msg: 'johndoe has no subuid range'
+
+    - name: Verify | Stat rootless user config directory
+      ansible.builtin.stat:
+        path: /home/johndoe/.config/containers
+      register: __podman_rootless_config
+
+    - name: Verify | Assert rootless user config directory
+      ansible.builtin.assert:
+        that:
+          - __podman_rootless_config.stat.exists
+          - __podman_rootless_config.stat.isdir
+          - __podman_rootless_config.stat.pw_name == 'johndoe'
+        fail_msg: '/home/johndoe/.config/containers is missing or not owned by johndoe'
+
+    # The container's home is not on BTRFS, so the role must leave the
+    # storage directory alone instead of creating it.
+    - name: Verify | Stat rootless storage directory
+      ansible.builtin.stat:
+        path: /home/johndoe/.local/share/containers
+      register: __podman_rootless_storage
+
+    - name: Verify | Assert rootless storage directory is untouched on non-BTRFS
+      ansible.builtin.assert:
+        that:
+          - not __podman_rootless_storage.stat.exists
+        fail_msg: 'the rootless storage directory must not be created on a non-BTRFS home'
+
+    #
     # Passwordless sudo
     #
 

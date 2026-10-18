@@ -56,6 +56,11 @@ podman_rootless_users: []
 # Default subuid/subgid range size when not specified per user
 podman_subid_count: 65536
 
+# On a BTRFS home, make ~/.local/share/containers of every rootless user its
+# own subvolume with NoCOW, like graphroot. A nested subvolume stays out of
+# snapshots of the home. Skipped when the directory already has content.
+podman_rootless_btrfs_subvolume_enabled: true
+
 #
 # Passwordless sudo
 #

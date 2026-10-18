@@ -1,0 +1,95 @@
+---
+# Subvolume + NoCOW for one rootless user's container storage
+# (~/.local/share/containers), mirroring btrfs.yml for graphroot. A nested
+# subvolume is excluded from snapshots of the home subvolume.
+# Included per user from rootless.yml with loop_var __podman_rootless_user.
+
+- name: Rootless BTRFS | Look up home directory
+  ansible.builtin.getent:
+    database: passwd
+    key: '{{ __podman_rootless_user.username }}'
+
+- name: Rootless BTRFS | Set storage path fact
+  ansible.builtin.set_fact:
+    __podman_rootless_home: "{{ ansible_facts['getent_passwd'][__podman_rootless_user.username][4] }}"
+    __podman_rootless_storage: >-
+      {{ ansible_facts['getent_passwd'][__podman_rootless_user.username][4] }}/.local/share/containers
+
+- name: Rootless BTRFS | Check if home filesystem is BTRFS
+  ansible.builtin.command:
+    cmd: stat -f -c %T {{ __podman_rootless_home }}
+  register: __podman_rootless_fstype
+  changed_when: false
+  # stat fails if the home directory does not exist
+  failed_when: false
+
+- name: Rootless BTRFS | Set BTRFS detection fact
+  ansible.builtin.set_fact:
+    __podman_rootless_is_btrfs: "{{ (__podman_rootless_fstype.stdout | default('')) == 'btrfs' }}"
+
+- name: Rootless BTRFS | Check if storage directory is already a BTRFS subvolume
+  ansible.builtin.command:
+    cmd: btrfs subvolume show {{ __podman_rootless_storage }}
+  register: __podman_rootless_subvol_check
+  changed_when: false
+  # Directory may not be a subvolume yet
+  failed_when: false
+  when: __podman_rootless_is_btrfs | bool
+
+- name: Rootless BTRFS | Check if storage directory exists and has content
+  ansible.builtin.find:
+    paths: '{{ __podman_rootless_storage }}'
+    file_type: any
+  register: __podman_rootless_dir_contents
+  when:
+    - __podman_rootless_is_btrfs | bool
+    - __podman_rootless_subvol_check.rc != 0
+
+- name: Rootless BTRFS | Create subvolume for container storage
+  when:
+    - __podman_rootless_is_btrfs | bool
+    - __podman_rootless_subvol_check.rc != 0
+    - __podman_rootless_dir_contents.matched == 0
+  block:
+    - name: Rootless BTRFS | Create parent directory
+      ansible.builtin.file:
+        path: '{{ __podman_rootless_storage | dirname }}'
+        state: directory
+        owner: '{{ __podman_rootless_user.username }}'
+        group: '{{ __podman_rootless_user.username }}'
+        mode: '0755'
+
+    - name: Rootless BTRFS | Remove empty storage directory for subvolume creation
+      ansible.builtin.file:
+        path: '{{ __podman_rootless_storage }}'
+        state: absent
+
+    - name: Rootless BTRFS | Create BTRFS subvolume
+      ansible.builtin.command:
+        cmd: btrfs subvolume create {{ __podman_rootless_storage }}
+      changed_when: true
+
+    - name: Rootless BTRFS | Set ownership on subvolume
+      ansible.builtin.file:
+        path: '{{ __podman_rootless_storage }}'
+        owner: '{{ __podman_rootless_user.username }}'
+        group: '{{ __podman_rootless_user.username }}'
+        mode: '0700'
+        state: directory
+
+- name: Rootless BTRFS | Check NoCOW attribute on storage directory
+  ansible.builtin.command:
+    cmd: lsattr -d {{ __podman_rootless_storage }}
+  register: __podman_rootless_lsattr
+  changed_when: false
+  # lsattr may fail on non-ext/btrfs filesystems
+  failed_when: false
+  when: __podman_rootless_is_btrfs | bool
+
+- name: Rootless BTRFS | Set NoCOW attribute on storage directory
+  ansible.builtin.command:
+    cmd: chattr +C {{ __podman_rootless_storage }}
+  changed_when: true
+  when:
+    - __podman_rootless_is_btrfs | bool
+    - "'C' not in (__podman_rootless_lsattr.stdout | default(''))"
