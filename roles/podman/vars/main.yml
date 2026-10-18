@@ -12,8 +12,9 @@ __podman_binary: '/usr/bin/podman'
 # sudoers.d leaves it in place.
 __podman_sudoers_file: '/etc/sudoers.d/60-role-podman'
 
-# Built-in podman storage paths. The system storage.conf sets graphroot and
-# runroot only when the role variables differ from these, because podman 6
-# applies a graphroot from the system file to rootless users as well.
+# Built-in podman storage paths. From podman 6 on the system storage.conf
+# sets graphroot and runroot only when the role variables differ from these,
+# because podman 6 applies a graphroot from the system file to rootless
+# users as well. podman before 6 requires both keys once the file exists.
 __podman_storage_default_root: '/var/lib/containers/storage'
 __podman_storage_default_runroot: '/run/containers/storage'

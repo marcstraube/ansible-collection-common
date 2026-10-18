@@ -107,11 +107,14 @@ keeps the file in place when the `sudo` role purges unmanaged drop-ins.
 | `podman_storage_runroot` | `/run/containers/storage`     | Temporary storage location                |
 | `podman_storage_options` | `{overlay: {mountopt: ...}}`  | Storage driver options                    |
 
-`graphroot` and `runroot` are written to `/etc/containers/storage.conf` only
-when they differ from the podman defaults above. With the defaults, podman
-uses its built-in values for root and the per-user paths for rootless users.
-Podman 6 applies a `graphroot` or `runroot` from the system file to rootless
-users as well. With a custom `podman_storage_root` the role therefore writes
+How `graphroot` and `runroot` reach `/etc/containers/storage.conf` depends on
+the podman version. Podman before 6 requires both keys once the file exists
+and does not apply them to rootless users, so the role always writes them
+there. Podman 6 applies a `graphroot` or `runroot` from the system file to
+rootless users as well, so from podman 6 on the role writes them only when
+they differ from the defaults above; podman then uses its built-in values for
+root and the per-user paths for rootless users. With a custom
+`podman_storage_root` the role writes
 `~/.config/containers/storage.conf` for every user in `podman_rootless_users`,
 pointing at `~/.local/share/containers/storage`. An existing per-user file is
 never overwritten, so a user's own `graphroot` stays in place. Rootless users

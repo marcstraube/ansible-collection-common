@@ -130,12 +130,39 @@
       ansible.builtin.assert:
         that:
           - "'driver = \"overlay\"' in __storage_decoded"
-          - "'graphroot' not in __storage_decoded"
-          - "'runroot' not in __storage_decoded"
           - "'rootless_storage_path' not in __storage_decoded"
           - "'[storage]' in __storage_decoded"
           - "'Ansible managed' in __storage_decoded"
         fail_msg: 'Storage not properly configured'
+
+    - name: Verify | Read podman version
+      ansible.builtin.command: podman --version
+      register: __podman_version_output
+      changed_when: false
+
+    - name: Verify | Set podman major version fact
+      ansible.builtin.set_fact:
+        __podman_major_version: >-
+          {{ __podman_version_output.stdout
+             | regex_search('([0-9]+)\.[0-9]+', '\1') | first | int }}
+
+    # podman before 6 requires both keys once the file exists; from 6 on the
+    # defaults stay unset so rootless users keep their per-user storage.
+    - name: Verify | Assert storage paths are written for podman before 6
+      ansible.builtin.assert:
+        that:
+          - "'graphroot = \"/var/lib/containers/storage\"' in __storage_decoded"
+          - "'runroot = \"/run/containers/storage\"' in __storage_decoded"
+        fail_msg: 'podman before 6 needs graphroot and runroot in storage.conf'
+      when: __podman_major_version | int < 6
+
+    - name: Verify | Assert storage paths are unset from podman 6 on
+      ansible.builtin.assert:
+        that:
+          - "'graphroot' not in __storage_decoded"
+          - "'runroot' not in __storage_decoded"
+        fail_msg: 'podman 6 must not get the default graphroot and runroot'
+      when: __podman_major_version | int >= 6
 
     #
     # containers.conf Content

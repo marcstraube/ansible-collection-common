@@ -67,11 +67,11 @@
         validate: 'visudo -cf %s'
       when: ansible_facts['os_family'] == 'RedHat'
 
-    # The Rocky 10 test image ships newuidmap/newgidmap without the file
-    # capabilities the shadow-utils package sets on a real host; rootless
-    # podman as the test user cannot create its user namespace without
-    # them (test container only).
-    - name: Prepare | Restore the ID map helper capabilities (Rocky 10 container)
+    # The Arch Linux and Rocky 10 test images ship newuidmap/newgidmap
+    # without the file capabilities the shadow package sets on a real host;
+    # rootless podman as the test user cannot create its user namespace
+    # without them (test container only).
+    - name: Prepare | Restore the ID map helper capabilities (Arch and Rocky 10 containers)
       community.general.capabilities:
         path: '/usr/bin/{{ item.helper }}'
         capability: '{{ item.capability }}'
@@ -79,9 +79,10 @@
       loop:
         - { helper: newuidmap, capability: cap_setuid+ep }
         - { helper: newgidmap, capability: cap_setgid+ep }
-      when:
-        - ansible_facts['os_family'] == 'RedHat'
-        - ansible_facts['distribution_major_version'] == '10'
+      when: >-
+        ansible_facts['os_family'] == 'Archlinux'
+        or (ansible_facts['os_family'] == 'RedHat'
+            and ansible_facts['distribution_major_version'] == '10')
 
     # State a previous run left behind with a user since dropped from
     # podman_nopasswd_sudo_users. Converge must drop that entry.

@@ -59,11 +59,13 @@ Error: creating runtime static files directory "/var/lib/containers/storage/libp
 ```
 
 Every rootless `podman pull` by a service user then failed. The role no longer
-writes `rootless_storage_path`, and `podman_storage_rootless` is gone. The
-system file sets `graphroot` and `runroot` only when they differ from the
-podman defaults, so rootless users get `$HOME/.local/share/containers/storage`
-on podman 5 and 6 alike. With a custom `podman_storage_root` the role writes
-`~/.config/containers/storage.conf` for the users in `podman_rootless_users`.
+writes `rootless_storage_path`, and `podman_storage_rootless` is gone. From
+podman 6 on the system file sets `graphroot` and `runroot` only when they
+differ from the podman defaults, so rootless users get
+`$HOME/.local/share/containers/storage`; podman before 6 still gets both keys,
+which it requires and does not apply to rootless users. With a custom
+`podman_storage_root` the role writes `~/.config/containers/storage.conf` for
+the users in `podman_rootless_users`.
 
 #### Required action
 
