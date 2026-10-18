@@ -26,12 +26,46 @@
       delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
 
+    - name: Prepare | Create rootless test user
+      ansible.builtin.user:
+        name: johndoe
+        create_home: true
+        shell: /bin/bash
+
     - name: Prepare | Install sudo for visudo validation
       ansible.builtin.package:
         name: sudo
         state: present
       retries: 3
       delay: 5
+
+    # Sudo PAM bypass — required for tasks using `become_user` on
+    # geerlingguy Rocky containers under GitHub-hosted runners
+    # (test container only).
+
+    - name: Prepare | Bypass sudo PAM stack (RedHat container)
+      ansible.builtin.copy:
+        content: |
+          #%PAM-1.0
+          auth       sufficient   pam_permit.so
+          account    sufficient   pam_permit.so
+          password   sufficient   pam_permit.so
+          session    sufficient   pam_permit.so
+        dest: /etc/pam.d/sudo
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Disable sudoers authentication (RedHat container)
+      ansible.builtin.copy:
+        content: 'Defaults !authenticate'
+        dest: /etc/sudoers.d/molecule-no-auth
+        owner: root
+        group: root
+        mode: '0440'
+        validate: 'visudo -cf %s'
+      when: ansible_facts['os_family'] == 'RedHat'
 
     # State a previous run left behind with a user since dropped from
     # podman_nopasswd_sudo_users. Converge must drop that entry.

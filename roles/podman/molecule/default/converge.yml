@@ -35,6 +35,8 @@
     podman_seccomp_enabled: true
     podman_nopasswd_sudo_users:
       - 'johndoe'
+    podman_rootless_users:
+      - username: 'johndoe'
 
   tasks:
     - name: Converge | Include podman role  # noqa: role-name[path]

@@ -63,3 +63,19 @@
     label: '{{ item.username }}'
   become: true
   become_user: '{{ item.username }}'
+
+- name: Rootless | Include BTRFS tasks for users
+  ansible.builtin.include_tasks:
+    file: rootless_btrfs.yml
+    apply:
+      tags:
+        - podman
+        - podman:rootless
+  loop: '{{ podman_rootless_users }}'
+  loop_control:
+    loop_var: __podman_rootless_user
+    label: '{{ __podman_rootless_user.username }}'
+  when: podman_rootless_btrfs_subvolume_enabled | bool
+  tags:
+    - podman
+    - podman:rootless

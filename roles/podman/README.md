@@ -47,10 +47,24 @@ overrides if needed.
 
 ### Rootless Configuration
 
-| Variable                | Default | Description                            |
-|-------------------------|---------|----------------------------------------|
-| `podman_rootless_users` | `[]`    | Users to configure for rootless podman |
-| `podman_subid_count`    | `65536` | Default subuid/subgid range size       |
+| Variable                                  | Default | Description                                             |
+|-------------------------------------------|---------|---------------------------------------------------------|
+| `podman_rootless_users`                   | `[]`    | Users to configure for rootless podman                  |
+| `podman_subid_count`                      | `65536` | Default subuid/subgid range size                        |
+| `podman_rootless_btrfs_subvolume_enabled` | `true`  | NoCOW subvolume for `~/.local/share/containers` (BTRFS) |
+
+On a BTRFS home the role turns `~/.local/share/containers` of every listed
+user into its own subvolume with the NoCOW attribute, the same treatment
+`podman_storage_root` gets. A nested subvolume is not part of snapshots of
+the home, so container images and layers stay out of them, and NoCOW removes
+the copy-on-write overhead from the overlay writes. As with `graphroot`,
+NoCOW disables BTRFS checksums for these files.
+
+The subvolume is created only when the directory is missing or empty. An
+existing user with populated storage keeps a plain directory; to move such a
+user onto a subvolume, run `podman system reset` as that user (or move the
+directory aside, run the role, and move the contents back). Homes on other
+filesystems are left as they are.
 
 ### Passwordless sudo
 
@@ -142,7 +156,7 @@ for security — override only per container where required.
 | `podman`           | All podman tasks               |
 | `podman:install`   | Package installation and BTRFS |
 | `podman:configure` | Configuration files            |
-| `podman:rootless`  | Rootless user setup            |
+| `podman:rootless`  | Rootless user setup and BTRFS  |
 | `podman:sudo`      | Passwordless sudo for podman   |
 | `podman:service`   | Systemd services and timers    |
 
