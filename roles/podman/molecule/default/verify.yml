@@ -131,7 +131,7 @@
         that:
           - "'driver = \"overlay\"' in __storage_decoded"
           - "'graphroot = \"/var/lib/containers/storage\"' in __storage_decoded"
-          - "'rootless_storage_path' in __storage_decoded"
+          - "'rootless_storage_path' not in __storage_decoded"
           - "'[storage]' in __storage_decoded"
           - "'Ansible managed' in __storage_decoded"
         fail_msg: 'Storage not properly configured'

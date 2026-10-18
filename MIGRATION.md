@@ -14,6 +14,31 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+### `podman` — `podman_storage_rootless` removed
+
+`/etc/containers/storage.conf` set both `graphroot` and
+`rootless_storage_path`. Current podman treats `rootless_storage_path` as
+deprecated and, when both keys are present, uses `graphroot` for rootless users
+as well:
+
+```text
+level=warning msg="Both rootless_storage_path and graphroot are set, using graphroot setting only,
+  rootless_storage_path is deprecated and should be removed from the config"
+Error: creating runtime static files directory "/var/lib/containers/storage/libpod": mkdir /var/lib/containers/storage: permission denied
+```
+
+Every rootless `podman pull` by a service user then failed. The role no longer
+writes `rootless_storage_path`, and `podman_storage_rootless` is gone. Rootless
+users fall back to the podman default `$HOME/.local/share/containers/storage`,
+which is the value the variable carried.
+
+#### Required action
+
+Remove `podman_storage_rootless` from the inventory. A rootless storage
+location other than the podman default is no longer configurable through the
+role; set `graphroot` in the user's own `~/.config/containers/storage.conf` for
+that.
+
 ### `ansible` — the role is now `ansible_tools`
 
 The role that installs Ansible, Molecule and the linters was named `ansible`,

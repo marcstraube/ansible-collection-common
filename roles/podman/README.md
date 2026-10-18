@@ -80,12 +80,11 @@ keeps the file in place when the `sudo` role purges unmanaged drop-ins.
 
 ### Storage (storage.conf)
 
-| Variable                  | Default                                 | Description                               |
-|---------------------------|-----------------------------------------|-------------------------------------------|
-| `podman_storage_driver`   | `overlay`                               | Storage driver (overlay, vfs, btrfs, zfs) |
-| `podman_storage_root`     | `/var/lib/containers/storage`           | Root storage location                     |
-| `podman_storage_rootless` | `$HOME/.local/share/containers/storage` | Rootless storage path                     |
-| `podman_storage_options`  | `{overlay: {mountopt: ...}}`            | Storage driver options                    |
+| Variable                 | Default                       | Description                               |
+|--------------------------|-------------------------------|-------------------------------------------|
+| `podman_storage_driver`  | `overlay`                     | Storage driver (overlay, vfs, btrfs, zfs) |
+| `podman_storage_root`    | `/var/lib/containers/storage` | Root storage location                     |
+| `podman_storage_options` | `{overlay: {mountopt: ...}}`  | Storage driver options                    |
 
 ### Network
 

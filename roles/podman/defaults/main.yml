@@ -124,9 +124,6 @@ podman_storage_root: '/var/lib/containers/storage'
 # Run root location (temporary writable content)
 podman_storage_runroot: '/run/containers/storage'
 
-# Rootless storage location (supports $HOME substitution)
-podman_storage_rootless: '$HOME/.local/share/containers/storage'
-
 # Transient store mode (faster but no persistence across reboots)
 podman_storage_transient: false
 
