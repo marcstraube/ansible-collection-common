@@ -12,6 +12,13 @@ on:
     - cron: '0 7 * * 0'
   workflow_dispatch:
 
+# One CI run per pull request: a new commit cancels the run of the previous
+# one. Pushes to main get a group of their own per commit, so a merge run is
+# never cancelled or queued behind another.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # =============================================================================
   # LINT (always runs)
@@ -177,6 +184,12 @@ jobs:
           if [ "$EVENT" = "schedule" ] || [ "$EVENT" = "workflow_dispatch" ]; then
             echo "Event '$EVENT' — full matrix (all roles × all platforms)"
             ROLES="$ALL_PODMAN_ROLES"
+          elif [ "${{ github.head_ref }}" = "release-please--branches--main" ]; then
+            # The release PR carries the tree of main plus the version bump
+            # and the changelog; every commit on main passed the matrix when
+            # its PR merged, so there is nothing new to test here.
+            echo "Release PR — skipping the molecule matrix"
+            ROLES=""
           else
             # Determine base commit for diff
             if [ "$EVENT" = "pull_request" ]; then
