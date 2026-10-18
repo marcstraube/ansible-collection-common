@@ -5,8 +5,9 @@
 # Task file for base system configuration — single source of truth.
 # Import it from a play with `ansible.builtin.import_tasks`.
 #
-# All roles default to enabled — disable per host/group via inventory.
-# See each role's defaults/main.yml for available variables.
+# Each role's defaults/main.yml decides whether it runs (`<role>_enabled`).
+# Override per host/group via inventory. See each role's defaults/main.yml
+# for available variables.
 #
 # Tag scheme:
 #   base-system     All roles in this file
@@ -17,6 +18,10 @@
 # Roles are imported statically (import_role) so their internal sub-tags are
 # exposed to --tags / --list-tags. Run `ansible-playbook … --list-tags` to see
 # the full set. Dynamic include_role would hide sub-tags behind the include.
+#
+# The import condition reads the role toggle without a default(): under
+# import_role the condition is evaluated with the role defaults in scope, so a
+# playbook default() would never apply.
 # =============================================================================
 
 #
@@ -29,7 +34,7 @@
   tags:
     - base-system
     - package-management
-  when: package_management_enabled | default(true) | bool
+  when: package_management_enabled | bool
 
 - name: Base System | Import base role
   ansible.builtin.import_role:
@@ -37,7 +42,7 @@
   tags:
     - base-system
     - base
-  when: base_enabled | default(true) | bool
+  when: base_enabled | bool
 
 - name: Base System | Import users role
   ansible.builtin.import_role:
@@ -45,7 +50,7 @@
   tags:
     - base-system
     - users
-  when: users_enabled | default(true) | bool
+  when: users_enabled | bool
 
 # After users: mount points may be owned by accounts the users role creates.
 - name: Base System | Import storage role
@@ -54,7 +59,7 @@
   tags:
     - base-system
     - storage
-  when: storage_enabled | default(true) | bool
+  when: storage_enabled | bool
 
 - name: Base System | Import sudo role
   ansible.builtin.import_role:
@@ -62,7 +67,7 @@
   tags:
     - base-system
     - sudo
-  when: sudo_enabled | default(true) | bool
+  when: sudo_enabled | bool
 
 #
 # Security Foundation
@@ -75,7 +80,7 @@
     - base-system
     - security
     - sysctl
-  when: sysctl_enabled | default(true) | bool
+  when: sysctl_enabled | bool
 
 - name: Base System | Import pam_hardening role
   ansible.builtin.import_role:
@@ -84,7 +89,7 @@
     - base-system
     - security
     - pam-hardening
-  when: pam_hardening_enabled | default(true) | bool
+  when: pam_hardening_enabled | bool
 
 - name: Base System | Import openssh role
   ansible.builtin.import_role:
@@ -93,7 +98,7 @@
     - base-system
     - security
     - openssh
-  when: openssh_enabled | default(true) | bool
+  when: openssh_enabled | bool
 
 - name: Base System | Import hardening role
   ansible.builtin.import_role:
@@ -102,7 +107,7 @@
     - base-system
     - security
     - hardening
-  when: hardening_enabled | default(true) | bool
+  when: hardening_enabled | bool
 
 - name: Base System | Import apparmor role
   ansible.builtin.import_role:
@@ -111,7 +116,7 @@
     - base-system
     - security
     - apparmor
-  when: apparmor_enabled | default(true) | bool
+  when: apparmor_enabled | bool
 
 - name: Base System | Import firejail role
   ansible.builtin.import_role:
@@ -135,7 +140,7 @@
   tags:
     - base-system
     - networkmanager
-  when: networkmanager_enabled | default(true) | bool
+  when: networkmanager_enabled | bool
 
 - name: Base System | Import firewalld role
   ansible.builtin.import_role:
@@ -144,7 +149,7 @@
     - base-system
     - security
     - firewalld
-  when: firewalld_enabled | default(true) | bool
+  when: firewalld_enabled | bool
 
 #
 # Languages & Tools
@@ -156,7 +161,7 @@
   tags:
     - base-system
     - python
-  when: python_enabled | default(true) | bool
+  when: python_enabled | bool
 
 - name: Base System | Import nodejs role
   ansible.builtin.import_role:
@@ -164,7 +169,7 @@
   tags:
     - base-system
     - nodejs
-  when: nodejs_enabled | default(true) | bool
+  when: nodejs_enabled | bool
 
 - name: Base System | Import git role
   ansible.builtin.import_role:
@@ -172,7 +177,7 @@
   tags:
     - base-system
     - git
-  when: git_enabled | default(true) | bool
+  when: git_enabled | bool
 
 - name: Base System | Import chrony role
   ansible.builtin.import_role:
@@ -180,7 +185,7 @@
   tags:
     - base-system
     - chrony
-  when: chrony_enabled | default(true) | bool
+  when: chrony_enabled | bool
 
 - name: Base System | Import mta role
   ansible.builtin.import_role:
@@ -188,7 +193,7 @@
   tags:
     - base-system
     - mta
-  when: mta_enabled | default(true) | bool
+  when: mta_enabled | bool
 
 - name: Base System | Import logrotate role
   ansible.builtin.import_role:
@@ -196,7 +201,7 @@
   tags:
     - base-system
     - logrotate
-  when: logrotate_enabled | default(true) | bool
+  when: logrotate_enabled | bool
 
 - name: Base System | Import editors role
   ansible.builtin.import_role:
@@ -204,7 +209,7 @@
   tags:
     - base-system
     - editors
-  when: editors_enabled | default(true) | bool
+  when: editors_enabled | bool
 
 #
 # Networking
@@ -216,7 +221,7 @@
   tags:
     - base-system
     - resolved
-  when: resolved_enabled | default(true) | bool
+  when: resolved_enabled | bool
 
 - name: Base System | Import wireguard role
   ansible.builtin.import_role:
@@ -224,7 +229,7 @@
   tags:
     - base-system
     - wireguard
-  when: wireguard_enabled | default(true) | bool
+  when: wireguard_enabled | bool
 
 - name: Base System | Import avahi role
   ansible.builtin.import_role:
@@ -232,7 +237,7 @@
   tags:
     - base-system
     - avahi
-  when: avahi_enabled | default(true) | bool
+  when: avahi_enabled | bool
 
 - name: Base System | Import unbound role
   ansible.builtin.import_role:
@@ -240,7 +245,7 @@
   tags:
     - base-system
     - unbound
-  when: unbound_enabled | default(true) | bool
+  when: unbound_enabled | bool
 
 - name: Base System | Import snmp role
   ansible.builtin.import_role:
@@ -248,7 +253,7 @@
   tags:
     - base-system
     - snmp
-  when: snmp_enabled | default(true) | bool
+  when: snmp_enabled | bool
 
 #
 # Applications
@@ -260,7 +265,7 @@
   tags:
     - base-system
     - utils
-  when: utils_enabled | default(true) | bool
+  when: utils_enabled | bool
 
 - name: Base System | Import multiplexer role
   ansible.builtin.import_role:
@@ -268,7 +273,7 @@
   tags:
     - base-system
     - multiplexer
-  when: multiplexer_enabled | default(true) | bool
+  when: multiplexer_enabled | bool
 
 - name: Base System | Import shell role
   ansible.builtin.import_role:
@@ -276,7 +281,7 @@
   tags:
     - base-system
     - shell
-  when: shell_enabled | default(true) | bool
+  when: shell_enabled | bool
 
 - name: Base System | Import fonts role
   ansible.builtin.import_role:
@@ -284,7 +289,7 @@
   tags:
     - base-system
     - fonts
-  when: fonts_enabled | default(true) | bool
+  when: fonts_enabled | bool
 
 - name: Base System | Import graphics role
   ansible.builtin.import_role:
@@ -292,7 +297,7 @@
   tags:
     - base-system
     - graphics
-  when: graphics_enabled | default(true) | bool
+  when: graphics_enabled | bool
 
 - name: Base System | Import energy_management role
   ansible.builtin.import_role:
@@ -300,7 +305,7 @@
   tags:
     - base-system
     - energy-management
-  when: energy_management_enabled | default(true) | bool
+  when: energy_management_enabled | bool
 
 - name: Base System | Import gnupg role
   ansible.builtin.import_role:
@@ -308,7 +313,7 @@
   tags:
     - base-system
     - gnupg
-  when: gnupg_enabled | default(true) | bool
+  when: gnupg_enabled | bool
 
 - name: Base System | Import docker role
   ansible.builtin.import_role:
@@ -316,7 +321,7 @@
   tags:
     - base-system
     - docker
-  when: docker_enabled | default(true) | bool
+  when: docker_enabled | bool
 
 - name: Base System | Import podman role
   ansible.builtin.import_role:
@@ -324,7 +329,7 @@
   tags:
     - base-system
     - podman
-  when: podman_enabled | default(true) | bool
+  when: podman_enabled | bool
 
 - name: Base System | Import php role
   ansible.builtin.import_role:
@@ -332,7 +337,7 @@
   tags:
     - base-system
     - php
-  when: php_enabled | default(true) | bool
+  when: php_enabled | bool
 
 - name: Base System | Import ansible_tools role
   ansible.builtin.import_role:
@@ -353,7 +358,7 @@
     - base-system
     - security
     - pki
-  when: pki_enabled | default(true) | bool
+  when: pki_enabled | bool
 
 - name: Base System | Import fail2ban role
   ansible.builtin.import_role:
@@ -362,7 +367,7 @@
     - base-system
     - security
     - fail2ban
-  when: fail2ban_enabled | default(true) | bool
+  when: fail2ban_enabled | bool
 
 - name: Base System | Import clamav role
   ansible.builtin.import_role:
@@ -371,7 +376,7 @@
     - base-system
     - security
     - clamav
-  when: clamav_enabled | default(true) | bool
+  when: clamav_enabled | bool
 
 - name: Base System | Import auditd role
   ansible.builtin.import_role:
@@ -380,7 +385,7 @@
     - base-system
     - security
     - auditd
-  when: auditd_enabled | default(true) | bool
+  when: auditd_enabled | bool
 
 - name: Base System | Import aide role
   ansible.builtin.import_role:
@@ -389,7 +394,7 @@
     - base-system
     - security
     - aide
-  when: aide_enabled | default(true) | bool
+  when: aide_enabled | bool
 
 - name: Base System | Import rkhunter role
   ansible.builtin.import_role:
@@ -398,7 +403,7 @@
     - base-system
     - security
     - rkhunter
-  when: rkhunter_enabled | default(true) | bool
+  when: rkhunter_enabled | bool
 
 - name: Base System | Import lynis role
   ansible.builtin.import_role:
@@ -407,7 +412,7 @@
     - base-system
     - security
     - lynis
-  when: lynis_enabled | default(true) | bool
+  when: lynis_enabled | bool
 
 - name: Base System | Import hardware_tokens role
   ansible.builtin.import_role:
@@ -416,7 +421,7 @@
     - base-system
     - security
     - hardware-tokens
-  when: hardware_tokens_enabled | default(true) | bool
+  when: hardware_tokens_enabled | bool
 
 #
 # Backup (explicit only — tagged 'never')
@@ -429,4 +434,4 @@
     - backup
     - restic
     - never
-  when: restic_enabled | default(true) | bool
+  when: restic_enabled | bool

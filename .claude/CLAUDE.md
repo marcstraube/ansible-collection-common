@@ -14,7 +14,8 @@ Multi-OS support: Arch Linux (primary), Debian Trixie, Rocky Linux 9/10.
 - **Tasks:** `ansible.builtin.include_tasks` — never `import_tasks` for conditional dispatch
 - **Tag propagation:** Always `apply: tags:` when using `include_tasks` inside blocks
 - **Variables:** `<role>_<setting>`, internal: `__<role>_<setting>` (double underscore)
-- **Booleans:** `<role>_enabled | default(true/false) | bool`
+- **Booleans:** `<role>_enabled | bool` — the role default in `defaults/main.yml`
+  is the single source of truth (see [Role toggles](#role-toggles))
 - **Role Control:** `<role>_enabled` + `<role>_service_enabled` in `# Role Control` section (first in defaults)
 - **Templates:** `{{ ansible_managed | comment }}` header
 - **Comments:** English only
@@ -102,6 +103,22 @@ stage can be run in isolation. For that to work, two rules apply:
   tags:
     - always        # bootstrap — needed by every sub-tag path
 ```
+
+### Role toggles
+
+The role default in `defaults/main.yml` is the single source of truth for
+`<role>_enabled`: infrastructure and base roles default to `true`, application,
+service and security roles to `false`. Inventory `group_vars` hold overrides only.
+
+- **`import_role` reads `when: <role>_enabled | bool`** — no `default()`. The
+  condition is attached to every task of the imported role and evaluated with
+  the role defaults in scope, so the toggle is always defined and a playbook
+  `default()` would be dead code (`public: false` does not change this).
+- **`include_role` mirrors the role default:** `when: <role>_enabled | default(<role default>) | bool`.
+  The condition runs before the role loads, so the `default()` is needed there
+  and must match the role default.
+- `firejail` is imported without a condition: the role dispatches on
+  `firejail_enabled` internally (install/configure vs. cleanup).
 
 ### Task Naming
 
