@@ -1,0 +1,34 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    kubernetes_enabled: true
+    kubernetes_kubectl_enabled: true
+    kubernetes_helm_enabled: true
+    kubernetes_minikube_enabled: true
+    kubernetes_minikube_driver: 'docker'
+    kubernetes_users:
+      - username: 'johndoe'
+        minikube_driver: 'podman'
+      - username: 'janedoe'
+        mode: 'managed'
+      - username: 'guest'
+        mode: 'disabled'
+
+  pre_tasks:
+    - name: Converge | Create test users
+      ansible.builtin.user:
+        name: '{{ item }}'
+        create_home: true
+        shell: /bin/bash
+      loop:
+        - 'johndoe'
+        - 'janedoe'
+        - 'guest'
+
+  tasks:
+    - name: Converge | Include kubernetes role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

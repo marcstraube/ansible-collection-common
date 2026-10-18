@@ -1,0 +1,17 @@
+---
+# Loops over kubernetes_users entries.
+# Respects mode: managed | initial | disabled
+
+- name: Users | Deploy per-user minikube config
+  ansible.builtin.include_tasks:
+    file: user_config.yml
+    apply:
+      tags:
+        - kubernetes
+        - kubernetes:users
+  loop: '{{ kubernetes_users }}'
+  loop_control:
+    loop_var: __kubernetes_user
+    label: '{{ __kubernetes_user.username }}'
+  when:
+    - (__kubernetes_user.mode | default(kubernetes_user_config_mode)) != 'disabled'

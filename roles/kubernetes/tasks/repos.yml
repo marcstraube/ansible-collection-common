@@ -1,0 +1,65 @@
+---
+#
+# Vendor repositories: kubectl from pkgs.k8s.io, helm from the Helm project.
+# EPEL (helm on EL) is enabled by the package_management role.
+#
+
+- name: Repos | Ensure apt prerequisites (Debian)
+  ansible.builtin.package:
+    name: '{{ __kubernetes_apt_prerequisites }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Repos | Add Kubernetes apt repository (Debian)
+  ansible.builtin.deb822_repository:
+    name: kubernetes
+    types: deb
+    uris: '{{ __kubernetes_kubectl_repo_url }}'
+    suites: '/'
+    signed_by: '{{ __kubernetes_kubectl_gpg_url }}'
+    state: present
+  retries: 5
+  delay: 10
+  register: __kubernetes_apt_kubernetes_repo
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - kubernetes_kubectl_enabled | bool
+
+- name: Repos | Add Helm apt repository (Debian)
+  ansible.builtin.deb822_repository:
+    name: helm
+    types: deb
+    uris: '{{ __kubernetes_helm_repo_url }}'
+    suites: any
+    components: main
+    signed_by: '{{ __kubernetes_helm_gpg_url }}'
+    state: present
+  retries: 5
+  delay: 10
+  register: __kubernetes_apt_helm_repo
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - kubernetes_helm_enabled | bool
+
+- name: Repos | Update apt cache after repository change (Debian)
+  ansible.builtin.apt:
+    update_cache: true
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - (__kubernetes_apt_kubernetes_repo is changed) or (__kubernetes_apt_helm_repo is changed)
+
+- name: Repos | Add Kubernetes dnf repository (RedHat)
+  ansible.builtin.yum_repository:
+    name: kubernetes
+    description: 'Kubernetes (pkgs.k8s.io, v{{ kubernetes_kubectl_version }})'
+    baseurl: '{{ __kubernetes_kubectl_repo_url }}'
+    gpgcheck: true
+    gpgkey: '{{ __kubernetes_kubectl_gpg_url }}'
+    enabled: true
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - kubernetes_kubectl_enabled | bool

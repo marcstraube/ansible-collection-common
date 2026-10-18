@@ -1,0 +1,12 @@
+---
+# All three tools ship in the extra repository; no vendor repositories.
+__kubernetes_packages:
+  kubectl:
+    - 'kubectl'
+  helm:
+    - 'helm'
+  minikube:
+    - 'minikube'
+
+# minikube comes from the distribution, no upstream package
+__kubernetes_minikube_package_url: ''

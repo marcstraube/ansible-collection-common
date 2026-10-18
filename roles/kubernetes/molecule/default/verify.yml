@@ -1,0 +1,156 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Load role defaults
+      ansible.builtin.include_vars: '{{ playbook_dir }}/../../defaults/main.yml'
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '{{ playbook_dir }}/../../vars'
+
+    #
+    # Repositories
+    #
+
+    - name: Verify | Stat vendor repository files
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop: >-
+        {{ {
+          'Debian': ['/etc/apt/sources.list.d/kubernetes.sources', '/etc/apt/sources.list.d/helm.sources'],
+          'RedHat': ['/etc/yum.repos.d/kubernetes.repo'],
+          'Archlinux': []
+        }[ansible_facts['os_family']] }}
+      register: __kubernetes_repo_files
+
+    - name: Verify | Assert vendor repository files exist
+      ansible.builtin.assert:
+        that:
+          - __kubernetes_repo_files.results | map(attribute='stat.exists') | select | list | length
+            == __kubernetes_repo_files.results | length
+        fail_msg: 'a vendor repository file is missing'
+
+    #
+    # Packages
+    #
+
+    - name: Verify | Check kubectl and helm packages are installed
+      ansible.builtin.package:
+        name: '{{ __kubernetes_packages.kubectl + __kubernetes_packages.helm }}'
+        state: present
+      check_mode: true
+      register: __kubernetes_pkg_check
+      failed_when: __kubernetes_pkg_check.changed
+
+    - name: Verify | Gather package facts
+      ansible.builtin.package_facts:
+
+    - name: Verify | Assert minikube is installed
+      ansible.builtin.assert:
+        that:
+          - "'minikube' in ansible_facts['packages']"
+        fail_msg: 'minikube is not installed'
+
+    # Debian and EL install the upstream package pinned to the role default
+    - name: Verify | Assert minikube is pinned to the configured release
+      ansible.builtin.assert:
+        that:
+          - >-
+            (ansible_facts['packages']['minikube'][0]['version'] | regex_replace('-.*$', ''))
+            == kubernetes_minikube_version
+        fail_msg: 'minikube version does not match kubernetes_minikube_version'
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    #
+    # Binaries
+    #
+
+    - name: Verify | Run kubectl version
+      ansible.builtin.command: kubectl version --client --output=yaml
+      register: __kubernetes_kubectl_version
+      changed_when: false
+
+    - name: Verify | Run helm version
+      ansible.builtin.command: helm version --short
+      register: __kubernetes_helm_version
+      changed_when: false
+
+    - name: Verify | Run minikube version
+      ansible.builtin.command: minikube version --short
+      register: __kubernetes_minikube_version
+      changed_when: false
+
+    - name: Verify | Assert the tools report their versions
+      ansible.builtin.assert:
+        that:
+          - "'gitVersion' in __kubernetes_kubectl_version.stdout"
+          - __kubernetes_helm_version.stdout is match('^v[0-9]')
+          - __kubernetes_minikube_version.stdout is match('^v[0-9]')
+        fail_msg: 'a tool does not report its version'
+
+    - name: Verify | Assert minikube reports the pinned release
+      ansible.builtin.assert:
+        that:
+          - __kubernetes_minikube_version.stdout == 'v' ~ kubernetes_minikube_version
+        fail_msg: 'minikube reports a release other than kubernetes_minikube_version'
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    #
+    # User Configuration
+    #
+
+    - name: Verify | Stat minikube config of the configured users
+      ansible.builtin.stat:
+        path: '/home/{{ item }}/.minikube/config/config.json'
+      loop:
+        - 'johndoe'
+        - 'janedoe'
+        - 'guest'
+      register: __kubernetes_user_configs
+
+    - name: Verify | Assert per-user configs follow the modes
+      ansible.builtin.assert:
+        that:
+          - __kubernetes_user_configs.results[0].stat.exists
+          - __kubernetes_user_configs.results[0].stat.pw_name == 'johndoe'
+          - __kubernetes_user_configs.results[1].stat.exists
+          - __kubernetes_user_configs.results[1].stat.pw_name == 'janedoe'
+          - not __kubernetes_user_configs.results[2].stat.exists
+        fail_msg: 'per-user minikube config does not follow the configured modes'
+
+    - name: Verify | Stat the minikube directory of a configured user
+      ansible.builtin.stat:
+        path: '/home/johndoe/.minikube'
+      register: __kubernetes_minikube_dir
+
+    - name: Verify | Assert the minikube directory belongs to the user
+      ansible.builtin.assert:
+        that:
+          - __kubernetes_minikube_dir.stat.isdir
+          - __kubernetes_minikube_dir.stat.pw_name == 'johndoe'
+        fail_msg: '~/.minikube is not owned by the user'
+
+    - name: Verify | Read minikube configs
+      ansible.builtin.slurp:
+        src: '/home/{{ item }}/.minikube/config/config.json'
+      loop:
+        - 'johndoe'
+        - 'janedoe'
+      register: __kubernetes_user_config_content
+
+    - name: Verify | Assert drivers per user
+      ansible.builtin.assert:
+        that:
+          - (__kubernetes_user_config_content.results[0].content | b64decode | from_json).driver == 'podman'
+          - (__kubernetes_user_config_content.results[1].content | b64decode | from_json).driver == 'docker'
+        fail_msg: 'minikube driver in the user config is wrong'

@@ -330,6 +330,14 @@
     - podman
   when: podman_enabled | bool
 
+- name: Base System | Import kubernetes role
+  ansible.builtin.import_role:
+    name: marcstraube.common.kubernetes
+  tags:
+    - base-system
+    - kubernetes
+  when: kubernetes_enabled | bool
+
 - name: Base System | Import php role
   ansible.builtin.import_role:
     name: marcstraube.common.php

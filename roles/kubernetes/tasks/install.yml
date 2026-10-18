@@ -1,0 +1,69 @@
+---
+- name: Install | kubectl
+  ansible.builtin.package:
+    name: '{{ __kubernetes_packages.kubectl }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: kubernetes_kubectl_enabled | bool
+
+- name: Install | helm
+  ansible.builtin.package:
+    name: '{{ __kubernetes_packages.helm }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: kubernetes_helm_enabled | bool
+
+- name: Install | minikube from the distribution
+  ansible.builtin.package:
+    name: '{{ __kubernetes_packages.minikube }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - kubernetes_minikube_enabled | bool
+    - __kubernetes_packages.minikube | length > 0
+
+# The upstream package has no checksum file and the .rpm carries no
+# signature. Installing by URL on every run would download it again, so
+# the installed version gates the install and pins it to
+# kubernetes_minikube_version in both directions.
+- name: Install | Gather package facts for the minikube pin
+  ansible.builtin.package_facts:
+  when:
+    - kubernetes_minikube_enabled | bool
+    - __kubernetes_minikube_package_url | length > 0
+
+- name: Install | Set minikube install decision
+  ansible.builtin.set_fact:
+    __kubernetes_minikube_install: >-
+      {{ 'minikube' not in ansible_facts['packages']
+         or (ansible_facts['packages']['minikube'][0]['version'] | regex_replace('-.*$', ''))
+            != kubernetes_minikube_version }}
+  when:
+    - kubernetes_minikube_enabled | bool
+    - __kubernetes_minikube_package_url | length > 0
+
+- name: Install | minikube from the upstream package (Debian)
+  ansible.builtin.apt:
+    deb: '{{ __kubernetes_minikube_package_url }}'
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - kubernetes_minikube_enabled | bool
+    - __kubernetes_minikube_install | default(false) | bool
+
+- name: Install | minikube from the upstream package (RedHat)
+  ansible.builtin.dnf:
+    name: '{{ __kubernetes_minikube_package_url }}'
+    state: present
+    disable_gpg_check: true
+    allow_downgrade: true
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - kubernetes_minikube_enabled | bool
+    - __kubernetes_minikube_install | default(false) | bool

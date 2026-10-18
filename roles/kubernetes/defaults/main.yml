@@ -1,0 +1,59 @@
+---
+#
+# Role Control
+#
+
+# Enable the kubernetes role
+kubernetes_enabled: false
+
+#
+# Tools
+#
+
+# Install kubectl, the Kubernetes command-line client
+kubernetes_kubectl_enabled: true
+
+# kubectl release branch of the pkgs.k8s.io repository on Debian and EL
+# (minor version; patch releases follow the repository). Arch Linux installs
+# the distribution package.
+kubernetes_kubectl_version: '1.37'
+
+# Install helm, the Kubernetes package manager
+kubernetes_helm_enabled: true
+
+# Install minikube, a local Kubernetes cluster for development
+kubernetes_minikube_enabled: true
+
+# minikube release installed from the upstream .deb/.rpm package on Debian
+# and EL. Arch Linux installs the distribution package.
+kubernetes_minikube_version: '1.39.0'
+
+#
+# minikube Driver
+#
+
+# Default driver written to each user's minikube config (docker or podman).
+# docker needs the docker role with the user in docker_users; podman needs
+# the podman role with the user in podman_rootless_users or
+# podman_nopasswd_sudo_users. Each kubernetes_users entry may override it.
+kubernetes_minikube_driver: 'docker'
+
+#
+# User Configuration
+#
+
+# Users receiving ~/.minikube/config/config.json with the driver
+kubernetes_users: []
+# Example:
+#   - username: 'johndoe'
+#     minikube_driver: 'podman'
+#   - username: 'developer'
+#     mode: 'managed'
+#   - username: 'guest'
+#     mode: 'disabled'
+
+# Default mode when a user entry has no 'mode' key
+# managed  — overwrite on every run
+# initial  — deploy only when the config is absent, then leave it alone
+# disabled — skip user config entirely
+kubernetes_user_config_mode: 'initial'
