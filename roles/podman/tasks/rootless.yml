@@ -64,6 +64,31 @@
   become: true
   become_user: '{{ item.username }}'
 
+# On podman 6 a graphroot in the system storage.conf applies to rootless
+# users as well. With a non-default podman_storage_root, point every listed
+# user back at the per-user default so their storage stays in their home.
+# The file is a safety net: an existing per-user storage.conf is never
+# overwritten, so users keep their own graphroot.
+- name: Rootless | Look up home directories
+  ansible.builtin.getent:
+    database: passwd
+  when:
+    - podman_rootless_users | length > 0
+    - podman_storage_root != __podman_storage_default_root
+
+- name: Rootless | Deploy per-user storage configuration
+  ansible.builtin.template:
+    src: storage-user.conf.j2
+    dest: "{{ ansible_facts['getent_passwd'][item.username][4] }}/.config/containers/storage.conf"
+    owner: '{{ item.username }}'
+    group: '{{ item.username }}'
+    mode: '0644'
+    force: false
+  loop: '{{ podman_rootless_users }}'
+  loop_control:
+    label: '{{ item.username }}'
+  when: podman_storage_root != __podman_storage_default_root
+
 - name: Rootless | Include BTRFS tasks for users
   ansible.builtin.include_tasks:
     file: rootless_btrfs.yml

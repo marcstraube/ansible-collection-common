@@ -11,3 +11,9 @@ __podman_binary: '/usr/bin/podman'
 # Named after the owning role (NN-role-<role>) so the sudo role's purge of
 # sudoers.d leaves it in place.
 __podman_sudoers_file: '/etc/sudoers.d/60-role-podman'
+
+# Built-in podman storage paths. The system storage.conf sets graphroot and
+# runroot only when the role variables differ from these, because podman 6
+# applies a graphroot from the system file to rootless users as well.
+__podman_storage_default_root: '/var/lib/containers/storage'
+__podman_storage_default_runroot: '/run/containers/storage'

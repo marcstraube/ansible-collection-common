@@ -35,8 +35,15 @@
     podman_seccomp_enabled: true
     podman_nopasswd_sudo_users:
       - 'johndoe'
+    # The molecule instance runs rootless on the CI runner and maps 65536
+    # IDs; the test user's range has to stay below that so rootless podman
+    # can create its user namespace (test scenario only).
     podman_rootless_users:
       - username: 'johndoe'
+        subuid_start: 10000
+        subuid_count: 50000
+        subgid_start: 10000
+        subgid_count: 50000
 
   tasks:
     - name: Converge | Include podman role  # noqa: role-name[path]

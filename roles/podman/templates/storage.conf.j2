@@ -7,8 +7,14 @@
 
 [storage]
 driver = "{{ podman_storage_driver }}"
+{% if podman_storage_root != __podman_storage_default_root %}
+# Applies to rootless users as well on podman 6; the role writes
+# ~/.config/containers/storage.conf for podman_rootless_users.
 graphroot = "{{ podman_storage_root }}"
+{% endif %}
+{% if podman_storage_runroot != __podman_storage_default_runroot %}
 runroot = "{{ podman_storage_runroot }}"
+{% endif %}
 {% if podman_storage_transient %}
 transient_store = true
 {% endif %}

@@ -15,6 +15,22 @@
     __podman_rootless_storage: >-
       {{ ansible_facts['getent_passwd'][__podman_rootless_user.username][4] }}/.local/share/containers
 
+# A user who sets an own graphroot in ~/.config/containers/storage.conf keeps
+# that layout; a subvolume at the default path would sit unused next to it.
+- name: Rootless BTRFS | Read graphroot from the user's storage.conf
+  ansible.builtin.command:
+    cmd: grep -E '^\s*graphroot\s*=' {{ __podman_rootless_home }}/.config/containers/storage.conf
+  register: __podman_rootless_user_graphroot
+  changed_when: false
+  # No file or no graphroot line both mean the per-user default applies
+  failed_when: false
+
+- name: Rootless BTRFS | Set custom graphroot fact
+  ansible.builtin.set_fact:
+    __podman_rootless_custom_graphroot: >-
+      {{ __podman_rootless_user_graphroot.rc == 0
+         and (__podman_rootless_storage ~ '/storage') not in __podman_rootless_user_graphroot.stdout }}
+
 - name: Rootless BTRFS | Check if home filesystem is BTRFS
   ansible.builtin.command:
     cmd: stat -f -c %T {{ __podman_rootless_home }}
@@ -22,10 +38,13 @@
   changed_when: false
   # stat fails if the home directory does not exist
   failed_when: false
+  when: not __podman_rootless_custom_graphroot | bool
 
 - name: Rootless BTRFS | Set BTRFS detection fact
   ansible.builtin.set_fact:
-    __podman_rootless_is_btrfs: "{{ (__podman_rootless_fstype.stdout | default('')) == 'btrfs' }}"
+    __podman_rootless_is_btrfs: >-
+      {{ not (__podman_rootless_custom_graphroot | bool)
+         and (__podman_rootless_fstype.stdout | default('')) == 'btrfs' }}
 
 - name: Rootless BTRFS | Check if storage directory is already a BTRFS subvolume
   ansible.builtin.command:
