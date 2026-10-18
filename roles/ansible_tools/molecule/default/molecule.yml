@@ -2,7 +2,7 @@
 driver:
   name: podman
 platforms:
-  - name: ansible-archlinux
+  - name: ansible-tools-archlinux
     image: docker.io/marcstraube/archlinux-ansible:latest
     pre_build_image: true
     command: /usr/lib/systemd/systemd
@@ -12,7 +12,7 @@ platforms:
     tmpfs:
       /run: rw,nosuid,nodev,size=65536k
       /tmp: rw,nosuid,nodev
-  - name: ansible-debian-trixie
+  - name: ansible-tools-debian-trixie
     image: docker.io/geerlingguy/docker-debian13-ansible:latest
     pre_build_image: true
     command: /lib/systemd/systemd
@@ -22,7 +22,7 @@ platforms:
     tmpfs:
       /run: rw,nosuid,nodev,size=65536k
       /tmp: rw,nosuid,nodev
-  - name: ansible-rocky-9
+  - name: ansible-tools-rocky-9
     image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest
     pre_build_image: true
     command: /usr/lib/systemd/systemd
@@ -32,7 +32,7 @@ platforms:
     tmpfs:
       /run: rw,nosuid,nodev,size=65536k
       /tmp: rw,nosuid,nodev
-  - name: ansible-rocky-10
+  - name: ansible-tools-rocky-10
     image: docker.io/geerlingguy/docker-rockylinux10-ansible:latest
     pre_build_image: true
     command: /usr/lib/systemd/systemd
@@ -50,16 +50,16 @@ provisioner:
     verify: verify.yml
   inventory:
     host_vars:
-      ansible-archlinux:
+      ansible-tools-archlinux:
         ansible_python_interpreter: /usr/bin/python
         ansible_tools_container_driver: ''
-      ansible-debian-trixie:
+      ansible-tools-debian-trixie:
         ansible_python_interpreter: /usr/bin/python3
         ansible_tools_container_driver: podman
-      ansible-rocky-9:
+      ansible-tools-rocky-9:
         ansible_python_interpreter: /usr/bin/python3
         ansible_tools_container_driver: podman
-      ansible-rocky-10:
+      ansible-tools-rocky-10:
         ansible_python_interpreter: /usr/bin/python3
         ansible_tools_container_driver: podman
   config_options:

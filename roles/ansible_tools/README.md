@@ -1,4 +1,4 @@
-# marcstraube.common.ansible
+# marcstraube.common.ansible_tools
 
 Install Ansible, Molecule testing framework, container drivers and linting
 tools.
@@ -37,9 +37,9 @@ overrides if needed.
 
 ### Role Control
 
-| Variable                | Default | Description             |
-|-------------------------|---------|-------------------------|
-| `ansible_tools_enabled` | `true`  | Enable the ansible role |
+| Variable                | Default | Description                   |
+|-------------------------|---------|-------------------------------|
+| `ansible_tools_enabled` | `true`  | Enable the ansible_tools role |
 
 ### Components
 
@@ -60,9 +60,9 @@ overrides if needed.
 ## Example Playbook
 
 ```yaml
-- name: Include ansible role
+- name: Include ansible_tools role
   ansible.builtin.include_role:
-    name: marcstraube.common.ansible
+    name: marcstraube.common.ansible_tools
   tags:
     - ansible-tools
   when: ansible_tools_enabled | default(true) | bool
@@ -71,7 +71,7 @@ overrides if needed.
 ## Testing
 
 ```bash
-cd roles/ansible
+cd roles/ansible_tools
 molecule test
 ```
 

@@ -14,6 +14,39 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+### `ansible` — the role is now `ansible_tools`
+
+The role that installs Ansible, Molecule and the linters was named `ansible`,
+but every variable it defines carries the prefix `ansible_tools_`
+(`ansible_tools_enabled`, `ansible_tools_molecule_enabled`, ...), because
+`ansible_` is the namespace Ansible reserves for connection variables and
+facts. With name and prefix apart, the `<role>_enabled` convention did not
+hold: `playbooks/tasks/base_system.yml` gated the import on `ansible_enabled`,
+a variable the role never defines.
+
+The role is renamed to `ansible_tools`. Its variables and the `ansible-tools`
+tag keep their names. `base_system.yml` imports
+`marcstraube.common.ansible_tools` gated on `ansible_tools_enabled | bool`.
+
+#### Required action
+
+Replace references to the old role name:
+
+```yaml
+# Before
+- name: Include ansible role
+  ansible.builtin.include_role:
+    name: marcstraube.common.ansible
+
+# After
+- name: Include ansible_tools role
+  ansible.builtin.include_role:
+    name: marcstraube.common.ansible_tools
+```
+
+Inventories that set `ansible_enabled` to switch the import off move to
+`ansible_tools_enabled`; `ansible_enabled` is no longer read anywhere.
+
 ### `php` — PHP errors now have a defined log destination
 
 `log_errors` was already `On`, but the role never wrote an `error_log`
