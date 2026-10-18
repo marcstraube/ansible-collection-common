@@ -14,6 +14,37 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+### `firejail` — the cleanup path is gone
+
+With `firejail_enabled: false` the role used to run cleanup tasks: it removed
+the firecfg symlinks, the pacman hook, `globals.local`, the role-managed
+profile overrides and, with `firejail_remove_package: true`, the package. That
+path was added in 2.x together with the default change to `false`, to migrate
+hosts that had received firejail while the role was enabled by default.
+
+The role now behaves like every other role: with `firejail_enabled: false` it is
+skipped. `firejail_remove_package` and the `firejail:cleanup` tag are gone.
+
+#### Required action
+
+None for hosts that never had firejail, and none for hosts with
+`firejail_enabled: true`.
+
+A host that still carries a firejail setup from the enabled-by-default era and
+has not run a 2.x release with `firejail_enabled: false` since cleans up by hand,
+in this order:
+
+```bash
+firecfg --clean                      # first: the /usr/local/bin symlinks
+rm -f /etc/pacman.d/hooks/firejail-firecfg.hook   # Arch Linux
+rm -f /etc/firejail/globals.local /etc/firejail/<app>.local   # the overrides the role deployed
+pacman -Rns firejail                 # or apt purge / dnf remove
+```
+
+The firecfg symlinks in `/usr/local/bin` take precedence over `/usr/bin`.
+Removing the package while they exist leaves every wrapped program unable to
+start, so `firecfg --clean` has to come first.
+
 ### `podman` — `podman_storage_rootless` removed
 
 `/etc/containers/storage.conf` set both `graphroot` and

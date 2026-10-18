@@ -125,8 +125,7 @@
     - base-system
     - security
     - firejail
-  # Always imported — the role dispatches install/configure (enabled=true) or
-  # cleanup (enabled=false) internally based on firejail_enabled.
+  when: firejail_enabled | bool
 
 # NetworkManager runs before firewalld so interface-to-zone bindings
 # (connection.zone) are in place before firewalld locks down. Otherwise, on a

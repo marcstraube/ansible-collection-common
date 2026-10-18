@@ -15,13 +15,6 @@ firecfg auto-wrap layer tends to break Electron apps, native-messaging hosts
 (KeePassXC-Browser, etc.) and portal-based URL handlers more than it adds
 defense-in-depth. Opt in per host or group when the sandbox is wanted.
 
-When toggled from `true` back to `false`, the role removes its previous setup
-idempotently: `firecfg --clean` strips the `/usr/local/bin/` symlinks, the
-pacman hook is removed, role-managed `*.local` profile overrides are deleted,
-and (by default) the `firejail` package is uninstalled. Set
-`firejail_remove_package: false` to keep the binary for manual `firejail <cmd>`
-invocations.
-
 ## Requirements
 
 - ansible-core >= 2.19
@@ -44,10 +37,9 @@ overrides if needed.
 
 ### Role Control
 
-| Variable                  | Default | Description                                             |
-|---------------------------|---------|---------------------------------------------------------|
-| `firejail_enabled`        | `false` | Enable the firejail role                                |
-| `firejail_remove_package` | `true`  | Uninstall firejail package during cleanup when disabled |
+| Variable           | Default | Description              |
+|--------------------|---------|--------------------------|
+| `firejail_enabled` | `false` | Enable the firejail role |
 
 ### Application Exclusions
 
@@ -77,12 +69,11 @@ overrides if needed.
 
 ## Tags
 
-| Tag                  | Scope                                                 |
-|----------------------|-------------------------------------------------------|
-| `firejail`           | All role tasks                                        |
-| `firejail:install`   | Package installation                                  |
-| `firejail:configure` | Configuration (firecfg, profiles, globals)            |
-| `firejail:cleanup`   | Cleanup tasks when `firejail_enabled: false`          |
+| Tag                  | Scope                                      |
+|----------------------|--------------------------------------------|
+| `firejail`           | All role tasks                             |
+| `firejail:install`   | Package installation                       |
+| `firejail:configure` | Configuration (firecfg, profiles, globals) |
 
 ## Example Playbook
 
