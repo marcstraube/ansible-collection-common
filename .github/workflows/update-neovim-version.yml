@@ -13,7 +13,7 @@ permissions:
 jobs:
   update-neovim:
     name: Check for new Neovim release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code

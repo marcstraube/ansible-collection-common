@@ -25,7 +25,7 @@ jobs:
   # =============================================================================
   lint:
     name: Ansible Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -52,7 +52,7 @@ jobs:
   # =============================================================================
   markdown-lint:
     name: Markdown Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -65,7 +65,7 @@ jobs:
   # =============================================================================
   yaml-lint:
     name: YAML Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -91,7 +91,7 @@ jobs:
   # =============================================================================
   molecule-compat:
     name: Compat ${{ matrix.role }} (ansible-2.21)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push'
     needs: [lint, markdown-lint, yaml-lint]
     strategy:
@@ -122,8 +122,8 @@ jobs:
           ansible-galaxy collection install community.general community.crypto ansible.posix kewlfft.aur containers.podman
 
       - name: Pin crun to a spec-compatible release
-        # ubuntu-latest ships crun versions that vary with the runner image
-        # rollout; crun < 1.14.3 cannot parse the OCI runtime spec v1.2.1
+        # The ubuntu-24.04 image ships crun versions that vary with the runner
+        # image rollout; crun < 1.14.3 cannot parse the OCI runtime spec v1.2.1
         # config that podman 5.x writes, failing container create with
         # "crun: unknown version specified". Pin a known-good static build.
         run: |
@@ -154,7 +154,7 @@ jobs:
   # =============================================================================
   detect-changes:
     name: Detect Changed Roles
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       has_roles: ${{ steps.set-matrix.outputs.has_roles }}
@@ -281,7 +281,7 @@ jobs:
   # =============================================================================
   molecule-roles:
     name: Molecule ${{ matrix.role }} / ${{ matrix.scenario }} (${{ matrix.platform }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [lint, markdown-lint, yaml-lint, detect-changes]
     if: needs.detect-changes.outputs.has_roles == 'true'
     strategy:
@@ -307,8 +307,8 @@ jobs:
           ansible-galaxy collection install community.general community.crypto ansible.posix kewlfft.aur containers.podman
 
       - name: Pin crun to a spec-compatible release
-        # ubuntu-latest ships crun versions that vary with the runner image
-        # rollout; crun < 1.14.3 cannot parse the OCI runtime spec v1.2.1
+        # The ubuntu-24.04 image ships crun versions that vary with the runner
+        # image rollout; crun < 1.14.3 cannot parse the OCI runtime spec v1.2.1
         # config that podman 5.x writes, failing container create with
         # "crun: unknown version specified". Pin a known-good static build.
         run: |
@@ -336,7 +336,7 @@ jobs:
   # =============================================================================
   migration-doc-check:
     name: MIGRATION.md doc check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
@@ -398,7 +398,7 @@ jobs:
   # =============================================================================
   ci-gate:
     name: CI Gate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always()
     needs: [lint, markdown-lint, yaml-lint, build, molecule-compat, molecule-roles, migration-doc-check]
     steps:
@@ -428,7 +428,7 @@ jobs:
   # =============================================================================
   build:
     name: Build Collection
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [lint, markdown-lint, yaml-lint]
     steps:
       - name: Checkout code
