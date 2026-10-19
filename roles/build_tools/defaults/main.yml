@@ -1,0 +1,48 @@
+---
+#
+# Role Control
+#
+
+# Enable the build_tools role
+build_tools_enabled: false
+
+#
+# Build Systems
+#
+
+# Core build tools: the distribution's base development group
+# (base-devel, build-essential, Development Tools) plus make
+build_tools_make_enabled: true
+
+# CMake build system generator
+build_tools_cmake_enabled: true
+
+# Meson build system
+build_tools_meson_enabled: true
+
+# Ninja build backend
+build_tools_ninja_enabled: true
+
+#
+# C/C++ Toolchain
+#
+
+# clang with clangd, clang-format and clang-tidy, gdb and pkgconf
+build_tools_c_enabled: false
+
+# codelldb LLDB debug adapter (Arch Linux AUR only; upstream ships a VSIX
+# archive, no package elsewhere)
+build_tools_c_codelldb_enabled: false
+
+# ccache compiler cache (EPEL on EL)
+build_tools_c_ccache_enabled: false
+
+# valgrind memory and leak debugger (part of Development Tools on EL)
+build_tools_c_valgrind_enabled: false
+
+# cppcheck static analysis (EPEL on EL)
+build_tools_c_cppcheck_enabled: false
+
+# bear, generates compile_commands.json for non-CMake projects
+# (not packaged for EL 10)
+build_tools_c_bear_enabled: false

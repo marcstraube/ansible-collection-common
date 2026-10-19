@@ -1,0 +1,97 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '{{ playbook_dir }}/../../vars'
+
+    #
+    # Build Systems
+    #
+
+    - name: Verify | Run the build system binaries
+      ansible.builtin.command: '{{ item }}'
+      loop:
+        - make --version
+        - cmake --version
+        - meson --version
+        - ninja --version
+        - gcc --version
+      register: __build_tools_binaries
+      changed_when: false
+
+    - name: Verify | Assert the build system binaries run
+      ansible.builtin.assert:
+        that:
+          - __build_tools_binaries.results | map(attribute='rc') | select('ne', 0) | list | length == 0
+        fail_msg: 'a build system binary is missing or does not run'
+
+    #
+    # C/C++ Toolchain
+    #
+
+    - name: Verify | Run the C/C++ toolchain binaries
+      ansible.builtin.command: '{{ item }}'
+      loop:
+        - clang --version
+        - clangd --version
+        - clang-format --version
+        - clang-tidy --version
+        - gdb --version
+        - pkgconf --version
+        - ccache --version
+        - cppcheck --version
+      register: __build_tools_c_binaries
+      changed_when: false
+
+    - name: Verify | Assert the C/C++ toolchain binaries run
+      ansible.builtin.assert:
+        that:
+          - __build_tools_c_binaries.results | map(attribute='rc') | select('ne', 0) | list | length == 0
+        fail_msg: 'a C/C++ toolchain binary is missing or does not run'
+
+    # valgrind: direct package on Arch and Debian, Development Tools member on EL
+    - name: Verify | Run valgrind
+      ansible.builtin.command: valgrind --version
+      register: __build_tools_valgrind
+      changed_when: false
+
+    - name: Verify | Assert valgrind runs
+      ansible.builtin.assert:
+        that:
+          - "'valgrind-' in __build_tools_valgrind.stdout"
+        fail_msg: 'valgrind does not run'
+
+    - name: Verify | Run bear where packaged
+      ansible.builtin.command: bear --version
+      register: __build_tools_bear
+      changed_when: false
+      when: __build_tools_c_bear_package | length > 0
+
+    - name: Verify | Assert bear runs where packaged
+      ansible.builtin.assert:
+        that:
+          - __build_tools_bear.rc == 0
+        fail_msg: 'bear does not run'
+      when: __build_tools_c_bear_package | length > 0
+
+    - name: Verify | Gather package facts (Arch)
+      ansible.builtin.package_facts:
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert codelldb is installed (Arch)
+      ansible.builtin.assert:
+        that:
+          - "'codelldb-bin' in ansible_facts['packages']"
+        fail_msg: 'codelldb-bin is not installed'
+      when: ansible_facts['os_family'] == 'Archlinux'

@@ -1,0 +1,48 @@
+---
+- name: C | Toolchain
+  ansible.builtin.package:
+    name: '{{ __build_tools_c_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+
+# Helper tools the platform does not package resolve to an empty string and
+# drop out of the list (see vars/ for the reasons per platform).
+- name: C | Helper tools
+  ansible.builtin.package:
+    name: >-
+      {{ [
+           (build_tools_c_ccache_enabled | bool)   | ternary(__build_tools_c_ccache_package, ''),
+           (build_tools_c_valgrind_enabled | bool) | ternary(__build_tools_c_valgrind_package, ''),
+           (build_tools_c_cppcheck_enabled | bool) | ternary(__build_tools_c_cppcheck_package, ''),
+           (build_tools_c_bear_enabled | bool)     | ternary(__build_tools_c_bear_package, ''),
+         ] | reject('equalto', '') | list }}
+    state: present
+  retries: 3
+  delay: 5
+  when: >-
+    [
+      (build_tools_c_ccache_enabled | bool)   | ternary(__build_tools_c_ccache_package, ''),
+      (build_tools_c_valgrind_enabled | bool) | ternary(__build_tools_c_valgrind_package, ''),
+      (build_tools_c_cppcheck_enabled | bool) | ternary(__build_tools_c_cppcheck_package, ''),
+      (build_tools_c_bear_enabled | bool)     | ternary(__build_tools_c_bear_package, ''),
+    ] | reject('equalto', '') | list | length > 0
+
+- name: C | codelldb from AUR (Arch)
+  become: true
+  become_user: "{{ aur_builder_user | default('aur_builder') }}"
+  kewlfft.aur.aur:
+    name: '{{ __build_tools_aur_packages.codelldb }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - build_tools_c_codelldb_enabled | bool
+
+- name: C | codelldb not packaged notice
+  ansible.builtin.debug:
+    msg: 'codelldb is not packaged for {{ ansible_facts["os_family"] }}; upstream ships a VSIX archive only.'
+  when:
+    - ansible_facts['os_family'] != 'Archlinux'
+    - build_tools_c_codelldb_enabled | bool

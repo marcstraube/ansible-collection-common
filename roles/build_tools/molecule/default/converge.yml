@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    build_tools_enabled: true
+    build_tools_make_enabled: true
+    build_tools_cmake_enabled: true
+    build_tools_meson_enabled: true
+    build_tools_ninja_enabled: true
+    build_tools_c_enabled: true
+    # Arch Linux AUR only; a documented no-op elsewhere
+    build_tools_c_codelldb_enabled: true
+    build_tools_c_ccache_enabled: true
+    build_tools_c_valgrind_enabled: true
+    build_tools_c_cppcheck_enabled: true
+    # Not packaged for EL 10; a no-op there
+    build_tools_c_bear_enabled: true
+
+  tasks:
+    - name: Converge | Include build_tools role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

@@ -1,0 +1,21 @@
+---
+__build_tools_make_packages:
+  - 'base-devel'
+  - 'make'
+__build_tools_cmake_package: 'cmake'
+__build_tools_meson_package: 'meson'
+__build_tools_ninja_package: 'ninja'
+
+# clang bundles clangd, clang-format and clang-tidy
+__build_tools_c_packages:
+  - 'clang'
+  - 'gdb'
+  - 'pkgconf'
+__build_tools_c_ccache_package: 'ccache'
+__build_tools_c_valgrind_package: 'valgrind'
+__build_tools_c_cppcheck_package: 'cppcheck'
+__build_tools_c_bear_package: 'bear'
+
+__build_tools_aur_packages:
+  codelldb:
+    - 'codelldb-bin'

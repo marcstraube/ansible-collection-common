@@ -1,0 +1,30 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - always
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: build_tools_enabled | bool
+  tags:
+    - build-tools
+    - build-tools:install
+
+- name: Main | Import C/C++ toolchain tasks
+  ansible.builtin.import_tasks: c.yml
+  when:
+    - build_tools_enabled | bool
+    - build_tools_c_enabled | bool
+  tags:
+    - build-tools
+    - build-tools:c
