@@ -18,3 +18,11 @@
   when: python_enabled | bool
   tags:
     - python
+    - python:install
+
+- name: Main | Import tooling tasks
+  ansible.builtin.import_tasks: tooling.yml
+  when: python_enabled | bool
+  tags:
+    - python
+    - python:tooling

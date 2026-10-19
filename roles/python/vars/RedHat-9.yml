@@ -16,3 +16,13 @@ __python_pipx_packages: []
 __python_bootstrap_pipx: true
 
 __python_venv_command: 'python3.12 -m venv'
+
+# ruff, uv and bandit are not packaged for EL 9
+__python_tooling_packages:
+  ruff: ''
+  uv: ''
+  pytest: 'python3-pytest'
+  bandit: ''
+
+# system pipx is too old, the role bootstraps one in a venv
+__python_pipx_executable: '/opt/pipx-bootstrap/bin/pipx'

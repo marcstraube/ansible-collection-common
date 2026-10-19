@@ -7,3 +7,10 @@ __python_pip_packages:
 
 __python_pipx_packages:
   - 'pipx'
+
+# ruff and uv are not packaged for Trixie
+__python_tooling_packages:
+  ruff: ''
+  uv: ''
+  pytest: 'python3-pytest'
+  bandit: 'python3-bandit'

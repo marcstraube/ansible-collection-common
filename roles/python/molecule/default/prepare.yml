@@ -27,6 +27,14 @@
       delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
 
+    # python3-pytest lives in CRB on EL 10 (AppStream on EL 9); the
+    # package_management role enables CRB on real hosts.
+    - name: Prepare | Enable CRB repository (RedHat)
+      ansible.builtin.command:
+        cmd: dnf config-manager --set-enabled crb
+      changed_when: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
     - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
         update_cache: true

@@ -11,3 +11,11 @@ __python_pip_packages:
 
 __python_pipx_packages:
   - 'pipx'
+
+# ruff and uv come from EPEL 10, python3-pytest from CRB (package_management:
+# dnf_powertools_enabled); bandit is not packaged
+__python_tooling_packages:
+  ruff: 'ruff'
+  uv: 'uv'
+  pytest: 'python3-pytest'
+  bandit: ''

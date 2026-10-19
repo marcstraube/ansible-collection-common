@@ -46,11 +46,30 @@ overrides if needed.
 | `python_pip_proxy`      | `''`    | HTTP(S) proxy for pip (used by pipx bootstrap)    |
 | `python_extra_packages` | `[]`    | Additional OS packages to install                 |
 
+### Python Tooling
+
+| Variable                | Default | Description                                            |
+|-------------------------|---------|--------------------------------------------------------|
+| `python_ruff_enabled`   | `false` | ruff linter and formatter (Arch, EL 10)                |
+| `python_uv_enabled`     | `false` | uv package installer and resolver (Arch, EL 10)        |
+| `python_pytest_enabled` | `false` | pytest test framework (EL 10: CRB)                     |
+| `python_bandit_enabled` | `false` | bandit security linter (Arch, Debian)                  |
+| `python_pipx_tools`     | `[]`    | Tools installed through `pipx --global` (Debian, EL)   |
+
+Tools come from distribution packages where the platform has them; ruff and uv
+are missing from Debian Trixie and EL 9, bandit from EL, and pytest on EL 10
+needs CRB (`dnf_powertools_enabled` in `package_management`). An enabled tool
+without a package is skipped. `python_pipx_tools` installs further tools system-wide
+through pipx on Debian and EL (`/usr/local/bin`); Arch Linux packages most
+Python tools and skips the list.
+
 ## Tags
 
-| Tag      | Scope          |
-|----------|----------------|
-| `python` | All role tasks |
+| Tag              | Scope                    |
+|------------------|--------------------------|
+| `python`         | All role tasks           |
+| `python:install` | Interpreter, pip, pipx   |
+| `python:tooling` | Tooling toggles and pipx |
 
 ## Example Playbook
 

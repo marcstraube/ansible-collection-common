@@ -2,3 +2,6 @@
 __python_bootstrap_pipx: false
 
 __python_venv_command: 'python3 -m venv'
+
+# pipx executable for the tooling tasks
+__python_pipx_executable: 'pipx'
