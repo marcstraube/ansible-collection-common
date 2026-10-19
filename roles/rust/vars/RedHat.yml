@@ -1,0 +1,16 @@
+---
+__rust_packages:
+  - 'rust'
+  - 'cargo'
+
+__rust_component_packages:
+  rustfmt: 'rustfmt'
+  clippy: 'clippy'
+  rust-analyzer: 'rust-analyzer'
+
+# EL ships no rustup package; the rustup method falls back to package
+__rust_rustup_supported: false
+__rust_rustup_packages: []
+
+# cargo-audit is not packaged
+__rust_cargo_audit_package: ''

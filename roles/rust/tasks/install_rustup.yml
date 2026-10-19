@@ -1,0 +1,27 @@
+---
+- name: Install rustup | Validate rustup users are defined
+  ansible.builtin.assert:
+    that:
+      - rust_rustup_users | length > 0
+    fail_msg: "rust_rustup_users must contain at least one user when rust_install_method is 'rustup'"
+
+- name: Install rustup | rustup package
+  ansible.builtin.package:
+    name: '{{ __rust_rustup_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+
+- name: Install rustup | Per-user toolchain
+  ansible.builtin.include_tasks:
+    file: rustup_user.yml
+    apply:
+      tags:
+        - rust
+        - rust:install
+  loop: '{{ rust_rustup_users }}'
+  loop_control:
+    loop_var: __rust_rustup_user
+  tags:
+    - rust
+    - rust:install

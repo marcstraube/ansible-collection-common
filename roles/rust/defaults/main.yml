@@ -1,0 +1,45 @@
+---
+#
+# Role Control
+#
+
+# Enable the rust role
+rust_enabled: false
+
+#
+# Installation
+#
+
+# Installation method: package | rustup
+# - package: distribution packages, installed system-wide (rust, cargo)
+# - rustup:  the distribution's rustup package with a per-user toolchain
+#            for rust_rustup_users (Arch Linux, Debian). EL has no rustup
+#            package and falls back to package.
+rust_install_method: 'package'
+
+# Toolchain components: rustfmt, clippy, rust-analyzer. With package they
+# map to distribution packages (Arch Linux bundles rustfmt and clippy in
+# rust); with rustup they are added to each user's toolchain.
+rust_components:
+  - 'rustfmt'
+  - 'clippy'
+
+#
+# rustup Settings
+#
+
+# Only used when rust_install_method is 'rustup'
+
+# Users who get a rustup toolchain
+rust_rustup_users: []
+
+# Toolchain to install and set as default (stable, beta, nightly, 1.99.0)
+rust_rustup_toolchain: 'stable'
+
+#
+# Security Tooling
+#
+
+# cargo-audit: audits Cargo.lock against the RustSec advisory database
+# (Arch Linux only; Debian and EL have no package)
+rust_cargo_audit_enabled: false

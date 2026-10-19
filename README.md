@@ -7,8 +7,8 @@
 ## Description
 
 Shared Ansible roles for multi-OS infrastructure management.
-43 roles covering base system, security, networking, package management,
-user management, editors, and more.
+51 roles covering base system, security, networking, package management,
+development toolchains, user management, editors, and more.
 
 ## Supported Platforms
 
@@ -44,10 +44,18 @@ user management, editors, and more.
 | Role                   | Description                                    |
 | ---------------------- | ---------------------------------------------- |
 | **package_management** | pacman, APT, DNF, AUR helper (paru), reflector |
-| **nodejs**             | Node.js and NVM                                |
-| **php**                | PHP interpreter and extensions                 |
-| **python**             | Python interpreter and tools                   |
-| **ansible_tools**      | Ansible, Molecule and linting tools            |
+
+### Development
+
+| Role                  | Description                                         |
+| --------------------- | --------------------------------------------------- |
+| **git**               | Git, git-lfs, GitHub/GitLab CLIs, per-user config   |
+| **python**            | Python interpreter, pipx and tooling                |
+| **nodejs**            | Node.js and NVM                                     |
+| **php**               | PHP interpreter and extensions                      |
+| **rust**              | Rust toolchain (packages or rustup)                 |
+| **ansible_tools**     | Ansible, Molecule and linting tools                 |
+| **kubernetes**        | Kubernetes client tooling (kubectl, helm, minikube) |
 
 ### Networking
 
@@ -87,16 +95,15 @@ user management, editors, and more.
 
 ### Services & Infrastructure
 
-| Role           | Description                                         |
-| -------------- | --------------------------------------------------- |
-| **chrony**     | NTP time synchronization                            |
-| **logrotate**  | Log rotation                                        |
-| **mta**        | Send-only mail (Postfix)                            |
-| **docker**     | Docker container runtime                            |
-| **podman**     | Podman container runtime                            |
-| **kubernetes** | Kubernetes client tooling (kubectl, helm, minikube) |
-| **snmp**       | SNMP monitoring agent                               |
-| **restic**     | Backup with restic                                  |
+| Role          | Description              |
+| ------------- | ------------------------ |
+| **chrony**    | NTP time synchronization |
+| **logrotate** | Log rotation             |
+| **mta**       | Send-only mail (Postfix) |
+| **docker**    | Docker container runtime |
+| **podman**    | Podman container runtime |
+| **snmp**      | SNMP monitoring agent    |
+| **restic**    | Backup with restic       |
 
 ## Installation
 
@@ -141,6 +148,10 @@ All roles use `include_role` with boolean toggles:
         name: marcstraube.common.openssh
       when: openssh_enabled | default(true) | bool
 ```
+
+`playbooks/tasks/base_system.yml` imports every role of the collection with
+`import_role` and the same toggles, so a play can include that task file
+instead of listing the roles itself.
 
 Each role documents its variables in `defaults/main.yml` and `roles/<role>/README.md`.
 

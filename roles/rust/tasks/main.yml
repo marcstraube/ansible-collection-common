@@ -1,0 +1,80 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - always
+
+- name: Main | Validate install method and components
+  ansible.builtin.assert:
+    that:
+      - rust_install_method in __rust_valid_install_methods
+      - rust_components | difference(__rust_valid_components) | length == 0
+    fail_msg: >-
+      rust_install_method must be one of {{ __rust_valid_install_methods | join(', ') }}
+      and rust_components may only contain {{ __rust_valid_components | join(', ') }}
+  when: rust_enabled | bool
+  tags:
+    - always
+
+- name: Main | Fall back to package where rustup is not packaged
+  ansible.builtin.set_fact:
+    __rust_install_method: 'package'
+  when:
+    - rust_enabled | bool
+    - rust_install_method == 'rustup'
+    - not __rust_rustup_supported
+  tags:
+    - always
+
+- name: Main | Set effective install method
+  ansible.builtin.set_fact:
+    __rust_install_method: '{{ __rust_install_method | default(rust_install_method) }}'
+  when: rust_enabled | bool
+  tags:
+    - always
+
+- name: Main | Include package install tasks
+  ansible.builtin.include_tasks:
+    file: install_package.yml
+    apply:
+      tags:
+        - rust
+        - rust:install
+  when:
+    - rust_enabled | bool
+    - __rust_install_method == 'package'
+  tags:
+    - rust
+    - rust:install
+
+- name: Main | Include rustup install tasks
+  ansible.builtin.include_tasks:
+    file: install_rustup.yml
+    apply:
+      tags:
+        - rust
+        - rust:install
+  when:
+    - rust_enabled | bool
+    - __rust_install_method == 'rustup'
+  tags:
+    - rust
+    - rust:install
+
+- name: Main | Import security tooling tasks
+  ansible.builtin.import_tasks: security.yml
+  when:
+    - rust_enabled | bool
+    - rust_cargo_audit_enabled | bool
+  tags:
+    - rust
+    - rust:security

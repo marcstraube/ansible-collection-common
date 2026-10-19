@@ -1,0 +1,17 @@
+---
+__rust_packages:
+  - 'rust'
+
+# rust bundles rustfmt and clippy; rust-analyzer is a separate package
+__rust_component_packages:
+  rustfmt: ''
+  clippy: ''
+  rust-analyzer: 'rust-analyzer'
+
+# rustup replaces rust and cargo (pacman conflict); the toolchain then
+# lives per user
+__rust_rustup_supported: true
+__rust_rustup_packages:
+  - 'rustup'
+
+__rust_cargo_audit_package: 'cargo-audit'
