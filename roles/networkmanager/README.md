@@ -410,7 +410,7 @@ The resolved role must run before the networkmanager role in the playbook
 - [NetworkManager](https://networkmanager.dev/) — network configuration daemon
 - [NetworkManager API Reference](https://networkmanager.dev/docs/api/latest/) — D-Bus API and configuration documentation
 - [marcstraube.common.resolved](../resolved/README.md) — systemd-resolved DNS resolver
-- [marcstraube.common.wireguard](../wireguard/README.md) — WireGuard VPN (managed by wg-quick, not NM)
+- [marcstraube.common.wireguard](../wireguard/README.md) — WireGuard VPN (wg-quick or NetworkManager)
 
 ## License
 
