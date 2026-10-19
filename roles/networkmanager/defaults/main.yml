@@ -204,7 +204,9 @@ networkmanager_timezone_enabled: false
 # VPN Auto-Connect
 
 # Activate a WireGuard tunnel on non-home networks via dispatcher script.
-# The tunnel is managed by the wireguard role (wg-quick/systemd), not NM.
+# The tunnel must be a NetworkManager-managed connection named
+# "WireGuard <interface>" (wireguard role with `mode: nm`); the dispatcher
+# brings it up via `nmcli connection up`.
 # Set enabled: true and configure interface + home_connections to use.
 networkmanager_vpn_autoconnect:
   enabled: false
