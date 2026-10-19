@@ -30,9 +30,12 @@
 # own service conditionals. This role names no service and the inventory
 # configures nothing.
 #
-# Ansible aborts a run when a notification reaches no handler at all, so this
-# role carries a listener of its own for hosts without any consumer.
-- name: Cert services notified
-  ansible.builtin.debug:
-    msg: 'Certificate material changed — notifying consumers'
+# Notifications do not cross play boundaries, so this listener also records the
+# change as a host fact. A later play whose consumers did not run alongside this
+# role reads pki_cert_material_changed and notifies the topic again in its own
+# play. Being a listener of its own, it also keeps a host without any consumer
+# from failing: Ansible aborts a run when a notification reaches no handler.
+- name: Record cert material change
+  ansible.builtin.set_fact:
+    pki_cert_material_changed: true
   listen: Reload cert services

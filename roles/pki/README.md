@@ -218,6 +218,28 @@ subscribes, because chronyd reads the NTS server certificate and key at startup.
 The role carries a listener of its own, so a host with no consumer at all does
 not fail: Ansible aborts a run when a notification reaches no handler.
 
+### Consumers in a later play
+
+Handler notifications do not cross play boundaries. When this role runs in one
+play (for example a base play for every host) and the consuming role in another,
+the consumer's handler never fires. For that case the role's own listener sets
+the host fact `pki_cert_material_changed: true`, which stays available for the
+rest of the run. A later play forwards it to its own consumers with a single
+task:
+
+```yaml
+- name: Forward certificate changes from an earlier play
+  ansible.builtin.debug:
+    msg: 'Certificate material changed earlier in this run'
+  changed_when: true
+  when: pki_cert_material_changed | default(false) | bool
+  notify: Reload cert services
+  tags:
+    - pki
+```
+
+Tag the task with `pki` as well, so a `--tags pki` run reaches the consumers.
+
 ## Example Playbook
 
 ```yaml
