@@ -55,6 +55,19 @@ __utils_filemgr_lf: ''
 __utils_search_fd: 'fd-find'
 
 #
+# Developer Tools
+#
+
+# EPEL's yq package is the Go implementation; the Python wrapper is not
+# packaged. ShellCheck comes from EPEL; shfmt and direnv are not packaged.
+# pre-commit (EPEL) needs python3-wheel-wheel from CRB.
+__utils_dev_yq: ''
+__utils_dev_go_yq: 'yq'
+__utils_dev_shellcheck: 'ShellCheck'
+__utils_dev_shfmt: ''
+__utils_dev_direnv: ''
+
+#
 # System Info (Fetch Tools)
 #
 

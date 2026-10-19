@@ -136,6 +136,26 @@ All other tools use the same package name on every supported distro.
 | `utils_search_ripgrep_enabled` | `false` | Fast grep replacement (rg)                  |
 | `utils_search_fd_enabled`      | `false` | Fast find replacement (fd/fdfind on Debian) |
 
+### Developer Tools
+
+| Variable                       | Default | Description                                          |
+|--------------------------------|---------|------------------------------------------------------|
+| `utils_dev_jq_enabled`         | `false` | JSON processor (jq)                                  |
+| `utils_dev_yq_enabled`         | `false` | YAML processor, Python jq wrapper (Arch, Debian)     |
+| `utils_dev_go_yq_enabled`      | `false` | YAML processor, Go implementation (Arch, EL)         |
+| `utils_dev_direnv_enabled`     | `false` | Directory-based environment variables (Arch, Debian) |
+| `utils_dev_pre_commit_enabled` | `false` | Git hook framework (pre-commit; EL needs CRB)        |
+| `utils_dev_shellcheck_enabled` | `false` | Shell script linter (shellcheck)                     |
+| `utils_dev_shfmt_enabled`      | `false` | Shell script formatter (shfmt; Arch, Debian)         |
+| `utils_dev_bats_enabled`       | `false` | Bash test framework (bats)                           |
+
+Two different tools share the name yq: the Python package wraps jq and takes
+jq expressions, the Go implementation has its own expression syntax and edits
+files in place. Both install `/usr/bin/yq` and conflict on Arch Linux, so
+enable one of them. Debian packages only the Python wrapper, EPEL only the Go
+implementation. shfmt and direnv are not packaged for EL, and pre-commit from
+EPEL needs CRB there (`dnf_powertools_enabled` in `package_management`).
+
 ### System Info
 
 | Variable                        | Default | Description                                 |

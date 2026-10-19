@@ -49,6 +49,16 @@ __utils_filemgr_lf: 'lf'
 __utils_search_fd: 'fd-find'
 
 #
+# Developer Tools
+#
+
+# Debian ships only the Python jq wrapper; the Go yq is not packaged
+__utils_dev_yq: 'yq'
+__utils_dev_go_yq: ''
+__utils_dev_shellcheck: 'shellcheck'
+__utils_dev_shfmt: 'shfmt'
+
+#
 # System Info (Fetch Tools)
 #
 
