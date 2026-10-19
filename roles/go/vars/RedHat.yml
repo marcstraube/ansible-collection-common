@@ -1,0 +1,6 @@
+---
+__go_packages:
+  - 'golang'
+
+# govulncheck is not packaged
+__go_govulncheck_package: ''

@@ -1,0 +1,15 @@
+---
+#
+# Role Control
+#
+
+# Enable the go role
+go_enabled: false
+
+#
+# Security Tooling
+#
+
+# govulncheck: checks Go modules and binaries against the Go vulnerability
+# database (Arch Linux, Debian; EL has no package)
+go_govulncheck_enabled: false

@@ -1,0 +1,7 @@
+---
+- name: Install | Go toolchain
+  ansible.builtin.package:
+    name: '{{ __go_packages }}'
+    state: present
+  retries: 3
+  delay: 5

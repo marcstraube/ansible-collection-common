@@ -1,0 +1,48 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '{{ playbook_dir }}/../../vars'
+
+    - name: Verify | Check toolchain packages are installed
+      ansible.builtin.package:
+        name: '{{ __go_packages }}'
+        state: present
+      check_mode: true
+      register: __go_pkg_check
+      failed_when: __go_pkg_check.changed
+
+    - name: Verify | Run go version
+      ansible.builtin.command: go version
+      register: __go_version
+      changed_when: false
+
+    - name: Verify | Assert go reports its version
+      ansible.builtin.assert:
+        that:
+          - "'go version go' in __go_version.stdout"
+        fail_msg: 'go does not run'
+
+    - name: Verify | Run govulncheck (Arch, Debian)
+      ansible.builtin.command: govulncheck -version
+      register: __go_govulncheck
+      changed_when: false
+      when: __go_govulncheck_package | length > 0
+
+    - name: Verify | Assert govulncheck is installed (Arch, Debian)
+      ansible.builtin.assert:
+        that:
+          - __go_govulncheck.rc == 0
+        fail_msg: 'govulncheck is not installed'
+      when: __go_govulncheck_package | length > 0
