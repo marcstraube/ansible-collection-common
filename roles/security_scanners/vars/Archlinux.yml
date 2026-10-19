@@ -1,0 +1,11 @@
+---
+__security_scanners_trivy_package: 'trivy'
+__security_scanners_gitleaks_package: 'gitleaks'
+__security_scanners_osv_scanner_package: 'osv-scanner'
+__security_scanners_syft_package: 'syft'
+
+# Socket CLI comes from the AUR; the npm path is not used on Arch Linux
+__security_scanners_socket_npm: false
+__security_scanners_aur_packages:
+  socket:
+    - 'socket-cli'

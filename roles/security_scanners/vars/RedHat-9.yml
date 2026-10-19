@@ -1,0 +1,8 @@
+---
+# EPEL 9 ships none of the scanners
+__security_scanners_trivy_package: ''
+__security_scanners_gitleaks_package: ''
+__security_scanners_osv_scanner_package: ''
+__security_scanners_syft_package: ''
+
+__security_scanners_socket_npm: true
