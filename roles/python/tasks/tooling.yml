@@ -1,0 +1,34 @@
+---
+# Tools a platform does not package resolve to an empty string and drop out
+# of the list (see vars/ for the reasons per platform).
+- name: Tooling | Build package list
+  ansible.builtin.set_fact:
+    __python_tooling_install: >-
+      {{ [
+           (python_ruff_enabled | bool)   | ternary(__python_tooling_packages.ruff, ''),
+           (python_uv_enabled | bool)     | ternary(__python_tooling_packages.uv, ''),
+           (python_pytest_enabled | bool) | ternary(__python_tooling_packages.pytest, ''),
+           (python_bandit_enabled | bool) | ternary(__python_tooling_packages.bandit, ''),
+         ] | reject('equalto', '') | list }}
+
+- name: Tooling | Packages
+  ansible.builtin.package:
+    name: '{{ __python_tooling_install }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: __python_tooling_install | length > 0
+
+# Installed globally (pipx --global, /usr/local/bin) so every user gets them
+- name: Tooling | pipx tools (Debian, RedHat)
+  community.general.pipx:
+    name: '{{ item }}'
+    state: present
+    global: true
+    executable: '{{ __python_pipx_executable }}'
+  loop: '{{ python_pipx_tools }}'
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] != 'Archlinux'
+    - python_pipx_enabled | bool

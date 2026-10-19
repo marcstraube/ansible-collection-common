@@ -3,6 +3,13 @@
   hosts: all
   gather_facts: true
 
+  vars:
+    # Each tool is a documented no-op on the platforms without a package
+    python_ruff_enabled: true
+    python_uv_enabled: true
+    python_pytest_enabled: true
+    python_bandit_enabled: true
+
   tasks:
     - name: Converge | Include python role  # noqa: role-name[path]
       ansible.builtin.include_role:
