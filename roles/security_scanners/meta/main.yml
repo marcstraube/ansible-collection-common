@@ -1,0 +1,25 @@
+---
+galaxy_info:
+  author: Marc Straube
+  description: Install supply-chain and secret scanners (Socket CLI, trivy, gitleaks, osv-scanner, syft)
+  license: MIT
+  min_ansible_version: '2.19'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - security
+    - sbom
+    - scanner
+    - development
+
+dependencies: []

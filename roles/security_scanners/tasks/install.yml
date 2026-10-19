@@ -1,0 +1,43 @@
+---
+# Scanners a platform does not package resolve to an empty string and drop
+# out of the list; the README lists the coverage per platform.
+- name: Install | Build package list
+  ansible.builtin.set_fact:
+    __security_scanners_packages: >-
+      {{ [
+           (security_scanners_trivy_enabled | bool)       | ternary(__security_scanners_trivy_package, ''),
+           (security_scanners_gitleaks_enabled | bool)    | ternary(__security_scanners_gitleaks_package, ''),
+           (security_scanners_osv_scanner_enabled | bool) | ternary(__security_scanners_osv_scanner_package, ''),
+           (security_scanners_syft_enabled | bool)        | ternary(__security_scanners_syft_package, ''),
+         ] | reject('equalto', '') | list }}
+
+- name: Install | Scanner packages
+  ansible.builtin.package:
+    name: '{{ __security_scanners_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: __security_scanners_packages | length > 0
+
+- name: Install | Socket CLI from AUR (Arch)
+  become: true
+  become_user: "{{ aur_builder_user | default('aur_builder') }}"
+  kewlfft.aur.aur:
+    name: '{{ __security_scanners_aur_packages.socket }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - security_scanners_socket_enabled | bool
+    - not __security_scanners_socket_npm
+
+- name: Install | Socket CLI via npm
+  community.general.npm:
+    name: socket
+    global: true
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - security_scanners_socket_enabled | bool
+    - __security_scanners_socket_npm

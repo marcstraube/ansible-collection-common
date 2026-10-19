@@ -1,0 +1,34 @@
+---
+#
+# Role Control
+#
+
+# Enable the security_scanners role
+security_scanners_enabled: false
+
+#
+# Scanners
+#
+# Language-independent supply-chain and secret scanners. Scanners bound to
+# one language live in that language's role (bandit in python, cargo-audit
+# in rust, govulncheck in go).
+#
+
+# Socket CLI: dependency supply-chain scanner for npm, PyPI, Go, Maven and
+# more. AUR package on Arch Linux, global npm package elsewhere (needs npm
+# from the nodejs role).
+security_scanners_socket_enabled: false
+
+# trivy: vulnerability and misconfiguration scanner for containers,
+# filesystems and IaC (Arch Linux, EL 10 via EPEL; no package for Debian
+# and EL 9)
+security_scanners_trivy_enabled: false
+
+# gitleaks: secret scanner for git repositories (Arch Linux, Debian)
+security_scanners_gitleaks_enabled: false
+
+# osv-scanner: lockfile scanner against the OSV database (Arch Linux)
+security_scanners_osv_scanner_enabled: false
+
+# syft: SBOM generator for containers and filesystems (Arch Linux)
+security_scanners_syft_enabled: false

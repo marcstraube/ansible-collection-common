@@ -1,0 +1,18 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    security_scanners_enabled: true
+    security_scanners_socket_enabled: true
+    # Each scanner is a documented no-op on the platforms without a package
+    security_scanners_trivy_enabled: true
+    security_scanners_gitleaks_enabled: true
+    security_scanners_osv_scanner_enabled: true
+    security_scanners_syft_enabled: true
+
+  tasks:
+    - name: Converge | Include security_scanners role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

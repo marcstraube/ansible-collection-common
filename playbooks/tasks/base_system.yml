@@ -202,6 +202,14 @@
     - build-tools
   when: build_tools_enabled | bool
 
+- name: Base System | Import security_scanners role
+  ansible.builtin.import_role:
+    name: marcstraube.common.security_scanners
+  tags:
+    - base-system
+    - security-scanners
+  when: security_scanners_enabled | bool
+
 - name: Base System | Import git role
   ansible.builtin.import_role:
     name: marcstraube.common.git

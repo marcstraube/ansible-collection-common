@@ -57,6 +57,7 @@ development toolchains, user management, editors, and more.
 | **go**                | Go toolchain                                        |
 | **java**              | OpenJDK                                             |
 | **build_tools**       | make, CMake, Meson, Ninja, C/C++ toolchain          |
+| **security_scanners** | Socket CLI, trivy, gitleaks, osv-scanner, syft      |
 | **ansible_tools**     | Ansible, Molecule and linting tools                 |
 | **kubernetes**        | Kubernetes client tooling (kubectl, helm, minikube) |
 

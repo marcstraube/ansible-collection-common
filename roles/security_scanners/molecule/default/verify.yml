@@ -1,0 +1,48 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '{{ playbook_dir }}/../../vars'
+
+    - name: Verify | Run the packaged scanners
+      ansible.builtin.command: '{{ item.cmd }}'
+      loop:
+        - { cmd: 'trivy --version', pkg: '{{ __security_scanners_trivy_package }}' }
+        - { cmd: 'gitleaks version', pkg: '{{ __security_scanners_gitleaks_package }}' }
+        - { cmd: 'osv-scanner --version', pkg: '{{ __security_scanners_osv_scanner_package }}' }
+        - { cmd: 'syft version', pkg: '{{ __security_scanners_syft_package }}' }
+      loop_control:
+        label: '{{ item.cmd }}'
+      register: __security_scanners_binaries
+      changed_when: false
+      when: item.pkg | length > 0
+
+    - name: Verify | Assert the packaged scanners run
+      ansible.builtin.assert:
+        that:
+          - >-
+            __security_scanners_binaries.results | rejectattr('skipped', 'defined')
+            | map(attribute='rc') | select('ne', 0) | list | length == 0
+        fail_msg: 'a packaged scanner is missing or does not run'
+
+    - name: Verify | Run the Socket CLI
+      ansible.builtin.command: socket --version
+      register: __security_scanners_socket
+      changed_when: false
+
+    - name: Verify | Assert the Socket CLI runs
+      ansible.builtin.assert:
+        that:
+          - __security_scanners_socket.rc == 0
+        fail_msg: 'socket does not run'
