@@ -50,6 +50,17 @@ __utils_filemgr_lf: 'lf'
 __utils_search_fd: 'fd'
 
 #
+# Developer Tools
+#
+
+# yq is the Python jq wrapper, go-yq the Go implementation; both install
+# /usr/bin/yq and conflict
+__utils_dev_yq: 'yq'
+__utils_dev_go_yq: 'go-yq'
+__utils_dev_shellcheck: 'shellcheck'
+__utils_dev_shfmt: 'shfmt'
+
+#
 # System Info (Fetch Tools)
 #
 

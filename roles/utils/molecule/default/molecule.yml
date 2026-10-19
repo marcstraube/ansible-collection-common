@@ -52,12 +52,20 @@ provisioner:
     host_vars:
       utils-archlinux:
         ansible_python_interpreter: /usr/bin/python
+        utils_dev_yq_enabled: false
+        utils_dev_go_yq_enabled: true
       utils-debian-trixie:
         ansible_python_interpreter: /usr/bin/python3
+        utils_dev_yq_enabled: true
+        utils_dev_go_yq_enabled: false
       utils-rocky-9:
         ansible_python_interpreter: /usr/bin/python3
+        utils_dev_yq_enabled: false
+        utils_dev_go_yq_enabled: true
       utils-rocky-10:
         ansible_python_interpreter: /usr/bin/python3
+        utils_dev_yq_enabled: false
+        utils_dev_go_yq_enabled: true
   config_options:
     defaults:
       allow_broken_conditionals: true

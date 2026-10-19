@@ -54,6 +54,15 @@
     utils_search_ripgrep_enabled: true
     utils_search_fd_enabled: true
 
+    # Developer tools (shfmt is a no-op where not packaged; the two yq
+    # variants conflict on Arch and are set per platform in molecule.yml)
+    utils_dev_jq_enabled: true
+    utils_dev_direnv_enabled: true
+    utils_dev_pre_commit_enabled: true
+    utils_dev_shellcheck_enabled: true
+    utils_dev_shfmt_enabled: true
+    utils_dev_bats_enabled: true
+
     # System info
     utils_fetch_fastfetch_enabled: true
 

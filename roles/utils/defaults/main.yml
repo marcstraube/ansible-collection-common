@@ -180,6 +180,37 @@ utils_search_ripgrep_enabled: false
 utils_search_fd_enabled: true
 
 #
+# Developer Tools
+#
+
+# jq — command-line JSON processor
+utils_dev_jq_enabled: false
+
+# yq — YAML processor as a jq wrapper (Python, jq syntax; Arch and Debian).
+# Conflicts with go-yq on Arch, enable one of the two.
+utils_dev_yq_enabled: false
+
+# go-yq — YAML processor in Go with its own expression syntax (mikefarah;
+# Arch and EL). Conflicts with yq on Arch, enable one of the two.
+utils_dev_go_yq_enabled: false
+
+# direnv — directory-based environment variables (Arch and Debian; not
+# packaged for EL)
+utils_dev_direnv_enabled: false
+
+# pre-commit — git hook framework (EL: needs CRB for python3-wheel-wheel)
+utils_dev_pre_commit_enabled: false
+
+# shellcheck — shell script linter
+utils_dev_shellcheck_enabled: false
+
+# shfmt — shell script formatter (not packaged for EL)
+utils_dev_shfmt_enabled: false
+
+# bats — Bash test framework
+utils_dev_bats_enabled: false
+
+#
 # System Info (Fetch Tools)
 #
 

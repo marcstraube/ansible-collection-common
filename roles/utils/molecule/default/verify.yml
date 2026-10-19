@@ -480,3 +480,56 @@
       loop_control:
         label: '{{ item.bin }}'
       when: item.pkg | length > 0
+
+    #
+    # Developer Tools
+    #
+
+    # The two yq variants are set per platform in molecule.yml; resolve the
+    # expected packages once so the loops below stay short.
+    - name: Verify | Resolve the expected yq packages
+      ansible.builtin.set_fact:
+        _utils_dev_yq_expected: >-
+          {{ (utils_dev_yq_enabled | default(false) | bool)
+             | ternary(__utils_dev_yq | default(''), '') }}
+        _utils_dev_go_yq_expected: >-
+          {{ (utils_dev_go_yq_enabled | default(false) | bool)
+             | ternary(__utils_dev_go_yq | default(''), '') }}
+
+    - name: Verify | Check developer tool packages are installed
+      ansible.builtin.package:
+        name: '{{ item.pkg }}'
+        state: present
+      check_mode: true
+      register: _utils_dev_pkg
+      failed_when: _utils_dev_pkg.changed
+      loop:
+        - { name: 'jq', pkg: '{{ __utils_dev_jq | default("") }}' }
+        - { name: 'yq', pkg: '{{ _utils_dev_yq_expected }}' }
+        - { name: 'go-yq', pkg: '{{ _utils_dev_go_yq_expected }}' }
+        - { name: 'direnv', pkg: '{{ __utils_dev_direnv | default("") }}' }
+        - { name: 'pre-commit', pkg: '{{ __utils_dev_pre_commit | default("") }}' }
+        - { name: 'shellcheck', pkg: '{{ __utils_dev_shellcheck | default("") }}' }
+        - { name: 'shfmt', pkg: '{{ __utils_dev_shfmt | default("") }}' }
+        - { name: 'bats', pkg: '{{ __utils_dev_bats | default("") }}' }
+      loop_control:
+        label: '{{ item.name }}'
+      when: item.pkg | length > 0
+
+    - name: Verify | Check developer tool binaries exist
+      ansible.builtin.command:
+        cmd: 'which {{ item.bin }}'
+      register: _utils_dev_bin
+      changed_when: false
+      failed_when: _utils_dev_bin.rc != 0
+      loop:
+        - { bin: 'jq', pkg: '{{ __utils_dev_jq | default("") }}' }
+        - { bin: 'yq', pkg: '{{ _utils_dev_yq_expected ~ _utils_dev_go_yq_expected }}' }
+        - { bin: 'direnv', pkg: '{{ __utils_dev_direnv | default("") }}' }
+        - { bin: 'pre-commit', pkg: '{{ __utils_dev_pre_commit | default("") }}' }
+        - { bin: 'shellcheck', pkg: '{{ __utils_dev_shellcheck | default("") }}' }
+        - { bin: 'shfmt', pkg: '{{ __utils_dev_shfmt | default("") }}' }
+        - { bin: 'bats', pkg: '{{ __utils_dev_bats | default("") }}' }
+      loop_control:
+        label: '{{ item.bin }}'
+      when: item.pkg | length > 0

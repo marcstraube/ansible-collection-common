@@ -75,6 +75,17 @@ __utils_filemgr_vifm: 'vifm'
 __utils_search_ripgrep: 'ripgrep'
 
 #
+# Developer Tools
+# yq, go-yq, shellcheck, shfmt and direnv differ per distro — see the OS
+# files. pre-commit on EL needs CRB (python3-wheel-wheel).
+#
+
+__utils_dev_jq: 'jq'
+__utils_dev_direnv: 'direnv'
+__utils_dev_pre_commit: 'pre-commit'
+__utils_dev_bats: 'bats'
+
+#
 # System Info (Fetch Tools)
 #
 
