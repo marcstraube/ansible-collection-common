@@ -1,0 +1,19 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    rust_enabled: true
+    rust_install_method: 'package'
+    rust_components:
+      - 'rustfmt'
+      - 'clippy'
+      - 'rust-analyzer'
+    # Packaged on Arch Linux only; a documented no-op elsewhere
+    rust_cargo_audit_enabled: true
+
+  tasks:
+    - name: Converge | Include rust role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

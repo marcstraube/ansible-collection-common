@@ -1,0 +1,21 @@
+---
+- name: Install Package | Rust toolchain
+  ansible.builtin.package:
+    name: '{{ __rust_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+
+# Components the distribution ships inside the toolchain package resolve
+# to an empty string and drop out of the list.
+- name: Install Package | Toolchain components
+  ansible.builtin.package:
+    name: >-
+      {{ rust_components | map('extract', __rust_component_packages)
+         | reject('equalto', '') | list }}
+    state: present
+  retries: 3
+  delay: 5
+  when: >-
+    rust_components | map('extract', __rust_component_packages)
+    | reject('equalto', '') | list | length > 0

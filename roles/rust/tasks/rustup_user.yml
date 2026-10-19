@@ -1,0 +1,30 @@
+---
+# One user's rustup toolchain. rustup keeps its state in the user's home,
+# so every call runs as that user.
+
+- name: Rustup User | List installed toolchains
+  ansible.builtin.command:
+    cmd: rustup toolchain list
+  become: true
+  become_user: '{{ __rust_rustup_user }}'
+  register: __rust_toolchain_list
+  changed_when: false
+  # No toolchain yet: rustup exits non-zero on a fresh home
+  failed_when: false
+
+- name: Rustup User | Install toolchain and set it as default
+  ansible.builtin.command:
+    cmd: rustup default {{ rust_rustup_toolchain }}
+  become: true
+  become_user: '{{ __rust_rustup_user }}'
+  changed_when: true
+  when: rust_rustup_toolchain not in (__rust_toolchain_list.stdout | default(''))
+
+- name: Rustup User | Add toolchain components
+  ansible.builtin.command:
+    cmd: rustup component add {{ item }}
+  become: true
+  become_user: '{{ __rust_rustup_user }}'
+  loop: '{{ rust_components }}'
+  register: __rust_component_add
+  changed_when: "'is up to date' not in __rust_component_add.stderr"

@@ -1,0 +1,9 @@
+---
+__rust_valid_install_methods:
+  - 'package'
+  - 'rustup'
+
+__rust_valid_components:
+  - 'rustfmt'
+  - 'clippy'
+  - 'rust-analyzer'

@@ -1,0 +1,68 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '{{ playbook_dir }}/../../vars'
+
+    #
+    # Packages
+    #
+
+    - name: Verify | Check toolchain packages are installed
+      ansible.builtin.package:
+        name: '{{ __rust_packages }}'
+        state: present
+      check_mode: true
+      register: __rust_pkg_check
+      failed_when: __rust_pkg_check.changed
+
+    #
+    # Binaries
+    #
+
+    - name: Verify | Run the toolchain binaries
+      ansible.builtin.command: '{{ item }}'
+      loop:
+        - rustc --version
+        - cargo --version
+        - cargo fmt --version
+        - cargo clippy --version
+        - rust-analyzer --version
+      register: __rust_binaries
+      changed_when: false
+
+    - name: Verify | Assert the toolchain binaries report versions
+      ansible.builtin.assert:
+        that:
+          - __rust_binaries.results | map(attribute='rc') | select('ne', 0) | list | length == 0
+          - "'rustc ' in __rust_binaries.results[0].stdout"
+          - "'cargo ' in __rust_binaries.results[1].stdout"
+        fail_msg: 'a Rust toolchain binary is missing or does not run'
+
+    #
+    # Security Tooling
+    #
+
+    - name: Verify | Run cargo-audit (Arch)
+      ansible.builtin.command: cargo audit --version
+      register: __rust_cargo_audit
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert cargo-audit is installed (Arch)
+      ansible.builtin.assert:
+        that:
+          - "'cargo-audit' in __rust_cargo_audit.stdout"
+        fail_msg: 'cargo-audit is not installed'
+      when: ansible_facts['os_family'] == 'Archlinux'

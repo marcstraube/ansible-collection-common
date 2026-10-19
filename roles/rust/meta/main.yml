@@ -1,0 +1,25 @@
+---
+galaxy_info:
+  author: Marc Straube
+  description: Install the Rust toolchain from distribution packages or rustup, with components and cargo-audit
+  license: MIT
+  min_ansible_version: '2.19'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - rust
+    - cargo
+    - rustup
+    - development
+
+dependencies: []

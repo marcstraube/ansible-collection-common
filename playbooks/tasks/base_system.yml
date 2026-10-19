@@ -170,6 +170,14 @@
     - nodejs
   when: nodejs_enabled | bool
 
+- name: Base System | Import rust role
+  ansible.builtin.import_role:
+    name: marcstraube.common.rust
+  tags:
+    - base-system
+    - rust
+  when: rust_enabled | bool
+
 - name: Base System | Import git role
   ansible.builtin.import_role:
     name: marcstraube.common.git

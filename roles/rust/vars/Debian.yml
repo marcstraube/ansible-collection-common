@@ -1,0 +1,16 @@
+---
+__rust_packages:
+  - 'rustc'
+  - 'cargo'
+
+__rust_component_packages:
+  rustfmt: 'rustfmt'
+  clippy: 'rust-clippy'
+  rust-analyzer: 'rust-analyzer'
+
+__rust_rustup_supported: true
+__rust_rustup_packages:
+  - 'rustup'
+
+# cargo-audit is not packaged
+__rust_cargo_audit_package: ''
