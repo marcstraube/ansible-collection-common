@@ -194,6 +194,14 @@
     - java
   when: java_enabled | bool
 
+- name: Base System | Import build_tools role
+  ansible.builtin.import_role:
+    name: marcstraube.common.build_tools
+  tags:
+    - base-system
+    - build-tools
+  when: build_tools_enabled | bool
+
 - name: Base System | Import git role
   ansible.builtin.import_role:
     name: marcstraube.common.git

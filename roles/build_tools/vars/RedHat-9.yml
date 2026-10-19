@@ -1,0 +1,22 @@
+---
+__build_tools_make_packages:
+  - '@Development Tools'
+  - 'make'
+__build_tools_cmake_package: 'cmake'
+# meson and ninja-build live in CRB (package_management: dnf_powertools_enabled)
+__build_tools_meson_package: 'meson'
+__build_tools_ninja_package: 'ninja-build'
+
+# clang-tools-extra provides clangd, clang-format and clang-tidy
+__build_tools_c_packages:
+  - 'clang'
+  - 'clang-tools-extra'
+  - 'gdb'
+  - 'pkgconf'
+
+# ccache, cppcheck and bear come from EPEL 9. valgrind is a member of the
+# Development Tools group and arrives with the build tools.
+__build_tools_c_ccache_package: 'ccache'
+__build_tools_c_valgrind_package: ''
+__build_tools_c_cppcheck_package: 'cppcheck'
+__build_tools_c_bear_package: 'bear'

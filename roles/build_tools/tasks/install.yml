@@ -1,0 +1,24 @@
+---
+- name: Install | Core build tools
+  ansible.builtin.package:
+    name: '{{ __build_tools_make_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: build_tools_make_enabled | bool
+
+- name: Install | Build systems
+  ansible.builtin.package:
+    name: >-
+      {{ [
+           (build_tools_cmake_enabled | bool) | ternary(__build_tools_cmake_package, ''),
+           (build_tools_meson_enabled | bool) | ternary(__build_tools_meson_package, ''),
+           (build_tools_ninja_enabled | bool) | ternary(__build_tools_ninja_package, ''),
+         ] | reject('equalto', '') | list }}
+    state: present
+  retries: 3
+  delay: 5
+  when: >-
+    build_tools_cmake_enabled | bool
+    or build_tools_meson_enabled | bool
+    or build_tools_ninja_enabled | bool

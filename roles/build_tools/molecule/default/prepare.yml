@@ -1,0 +1,60 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # ccache, cppcheck and bear come from EPEL on EL, meson and ninja-build
+    # from CRB; the package_management role enables both on real hosts.
+    - name: Prepare | Enable EPEL repository (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Enable CRB repository (RedHat)
+      ansible.builtin.command:
+        cmd: dnf config-manager --set-enabled crb
+      changed_when: true
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Create aur_builder user for AUR packages (Arch)
+      ansible.builtin.user:
+        name: aur_builder
+        group: wheel
+        create_home: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Allow aur_builder passwordless sudo (Arch)
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/99-aur_builder
+        line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+        create: true
+        owner: root
+        group: root
+        mode: '0440'
+      when: ansible_facts['os_family'] == 'Archlinux'
