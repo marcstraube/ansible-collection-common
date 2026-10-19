@@ -186,6 +186,14 @@
     - go
   when: go_enabled | bool
 
+- name: Base System | Import java role
+  ansible.builtin.import_role:
+    name: marcstraube.common.java
+  tags:
+    - base-system
+    - java
+  when: java_enabled | bool
+
 - name: Base System | Import git role
   ansible.builtin.import_role:
     name: marcstraube.common.git

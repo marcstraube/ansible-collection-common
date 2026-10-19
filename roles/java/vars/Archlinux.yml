@@ -1,0 +1,10 @@
+---
+__java_versions:
+  - '17'
+  - '21'
+  - '25'
+
+__java_package: 'jdk{{ java_version }}-openjdk'
+
+# archlinux-java environment name for the default selection
+__java_environment: 'java-{{ java_version }}-openjdk'
