@@ -10,11 +10,14 @@
 # storage.conf.j2 renders graphroot and runroot depending on the podman
 # major version: podman before 6 requires both keys once the file exists,
 # podman 6 applies a graphroot in the system file to rootless users as well.
+# check_mode: false — a read-only lookup that must run under --check,
+# otherwise the fact below has no version to work with.
 - name: Configure | Read podman version
   ansible.builtin.command:
     cmd: podman --version
   register: __podman_version_output
   changed_when: false
+  check_mode: false
 
 - name: Configure | Set podman major version fact
   ansible.builtin.set_fact:
