@@ -55,6 +55,7 @@ development toolchains, user management, editors, and more.
 | **php**               | PHP interpreter and extensions                      |
 | **rust**              | Rust toolchain (packages or rustup)                 |
 | **go**                | Go toolchain                                        |
+| **java**              | OpenJDK                                             |
 | **ansible_tools**     | Ansible, Molecule and linting tools                 |
 | **kubernetes**        | Kubernetes client tooling (kubectl, helm, minikube) |
 

@@ -1,0 +1,26 @@
+---
+- name: Install | OpenJDK
+  ansible.builtin.package:
+    name: '{{ __java_package }}'
+    state: present
+  retries: 3
+  delay: 5
+
+# Arch Linux keeps several JDKs side by side and selects the default with
+# archlinux-java; Debian and EL do that through alternatives on install.
+- name: Install | Read the default Java environment (Arch)
+  ansible.builtin.command:
+    cmd: archlinux-java get
+  register: __java_current_environment
+  changed_when: false
+  # No default yet when the first JDK was just installed
+  failed_when: false
+  when: __java_environment | length > 0
+
+- name: Install | Select the default Java environment (Arch)
+  ansible.builtin.command:
+    cmd: archlinux-java set {{ __java_environment }}
+  changed_when: true
+  when:
+    - __java_environment | length > 0
+    - (__java_current_environment.stdout | default('') | trim) != __java_environment

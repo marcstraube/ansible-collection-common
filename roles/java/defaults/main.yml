@@ -1,0 +1,16 @@
+---
+#
+# Role Control
+#
+
+# Enable the java role
+java_enabled: false
+
+#
+# Installation
+#
+
+# OpenJDK release to install. LTS releases: 17, 21, 25 (Debian Trixie
+# ships 21 and 25). The role installs the JDK and makes it the default
+# java on hosts with several JDKs installed.
+java_version: '25'

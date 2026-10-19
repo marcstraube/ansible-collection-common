@@ -1,0 +1,9 @@
+---
+__java_versions:
+  - '21'
+  - '25'
+
+__java_package: 'openjdk-{{ java_version }}-jdk'
+
+# The default java is selected through update-alternatives by the package
+__java_environment: ''

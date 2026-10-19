@@ -1,0 +1,13 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    java_enabled: true
+    java_version: '25'
+
+  tasks:
+    - name: Converge | Include java role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
