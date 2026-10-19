@@ -178,6 +178,14 @@
     - rust
   when: rust_enabled | bool
 
+- name: Base System | Import go role
+  ansible.builtin.import_role:
+    name: marcstraube.common.go
+  tags:
+    - base-system
+    - go
+  when: go_enabled | bool
+
 - name: Base System | Import git role
   ansible.builtin.import_role:
     name: marcstraube.common.git

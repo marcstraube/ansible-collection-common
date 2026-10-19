@@ -1,0 +1,15 @@
+---
+- name: Security | govulncheck
+  ansible.builtin.package:
+    name: '{{ __go_govulncheck_package }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: __go_govulncheck_package | length > 0
+
+- name: Security | govulncheck not packaged notice
+  ansible.builtin.debug:
+    msg: >-
+      govulncheck is not packaged for {{ ansible_facts["os_family"] }};
+      install it with go install golang.org/x/vuln/cmd/govulncheck@latest.
+  when: __go_govulncheck_package | length == 0

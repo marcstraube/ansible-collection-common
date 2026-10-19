@@ -1,0 +1,24 @@
+---
+galaxy_info:
+  author: Marc Straube
+  description: Install the Go toolchain with govulncheck
+  license: MIT
+  min_ansible_version: '2.19'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - go
+    - golang
+    - development
+
+dependencies: []

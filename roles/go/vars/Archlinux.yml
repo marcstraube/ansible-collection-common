@@ -1,0 +1,5 @@
+---
+__go_packages:
+  - 'go'
+
+__go_govulncheck_package: 'govulncheck'

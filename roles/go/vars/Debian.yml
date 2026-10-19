@@ -1,0 +1,5 @@
+---
+__go_packages:
+  - 'golang'
+
+__go_govulncheck_package: 'govulncheck'
