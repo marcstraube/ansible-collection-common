@@ -134,16 +134,40 @@ Always use generic placeholder data in commented examples:
 #   - username: 'mst'
 ```
 
+## Branching Model
+
+The repository uses two long-lived branches:
+
+- `develop` is the default branch and the integration branch. Every
+  feature, fix, chore and docs pull request targets it and is merged by
+  squash or merge commit, whichever keeps the history readable.
+- `main` carries the released state. It only receives release merges
+  and hotfixes; release-please, the release tags and the Galaxy
+  publishing run from it.
+
+A release merges `develop` into `main` with a merge commit, never a
+squash, so release-please reads the individual Conventional Commits for
+the changelog. Merging the release PR on `main` publishes the release,
+and a workflow then opens a pull request that merges `main` back into
+`develop` and lands it automatically once CI passes.
+
+A hotfix branches from `main` and targets `main`; its patch release
+reaches `develop` through the same back-merge.
+
+Issues referenced with `Closes #N` close when the pull request merges
+into `develop`.
+
 ## Pull Request Process
 
-1. Run pre-commit hooks: `pre-commit run --all-files`
-2. Test changes: `molecule test` on at least one platform
-3. Update documentation if needed
-4. Use conventional commit format:
+1. Target `develop`, or `main` for a hotfix
+2. Run pre-commit hooks: `pre-commit run --all-files`
+3. Test changes: `molecule test` on at least one platform
+4. Update documentation if needed
+5. Use conventional commit format:
    - `feat(chrony): add NTS support`
    - `fix(openssh): correct TLS configuration`
    - `refactor(users): simplify group management`
-5. **Breaking changes** — the `!` marker (`<type>!:` headline or
+6. **Breaking changes** — the `!` marker (`<type>!:` headline or
    `BREAKING CHANGE:` footer) is reserved strictly for actual inventory
    contract violations. Additive features, no-op removals of dead code,
    and changes that merely implement documented intent are **not**

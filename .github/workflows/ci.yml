@@ -3,9 +3,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   schedule:
     # Weekly on Sunday 07:00 UTC — catches upstream package drift
     # (EPEL / Arch repos / Debian) without code changes.
@@ -13,8 +13,8 @@ on:
   workflow_dispatch:
 
 # One CI run per pull request: a new commit cancels the run of the previous
-# one. Pushes to main get a group of their own per commit, so a merge run is
-# never cancelled or queued behind another.
+# one. Pushes to main and develop get a group of their own per commit, so a
+# merge run is never cancelled or queued behind another.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -87,7 +87,7 @@ jobs:
   # MOLECULE FORWARD-COMPATIBILITY (ansible-core 2.21, representative subset)
   # Tests a diverse subset of roles on latest ansible-core to catch
   # deprecations and breaking changes early.
-  # Only runs on push to main — not needed for every PR.
+  # Only runs on pushes to main and develop — not needed for every PR.
   # =============================================================================
   molecule-compat:
     name: Compat ${{ matrix.role }} (ansible-2.21)
@@ -190,6 +190,12 @@ jobs:
             # its PR merged, so there is nothing new to test here.
             echo "Release PR — skipping the molecule matrix"
             ROLES=""
+          elif [ "${{ github.head_ref }}" = "develop" ] || [ "${{ github.head_ref }}" = "main" ]; then
+            # Merges between the long-lived branches (the release merge of
+            # develop into main, the back-merge of main into develop) only
+            # carry commits whose PRs passed the matrix already.
+            echo "Merge between main and develop — skipping the molecule matrix"
+            ROLES=""
           else
             # Determine base commit for diff
             if [ "$EVENT" = "pull_request" ]; then
@@ -207,8 +213,27 @@ jobs:
             else
               CHANGED=$(git diff --name-only "$BASE" "${{ github.sha }}")
 
+              # galaxy.yml affects every role through its dependencies
+              # only; changes to the version, description or tags affect
+              # none and fall through to the per-role detection.
+              GALAXY_DEPS=unchanged
+              if echo "$CHANGED" | grep -qx 'galaxy\.yml'; then
+                GALAXY_DEPS=$(python3 -c "
+          import subprocess, sys, yaml
+          def deps(rev):
+              out = subprocess.run(['git', 'show', rev + ':galaxy.yml'],
+                                   capture_output=True, text=True)
+              if out.returncode != 0:
+                  return None
+              return (yaml.safe_load(out.stdout) or {}).get('dependencies')
+          print('unchanged' if deps(sys.argv[1]) == deps(sys.argv[2]) else 'changed')
+          " "$BASE" "${{ github.sha }}")
+                echo "galaxy.yml dependencies: $GALAXY_DEPS"
+              fi
+
               # Shared files that require testing all roles
-              if echo "$CHANGED" | grep -qE '^(galaxy\.yml|requirements\.yml|plugins/|meta/runtime\.yml|\.github/workflows/ci\.yml)'; then
+              if [ "$GALAXY_DEPS" = "changed" ] \
+                || echo "$CHANGED" | grep -qE '^(requirements\.yml|plugins/|meta/runtime\.yml|\.github/workflows/ci\.yml)'; then
                 echo "Shared files changed — testing all roles"
                 ROLES="$ALL_PODMAN_ROLES"
               else
@@ -405,7 +430,7 @@ jobs:
       - name: Check required job results
         run: |
           # molecule-roles may be skipped when no roles changed;
-          # migration-doc-check is skipped on push to main (PR-only).
+          # migration-doc-check is skipped on pushes (PR-only).
           results=(
             "${{ needs.lint.result }}"
             "${{ needs.markdown-lint.result }}"

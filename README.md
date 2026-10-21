@@ -171,6 +171,7 @@ molecule test
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+Pull requests target the `develop` branch; `main` holds the released state.
 
 ## Support
 
