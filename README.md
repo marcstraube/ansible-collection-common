@@ -7,7 +7,7 @@
 ## Description
 
 Shared Ansible roles for multi-OS infrastructure management.
-51 roles covering base system, security, networking, package management,
+Roles covering base system, security, networking, package management,
 development toolchains, user management, editors, and more.
 
 ## Supported Platforms
