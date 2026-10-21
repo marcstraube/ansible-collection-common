@@ -228,6 +228,33 @@ Full template deployed for each version with FPM enabled.
 |------------------------|---------|-------------------------------------|
 | `php_composer_enabled` | `false` | Install Composer (PHP dep. manager) |
 
+### Package Updates
+
+| Variable               | Default     | Description                                                          |
+|------------------------|-------------|----------------------------------------------------------------------|
+| `php_packages_state`   | `'present'` | `present` installs missing packages only, `latest` updates them      |
+| `php_packages_minimum` | `{}`        | Lowest acceptable version per PHP branch, checked after the packages |
+
+A regular run never updates PHP. A targeted update, for example for a
+security release, is requested on the command line:
+
+```bash
+ansible-playbook site.yml --tags php \
+  -e php_packages_state=latest \
+  -e '{"php_packages_minimum": {"8.3": "8.3.34"}}'
+```
+
+With `latest` the role refreshes the package metadata, updates every
+installed package of each configured version in one transaction (including
+parts pulled in as dependencies) and restarts the PHP-FPM services whose
+packages changed. `php_packages_minimum` then fails the run for every
+configured branch whose installed version is still lower, which shows that
+the repository does not carry the fix yet; branches that are not configured
+on the host are ignored. The check is skipped under `--check`.
+
+On Arch Linux `php_packages_state` is ignored: updating single packages is a
+partial upgrade there, PHP updates with the full system upgrade.
+
 ## Tags
 
 | Tag             | Scope                             |
