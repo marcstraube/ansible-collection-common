@@ -15,6 +15,9 @@ jobs:
   release-please:
     name: Create Release PR
     runs-on: ubuntu-24.04
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - uses: actions/create-github-app-token@v3
         id: app-token
@@ -132,3 +135,44 @@ jobs:
             -f content="${NEW_B64}" \
             -f sha="${FILE_SHA}" \
             -f branch="${PR_BRANCH}"
+
+  # Merge main back into develop after every release. The release PR
+  # commits the version bump, CHANGELOG.md and the dated MIGRATION.md
+  # section to main only; without the back-merge, develop drifts from
+  # main and the next release merge conflicts in MIGRATION.md. Hotfixes
+  # merged into main reach develop the same way with their patch release.
+  #
+  # The PR is opened with the release bot token so that CI runs on it,
+  # and auto-merge lands it as a merge commit once the CI Gate passes. A
+  # conflict leaves the PR open for a manual resolution.
+  back-merge:
+    name: Merge main into develop
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - name: Open the back-merge PR and enable auto-merge
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          VERSION: ${{ needs.release-please.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          PR_URL=$(gh pr list -R "$REPO" --base develop --head main \
+            --state open --json url --jq '.[0].url // empty')
+
+          if [ -z "$PR_URL" ]; then
+            PR_URL=$(gh pr create -R "$REPO" --base develop --head main \
+              --title "chore: merge main into develop after v${VERSION}" \
+              --body "Brings the v${VERSION} release commit (version bump, CHANGELOG.md, dated MIGRATION.md section) back into develop. Opened by the release-please workflow.")
+          fi
+
+          echo "Back-merge PR: ${PR_URL}"
+          gh pr merge "$PR_URL" --auto --merge
