@@ -234,6 +234,21 @@
           - __verify_auto_pool_stat.stat.exists
         fail_msg: "www.conf not found at {{ __verify_auto_pool }}"
 
+    # FPM reads only *.conf from the pool directory; an ini drop-in there has
+    # no effect.
+    - name: Verify | Check no php.ini drop-in in auto FPM pool directory
+      ansible.builtin.stat:
+        path: "{{ __verify_auto_pool | dirname }}/99-ansible.ini"
+      register: __verify_auto_pool_ini_stat
+
+    - name: Verify | Assert no php.ini drop-in in auto FPM pool directory
+      ansible.builtin.assert:
+        that:
+          - not __verify_auto_pool_ini_stat.stat.exists
+        fail_msg: >-
+          php.ini drop-in deployed to the FPM pool directory
+          {{ __verify_auto_pool | dirname }}
+
     - name: Verify | Check auto www.conf content
       ansible.builtin.slurp:
         src: '{{ __verify_auto_pool }}'
