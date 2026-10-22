@@ -325,7 +325,10 @@
   loop: "{{ all_uuids_with_type | default([]) }}"
   loop_control:
     label: "{{ item.item.item.key }}"
+  # Connections with state: absent are skipped by the UUID lookup and carry
+  # no rc.
   when:
+    - item is not skipped
     - item.rc == 0
     - item.stdout is defined
     - item.stdout | trim | length > 0
@@ -368,6 +371,7 @@
   when:
     - vpn_uuids.results is defined
     - vpn_uuids.results | length > 0
+    - item is not skipped
     - item.rc == 0
     - item.stdout is defined
     - item.stdout | trim | length > 0

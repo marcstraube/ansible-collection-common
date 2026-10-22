@@ -151,3 +151,43 @@
       ansible.builtin.pause:
         seconds: 5
       when: ansible_facts['os_family'] == 'Archlinux'
+
+    # A connection the inventory marks state: absent; converge must remove it.
+    # Creating it needs a running NetworkManager. The Debian and RedHat
+    # dependencies above already bring one up; on Arch it arrives with the
+    # role, so install and start it here.
+    - name: Prepare | Install NetworkManager for the removal fixture (Arch)
+      community.general.pacman:
+        name: networkmanager
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    # Same exclusion converge sets up: NetworkManager must not take over the
+    # Vagrant management interface when it starts here.
+    - name: Prepare | Keep the Vagrant interface unmanaged
+      community.general.ini_file:
+        path: /etc/NetworkManager/conf.d/99-unmanaged-vagrant-interfaces.conf
+        create: true
+        option: unmanaged-devices
+        value: interface-name:eth0
+        section: keyfile
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Prepare | Start NetworkManager for the removal fixture
+      ansible.builtin.service:
+        name: NetworkManager
+        state: started
+
+    - name: Prepare | Create the connection to be removed
+      community.general.nmcli:
+        type: ethernet
+        conn_name: 'Retired Ethernet'
+        ifname: eth3
+        method4: disabled
+        method6: disabled
+        autoconnect: false
+        state: present
