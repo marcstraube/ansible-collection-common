@@ -12,10 +12,10 @@ __php_fpm_service: 'php-fpm'
 # RHEL does not use update-alternatives for PHP (single stream at a time)
 __php_has_alternatives: false
 
-# AppStream paths
+# AppStream paths. The CLI and FPM SAPIs share /etc/php.ini and /etc/php.d;
+# /etc/php-fpm.d holds the FPM pools (FPM reads only *.conf there).
 __php_conf_dirs:
   - '/etc/php.d'
-  - '/etc/php-fpm.d'
 __php_fpm_pool_dir: '/etc/php-fpm.d'
 __php_fpm_listen_default: '/run/php-fpm/www.sock'
 
