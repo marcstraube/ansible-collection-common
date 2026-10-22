@@ -136,19 +136,35 @@ jobs:
             -f sha="${FILE_SHA}" \
             -f branch="${PR_BRANCH}"
 
-  # Merge main back into develop after every release. The release PR
-  # commits the version bump, CHANGELOG.md and the dated MIGRATION.md
-  # section to main only; without the back-merge, develop drifts from
-  # main and the next release merge conflicts in MIGRATION.md. Hotfixes
-  # merged into main reach develop the same way with their patch release.
+  # Merge main back into develop after every push to main: a hotfix reaches
+  # develop right away, whether or not its patch release is cut yet, and
+  # the release PR's version bump, CHANGELOG.md and dated MIGRATION.md
+  # section follow once it is merged. Without the back-merge, develop
+  # drifts from main and the next release merge conflicts. A hotfix PR's
+  # merge commit carries the PR body (repository setting), so its closing
+  # keywords close their issues once the commit lands in develop, the
+  # default branch.
   #
-  # The PR is opened with the release bot token so that CI runs on it,
-  # and auto-merge lands it as a merge commit once the CI Gate passes. A
-  # conflict leaves the PR open for a manual resolution.
+  # A release merge (develop into main) leaves nothing to bring back: main
+  # then has no file changes since its merge base with develop, and the
+  # job ends without opening a PR.
+  #
+  # The PR head is a dedicated back-merge/<sha> branch cut from main with
+  # develop merged in, never main itself: develop requires PR heads to be
+  # up to date, and updating main with develop is not an option. A merge
+  # conflict leaves the branch at main's state and the PR open, so the
+  # conflict is resolved on that branch. A newer back-merge supersedes an
+  # open one, since its branch contains everything the older one carries.
+  #
+  # Branch and merge are created through the GitHub API with the release bot
+  # token: GitHub signs the merge commit for the app, which a local git
+  # merge on the runner cannot do. The job fails instead of opening a PR
+  # if the merge commit is not verified. The release bot token also makes
+  # CI run on the PR, and auto-merge lands it as a merge commit once the
+  # CI Gate passes.
   back-merge:
     name: Merge main into develop
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/create-github-app-token@v3
@@ -157,22 +173,98 @@ jobs:
           app-id: ${{ vars.RELEASE_BOT_APP_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
 
-      - name: Open the back-merge PR and enable auto-merge
+      - name: Check for changes to merge back
+        id: changes
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # File changes on main since its merge base with develop.
+          CHANGED_FILES=$(gh api "repos/${REPO}/compare/develop...${GITHUB_SHA}" \
+            --jq '.files | length')
+          if [ "$CHANGED_FILES" -eq 0 ]; then
+            echo "main has no changes that develop lacks - nothing to merge back."
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open the back-merge PR and enable auto-merge
+        if: steps.changes.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          RELEASE_CREATED: ${{ needs.release-please.outputs.release_created }}
           VERSION: ${{ needs.release-please.outputs.version }}
         run: |
           set -euo pipefail
 
-          PR_URL=$(gh pr list -R "$REPO" --base develop --head main \
-            --state open --json url --jq '.[0].url // empty')
+          BRANCH="back-merge/${GITHUB_SHA::7}"
 
-          if [ -z "$PR_URL" ]; then
-            PR_URL=$(gh pr create -R "$REPO" --base develop --head main \
-              --title "chore: merge main into develop after v${VERSION}" \
-              --body "Brings the v${VERSION} release commit (version bump, CHANGELOG.md, dated MIGRATION.md section) back into develop. Opened by the release-please workflow.")
+          # Cut the branch from main at this push; a re-run resets it.
+          if gh api "repos/${REPO}/git/ref/heads/${BRANCH}" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/${REPO}/git/refs/heads/${BRANCH}" \
+              -f sha="$GITHUB_SHA" -F force=true > /dev/null
+          else
+            gh api -X POST "repos/${REPO}/git/refs" \
+              -f ref="refs/heads/${BRANCH}" -f sha="$GITHUB_SHA" > /dev/null
           fi
 
+          # Merge develop into the branch on GitHub's side. HTTP 409 is a
+          # merge conflict; HTTP 204 (empty response) means main already
+          # contains develop, as right after a release.
+          CONFLICT=false
+          if MERGE_RESPONSE=$(gh api -X POST "repos/${REPO}/merges" \
+              -f base="$BRANCH" -f head=develop \
+              -f commit_message="chore: merge develop into ${BRANCH}" \
+              2> merge-error.txt); then
+            MERGE_SHA=$(printf '%s' "$MERGE_RESPONSE" | jq -r '.sha // empty')
+            if [ -n "$MERGE_SHA" ]; then
+              VERIFIED=$(gh api "repos/${REPO}/commits/${MERGE_SHA}" \
+                --jq '.commit.verification.verified')
+              if [ "$VERIFIED" != "true" ]; then
+                echo "::error::Merge commit ${MERGE_SHA} is not verified; no back-merge PR opened."
+                exit 1
+              fi
+            fi
+          elif grep -q 'HTTP 409' merge-error.txt; then
+            CONFLICT=true
+          else
+            cat merge-error.txt >&2
+            exit 1
+          fi
+
+          if [ "$RELEASE_CREATED" = "true" ]; then
+            TITLE="chore: merge main into develop after v${VERSION}"
+            BODY="Brings the v${VERSION} release commit (version bump, CHANGELOG.md, dated MIGRATION.md section) back into develop."
+          else
+            TITLE="chore: merge main into develop"
+            BODY="Brings the changes merged into main, such as a hotfix, back into develop."
+          fi
+          BODY="${BODY} Opened by the release-please workflow from ${BRANCH}, which is main at ${GITHUB_SHA::7} with develop merged in."
+          if [ "$CONFLICT" = "true" ]; then
+            BODY="${BODY} Merging develop into the branch conflicted: resolve the conflict on ${BRANCH} by merging develop, then merge this pull request."
+          fi
+
+          # Supersede older back-merge PRs: the new branch contains their commits.
+          export BRANCH
+          for OLD in $(gh pr list -R "$REPO" --base develop --state open \
+              --json number,headRefName \
+              --jq '.[] | select((.headRefName | startswith("back-merge/")) and .headRefName != $ENV.BRANCH) | .number'); do
+            gh pr close "$OLD" -R "$REPO" --delete-branch \
+              --comment "Superseded by the back-merge of ${GITHUB_SHA::7}."
+          done
+
+          PR_URL=$(gh pr list -R "$REPO" --base develop --head "$BRANCH" \
+            --state open --json url --jq '.[0].url // empty')
+          if [ -z "$PR_URL" ]; then
+            PR_URL=$(gh pr create -R "$REPO" --base develop --head "$BRANCH" \
+              --title "$TITLE" --body "$BODY")
+          fi
           echo "Back-merge PR: ${PR_URL}"
-          gh pr merge "$PR_URL" --auto --merge
+
+          if [ "$CONFLICT" = "false" ]; then
+            gh pr merge "$PR_URL" --auto --merge
+          fi
