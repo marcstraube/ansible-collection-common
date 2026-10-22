@@ -67,6 +67,27 @@ php_default_version: 'auto'
 php_redhat_repo: 'appstream'
 
 #
+# Package Updates
+#
+
+# State of the PHP packages of every configured version:
+#   'present' installs missing packages and never updates (default).
+#   'latest'  updates all installed PHP packages of each version in one
+#             transaction and restarts the affected PHP-FPM services.
+# Pass 'latest' for a targeted update instead of setting it in inventory:
+#   --tags php -e php_packages_state=latest
+# Ignored on Arch Linux: updating single packages is a partial upgrade there,
+# PHP updates with the full system upgrade.
+php_packages_state: 'present'
+
+# Lowest acceptable version per PHP branch, checked after the package task.
+# Meant to be passed with the update command to confirm that the repository
+# already carries a fix; the run fails when an installed branch is older:
+#   -e '{"php_packages_minimum": {"8.3": "8.3.34"}}'
+# Branches that are not configured on the host are ignored.
+php_packages_minimum: {}
+
+#
 # PHP Configuration (php.ini)
 #
 # Drop-in override deployed to conf.d/99-ansible.ini.
