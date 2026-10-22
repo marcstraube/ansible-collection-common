@@ -257,11 +257,12 @@ jobs:
               --comment "Superseded by the back-merge of ${GITHUB_SHA::7}."
           done
 
+          # The chore label keeps the PR out of the release notes (.github/release.yml).
           PR_URL=$(gh pr list -R "$REPO" --base develop --head "$BRANCH" \
             --state open --json url --jq '.[0].url // empty')
           if [ -z "$PR_URL" ]; then
             PR_URL=$(gh pr create -R "$REPO" --base develop --head "$BRANCH" \
-              --title "$TITLE" --body "$BODY")
+              --title "$TITLE" --body "$BODY" --label chore)
           fi
           echo "Back-merge PR: ${PR_URL}"
 
