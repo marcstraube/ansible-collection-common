@@ -63,6 +63,10 @@ provisioner:
               settings:
                 ipv4.dhcp-send-hostname: "no"
                 ipv6.dhcp-send-hostname: "no"
+            # Prepare creates it; state: absent must remove it.
+            'Retired Ethernet':
+              ifname: eth3
+              state: absent
           wifi:
             'Office WiFi':
               ifname: wlan2
@@ -180,6 +184,10 @@ provisioner:
               settings:
                 ipv4.dhcp-send-hostname: "yes"
                 ipv6.dhcp-send-hostname: "yes"
+            # Prepare creates it; state: absent must remove it.
+            'Retired Ethernet':
+              ifname: eth3
+              state: absent
           wifi: {}
           vpn: {}
         test_networkmanager_smb_shares: []
@@ -205,6 +213,10 @@ provisioner:
               settings:
                 ipv4.dhcp-send-hostname: "yes"
                 ipv6.dhcp-send-hostname: "yes"
+            # Prepare creates it; state: absent must remove it.
+            'Retired Ethernet':
+              ifname: eth3
+              state: absent
           wifi: {}
           vpn: {}
         test_networkmanager_smb_shares: []
@@ -230,6 +242,10 @@ provisioner:
               settings:
                 ipv4.dhcp-send-hostname: "yes"
                 ipv6.dhcp-send-hostname: "yes"
+            # Prepare creates it; state: absent must remove it.
+            'Retired Ethernet':
+              ifname: eth3
+              state: absent
           wifi: {}
           vpn: {}
         test_networkmanager_smb_shares: []
