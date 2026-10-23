@@ -2,6 +2,18 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.0.1 (2026-10-23)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(php): deploy the ini override only to the EL php.d directory by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/431
+* fix(networkmanager): skip absent connections when collecting UUIDs by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/434
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.0.0...v3.0.1
+
 ## [3.0.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.3.1...v3.0.0) (2026-10-19)
 
 
