@@ -82,8 +82,26 @@
           - item in nmcli_connections.stdout
         fail_msg: Ethernet connection '{{ item }}' was not created
         success_msg: Ethernet connection '{{ item }}' exists
-      loop: "{{ test_networkmanager_connections.ethernet.keys() | list }}"
+      loop: >-
+        {{ test_networkmanager_connections.ethernet | dict2items
+           | rejectattr('value.state', 'defined') | map(attribute='key') | list
+           + (test_networkmanager_connections.ethernet | dict2items
+              | selectattr('value.state', 'defined')
+              | selectattr('value.state', 'eq', 'present')
+              | map(attribute='key') | list) }}
       when: test_networkmanager_connections.ethernet | length > 0
+
+    - name: Verify | Assert Ethernet connections with state absent are removed
+      ansible.builtin.assert:
+        that:
+          - item not in nmcli_connections.stdout
+        fail_msg: Ethernet connection '{{ item }}' still exists
+        success_msg: Ethernet connection '{{ item }}' was removed
+      loop: >-
+        {{ test_networkmanager_connections.ethernet | dict2items
+           | selectattr('value.state', 'defined')
+           | selectattr('value.state', 'eq', 'absent')
+           | map(attribute='key') | list }}
 
     - name: Verify | Assert WiFi connections exist
       ansible.builtin.assert:
