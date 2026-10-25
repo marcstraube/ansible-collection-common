@@ -70,5 +70,8 @@ scenario:
     - prepare
     - converge
     - idempotence
+    # Run the role once in check mode against the converged instance; the
+    # verify step covers check mode with a deviating parameter.
+    - check
     - verify
     - destroy

@@ -40,6 +40,20 @@
   changed_when: true
   notify: Restart Postfix
 
+# The command above does not run under --check; this task reports the
+# parameters the real run would change, with the current and desired value.
+- name: Configure | Report pending Postfix parameter changes
+  ansible.builtin.debug:
+    msg: "{{ item.item.key }}: '{{ item.stdout | trim }}' -> '{{ item.item.value | trim }}'"
+  loop: '{{ __mta_current.results }}'
+  loop_control:
+    label: '{{ item.item.key }}'
+  when:
+    - ansible_check_mode
+    - (item.stdout | trim) != (item.item.value | trim)
+  changed_when: true
+  notify: Restart Postfix
+
 - name: Configure | Set Postfix as the system MTA
   community.general.alternatives:
     name: mta
