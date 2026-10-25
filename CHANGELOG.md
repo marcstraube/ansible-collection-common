@@ -2,6 +2,25 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.0.1 (2026-10-25)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(php): deploy the ini override only to the EL php.d directory by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/431
+* fix(networkmanager): skip absent connections when collecting UUIDs by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/434
+* fix(pki): install the Python cryptography library by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/437
+* fix(firewalld): create zones before networkmanager binds connections by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/440
+* fix(mta): report pending Postfix parameter changes in check mode by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/443
+* fix(btrfs): detect BTRFS and report NoCOW changes in check mode by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/445
+* fix(networkmanager): retry SMB and SSHFS mounts in the background by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/447
+### Documentation
+* docs(readme): require version 3 in the requirements file example by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/448
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.0.0...v3.0.1
+
 ## [3.0.0](https://github.com/marcstraube/ansible-collection-common/compare/v2.3.1...v3.0.0) (2026-10-19)
 
 
