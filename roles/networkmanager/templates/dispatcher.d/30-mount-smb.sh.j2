@@ -7,9 +7,23 @@
 # for any defined SMB share. WireGuard interface dependencies are checked via systemctl.
 # Shares that depend on VPN connections are excluded and handled by the VPN-specific mount script.
 # Each share is mounted per user into their home directory.
+# A connectivity change retries shares whose mount still failed.
 
-# CONNECTION_UUID is provided by NetworkManager dispatcher.
+# CONNECTION_UUID is provided by NetworkManager dispatcher for connection events.
+ACTION="$2"
 LOG_PREFIX="NM-SMB-Mount"
+
+# True if the connection triggered this "up" event or, on a connectivity
+# change, is currently active.
+connection_up() {
+  if [ "$ACTION" = "up" ]; then
+    [ "$CONNECTION_UUID" = "$1" ]
+  else
+    nmcli -g UUID connection show --active | grep -qxF "$1"
+  fi
+}
+
+{% include 'mount-retry.sh.j2' +%}
 
 {# Classification sources: configured inventory data (always present). #}
 {% set _nm_base_names = ((networkmanager_connections.ethernet | default({})).keys() | list)
@@ -31,7 +45,7 @@ LOG_PREFIX="NM-SMB-Mount"
 {% for user in users_list | default([]) -%}
   {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
 {% endfor -%}
-if [ "$2" = "up" ]; then
+if [ "$ACTION" = "up" ] || { [ "$ACTION" = "connectivity-change" ] && [ "$CONNECTIVITY_STATE" != "NONE" ]; }; then
 {% if networkmanager_smb_shares is defined and networkmanager_smb_shares is not none and networkmanager_smb_shares | length > 0 %}
   {% for share in networkmanager_smb_shares %}
     {% if share.depends_on is defined and share.depends_on | length > 0 %}
@@ -59,7 +73,7 @@ if [ "$2" = "up" ]; then
   SHOULD_MOUNT="false"
         {% if dependency_uuids_for_this_share | length > 0 %}
   # NM connection dependencies
-  if {% for uuid in dependency_uuids_for_this_share %}[ "$CONNECTION_UUID" = "{{ uuid }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
+  if {% for uuid in dependency_uuids_for_this_share %}connection_up "{{ uuid }}"{% if not loop.last %} || {% endif %}{% endfor %}; then
     SHOULD_MOUNT="true"
   fi
         {% endif %}
@@ -82,7 +96,7 @@ if [ "$2" = "up" ]; then
     if ! mountpoint -q "{{ mount_point }}"; then
       echo "$LOG_PREFIX: Dependency satisfied for share '{{ share.name }}'. Mounting {{ mount_point }} for {{ smb_user.name }}"
       mkdir -p "{{ mount_point }}"
-      mount -t cifs -o {{ opts | join(',') }} {{ share.src }} "{{ mount_point }}"
+      mount_retry "{{ mount_point }}" "{{ share.name }}" mount -t cifs -o {{ opts | join(',') }} {{ share.src }} "{{ mount_point }}"
     else
       echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ mount_point }}) already mounted for {{ smb_user.name }}."
     fi

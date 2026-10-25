@@ -248,6 +248,13 @@ networkmanager_smb_credentials_dir: ".config/samba"
 #       - "My Office Connection"
 networkmanager_sshfs_shares: []
 
+# Mount retries for SMB and SSHFS shares. The server may not be reachable yet
+# when the connection comes up (e.g. right after resume); each mount runs in
+# the background and is retried up to this many attempts, with this delay in
+# seconds between them.
+networkmanager_mount_retry_attempts: 5
+networkmanager_mount_retry_delay: 5
+
 #
 # Global DNS
 #
