@@ -25,6 +25,19 @@
   tags:
     - always
 
+- name: Main | Validate package update settings
+  ansible.builtin.assert:
+    that:
+      - php_packages_state in ['present', 'latest']
+      - php_packages_minimum is mapping
+    fail_msg: >-
+      php_packages_state must be 'present' or 'latest' (got '{{ php_packages_state }}'),
+      php_packages_minimum must be a mapping of PHP branch to version,
+      e.g. {"8.3": "8.3.34"}
+  when: php_enabled | bool
+  tags:
+    - always
+
 - name: Main | Validate php_redhat_repo
   ansible.builtin.assert:
     that:

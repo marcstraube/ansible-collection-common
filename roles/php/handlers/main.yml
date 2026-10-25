@@ -5,3 +5,13 @@
     state: reloaded
   loop: "{{ __php_fpm_changed_services | default([]) | unique }}"
   when: php_fpm_enabled | bool
+
+# After a package update the FPM master must run the new binary, which only a
+# restart achieves. Runs after the reload, so a service queued for both ends
+# up restarted.
+- name: Restart PHP-FPM
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    state: restarted
+  loop: "{{ __php_fpm_restart_services | default([]) | unique }}"
+  when: php_fpm_enabled | bool
