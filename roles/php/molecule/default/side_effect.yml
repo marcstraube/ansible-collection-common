@@ -33,6 +33,20 @@
     # the workers must pick the new value up, which only happens if the role
     # queues a reload. verify.yml asserts both the file content and the reload.
     php_ini_max_input_vars: 2000
+    # Targeted update: the pre_tasks roll the system PHP packages back to an
+    # older build, the role has to update them again and restart php-fpm, and
+    # the installed version must meet the minimum. Arch ignores the state.
+    php_packages_state: 'latest'
+    php_packages_minimum: "{{ {__side_effect_branch.stdout: '8.0.0'} }}"
+    __side_effect_cli_package: >-
+      {{ {'Archlinux': 'php', 'RedHat': 'php-cli'}[ansible_facts['os_family']]
+         | default('php' + __side_effect_branch.stdout + '-cli') }}
+    # version-release of the CLI package from the latest package facts
+    # (Debian has no separate release field).
+    __side_effect_cli_version: >-
+      {{ [(ansible_facts['packages'][__side_effect_cli_package] | first).version,
+          (ansible_facts['packages'][__side_effect_cli_package] | first).release | default('')]
+         | select | join('-') }}
 
   pre_tasks:
     # Multi-version: add second PHP version on Debian.
@@ -59,7 +73,93 @@
                 realpath_cache_size: '8192k'
       when: ansible_facts['os_family'] == 'Debian'
 
+    - name: Side Effect | Detect the system PHP branch
+      ansible.builtin.command:
+        argv: ['php', '-r', 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;']
+      register: __side_effect_branch
+      changed_when: false
+
+    - name: Side Effect | Gather package facts before the rollback
+      ansible.builtin.package_facts:
+
+    - name: Side Effect | Record the current CLI package version
+      ansible.builtin.set_fact:
+        __side_effect_version_current: >-
+          {{ __side_effect_cli_version }}
+
+    # Older builds of the same branch stay in the EL AppStream and in the
+    # Debian release pocket (the update ships through the security pocket).
+    # When the repository holds only one build, nothing is rolled back and
+    # verify.yml skips the version comparison.
+    - name: Side Effect | Roll the PHP packages back (RedHat)
+      ansible.builtin.command:
+        cmd: dnf downgrade -y 'php-*'
+      register: __side_effect_downgrade
+      changed_when: true
+      failed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Side Effect | Roll the PHP packages back (Debian)
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          branch='{{ __side_effect_branch.stdout }}'
+          installed=$(dpkg-query -W -f '${Version}' "php${branch}-cli")
+          # madison lists the newest build first; take the first older one,
+          # whichever repository (Debian, security pocket, sury) carries it.
+          old=$(apt-cache madison "php${branch}-cli" \
+            | awk -F' [|] ' -v cur="${installed}" '$2 != cur { print $2; exit }')
+          [ -n "${old}" ] || exit 0
+          pkgs=$(dpkg-query -W -f '${Package} ${db:Status-Abbrev}\n' "php${branch}-*" \
+            | awk '$2 == "ii" { print $1 }')
+          args=''
+          for pkg in ${pkgs}; do args="${args} ${pkg}=${old}"; done
+          # shellcheck disable=SC2086
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-downgrades ${args}
+        executable: /bin/bash
+      changed_when: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Side Effect | Gather package facts after the rollback
+      ansible.builtin.package_facts:
+
+    # verify.yml runs as a separate playbook; the versions before and after
+    # the rollback and the time of the update reach it through this file.
+    - name: Side Effect | Record the CLI package versions around the rollback
+      ansible.builtin.copy:
+        content: |
+          {{ __side_effect_version_current }}
+          {{ __side_effect_cli_version }}
+        dest: /root/php-update-versions
+        mode: '0600'
+
   tasks:
     - name: Side Effect | Include php role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    - name: Side Effect | Run the queued handlers
+      ansible.builtin.meta: flush_handlers
+
+    # A minimum above the installed version must fail the run with a message
+    # that names both versions.
+    - name: Side Effect | Run with a minimum above the installed version
+      block:
+        - name: Side Effect | Include php role with an unmet minimum  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            php_packages_state: 'present'
+            php_packages_minimum: "{{ {__side_effect_branch.stdout: '99.0.0'} }}"
+      rescue:
+        - name: Side Effect | Record the minimum check failure
+          ansible.builtin.set_fact:
+            __side_effect_minimum_error: '{{ ansible_failed_result.msg | default("") }}'
+
+    - name: Side Effect | Assert the unmet minimum failed the run
+      ansible.builtin.assert:
+        that:
+          - __side_effect_minimum_error is defined
+          - "'requires 99.0.0' in __side_effect_minimum_error"
+        fail_msg: "A minimum of 99.0.0 did not fail the run"
+        success_msg: "The minimum check rejects an older installed version"
