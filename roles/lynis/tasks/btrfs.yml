@@ -7,6 +7,7 @@
     cmd: stat -f -c %T {{ lynis_report_dir | dirname }}
   register: __lynis_report_fstype
   changed_when: false
+  check_mode: false
   failed_when: false
 
 - name: BTRFS | Create report directory
@@ -23,13 +24,17 @@
     cmd: lsattr -d {{ lynis_report_dir }}
   register: __lynis_lsattr
   changed_when: false
+  check_mode: false
   failed_when: false
   when: __lynis_report_fstype.stdout | default('') == 'btrfs'
 
-- name: BTRFS | Set NoCOW attribute on report directory
-  ansible.builtin.command:
-    cmd: chattr +C {{ lynis_report_dir }}
-  changed_when: true
+# Only sets the attribute; owner and mode stay with the task or package
+# that creates the directory.
+- name: BTRFS | Set NoCOW attribute on report directory  # noqa: risky-file-permissions
+  ansible.builtin.file:
+    path: '{{ lynis_report_dir }}'
+    state: directory
+    attributes: '+C'
   when:
     - __lynis_report_fstype.stdout | default('') == 'btrfs'
     - "'C' not in (__lynis_lsattr.stdout | default(''))"

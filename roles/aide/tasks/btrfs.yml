@@ -6,6 +6,7 @@
     cmd: stat -f -c %T {{ (aide_database | dirname) | dirname }}
   register: __aide_db_fstype
   changed_when: false
+  check_mode: false
   # Filesystem may not support stat -f (container, network mount)
   failed_when: false
 
@@ -18,6 +19,7 @@
     cmd: btrfs subvolume show {{ aide_database | dirname }}
   register: __aide_subvol_check
   changed_when: false
+  check_mode: false
   # Directory may not be a subvolume yet
   failed_when: false
   when: __aide_is_btrfs | bool
@@ -60,13 +62,17 @@
     cmd: lsattr -d {{ aide_database | dirname }}
   register: __aide_lsattr
   changed_when: false
+  check_mode: false
   failed_when: false
   when: __aide_is_btrfs | bool
 
-- name: BTRFS | Set NoCOW attribute on AIDE database directory
-  ansible.builtin.command:
-    cmd: chattr +C {{ aide_database | dirname }}
-  changed_when: true
+# Only sets the attribute; owner and mode stay with the task or package
+# that creates the directory.
+- name: BTRFS | Set NoCOW attribute on AIDE database directory  # noqa: risky-file-permissions
+  ansible.builtin.file:
+    path: '{{ aide_database | dirname }}'
+    state: directory
+    attributes: '+C'
   when:
     - __aide_is_btrfs | bool
     - "'C' not in (__aide_lsattr.stdout | default(''))"
