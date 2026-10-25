@@ -22,6 +22,7 @@
     cmd: grep -E '^\s*graphroot\s*=' {{ __podman_rootless_home }}/.config/containers/storage.conf
   register: __podman_rootless_user_graphroot
   changed_when: false
+  check_mode: false
   # No file or no graphroot line both mean the per-user default applies
   failed_when: false
 
@@ -36,6 +37,7 @@
     cmd: stat -f -c %T {{ __podman_rootless_home }}
   register: __podman_rootless_fstype
   changed_when: false
+  check_mode: false
   # stat fails if the home directory does not exist
   failed_when: false
   when: not __podman_rootless_custom_graphroot | bool
@@ -51,6 +53,7 @@
     cmd: btrfs subvolume show {{ __podman_rootless_storage }}
   register: __podman_rootless_subvol_check
   changed_when: false
+  check_mode: false
   # Directory may not be a subvolume yet
   failed_when: false
   when: __podman_rootless_is_btrfs | bool
@@ -101,14 +104,18 @@
     cmd: lsattr -d {{ __podman_rootless_storage }}
   register: __podman_rootless_lsattr
   changed_when: false
+  check_mode: false
   # lsattr may fail on non-ext/btrfs filesystems
   failed_when: false
   when: __podman_rootless_is_btrfs | bool
 
-- name: Rootless BTRFS | Set NoCOW attribute on storage directory
-  ansible.builtin.command:
-    cmd: chattr +C {{ __podman_rootless_storage }}
-  changed_when: true
+# Only sets the attribute; owner and mode stay with the task or package
+# that creates the directory.
+- name: Rootless BTRFS | Set NoCOW attribute on storage directory  # noqa: risky-file-permissions
+  ansible.builtin.file:
+    path: '{{ __podman_rootless_storage }}'
+    state: directory
+    attributes: '+C'
   when:
     - __podman_rootless_is_btrfs | bool
     - "'C' not in (__podman_rootless_lsattr.stdout | default(''))"

@@ -7,6 +7,7 @@
     cmd: stat -f -c %T {{ (auditd_log_file | dirname) | dirname }}
   register: __auditd_fstype
   changed_when: false
+  check_mode: false
   failed_when: false
 
 - name: BTRFS | Set BTRFS detection fact
@@ -19,6 +20,7 @@
     cmd: btrfs subvolume show {{ auditd_log_file | dirname }}
   register: __auditd_subvol_check
   changed_when: false
+  check_mode: false
   failed_when: false
   when: __auditd_is_btrfs | bool
 
@@ -60,13 +62,17 @@
     cmd: lsattr -d {{ auditd_log_file | dirname }}
   register: __auditd_lsattr
   changed_when: false
+  check_mode: false
   failed_when: false
   when: __auditd_is_btrfs | bool
 
-- name: BTRFS | Set NoCOW attribute on audit log directory
-  ansible.builtin.command:
-    cmd: chattr +C {{ auditd_log_file | dirname }}
-  changed_when: true
+# Only sets the attribute; owner and mode stay with the task or package
+# that creates the directory.
+- name: BTRFS | Set NoCOW attribute on audit log directory  # noqa: risky-file-permissions
+  ansible.builtin.file:
+    path: '{{ auditd_log_file | dirname }}'
+    state: directory
+    attributes: '+C'
   when:
     - __auditd_is_btrfs | bool
     - "'C' not in (__auditd_lsattr.stdout | default(''))"

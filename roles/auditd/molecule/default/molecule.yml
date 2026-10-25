@@ -119,5 +119,8 @@ scenario:
     - prepare
     - converge
     - idempotence
+    # Run the role once in check mode against the converged instance; the
+    # BTRFS detection runs there as well.
+    - check
     - verify
     - destroy

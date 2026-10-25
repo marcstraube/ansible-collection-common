@@ -6,6 +6,7 @@
     cmd: stat -f -c %T {{ clamav_database_directory | dirname }}
   register: __clamav_db_fstype
   changed_when: false
+  check_mode: false
   failed_when: false
 
 - name: BTRFS | Set BTRFS detection fact
@@ -17,6 +18,7 @@
     cmd: btrfs subvolume show {{ clamav_database_directory }}
   register: __clamav_subvol_check
   changed_when: false
+  check_mode: false
   failed_when: false
   when: __clamav_is_btrfs | bool
 
@@ -58,13 +60,17 @@
     cmd: lsattr -d {{ clamav_database_directory }}
   register: __clamav_lsattr
   changed_when: false
+  check_mode: false
   failed_when: false
   when: __clamav_is_btrfs | bool
 
-- name: BTRFS | Set NoCOW attribute on ClamAV database directory
-  ansible.builtin.command:
-    cmd: chattr +C {{ clamav_database_directory }}
-  changed_when: true
+# Only sets the attribute; owner and mode stay with the task or package
+# that creates the directory.
+- name: BTRFS | Set NoCOW attribute on ClamAV database directory  # noqa: risky-file-permissions
+  ansible.builtin.file:
+    path: '{{ clamav_database_directory }}'
+    state: directory
+    attributes: '+C'
   when:
     - __clamav_is_btrfs | bool
     - "'C' not in (__clamav_lsattr.stdout | default(''))"

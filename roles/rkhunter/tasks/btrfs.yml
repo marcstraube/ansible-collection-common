@@ -6,6 +6,7 @@
     cmd: stat -f -c %T /var/lib/rkhunter/db
   register: __rkhunter_db_fstype
   changed_when: false
+  check_mode: false
   failed_when: false
 
 - name: BTRFS | Check NoCOW attribute on rkhunter database directory
@@ -13,13 +14,17 @@
     cmd: lsattr -d /var/lib/rkhunter/db
   register: __rkhunter_lsattr
   changed_when: false
+  check_mode: false
   failed_when: false
   when: __rkhunter_db_fstype.stdout | default('') == 'btrfs'
 
-- name: BTRFS | Set NoCOW attribute on rkhunter database directory
-  ansible.builtin.command:
-    cmd: chattr +C /var/lib/rkhunter/db
-  changed_when: true
+# Only sets the attribute; owner and mode stay with the task or package
+# that creates the directory.
+- name: BTRFS | Set NoCOW attribute on rkhunter database directory  # noqa: risky-file-permissions
+  ansible.builtin.file:
+    path: /var/lib/rkhunter/db
+    state: directory
+    attributes: '+C'
   when:
     - __rkhunter_db_fstype.stdout | default('') == 'btrfs'
     - "'C' not in (__rkhunter_lsattr.stdout | default(''))"
