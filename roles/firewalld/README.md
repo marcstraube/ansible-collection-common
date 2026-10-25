@@ -75,6 +75,21 @@ Deployed as `/etc/firewalld/firewalld.conf`.
 |-------------------|---------|----------------------------------------------|
 | `firewalld_zones` | `[]`    | Zones to create or modify (`{name, target}`) |
 
+Zones are created in their own phase (`tasks/zones.yml`), which installs and
+starts firewalld, creates the zones, sets their targets and reloads, without
+opening anything. A playbook that binds NetworkManager connections to custom
+zones runs this phase before the `networkmanager` role:
+
+```yaml
+- name: Create firewalld zones
+  ansible.builtin.import_role:
+    name: marcstraube.common.firewalld
+    tasks_from: zones.yml
+```
+
+`playbooks/tasks/base_system.yml` does this before `networkmanager` and runs
+the full role afterwards.
+
 ### Services
 
 | Variable                      | Default   | Description                                     |
@@ -156,6 +171,7 @@ Deployed as `/etc/firewalld/firewalld.conf`.
 |-----------------------|-----------------------------|
 | `firewalld`           | All role tasks              |
 | `firewalld:install`   | Package installation        |
+| `firewalld:zones`     | Zones and zone targets      |
 | `firewalld:configure` | Configuration and rules     |
 | `firewalld:purge`     | Purge unconfigured services |
 | `firewalld:service`   | Service management          |

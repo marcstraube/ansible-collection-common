@@ -104,6 +104,24 @@
       failed_when: "'10.0.0.0/8' not in __verify_rich.stdout"
 
     #
+    # Zones
+    #
+
+    - name: Verify | Check custom zone exists (permanent)
+      ansible.builtin.command:
+        cmd: firewall-cmd --permanent --get-zones
+      register: __verify_zones
+      changed_when: false
+      failed_when: "'appzone' not in __verify_zones.stdout.split()"
+
+    - name: Verify | Check custom zone target
+      ansible.builtin.command:
+        cmd: firewall-cmd --permanent --zone=appzone --get-target
+      register: __verify_zone_target
+      changed_when: false
+      failed_when: __verify_zone_target.stdout | trim != 'DROP'
+
+    #
     # Sources
     #
 
