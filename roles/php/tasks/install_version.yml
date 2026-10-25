@@ -122,13 +122,42 @@
          | ternary(_mapped_raw | map('regex_replace', '^(.*)$', __php_extension_prefix + '\1') | list,
                    _mapped_raw) }}
 
+# A targeted update covers every installed package of this version, not only
+# the configured ones: parts pulled in as dependencies (e.g. php-opcache,
+# php-pdo) pin the exact version of the common package and must move in the
+# same transaction.
+- name: Install Version | Merge installed packages into the update (RedHat, Debian)
+  ansible.builtin.set_fact:
+    __php_version_packages: >-
+      {{ (__php_version_packages
+          + (ansible_facts['packages'] | default({}) | list
+             | select('match', '^' + (__php_extension_prefix | regex_escape) + '.+')
+             | list))
+         | unique | list }}
+  when:
+    - php_packages_state == 'latest'
+    - ansible_facts['os_family'] in ['RedHat', 'Debian']
+
 - name: Install Version | PHP packages
   ansible.builtin.package:
     name: '{{ __php_version_packages }}'
-    state: present
+    state: "{{ (ansible_facts['os_family'] == 'Archlinux') | ternary('present', php_packages_state) }}"
+  register: __php_packages_result
   retries: 3
   delay: 5
   when: not (__php_use_aur | bool)
+
+# A running FPM master keeps executing the old binary after an update; a
+# reload does not replace it, so the service is restarted.
+- name: Install Version | Queue FPM restart for package update
+  ansible.builtin.set_fact:
+    __php_fpm_restart_services: "{{ __php_fpm_restart_services + [__php_fpm_service] }}"
+  when:
+    - php_packages_state == 'latest'
+    - __php_version_item.fpm | default(true) | bool
+    - __php_packages_result is changed
+  changed_when: true
+  notify: 'Restart PHP-FPM'
 
 # Installed parts of the split package that are not in the configured
 # list (e.g. phpXX-pdo or phpXX-cli, pulled in earlier as dependencies)
@@ -257,3 +286,32 @@
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_use_aur | bool
+
+# Re-read the installed packages, the facts gathered before the update show
+# the old versions.
+- name: Install Version | Gather package facts for minimum version check
+  ansible.builtin.package_facts:
+  when:
+    - (__php_ver | string) in php_packages_minimum
+    - not ansible_check_mode
+
+- name: Install Version | Check minimum version
+  ansible.builtin.assert:
+    that:
+      - __php_installed_version | length > 0
+      - __php_installed_version is version(php_packages_minimum[__php_ver | string] | string, '>=')
+    fail_msg: >-
+      {{ __php_cli_package }} {{ __php_installed_version | default('(not installed)', true) }}
+      is installed, php_packages_minimum requires
+      {{ php_packages_minimum[__php_ver | string] }} for PHP {{ __php_ver }}.
+      The repository does not carry the required version yet.
+    success_msg: >-
+      {{ __php_cli_package }} {{ __php_installed_version }} meets the minimum
+      {{ php_packages_minimum[__php_ver | string] }}
+  vars:
+    __php_installed_version: >-
+      {{ (ansible_facts['packages'][__php_cli_package] | default([{'version': ''}]) | first)['version']
+         | regex_search('^[0-9]+(\.[0-9]+)*') | default('', true) }}
+  when:
+    - (__php_ver | string) in php_packages_minimum
+    - not ansible_check_mode
