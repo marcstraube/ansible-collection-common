@@ -458,6 +458,36 @@
         label: "{{ item.item }}"
       when: sshfs_configured | bool
 
+    - name: Verify | Find installed mount scripts
+      ansible.builtin.find:
+        paths:
+          - /etc/NetworkManager/dispatcher.d
+          - /usr/local/lib
+        patterns:
+          - '*-mount-smb.sh'
+          - 30-mount-sshfs.sh
+          - wireguard-smb-mount.sh
+      register: mount_scripts
+      when: smb_configured | bool or sshfs_configured | bool
+
+    - name: Verify | Check mount script syntax
+      ansible.builtin.command:
+        cmd: sh -n {{ item.path }}
+      loop: "{{ mount_scripts.files | default([]) }}"
+      loop_control:
+        label: "{{ item.path }}"
+      changed_when: false
+      when: smb_configured | bool or sshfs_configured | bool
+
+    - name: Verify | Check mount scripts use the retry helper
+      ansible.builtin.command:
+        cmd: grep -q '^mount_retry() {$' {{ item.path }}
+      loop: "{{ mount_scripts.files | default([]) }}"
+      loop_control:
+        label: "{{ item.path }}"
+      changed_when: false
+      when: smb_configured | bool or sshfs_configured | bool
+
     #
     # VPN Auto-Connect Verification (only when VPN configured)
     #

@@ -297,7 +297,18 @@ networkmanager_smb_credentials_dir: ".config/samba"
 
 # SSHFS shares (auto-mount)
 networkmanager_sshfs_shares: []
+
+# Mount retries for SMB and SSHFS shares (attempts, delay in seconds)
+networkmanager_mount_retry_attempts: 5
+networkmanager_mount_retry_delay: 5
 ```
+
+Each mount runs in the background and is retried, so a share whose server is
+not reachable yet when the connection comes up (e.g. right after resume) is
+mounted once it is. Failed attempts and the final result are logged to the
+journal with the script's tag (`NM-SMB-Mount`, `NM-VPN-SMB-Mount`,
+`NM-SSHFS-Mount`, `WG-SMB-up`). A `connectivity-change` event retries shares
+that are still not mounted.
 
 ### Polkit
 
@@ -392,18 +403,18 @@ The resolved role must run before the networkmanager role in the playbook
 
 ### Dispatcher Scripts
 
-| Script                          | Trigger     | Purpose                                      |
-|---------------------------------|-------------|----------------------------------------------|
-| `09-timezone.sh`                | `up`        | Set timezone via IP geolocation              |
-| `20-vpn-autoconnect.sh`         | `up`/`down` | Auto-activate WireGuard NM connection        |
-| `30-mount-smb.sh`               | `up`        | Mount SMB shares on connection up            |
-| `40-umount-smb.sh`              | `down`      | Unmount SMB shares on connection down        |
-| `30-mount-sshfs.sh`             | `up`        | Mount SSHFS shares                           |
-| `40-umount-sshfs.sh`            | `down`      | Unmount SSHFS shares                         |
-| `50-vpn-mount-smb.sh`           | `vpn-up`    | Mount SMB shares on VPN connect              |
-| `60-vpn-umount-smb.sh`          | `vpn-down`  | Unmount SMB shares on VPN disconnect         |
-| `pre-down.d/30-umount-smb.sh`   | `pre-down`  | Graceful SMB unmount                         |
-| `pre-down.d/30-umount-sshfs.sh` | `pre-down`  | Graceful SSHFS unmount                       |
+| Script                          | Trigger                         | Purpose                                      |
+|---------------------------------|---------------------------------|----------------------------------------------|
+| `09-timezone.sh`                | `up`                            | Set timezone via IP geolocation              |
+| `20-vpn-autoconnect.sh`         | `up`/`down`                     | Auto-activate WireGuard NM connection        |
+| `30-mount-smb.sh`               | `up`, `connectivity-change`     | Mount SMB shares on connection up            |
+| `40-umount-smb.sh`              | `down`                          | Unmount SMB shares on connection down        |
+| `30-mount-sshfs.sh`             | `up`, `connectivity-change`     | Mount SSHFS shares                           |
+| `40-umount-sshfs.sh`            | `down`                          | Unmount SSHFS shares                         |
+| `50-vpn-mount-smb.sh`           | `vpn-up`, `connectivity-change` | Mount SMB shares on VPN connect              |
+| `60-vpn-umount-smb.sh`          | `vpn-down`                      | Unmount SMB shares on VPN disconnect         |
+| `pre-down.d/30-umount-smb.sh`   | `pre-down`                      | Graceful SMB unmount                         |
+| `pre-down.d/30-umount-sshfs.sh` | `pre-down`                      | Graceful SSHFS unmount                       |
 
 ## References
 
