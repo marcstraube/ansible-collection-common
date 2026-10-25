@@ -10,6 +10,8 @@ WG_INTERFACE="$1"
 ACTION="$2"
 LOG_PREFIX="WG-SMB-${ACTION}"
 
+{% include 'mount-retry.sh.j2' +%}
+
 {% set user_homes = {} -%}
 {% for user in users_list | default([]) -%}
   {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
@@ -47,7 +49,7 @@ if [ "$ACTION" = "up" ]; then
     if ! mountpoint -q "{{ mount_point }}"; then
       echo "$LOG_PREFIX: WireGuard interface ($WG_INTERFACE) is a dependency for share '{{ share.name }}'. Mounting {{ mount_point }} for {{ smb_user.name }}"
       mkdir -p "{{ mount_point }}"
-      mount -t cifs -o {{ opts | join(',') }} {{ share.src }} "{{ mount_point }}"
+      mount_retry "{{ mount_point }}" "{{ share.name }}" mount -t cifs -o {{ opts | join(',') }} {{ share.src }} "{{ mount_point }}"
     else
       echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ mount_point }}) already mounted for {{ smb_user.name }}."
     fi

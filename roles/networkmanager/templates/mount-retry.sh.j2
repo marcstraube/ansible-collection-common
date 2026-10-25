@@ -1,0 +1,30 @@
+{# Shared by the mount scripts via include; expects LOG_PREFIX to be set. #}
+# Mount with retries in a background subshell, so the dispatcher's script
+# timeout cannot kill a slow attempt and later scripts do not wait for it.
+# A lock per mount point keeps a second event from starting a parallel loop.
+# Usage: mount_retry <mount point> <share name> <command> [args...]
+mount_retry() {
+  _mount_point="$1"
+  _share="$2"
+  shift 2
+  (
+    exec 9>"/run/lock/nm-mount$(printf '%s' "$_mount_point" | tr '/' '_').lock"
+    flock -n 9 || exit 0
+    _attempt=1
+    while :; do
+      mountpoint -q "$_mount_point" && exit 0
+      if _error=$("$@" 2>&1); then
+        logger -t "$LOG_PREFIX" "Mounted '$_share' on $_mount_point (attempt $_attempt/{{ networkmanager_mount_retry_attempts }})."
+        exit 0
+      fi
+      logger -t "$LOG_PREFIX" -p user.warning \
+        "Attempt $_attempt/{{ networkmanager_mount_retry_attempts }} to mount '$_share' on $_mount_point failed: $(printf '%s' "$_error" | tr '\n' ' ')"
+      [ "$_attempt" -ge {{ networkmanager_mount_retry_attempts }} ] && break
+      _attempt=$((_attempt + 1))
+      sleep {{ networkmanager_mount_retry_delay }}
+    done
+    logger -t "$LOG_PREFIX" -p user.err \
+      "Giving up on '$_share' ($_mount_point) after {{ networkmanager_mount_retry_attempts }} attempts."
+    exit 1
+  ) </dev/null >/dev/null 2>&1 &
+}

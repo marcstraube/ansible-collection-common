@@ -5,9 +5,23 @@
 # This script mounts SMB shares associated with a specific VPN connection
 # when the VPN connection comes up.
 # Each share is mounted per user into their home directory.
+# A connectivity change retries shares whose mount still failed.
 
 # NM_VPN_NAME is provided by NetworkManager dispatcher for VPN events.
+ACTION="$2"
 LOG_PREFIX="NM-VPN-SMB-Mount"
+
+# True if the VPN connection triggered this "vpn-up" event or, on a
+# connectivity change, is currently active.
+vpn_up() {
+  if [ "$ACTION" = "vpn-up" ]; then
+    [ "$NM_VPN_NAME" = "$1" ]
+  else
+    nmcli -g NAME connection show --active | grep -qxF "$1"
+  fi
+}
+
+{% include 'mount-retry.sh.j2' +%}
 
 {# Classification sources: configured inventory data (always present). #}
 {% set _nm_base_names = ((networkmanager_connections.ethernet | default({})).keys() | list)
@@ -18,7 +32,7 @@ LOG_PREFIX="NM-VPN-SMB-Mount"
 {% for user in users_list | default([]) -%}
   {% set _ = user_homes.update({user.name: user.home | default('/home/' + user.name)}) -%}
 {% endfor -%}
-if [ "$2" = "vpn-up" ]; then
+if [ "$ACTION" = "vpn-up" ] || { [ "$ACTION" = "connectivity-change" ] && [ "$CONNECTIVITY_STATE" != "NONE" ]; }; then
 {% if networkmanager_smb_shares is defined and networkmanager_smb_shares is not none and networkmanager_smb_shares | length > 0 %}
   {% for share in networkmanager_smb_shares %}
     {% set dependency_vpn_names_for_this_share = [] %}
@@ -35,7 +49,7 @@ if [ "$2" = "vpn-up" ]; then
 
     {% if dependency_vpn_names_for_this_share | length > 0 %}
   # Check if the current NM_VPN_NAME matches any of the share's VPN connection dependencies
-  if {% for vpn_name in dependency_vpn_names_for_this_share %}[ "$NM_VPN_NAME" = "{{ vpn_name }}" ]{% if not loop.last %} || {% endif %}{% endfor %}; then
+  if {% for vpn_name in dependency_vpn_names_for_this_share %}vpn_up "{{ vpn_name }}"{% if not loop.last %} || {% endif %}{% endfor %}; then
       {% for smb_user in share.users %}
         {% set user_home = user_homes[smb_user.name] | default('/home/' + smb_user.name) %}
         {% set mount_point = user_home + '/' + share.mount_subpath %}
@@ -48,7 +62,7 @@ if [ "$2" = "vpn-up" ]; then
     if ! mountpoint -q "{{ mount_point }}"; then
       echo "$LOG_PREFIX: Current VPN connection ($NM_VPN_NAME) is a dependency for share '{{ share.name }}'. Mounting {{ mount_point }} for {{ smb_user.name }}"
       mkdir -p "{{ mount_point }}"
-      mount -t cifs -o {{ opts | join(',') }} {{ share.src }} "{{ mount_point }}"
+      mount_retry "{{ mount_point }}" "{{ share.name }}" mount -t cifs -o {{ opts | join(',') }} {{ share.src }} "{{ mount_point }}"
     else
       echo "$LOG_PREFIX: Share '{{ share.name }}' ({{ mount_point }}) already mounted for {{ smb_user.name }}."
     fi
