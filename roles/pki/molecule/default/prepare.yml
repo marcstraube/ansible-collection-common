@@ -3,15 +3,6 @@
   hosts: all
   gather_facts: true
 
-  vars:
-    __prepare_packages:
-      Archlinux:
-        - python-cryptography
-      Debian:
-        - python3-cryptography
-      RedHat:
-        - python3-cryptography
-
   tasks:
     - name: Prepare | Update package cache (Arch)
       community.general.pacman:
@@ -34,10 +25,3 @@
       retries: 3
       delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
-
-    - name: Prepare | Install container dependencies
-      ansible.builtin.package:
-        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
-        state: present
-      retries: 3
-      delay: 5
