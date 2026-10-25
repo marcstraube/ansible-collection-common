@@ -133,6 +133,20 @@
 # in the default zone — cutting SSH if the management interface's zone is the
 # only one allowing it. NM stays ahead of the remaining networking roles
 # (resolved/wireguard/etc.) which do not depend on it.
+#
+# The firewalld zones phase runs first: it only creates zones and sets their
+# targets, so custom zones exist when NetworkManager binds connections to them,
+# without opening or closing anything ahead of the bindings.
+- name: Base System | Import firewalld zones
+  ansible.builtin.import_role:
+    name: marcstraube.common.firewalld
+    tasks_from: zones.yml
+  tags:
+    - base-system
+    - security
+    - firewalld
+  when: firewalld_enabled | bool
+
 - name: Base System | Import networkmanager role
   ansible.builtin.import_role:
     name: marcstraube.common.networkmanager

@@ -19,6 +19,10 @@
       - '8080/tcp'
     firewalld_rich_rules:
       - rule: 'rule family="ipv4" source address="10.0.0.0/8" service name="https" accept'
+    # Custom zone created by the zones phase ahead of the full role
+    firewalld_zones:
+      - name: 'appzone'
+        target: 'DROP'
     firewalld_sources:
       - zone: 'trusted'
         source: '192.168.1.0/24'
@@ -36,6 +40,20 @@
             protocol: 'udp'
 
   tasks:
+    # Mirrors base_system.yml: the zones phase runs on its own before the
+    # networkmanager role binds connections to zones.
+    - name: Converge | Include firewalld zones phase  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: zones.yml
+
+    - name: Converge | Check custom zone is available at runtime after the zones phase
+      ansible.builtin.command:
+        cmd: firewall-cmd --get-zones
+      register: __converge_runtime_zones
+      changed_when: false
+      failed_when: "'appzone' not in __converge_runtime_zones.stdout.split()"
+
     - name: Converge | Include firewalld role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

@@ -1,0 +1,52 @@
+---
+# Creates zones and sets their targets, nothing else. Runs as its own phase
+# so playbooks can call it (tasks_from: zones.yml) before the networkmanager
+# role binds connections to zones (connection.zone), while the rules that open
+# anything stay in the configure phase after it.
+
+- name: Zones | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - firewalld:install
+
+- name: Zones | Start firewalld for zone management
+  ansible.builtin.systemd_service:
+    name: '{{ __firewalld_service_name }}'
+    state: started
+
+- name: Zones | Create custom zones
+  ansible.posix.firewalld:
+    zone: '{{ item.name }}'
+    state: present
+    permanent: true
+  loop: '{{ firewalld_zones }}'
+  loop_control:
+    label: '{{ item.name }}'
+  notify: Reload firewalld
+
+- name: Zones | Get current zone targets
+  ansible.builtin.command:
+    cmd: 'firewall-cmd --permanent --zone={{ item.name }} --get-target'
+  loop: '{{ firewalld_zones | selectattr("target", "defined") | list }}'
+  loop_control:
+    label: '{{ item.name }}'
+  register: __firewalld_zone_targets
+  changed_when: false
+
+- name: Zones | Set zone targets
+  ansible.builtin.command:
+    cmd: >-
+      firewall-cmd --permanent
+      --zone={{ item.item.name }}
+      --set-target={{ item.item.target }}
+  loop: '{{ __firewalld_zone_targets.results }}'
+  loop_control:
+    label: '{{ item.item.name }}: {{ item.item.target }}'
+  when: (item.stdout | trim) != item.item.target
+  changed_when: true
+  notify: Reload firewalld
+
+# The reload makes new zones and targets available at runtime, so the
+# networkmanager role can bind connections to them right after this phase.
+- name: Zones | Flush handlers for zone availability
+  ansible.builtin.meta: flush_handlers

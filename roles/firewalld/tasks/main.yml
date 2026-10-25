@@ -1,10 +1,10 @@
 ---
-- name: Main | Import install tasks
-  ansible.builtin.import_tasks: install.yml
+- name: Main | Import zone tasks
+  ansible.builtin.import_tasks: zones.yml
   when: firewalld_enabled | bool
   tags:
     - firewalld
-    - firewalld:install
+    - firewalld:zones
 
 - name: Main | Import configure tasks
   ansible.builtin.import_tasks: configure.yml
