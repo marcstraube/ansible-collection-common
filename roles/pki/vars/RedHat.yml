@@ -4,6 +4,7 @@ __pki_packages:
   - 'ca-certificates'
   - 'crypto-policies'
   - 'crypto-policies-scripts'
+  - 'python3-cryptography'
 __pki_config_file: '/etc/pki/tls/openssl.cnf'
 __pki_certs_dir: '/etc/pki/tls/certs'
 __pki_private_dir: '/etc/pki/tls/private'

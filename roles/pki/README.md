@@ -12,7 +12,6 @@ expiry monitoring.
 
 - ansible-core >= 2.19
 - Collections: `community.crypto`, `ansible.posix`
-- Python `cryptography` library on target hosts
 
 ## Supported Platforms
 
