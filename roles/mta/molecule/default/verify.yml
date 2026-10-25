@@ -101,3 +101,56 @@
       register: mta_sendmail_test
       changed_when: false
       failed_when: mta_sendmail_test.rc != 0
+
+    #
+    # Check Mode Verification
+    #
+
+    - name: Verify | Set a deviating Postfix parameter
+      ansible.builtin.command:
+        argv:
+          - postconf
+          - -e
+          - mydomain=deviating.test
+      changed_when: true
+
+    # A task-level check_mode does not set ansible_check_mode, so the converge
+    # playbook runs with --check from the controller against this instance.
+    - name: Verify | Run the converge playbook in check mode
+      ansible.builtin.command:
+        argv:
+          - ansible-playbook
+          - --check
+          - --inventory
+          - "{{ lookup('ansible.builtin.env', 'MOLECULE_INVENTORY_FILE') }}"
+          - --limit
+          - '{{ inventory_hostname }}'
+          - '{{ playbook_dir }}/converge.yml'
+      environment:
+        ANSIBLE_STDOUT_CALLBACK: ansible.builtin.json
+      register: mta_check_run
+      changed_when: false
+      delegate_to: localhost
+
+    - name: Verify | Collect the reported Postfix parameter changes
+      ansible.builtin.set_fact:
+        mta_check_pending: >-
+          {{ (mta_check_run.stdout | from_json).plays[0].tasks
+             | selectattr('task.name', 'search', 'Report pending Postfix parameter changes')
+             | map(attribute='hosts') | map(attribute=inventory_hostname)
+             | map(attribute='results') | flatten
+             | selectattr('changed', 'defined') | selectattr('changed')
+             | map(attribute='item.item.key') | list }}
+
+    - name: Verify | Read the deviating Postfix parameter after check mode
+      ansible.builtin.command:
+        cmd: postconf -h mydomain
+      register: mta_check_mydomain
+      changed_when: false
+
+    - name: Verify | Assert check mode reports the pending change only
+      ansible.builtin.assert:
+        that:
+          - mta_check_pending == ['mydomain']
+          - (mta_check_mydomain.stdout | trim) == 'deviating.test'
+        fail_msg: 'Check mode did not report the deviating parameter, or changed it'
