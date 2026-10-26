@@ -29,6 +29,10 @@
         uid: 3001
         shell: '/bin/bash'
         profile_image: '{{ playbook_dir }}/files/users/basicuser.png'
+        environment:
+          http_proxy: 'http://proxy.example.com:3128'
+          # Space, single quote and $ prove the value is shell-quoted
+          USERS_TEST_QUOTED: "it's $HOME"
 
       # User with groups
       - name: 'devuser'
