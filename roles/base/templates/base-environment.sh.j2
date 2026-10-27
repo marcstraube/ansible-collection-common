@@ -1,0 +1,4 @@
+{{ ansible_managed | default('Ansible managed') | comment }}
+{% for name, value in base_environment.items() %}
+export {{ name }}={{ value | string | quote }}
+{% endfor %}
