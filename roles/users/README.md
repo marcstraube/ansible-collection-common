@@ -6,7 +6,7 @@ Manage system users, groups, SSH authorized keys, and profile images.
 
 - Group creation with optional GID and system flag
 - User creation with full control over UID, shell, home, groups, password
-- Root user special handling (password/shell only, no home creation)
+- Root user special handling (password, shell and SSH keys, no home creation)
 - Shell binary validation with fallback to `/bin/bash`
 - SSH authorized key deployment with exclusive mode
 - SSH key generation (ed25519/rsa)
@@ -224,7 +224,7 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 ## Notes
 
-- Root user receives special handling: only password and shell are updated
+- Root user receives special handling: only password, shell and SSH keys are managed; its home defaults to `/root`
 - Shell validation checks if the binary exists, falls back to `/bin/bash`
 - Password hashing is automatic: plaintext passwords are hashed with the configured algorithm
 - Use `users_password_salt` (stored in vault) for idempotent password hashing

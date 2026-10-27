@@ -1,4 +1,21 @@
 ---
+# root is not managed as a regular user, so its SSH directory is only
+# created here, when root has keys to deploy
+- name: SSH Keys | Create root SSH directory
+  ansible.builtin.file:
+    path: '{{ item.home | default("/root") }}/{{ users_ssh_authorized_keys_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '{{ users_ssh_dir_mode }}'
+  loop: '{{ users_list | selectattr("name", "equalto", "root") | list }}'
+  loop_control:
+    label: root
+  when:
+    - users_create_ssh_dir | bool
+    - (item.ssh_keys | default([]) | length > 0) or
+      (item.ssh_key_files | default([]) | length > 0)
+
 - name: SSH Keys | Add SSH authorized keys
   ansible.posix.authorized_key:
     user: '{{ item.name }}'
@@ -6,7 +23,8 @@
     state: present
     exclusive: '{{ item.ssh_keys_exclusive | default(false) }}'
     path: >-
-      {{ item.home | default(users_default_home_base + "/" + item.name) }}/{{
+      {{ item.home | default("/root" if item.name == "root"
+        else users_default_home_base + "/" + item.name) }}/{{
         users_ssh_authorized_keys_dir }}/{{ users_ssh_authorized_keys_file }}
     manage_dir: false
   loop: '{{ users_list | selectattr("ssh_keys", "defined") | list }}'
@@ -19,7 +37,8 @@
 - name: SSH Keys | Set authorized_keys file permissions
   ansible.builtin.file:
     path: >-
-      {{ item.home | default(users_default_home_base + "/" + item.name) }}/{{
+      {{ item.home | default("/root" if item.name == "root"
+        else users_default_home_base + "/" + item.name) }}/{{
         users_ssh_authorized_keys_dir }}/{{ users_ssh_authorized_keys_file }}
     owner: '{{ item.name }}'
     group: '{{ item.group | default(item.name) }}'
@@ -40,7 +59,8 @@
   ansible.builtin.copy:
     src: '{{ inventory_dir }}/files/ssh/{{ item.1.src }}'
     dest: >-
-      {{ item.0.home | default(users_default_home_base + "/" + item.0.name) }}/{{
+      {{ item.0.home | default("/root" if item.0.name == "root"
+        else users_default_home_base + "/" + item.0.name) }}/{{
         users_ssh_authorized_keys_dir }}/{{ item.1.dest }}
     owner: '{{ item.0.name }}'
     group: '{{ item.0.group | default(item.0.name) }}'
@@ -55,7 +75,8 @@
   ansible.builtin.copy:
     src: '{{ inventory_dir }}/files/ssh/{{ item.1.src_public }}'
     dest: >-
-      {{ item.0.home | default(users_default_home_base + "/" + item.0.name) }}/{{
+      {{ item.0.home | default("/root" if item.0.name == "root"
+        else users_default_home_base + "/" + item.0.name) }}/{{
         users_ssh_authorized_keys_dir }}/{{ item.1.dest }}.pub
     owner: '{{ item.0.name }}'
     group: '{{ item.0.group | default(item.0.name) }}'
