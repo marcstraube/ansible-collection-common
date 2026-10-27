@@ -66,6 +66,12 @@
       retries: 3
       delay: 5
 
+    # The role has to create the root SSH directory itself
+    - name: Prepare | Remove root SSH directory
+      ansible.builtin.file:
+        path: /root/.ssh
+        state: absent
+
     # Create orphan user for exclusive mode test
     - name: Prepare | Create orphan user for exclusive mode test
       ansible.builtin.user:
