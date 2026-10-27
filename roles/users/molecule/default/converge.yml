@@ -23,6 +23,15 @@
 
     # Test users with various configurations
     users_list:
+      # root: only SSH keys are managed, the home defaults to /root
+      - name: 'root'
+        ssh_keys:
+          - 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDvC2zLhVwHxRJ9cNJqXcLcPxD5QvqJ2vCcDx/KLmNgr root-test@example.com'
+        ssh_key_files:
+          - src: 'molecule_test_key'
+            src_public: 'molecule_test_key.pub'
+            dest: 'id_ed25519'
+
       # Basic user (with profile image via explicit path for molecule test)
       - name: 'basicuser'
         comment: 'Basic Test User'

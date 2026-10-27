@@ -292,6 +292,64 @@
         fail_msg: 'Deployed public key lost its comment'
 
     #
+    # root SSH Key Verification
+    #
+
+    - name: Verify | Check root SSH directory
+      ansible.builtin.stat:
+        path: /root/.ssh
+      register: root_ssh_dir
+
+    - name: Verify | Check root SSH directory permissions
+      ansible.builtin.assert:
+        that:
+          - root_ssh_dir.stat.isdir | default(false)
+          - root_ssh_dir.stat.mode == '0700'
+          - root_ssh_dir.stat.pw_name == 'root'
+        fail_msg: 'root SSH directory is missing or has incorrect permissions'
+
+    - name: Verify | Read root authorized_keys
+      ansible.builtin.slurp:
+        src: /root/.ssh/authorized_keys
+      register: root_authorized_keys
+
+    - name: Verify | Check root authorized_keys holds the key
+      ansible.builtin.assert:
+        that:
+          - "'root-test@example.com' in (root_authorized_keys.content | b64decode)"
+        fail_msg: 'root authorized_keys is missing the configured key'
+
+    - name: Verify | Check root key files
+      ansible.builtin.stat:
+        path: '/root/.ssh/{{ item.name }}'
+      register: root_key_files
+      loop:
+        - name: 'id_ed25519'
+          mode: '0600'
+        - name: 'id_ed25519.pub'
+          mode: '0644'
+      loop_control:
+        label: '{{ item.name }}'
+
+    - name: Verify | Check root key file permissions
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.mode == item.item.mode
+          - item.stat.pw_name == 'root'
+        fail_msg: '/root/.ssh/{{ item.item.name }} is missing or has incorrect permissions'
+        quiet: true
+      loop: '{{ root_key_files.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'
+
+    - name: Verify | Check no home directory was created for root
+      ansible.builtin.stat:
+        path: /home/root
+      register: root_wrong_home
+      failed_when: root_wrong_home.stat.exists
+
+    #
     # Generated SSH Key Verification
     #
 
