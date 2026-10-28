@@ -21,3 +21,16 @@ __apt_ppa_keyserver_url: 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=
 #
 
 __package_management_sudoers_file: '/etc/sudoers.d/99-role-package_management'
+
+#
+# Proxy for repository release packages (RedHat)
+#
+# ansible.builtin.dnf downloads an RPM given by URL itself (Python urllib)
+# before dnf runs, so the proxy in dnf.conf does not apply to it. The download
+# only honors the *_proxy environment variables, which these tasks set from
+# dnf_proxy.
+#
+
+__package_management_url_proxy_env: >-
+  {{ {'https_proxy': dnf_proxy, 'http_proxy': dnf_proxy}
+     if dnf_proxy | length > 0 else {} }}

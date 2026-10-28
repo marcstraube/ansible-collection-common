@@ -207,6 +207,7 @@ the file in place when the `sudo` role purges unmanaged drop-ins.
 | `dnf_epel_enabled`                | `true`  | Enable EPEL                                 |
 | `dnf_powertools_enabled`          | `false` | Enable CRB/PowerTools                       |
 | `dnf_remi_enabled`                | `false` | Enable Remi (PHP, MariaDB)                  |
+| `dnf_remi_php_version`            | `''`    | Remi PHP module stream (EL9; `''` = none)   |
 | `dnf_rpmfusion_free_enabled`      | `false` | Enable RPM Fusion Free                      |
 | `dnf_rpmfusion_nonfree_enabled`   | `false` | Enable RPM Fusion Nonfree                   |
 | `dnf_elrepo_enabled`              | `false` | Enable ELRepo                               |
