@@ -543,3 +543,82 @@
         path: /var/lib/AccountsService/icons/devuser
       register: devuser_icon
       failed_when: devuser_icon.stat.exists
+
+    #
+    # Environment Verification
+    #
+
+    - name: Verify | Stat environment file
+      ansible.builtin.stat:
+        path: /etc/profile.d/users-environment.sh
+      register: users_environment_file
+
+    - name: Verify | Check environment file mode
+      ansible.builtin.assert:
+        that:
+          - users_environment_file.stat.exists
+          - users_environment_file.stat.mode == '0644'
+          - users_environment_file.stat.pw_name == 'root'
+        fail_msg: '/etc/profile.d/users-environment.sh is missing or has unexpected mode'
+
+    - name: Verify | Read variables in the login shell of the configured user
+      ansible.builtin.command:
+        cmd: su - basicuser -s /bin/bash -c 'printf "%s|%s" "$http_proxy" "$USERS_TEST_QUOTED"'
+      register: users_environment_basicuser
+      changed_when: false
+
+    - name: Verify | Read variables in the login shell of another user
+      ansible.builtin.command:
+        cmd: su - devuser -s /bin/bash -c 'printf "%s|%s" "$http_proxy" "$USERS_TEST_QUOTED"'
+      register: users_environment_devuser
+      changed_when: false
+
+    - name: Verify | Check variables apply to the configured user only
+      ansible.builtin.assert:
+        that:
+          - users_environment_basicuser.stdout == "http://proxy.example.com:3128|it's $HOME"
+          - users_environment_devuser.stdout == '|'
+        fail_msg: >-
+          Unexpected login environment: basicuser '{{ users_environment_basicuser.stdout }}',
+          devuser '{{ users_environment_devuser.stdout }}'
+
+    - name: Verify | Run environment tasks with an invalid name  # noqa: role-name[path]
+      block:
+        - name: Verify | Include environment tasks with an invalid name  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+            tasks_from: environment.yml
+          vars:
+            users_list:
+              - name: 'basicuser'
+                environment:
+                  'BAD-NAME': 'value'
+
+        - name: Verify | Fail when the invalid name was accepted
+          ansible.builtin.fail:
+            msg: 'users environment accepted an invalid variable name'
+      rescue:
+        - name: Verify | Check the invalid name was rejected by the assert
+          ansible.builtin.assert:
+            that:
+              - ansible_failed_result.msg is search('not valid shell variable names')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result.msg }}'
+
+    - name: Verify | Run environment tasks without environment entries  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: environment.yml
+      vars:
+        users_list:
+          - name: 'basicuser'
+
+    - name: Verify | Stat environment file after removal
+      ansible.builtin.stat:
+        path: /etc/profile.d/users-environment.sh
+      register: users_environment_removed
+
+    - name: Verify | Check environment file removed
+      ansible.builtin.assert:
+        that:
+          - not users_environment_removed.stat.exists
+        fail_msg: 'Users without environment did not remove /etc/profile.d/users-environment.sh'

@@ -32,12 +32,116 @@
       changed_when: false
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Verify | Assert crypto policy is DEFAULT (RHEL)
+    - name: Verify | Assert crypto policy is DEFAULT:PKI-TEST (RHEL)
       ansible.builtin.assert:
         that:
-          - "'DEFAULT' in _pki_crypto_policy.stdout"
+          - _pki_crypto_policy.stdout | trim == 'DEFAULT:PKI-TEST'
         fail_msg: 'Crypto policy not set correctly'
       when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Crypto-policy modules (RHEL)
+      when: ansible_facts['os_family'] == 'RedHat'
+      block:
+        - name: Verify | Stat crypto-policy module
+          ansible.builtin.stat:
+            path: /etc/crypto-policies/policies/modules/PKI-TEST.pmod
+          register: _pki_module_stat
+
+        - name: Verify | Read crypto-policy module
+          ansible.builtin.slurp:
+            src: /etc/crypto-policies/policies/modules/PKI-TEST.pmod
+          register: _pki_module_content
+
+        - name: Verify | Assert crypto-policy module deployed
+          ansible.builtin.assert:
+            that:
+              - _pki_module_stat.stat.exists
+              - _pki_module_stat.stat.mode == '0644'
+              - _pki_module_stat.stat.pw_name == 'root'
+              - (_pki_module_content.content | b64decode).startswith('#')
+              - "'hash@openssl = SHA1+' in (_pki_module_content.content | b64decode)"
+            fail_msg: 'Crypto-policy module missing or wrong'
+
+        - name: Verify | Read OpenSSL policy backend
+          ansible.builtin.slurp:
+            src: /etc/crypto-policies/back-ends/opensslcnf.config
+          register: _pki_opensslcnf
+
+        - name: Verify | Assert module is active in the OpenSSL backend
+          ansible.builtin.assert:
+            that:
+              - "'rh-allow-sha1-signatures = yes' in (_pki_opensslcnf.content | b64decode)"
+            fail_msg: 'Module PKI-TEST is not applied to the OpenSSL backend'
+
+        # Same policy string, changed module content: the role must set the
+        # policy again, otherwise the backends keep the old module content.
+        - name: Verify | Run configure tasks with changed module content  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+            tasks_from: configure.yml
+            vars_from: RedHat.yml
+          vars:
+            pki_crypto_policy: 'DEFAULT:PKI-TEST'
+            pki_crypto_policy_modules:
+              - name: 'PKI-TEST'
+                content: |
+                  hash@openssh-client = SHA1+
+                  sign@openssh-client = RSA-SHA1+
+
+        - name: Verify | Read OpenSSL policy backend after module change
+          ansible.builtin.slurp:
+            src: /etc/crypto-policies/back-ends/opensslcnf.config
+          register: _pki_opensslcnf_changed
+
+        - name: Verify | Assert changed module is applied
+          ansible.builtin.assert:
+            that:
+              - "'rh-allow-sha1-signatures' not in (_pki_opensslcnf_changed.content | b64decode)"
+            fail_msg: 'Changed module content was not applied'
+
+        - name: Verify | Run configure tasks with an invalid module name
+          block:
+            - name: Verify | Include configure tasks with an invalid module name  # noqa: role-name[path]
+              ansible.builtin.include_role:
+                name: '{{ playbook_dir }}/../..'
+                tasks_from: configure.yml
+                vars_from: RedHat.yml
+              vars:
+                pki_crypto_policy: 'DEFAULT'
+                pki_crypto_policy_modules:
+                  - name: 'pki-test'
+                    content: 'hash@openssl = SHA1+'
+
+            - name: Verify | Fail when the invalid module name was accepted
+              ansible.builtin.fail:
+                msg: 'Invalid module name was not rejected'
+          rescue:
+            - name: Verify | Assert the validation rejected the module name
+              ansible.builtin.assert:
+                that:
+                  - ansible_failed_task.name == 'Configure | Validate crypto-policy modules (RHEL)'
+                  - >-
+                    'uppercase letters, digits and hyphens' in
+                    (ansible_failed_result.results | map(attribute='msg') | join(' '))
+                fail_msg: 'Unexpected failure in {{ ansible_failed_task.name }}'
+
+        - name: Verify | Check crypto policy after invalid module
+          ansible.builtin.command:
+            cmd: update-crypto-policies --show
+          register: _pki_crypto_policy_after_invalid
+          changed_when: false
+
+        - name: Verify | Stat invalid crypto-policy module
+          ansible.builtin.stat:
+            path: /etc/crypto-policies/policies/modules/pki-test.pmod
+          register: _pki_invalid_module_stat
+
+        - name: Verify | Assert invalid module left the system unchanged
+          ansible.builtin.assert:
+            that:
+              - _pki_crypto_policy_after_invalid.stdout | trim == 'DEFAULT:PKI-TEST'
+              - not _pki_invalid_module_stat.stat.exists
+            fail_msg: 'Invalid module changed the system'
 
     - name: Verify | Check OpenSSL system config (Arch/Debian)
       ansible.builtin.stat:
