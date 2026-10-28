@@ -656,6 +656,11 @@ dnf_epel_enabled: true
 # Enable Remi repository (PHP, MariaDB)
 dnf_remi_enabled: false
 
+# Remi PHP module stream to enable, e.g. '8.3' for php:remi-8.3 (EL9 only;
+# EL10 has no module streams). Empty enables no stream, which side-by-side
+# multi-version PHP via the Remi SCL packages (php82-php-*, php83-php-*) needs.
+dnf_remi_php_version: ''
+
 # Enable RPM Fusion Free
 dnf_rpmfusion_free_enabled: false
 
