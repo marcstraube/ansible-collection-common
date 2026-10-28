@@ -129,6 +129,7 @@
         name: "https://rpms.remirepo.net/enterprise/remi-release-{{ ansible_facts['distribution_major_version'] }}.rpm"
         state: present
         disable_gpg_check: true
+      environment: '{{ __package_management_url_proxy_env }}'
       retries: 5
       delay: 10
       notify: 'dnf configuration changed'
@@ -166,6 +167,7 @@
       https://mirrors.rpmfusion.org/free/{{ __rpmfusion_distro }}/rpmfusion-free-release-{{ __distro_ver }}.noarch.rpm
     state: present
     disable_gpg_check: true
+  environment: '{{ __package_management_url_proxy_env }}'
   retries: 5
   delay: 10
   when: dnf_rpmfusion_free_enabled | bool
@@ -186,6 +188,7 @@
       __distro_ver }}.noarch.rpm
     state: present
     disable_gpg_check: true
+  environment: '{{ __package_management_url_proxy_env }}'
   retries: 5
   delay: 10
   when: dnf_rpmfusion_nonfree_enabled | bool
@@ -203,6 +206,7 @@
       https://www.elrepo.org/elrepo-release-{{ __distro_ver }}.el{{ __distro_ver }}.elrepo.noarch.rpm
     state: present
     disable_gpg_check: true
+  environment: '{{ __package_management_url_proxy_env }}'
   retries: 5
   delay: 10
   when:
