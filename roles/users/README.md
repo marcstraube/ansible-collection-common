@@ -13,6 +13,7 @@ Manage system users, groups, SSH authorized keys, and profile images.
 - Password auto-hashing (plaintext, pre-hashed, or locked)
 - Random password generation with optional file storage
 - Profile images via AccountsService with optional `~/.face` symlink
+- Per-user login shell environment variables in `/etc/profile.d`
 - Exclusive mode: remove unlisted users (with keep-list safety)
 
 ## Requirements
@@ -156,8 +157,39 @@ Each entry in `users_list` supports:
       src_public: 'deploy_key.pub'   # Optional public half
       dest: 'id_ed25519'             # ~/.ssh/id_ed25519 (public: id_ed25519.pub)
       mode: '0600'                   # Optional
+  environment:               # Login shell variables for this user only
+    HTTP_PROXY: 'http://proxy.example.com:3128'
   profile_image: ''          # Path to image file
   state: 'present'           # present, absent
+```
+
+### Environment
+
+`environment` sets variables for one user's login shells. The role writes all
+entries into a single `/etc/profile.d/users-environment.sh`, which selects the
+block for the current user with `case "$(id -un)"`; files in the users' home
+directories stay untouched. The file is removed when no present user has
+`environment`.
+
+- Names are used as given and must be valid shell variable names; values are
+  shell-quoted.
+- `/etc/profile.d` loads alphabetically, so these values override the
+  system-wide `base_environment` of the `base` role (`base-environment.sh`).
+- Login shells that read `/etc/profile.d` (bash, sh, zsh through its system
+  profile) see the variables, including `sudo -iu <user>` and `su - <user>`.
+  fish and systemd services do not.
+
+Example: an HTTP proxy for a deployment user only, while other accounts keep no
+outbound access. Set both spellings, since tools differ in which one they read:
+
+```yaml
+users_list:
+  - name: 'deploy'
+    environment:
+      http_proxy: 'http://proxy.example.com:3128'
+      https_proxy: 'http://proxy.example.com:3128'
+      HTTP_PROXY: 'http://proxy.example.com:3128'
+      HTTPS_PROXY: 'http://proxy.example.com:3128'
 ```
 
 ## Tags
@@ -168,6 +200,7 @@ Each entry in `users_list` supports:
 | `users:groups`         | Group management         |
 | `users:users`          | User creation/removal    |
 | `users:ssh-keys`       | SSH key deployment       |
+| `users:environment`    | Per-user login variables |
 | `users:profile-images` | Profile image management |
 
 ## Example Playbook
