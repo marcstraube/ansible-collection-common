@@ -34,3 +34,14 @@ __package_management_sudoers_file: '/etc/sudoers.d/99-role-package_management'
 __package_management_url_proxy_env: >-
   {{ {'https_proxy': dnf_proxy, 'http_proxy': dnf_proxy}
      if dnf_proxy | length > 0 else {} }}
+
+#
+# pacman IgnorePkg drop-ins (Arch Linux)
+#
+# pacman.conf includes every *.conf file in this directory, so other roles
+# add packages to the ignore list without touching pacman.conf. pacman fails
+# on an Include glob that matches no file; the base file keeps it matched.
+#
+
+__package_management_pacman_ignore_dir: '/etc/pacman.d/ignore.d'
+__package_management_pacman_ignore_base_file: '00-package-management.conf'
