@@ -11,6 +11,8 @@
     pacman_color: true
     pacman_ilovecandy: true
     pacman_check_space: true
+    pacman_ignore_packages:
+      - 'molecule-ignored-package'
     reflector_enabled: true
     reflector:
       countries: []
@@ -89,6 +91,8 @@
     pacman_color: true
     pacman_ilovecandy: true
     pacman_check_space: true
+    pacman_ignore_packages:
+      - 'molecule-ignored-package'
     reflector_enabled: true
     reflector:
       countries: []
@@ -166,6 +170,8 @@
     pacman_color: true
     pacman_ilovecandy: true
     pacman_check_space: true
+    pacman_ignore_packages:
+      - 'molecule-ignored-package'
     reflector_enabled: true
     reflector:
       countries: []
