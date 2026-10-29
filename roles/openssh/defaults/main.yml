@@ -430,10 +430,12 @@ openssh_client_extra_config: []
 # System-wide Host blocks, written to ssh_config.d/10-hosts.conf. The file
 # is read before the distribution and role defaults, so its values win.
 # Keys: name (Host patterns, space-separated), hostname, port, user,
-# identity_file, identities_only, identity_agent, proxy_jump, extra (list).
+# identity_file, identities_only, identity_agent, proxy_jump, extra (list),
+# comment (string or list, rendered as '# ' lines above the Host line).
 openssh_client_hosts: []
 # Example:
 #   - name: 'deploy-target'
+#     comment: 'Deploy target, reached through the gateway'
 #     hostname: '10.0.0.5'
 #     user: 'deploy'
 #     identity_file: '~/.ssh/deploy_key'
