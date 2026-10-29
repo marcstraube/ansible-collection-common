@@ -1,0 +1,77 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - always
+
+- name: Main | Assert manager connection
+  ansible.builtin.assert:
+    that:
+      - wazuh_agent_managers | length > 0
+      - wazuh_agent_managers | rejectattr('address', 'defined') | list | length == 0
+      - wazuh_agent_managers | selectattr('protocol', 'defined')
+        | map(attribute='protocol') | reject('in', ['tcp', 'udp']) | list | length == 0
+    fail_msg: >-
+      The wazuh_agent role needs at least one manager in wazuh_agent_managers,
+      each with an address and, if set, the protocol 'tcp' or 'udp'.
+  when: wazuh_agent_enabled | bool
+  tags:
+    - always
+
+- name: Main | Assert enrollment certificate paths
+  ansible.builtin.assert:
+    that:
+      - (wazuh_agent_enrollment_cert_file | length > 0)
+        == (wazuh_agent_enrollment_key_file | length > 0)
+    fail_msg: >-
+      Set both wazuh_agent_enrollment_cert_file and
+      wazuh_agent_enrollment_key_file, or neither.
+  when: wazuh_agent_enabled | bool
+  tags:
+    - always
+
+- name: Main | Import repository tasks
+  ansible.builtin.import_tasks: repos.yml
+  when:
+    - wazuh_agent_enabled | bool
+    - ansible_facts['os_family'] in ['Debian', 'RedHat']
+  tags:
+    - wazuh-agent
+    - wazuh-agent:install
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: wazuh_agent_enabled | bool
+  tags:
+    - wazuh-agent
+    - wazuh-agent:install
+
+- name: Main | Import certificate tasks
+  ansible.builtin.import_tasks: certs.yml
+  when: wazuh_agent_enabled | bool
+  tags:
+    - wazuh-agent
+    - wazuh-agent:certs
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: wazuh_agent_enabled | bool
+  tags:
+    - wazuh-agent
+    - wazuh-agent:configure
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  when: wazuh_agent_enabled | bool
+  tags:
+    - wazuh-agent
+    - wazuh-agent:service

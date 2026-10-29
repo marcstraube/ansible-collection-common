@@ -475,6 +475,15 @@
     - lynis
   when: lynis_enabled | bool
 
+- name: Base System | Import wazuh_agent role
+  ansible.builtin.import_role:
+    name: marcstraube.common.wazuh_agent
+  tags:
+    - base-system
+    - security
+    - wazuh-agent
+  when: wazuh_agent_enabled | bool
+
 - name: Base System | Import hardware_tokens role
   ansible.builtin.import_role:
     name: marcstraube.common.hardware_tokens

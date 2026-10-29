@@ -1,0 +1,28 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    wazuh_agent_enabled: true
+    # Nothing listens on loopback; the agent keeps retrying
+    wazuh_agent_managers:
+      - address: '127.0.0.1'
+    wazuh_agent_groups:
+      - 'default'
+      - 'linux'
+    wazuh_agent_enrollment_ca_cert_file: '/etc/ssl/ca/certs/ca.crt'
+    wazuh_agent_enrollment_cert_file: '/etc/ssl/certs/wazuh-agent.crt'
+    wazuh_agent_enrollment_key_file: '/etc/ssl/private/wazuh-agent.key'
+    wazuh_agent_localfiles:
+      - log_format: 'syslog'
+        location: '/var/log/molecule-test.log'
+    wazuh_agent_syscheck_directories:
+      - path: '/srv/molecule'
+        attributes:
+          realtime: 'yes'
+
+  tasks:
+    - name: Converge | Include wazuh_agent role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

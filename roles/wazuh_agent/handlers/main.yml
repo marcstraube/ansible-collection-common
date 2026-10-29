@@ -1,0 +1,12 @@
+---
+- name: Reload Wazuh agent systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when: wazuh_agent_enabled | bool
+  failed_when: false
+
+- name: Restart Wazuh agent
+  ansible.builtin.systemd_service:
+    name: '{{ __wazuh_agent_service_name }}'
+    state: restarted
+  when: wazuh_agent_service_enabled | bool

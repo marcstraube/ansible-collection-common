@@ -1,0 +1,29 @@
+---
+# Wazuh package repository (one repository per major version)
+__wazuh_agent_repo_major: "{{ wazuh_agent_version.split('.') | first }}.x"
+__wazuh_agent_repo_key_url: 'https://packages.wazuh.com/key/GPG-KEY-WAZUH'
+
+# Package and service name (identical on every platform)
+__wazuh_agent_package_name: 'wazuh-agent'
+__wazuh_agent_service_name: 'wazuh-agent'
+
+# Group the agent daemons run as, created by the package
+__wazuh_agent_group: 'wazuh'
+
+# Installation directory and configuration files
+__wazuh_agent_home_dir: '/var/ossec'
+__wazuh_agent_config_dir: '{{ __wazuh_agent_home_dir }}/etc'
+__wazuh_agent_config_file: '{{ __wazuh_agent_config_dir }}/ossec.conf'
+__wazuh_agent_password_file: '{{ __wazuh_agent_config_dir }}/authd.pass'
+
+# Enrollment certificates inside the configuration directory
+__wazuh_agent_enrollment_ca_cert_file: '{{ __wazuh_agent_config_dir }}/rootca.pem'
+__wazuh_agent_enrollment_cert_file: '{{ __wazuh_agent_config_dir }}/sslagent.cert'
+__wazuh_agent_enrollment_key_file: '{{ __wazuh_agent_config_dir }}/sslagent.key'
+
+# Configuration profiles for the centralized configuration (agent.conf);
+# the package installer writes the same list
+__wazuh_agent_config_profiles:
+  - "{{ ansible_facts['distribution'] | lower }}"
+  - "{{ ansible_facts['distribution'] | lower }}{{ ansible_facts['distribution_major_version'] }}"
+  - "{{ ansible_facts['distribution'] | lower }}{{ ansible_facts['distribution_version'] }}"

@@ -88,6 +88,7 @@ development toolchains, user management, editors, and more.
 | **lynis**         | Security auditing                        |
 | **rkhunter**      | Rootkit detection                        |
 | **clamav**        | ClamAV antivirus                         |
+| **wazuh_agent**   | Wazuh agent with manager enrollment      |
 
 ### Crypto & Authentication
 
