@@ -2,6 +2,20 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.0.2 (2026-10-30)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(users): deploy SSH keys for root to /root by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/466
+* fix(package_management): route repository release package downloads through dnf_proxy by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/472
+* fix(package_management): default dnf_remi_php_version to an empty string by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/474
+* fix(storage): create the BTRFS top-level mount point in check mode by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/483
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.0.1...v3.0.2
+
 ## 3.0.1 (2026-10-25)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
