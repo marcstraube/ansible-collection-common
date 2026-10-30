@@ -83,6 +83,27 @@
           register: makepkg_conf
           failed_when: not makepkg_conf.stat.exists
 
+        - name: Verify | Check makepkg TMPDIR
+          ansible.builtin.stat:
+            path: /var/cache/makepkg
+          register: makepkg_tmpdir_stat
+          failed_when: >-
+            not makepkg_tmpdir_stat.stat.isdir | default(false)
+            or makepkg_tmpdir_stat.stat.mode != '1777'
+
+        - name: Verify | Check makepkg TMPDIR tmpfiles.d entry
+          ansible.builtin.command:
+            cmd: grep -qx 'd /var/cache/makepkg 1777 root root 10d' /etc/tmpfiles.d/makepkg-tmpdir.conf
+          changed_when: false
+
+        - name: Verify | Read TMPDIR as makepkg sees it
+          ansible.builtin.shell:
+            cmd: source /etc/makepkg.conf && bash -c 'echo "$TMPDIR"'
+            executable: /bin/bash
+          register: makepkg_tmpdir_env
+          changed_when: false
+          failed_when: makepkg_tmpdir_env.stdout != '/var/cache/makepkg'
+
         - name: Verify | Check reflector is installed
           ansible.builtin.package:
             name: reflector

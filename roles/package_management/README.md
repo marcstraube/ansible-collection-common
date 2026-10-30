@@ -82,9 +82,17 @@ An ignored package is still installed by an explicit `pacman -S` or
 | `makepkg_devtools_enabled`  | `false`      | Install devtools (chrooted builds)              |
 | `makepkg_nvchecker_enabled` | `false`      | Install nvchecker (upstream version tracking)   |
 | `makepkg_check`             | `true`       | Run check() in PKGBUILDs                        |
+| `makepkg_tmpdir`            | `''`         | TMPDIR for builds (empty = /tmp; see below)     |
 | `makepkg_sign`              | `false`      | Sign built packages                             |
 | `makepkg_debug`             | `true`       | Build with debug symbols                        |
 | `makepkg_lto`               | `true`       | Build with LTO                                  |
+
+`makepkg_tmpdir` is exported as `TMPDIR` in `/etc/makepkg.conf`. Set it when
+`/tmp` is mounted `noexec`: some PKGBUILDs run pip or meson, which execute
+files they create below `TMPDIR`, and the build fails with `Permission denied`.
+The role creates the directory with mode `1777` and a tmpfiles.d entry that
+recreates it at boot and removes files older than 10 days. The directory must
+be on a filesystem without `noexec`, for example `/var/cache/makepkg`.
 
 ### Arch Linux - Paru (AUR Helper)
 

@@ -15,6 +15,32 @@
     mode: '0644'
     backup: true
 
+# A separate tmpfiles.d entry recreates the directory at boot and keeps
+# the cleanup of a parent such as /var/tmp from removing it.
+- name: Makepkg | Deploy TMPDIR tmpfiles.d entry
+  ansible.builtin.template:
+    src: 'archlinux/makepkg-tmpdir.conf.j2'
+    dest: '/etc/tmpfiles.d/makepkg-tmpdir.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  when: makepkg_tmpdir | length > 0
+
+- name: Makepkg | Remove TMPDIR tmpfiles.d entry
+  ansible.builtin.file:
+    path: '/etc/tmpfiles.d/makepkg-tmpdir.conf'
+    state: absent
+  when: makepkg_tmpdir | length == 0
+
+- name: Makepkg | Create TMPDIR
+  ansible.builtin.file:
+    path: '{{ makepkg_tmpdir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '1777'
+  when: makepkg_tmpdir | length > 0
+
 - name: Makepkg | Install ccache
   ansible.builtin.package:
     name: 'ccache'
