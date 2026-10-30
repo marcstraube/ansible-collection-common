@@ -1,0 +1,13 @@
+---
+# Removes the BTRFS top-level mount point, as a reboot does with /run, so the
+# following check step runs against a host without it.
+- name: Side effect
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Side effect | Remove the BTRFS top-level mount point
+      ansible.builtin.file:
+        path: '/run/storage-mbtrfs'
+        state: absent
+      when: ansible_facts['os_family'] != 'RedHat'

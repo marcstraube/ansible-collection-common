@@ -46,6 +46,9 @@
 
 - name: Layout BTRFS | Create subvolumes
   block:
+    # Created outside check mode as well: the mount below runs in check mode
+    # too and needs the directory, which lives under /run and is gone after
+    # every reboot.
     - name: Layout BTRFS | Create top-level mount point
       ansible.builtin.file:
         path: '{{ __storage_toplevel }}'
@@ -53,6 +56,7 @@
         owner: root
         group: root
         mode: '0700'
+      check_mode: false
 
     # A temporary mount without an fstab entry; ansible.posix.mount
     # (state: ephemeral) would report a change on every run.
