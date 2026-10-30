@@ -7,7 +7,7 @@
 ## Description
 
 Shared Ansible roles for multi-OS infrastructure management.
-51 roles covering base system, security, networking, package management,
+Roles covering base system, security, networking, package management,
 development toolchains, user management, editors, and more.
 
 ## Supported Platforms
@@ -88,6 +88,7 @@ development toolchains, user management, editors, and more.
 | **lynis**         | Security auditing                        |
 | **rkhunter**      | Rootkit detection                        |
 | **clamav**        | ClamAV antivirus                         |
+| **wazuh_agent**   | Wazuh agent with manager enrollment      |
 
 ### Crypto & Authentication
 

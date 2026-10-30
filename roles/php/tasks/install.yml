@@ -90,6 +90,52 @@
          | default(__php_redhat_current_version
          | default('8.4'))) }}
 
+- name: Install | Initialize FPM restart queue
+  ansible.builtin.set_fact:
+    __php_fpm_restart_services: []
+
+# A targeted update must see the current repository state; dnf otherwise
+# keeps cached metadata for up to metadata_expire. The cache is cleared
+# rather than refreshed: dnf on EL 9 keeps the cached mirror list on
+# makecache --refresh and stays on the mirror it picked first, even when
+# that mirror has stopped syncing. Clearing the cache fetches a new list.
+# check_mode: false — the metadata cache holds no package, and --check
+# must report the update the real run would install.
+- name: Install | Clear package metadata for update (RedHat)
+  ansible.builtin.command:
+    cmd: dnf clean metadata
+  changed_when: false
+  check_mode: false
+  when:
+    - php_packages_state == 'latest'
+    - ansible_facts['os_family'] == 'RedHat'
+
+- name: Install | Refresh package metadata for update (RedHat)
+  ansible.builtin.command:
+    cmd: dnf makecache
+  changed_when: false
+  check_mode: false
+  when:
+    - php_packages_state == 'latest'
+    - ansible_facts['os_family'] == 'RedHat'
+
+- name: Install | Refresh package metadata for update (Debian)
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+  check_mode: false
+  when:
+    - php_packages_state == 'latest'
+    - ansible_facts['os_family'] == 'Debian'
+
+# Installed packages, for merging PHP packages outside the configured list
+# into the update transaction.
+- name: Install | Gather package facts for update
+  ansible.builtin.package_facts:
+  when:
+    - php_packages_state == 'latest'
+    - ansible_facts['os_family'] in ['RedHat', 'Debian']
+
 - name: Install | PHP versions
   ansible.builtin.include_tasks:
     file: install_version.yml

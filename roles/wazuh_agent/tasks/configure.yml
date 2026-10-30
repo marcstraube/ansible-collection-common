@@ -1,0 +1,27 @@
+---
+- name: Configure | Deploy agent configuration
+  ansible.builtin.template:
+    src: ossec.conf.j2
+    dest: '{{ __wazuh_agent_config_file }}'
+    owner: root
+    group: '{{ __wazuh_agent_group }}'
+    mode: '0640'
+  notify: Restart Wazuh agent
+
+- name: Configure | Deploy enrollment password
+  ansible.builtin.copy:
+    content: "{{ wazuh_agent_enrollment_password }}\n"
+    dest: '{{ __wazuh_agent_password_file }}'
+    owner: root
+    group: '{{ __wazuh_agent_group }}'
+    mode: '0640'
+  no_log: true
+  when: wazuh_agent_enrollment_password | length > 0
+  notify: Restart Wazuh agent
+
+- name: Configure | Remove enrollment password
+  ansible.builtin.file:
+    path: '{{ __wazuh_agent_password_file }}'
+    state: absent
+  when: wazuh_agent_enrollment_password | length == 0
+  notify: Restart Wazuh agent

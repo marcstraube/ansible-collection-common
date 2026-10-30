@@ -171,11 +171,13 @@ read before the distribution and role defaults; ssh uses the first value it
 reads, so these per-host settings win. The file is removed when the list is
 empty. Each entry takes `name` (Host patterns, space-separated) and any of
 `hostname`, `port`, `user`, `identity_file`, `identities_only`,
-`identity_agent`, `proxy_jump`, plus a free-form `extra` list:
+`identity_agent`, `proxy_jump`, plus a free-form `extra` list. `comment` (a
+string or a list) is rendered as comment lines directly above the `Host` line:
 
 ```yaml
 openssh_client_hosts:
   - name: 'deploy-target'
+    comment: 'Deploy target, reached through the gateway'
     hostname: '10.0.0.5'
     user: 'deploy'
     identity_file: '~/.ssh/deploy_key'

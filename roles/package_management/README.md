@@ -53,6 +53,14 @@ overrides if needed.
 | `pacman_download_user`         | `alpm`                      | Sandboxed download user               |
 | `pacman_hook_dir`              | `/etc/pacman.d/hooks`       | Custom hook directory                 |
 
+`pacman.conf` includes every `*.conf` file in `/etc/pacman.d/ignore.d`, so
+other roles can add `IgnorePkg` and `IgnoreGroup` lines in files of their
+own. pacman merges them with `pacman_ignore_packages` and
+`pacman_ignore_groups`. The role places `00-package-management.conf` in the
+directory, because pacman fails on an `Include` glob that matches no file.
+An ignored package is still installed by an explicit `pacman -S` or
+`pacman -U`.
+
 ### Arch Linux - Reflector
 
 | Variable                  | Default | Description                                                   |

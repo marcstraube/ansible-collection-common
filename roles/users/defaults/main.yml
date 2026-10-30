@@ -71,6 +71,8 @@ users_groups: []
 #           src_public: 'deploy_key.pub'  # Optional public half
 #           dest: 'id_ed25519'           # ~/.ssh/id_ed25519 (public: id_ed25519.pub)
 #           mode: '0600'                 # Optional, defaults to users_ssh_key_file_mode
+#       environment:               # Login shell variables for this user only,
+#         HTTP_PROXY: 'http://proxy.example.com:3128'  # in /etc/profile.d/users-environment.sh
 #       profile_image: ''          # Path to image file
 #       state: 'present'           # present, absent
 users_list: []

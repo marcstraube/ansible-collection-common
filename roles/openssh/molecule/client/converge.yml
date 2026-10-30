@@ -18,6 +18,7 @@
     # the host block is read first and must win.
     openssh_client_hosts:
       - name: 'deploy-target'
+        comment: 'Deploy target behind the gateway'
         hostname: '10.0.0.5'
         port: 2222
         user: 'deploy'
@@ -27,6 +28,9 @@
         extra:
           - 'ServerAliveInterval 30'
       - name: 'agent-host'
+        comment:
+          - 'Keys come from the agent socket'
+          - 'Same host as deploy-target'
         identity_agent: '/run/agent.sock'
 
     # Per-user config derived from users_list (openssh_client_users empty)
@@ -36,6 +40,7 @@
           mode: 'managed'
           hosts:
             - name: 'gateway'
+              comment: 'Jump host for all targets'
               hostname: 'gw.example.com'
               identities_only: true
           extra:

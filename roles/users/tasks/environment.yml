@@ -1,0 +1,45 @@
+---
+# Login shells source /etc/profile.d/*.sh. One shared file selects the block
+# for the current user, so files in the users' home directories stay untouched.
+- name: Environment | Collect users with environment variables
+  ansible.builtin.set_fact:
+    __users_environment_list: >-
+      {%- set ns = namespace(users=[]) -%}
+      {%- for user in users_list -%}
+      {%- if user.environment | default({}) and user.state | default('present') == 'present' -%}
+      {%- set ns.users = ns.users + [user] -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ ns.users }}
+
+- name: Environment | Validate variable names
+  ansible.builtin.assert:
+    that:
+      - __users_environment_invalid | length == 0
+    fail_msg: "users_list environment: {{ __users_environment_invalid | join(', ') }} not valid shell variable names"
+    quiet: true
+  vars:
+    __users_environment_invalid: >-
+      {{ __users_environment_list
+         | map(attribute='environment')
+         | map('dict2items')
+         | flatten
+         | map(attribute='key')
+         | reject('match', '^[A-Za-z_][A-Za-z0-9_]*$')
+         | unique
+         | list }}
+
+- name: Environment | Deploy environment variables
+  ansible.builtin.template:
+    src: users-environment.sh.j2
+    dest: '/etc/profile.d/users-environment.sh'
+    owner: root
+    group: root
+    mode: '0644'
+  when: __users_environment_list | length > 0
+
+- name: Environment | Remove environment variables
+  ansible.builtin.file:
+    path: '/etc/profile.d/users-environment.sh'
+    state: absent
+  when: __users_environment_list | length == 0

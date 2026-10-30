@@ -31,6 +31,52 @@
               - "'CheckSpace' in (pacman_content.content | b64decode)"
             fail_msg: 'pacman.conf missing expected settings'
 
+        - name: Verify | Stat ignore drop-in base file
+          ansible.builtin.stat:
+            path: /etc/pacman.d/ignore.d/00-package-management.conf
+          register: pacman_ignore_base
+
+        - name: Verify | Assert ignore drop-in base file
+          ansible.builtin.assert:
+            that:
+              - pacman_ignore_base.stat.exists
+              - pacman_ignore_base.stat.mode == '0644'
+            fail_msg: 'ignore drop-in base file is missing or not 0644'
+
+        # Packages from pacman.conf and from the drop-in that prepare.yml
+        # placed for another role
+        - name: Verify | Query pacman ignored packages
+          ansible.builtin.command:
+            cmd: pacman-conf IgnorePkg
+          register: pacman_ignore
+          changed_when: false
+
+        - name: Verify | Assert pacman merges ignored packages
+          ansible.builtin.assert:
+            that:
+              - "'molecule-ignored-package' in pacman_ignore.stdout_lines"
+              - "'molecule-dropin-package' in pacman_ignore.stdout_lines"
+            fail_msg: 'pacman ignores {{ pacman_ignore.stdout_lines }}'
+
+        # pacman fails on an Include glob without a match; the base file alone
+        # must keep it working
+        - name: Verify | Query pacman with only the base file
+          block:
+            - name: Verify | Move drop-in of another role aside
+              ansible.builtin.command:
+                cmd: mv /etc/pacman.d/ignore.d/molecule.conf /etc/pacman.d/ignore.d/molecule.conf.off
+              changed_when: false
+
+            - name: Verify | Query installed pacman package
+              ansible.builtin.command:
+                cmd: pacman -Q pacman
+              changed_when: false
+          always:
+            - name: Verify | Restore drop-in of another role
+              ansible.builtin.command:
+                cmd: mv /etc/pacman.d/ignore.d/molecule.conf.off /etc/pacman.d/ignore.d/molecule.conf
+              changed_when: false
+
         - name: Verify | Check makepkg.conf exists
           ansible.builtin.stat:
             path: /etc/makepkg.conf
