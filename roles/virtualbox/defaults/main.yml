@@ -1,0 +1,27 @@
+---
+#
+# Role Control
+#
+
+# Enable the virtualbox role
+virtualbox_enabled: false
+
+# Enable and start the virtualbox service
+virtualbox_service_enabled: true
+
+#
+# Installation
+#
+
+# VirtualBox branch (major.minor) installed from the Oracle repository on
+# Debian and EL. A changed branch replaces the installed one. Ignored on Arch
+# Linux, which installs the current release from the official repository.
+virtualbox_version: '7.2'
+
+#
+# Users
+#
+
+# Users added to the vboxusers group (USB passthrough, host devices). The
+# accounts must exist.
+virtualbox_users: []
