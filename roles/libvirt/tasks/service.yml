@@ -1,0 +1,19 @@
+---
+# The sockets activate the daemons on demand.
+- name: Service | Manage libvirt sockets
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    enabled: "{{ libvirt_service_enabled | bool }}"
+    state: "{{ libvirt_service_enabled | bool | ternary('started', 'stopped') }}"
+  loop: '{{ __libvirt_socket_units }}'
+
+# Enabled daemons start at boot and bring up autostart networks and guests.
+# They are not started here: the daemons exit after two idle minutes
+# (--timeout 120 in the upstream units) and come back through their sockets,
+# so a started state would report a change on every later run.
+- name: Service | Manage libvirt daemons
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    enabled: "{{ libvirt_service_enabled | bool }}"
+    state: "{{ libvirt_service_enabled | bool | ternary(omit, 'stopped') }}"
+  loop: '{{ __libvirt_service_units }}'

@@ -107,6 +107,7 @@ development toolchains, user management, editors, and more.
 | **mta**       | Send-only mail (Postfix) |
 | **docker**    | Docker container runtime |
 | **podman**    | Podman container runtime |
+| **libvirt**   | libvirt with QEMU/KVM    |
 | **snmp**      | SNMP monitoring agent    |
 | **restic**    | Backup with restic       |
 

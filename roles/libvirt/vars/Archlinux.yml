@@ -1,0 +1,12 @@
+---
+# nftables provides the firewall backend for NAT networks; libvirt prefers it
+# over iptables and lists both only as optional dependencies.
+__libvirt_packages:
+  - 'libvirt'
+  - 'qemu-base'
+  - 'dnsmasq'
+  - 'nftables'
+
+# Monolithic daemon
+__libvirt_daemons:
+  - 'libvirtd'

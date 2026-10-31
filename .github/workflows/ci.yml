@@ -147,7 +147,7 @@ jobs:
   # Only substantive changes trigger tests (not README-only edits).
   # Shared file changes (galaxy.yml dependencies, requirements.yml, plugins/,
   # meta/runtime.yml and this workflow) test all roles.
-  # Vagrant roles (apparmor, auditd, hardening, hardware_tokens,
+  # Vagrant roles (apparmor, auditd, hardening, hardware_tokens, libvirt,
   # networkmanager, storage, wireguard) require VMs and are tested locally.
   # On schedule / workflow_dispatch: full matrix (all roles × all platforms)
   # to catch upstream package drift.
