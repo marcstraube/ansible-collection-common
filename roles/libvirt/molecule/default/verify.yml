@@ -1,0 +1,123 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    #
+    # Load Variables
+    #
+
+    - name: Verify | Load common variables
+      ansible.builtin.include_vars:
+        file: '../../vars/main.yml'
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    #
+    # Packages
+    #
+
+    - name: Verify | Gather package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Verify | Assert libvirt packages are installed
+      ansible.builtin.assert:
+        that:
+          - item in ansible_facts['packages']
+        fail_msg: 'Package {{ item }} is not installed'
+        quiet: true
+      loop: '{{ __libvirt_packages }}'
+
+    #
+    # Group Membership
+    #
+
+    - name: Verify | Read libvirt group
+      ansible.builtin.getent:
+        database: group
+        key: '{{ __libvirt_group }}'
+
+    - name: Verify | Assert test user is in the libvirt group
+      ansible.builtin.assert:
+        that:
+          - "'libvirt-test' in ansible_facts['getent_group'][__libvirt_group][2].split(',')"
+        fail_msg: 'libvirt-test is not a member of the libvirt group'
+
+    #
+    # Daemon Units
+    #
+
+    - name: Verify | Read daemon unit states
+      ansible.builtin.systemd_service:
+        name: '{{ item }}'
+      register: __verify_units
+      loop: '{{ __libvirt_service_units + __libvirt_socket_units }}'
+
+    - name: Verify | Assert daemon units are enabled
+      ansible.builtin.assert:
+        that:
+          - item.status.UnitFileState == 'enabled'
+        fail_msg: '{{ item.item }} is {{ item.status.UnitFileState }}'
+        quiet: true
+      loop: '{{ __verify_units.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Verify | Assert sockets are active
+      ansible.builtin.assert:
+        that:
+          - item.status.ActiveState == 'active'
+        fail_msg: '{{ item.item }} is {{ item.status.ActiveState }}'
+        quiet: true
+      loop: '{{ __verify_units.results | selectattr("item", "in", __libvirt_socket_units) | list }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    #
+    # Default Network
+    #
+
+    - name: Verify | Read default network state
+      ansible.builtin.command:
+        cmd: 'virsh --connect {{ __libvirt_uri }} net-info {{ __libvirt_default_network_name }}'
+      environment:
+        LC_ALL: 'C'
+      register: __verify_network_info
+      changed_when: false
+
+    - name: Verify | Assert default network is active with autostart
+      ansible.builtin.assert:
+        that:
+          - __verify_network_info.stdout_lines | select('match', '^Active: +yes$') | list | length == 1
+          - __verify_network_info.stdout_lines | select('match', '^Autostart: +yes$') | list | length == 1
+        fail_msg: '{{ __verify_network_info.stdout }}'
+
+    #
+    # Access Without Root
+    #
+
+    # runuser keeps become to an unprivileged user (and its temp file
+    # permission requirements) out of the test.
+    - name: Verify | List networks as the test user
+      ansible.builtin.command:
+        cmd: 'runuser -u libvirt-test -- virsh --connect {{ __libvirt_uri }} net-list --name'
+      register: __verify_user_net_list
+      changed_when: false
+
+    - name: Verify | Assert the test user sees the default network
+      ansible.builtin.assert:
+        that:
+          - __libvirt_default_network_name in __verify_user_net_list.stdout_lines
+        fail_msg: 'libvirt-test cannot manage the system instance'

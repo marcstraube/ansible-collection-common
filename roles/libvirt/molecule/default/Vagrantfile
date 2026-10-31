@@ -1,0 +1,66 @@
+# marcstraube.common.libvirt/molecule/default/Vagrantfile
+#
+# MOLECULE_PLATFORM_NAME filters which VM to create.
+
+platform = ENV['MOLECULE_PLATFORM_NAME'] || ''
+
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  if platform.empty? || platform == "libvirt-archlinux"
+    config.vm.define "libvirt-archlinux" do |node|
+      node.vm.box = "marcstraube/archlinux-ansible"
+      node.vm.hostname = "libvirt-archlinux"
+      node.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = 1
+        vb.name = "molecule-libvirt-archlinux"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "libvirt-debian-trixie"
+    config.vm.define "libvirt-debian-trixie" do |node|
+      node.vm.box = "cloud-image/debian-13"
+      node.vm.hostname = "libvirt-debian-trixie"
+      node.vm.network "forwarded_port", guest: 22, host: 2223, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = 1
+        vb.name = "molecule-libvirt-debian-trixie"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "libvirt-rocky-9"
+    config.vm.define "libvirt-rocky-9" do |node|
+      node.vm.box = "bento/rockylinux-9"
+      node.vm.hostname = "libvirt-rocky-9"
+      node.vm.network "forwarded_port", guest: 22, host: 2224, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = 1
+        vb.name = "molecule-libvirt-rocky-9"
+      end
+    end
+  end
+
+  if platform.empty? || platform == "libvirt-rocky-10"
+    config.vm.define "libvirt-rocky-10" do |node|
+      node.vm.box = "bento/rockylinux-10"
+      node.vm.hostname = "libvirt-rocky-10"
+      node.vm.network "forwarded_port", guest: 22, host: 2225, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = 1
+        vb.name = "molecule-libvirt-rocky-10"
+      end
+    end
+  end
+end

@@ -1,0 +1,7 @@
+---
+- name: Install | libvirt packages
+  ansible.builtin.package:
+    name: '{{ __libvirt_packages }}'
+    state: present
+  retries: 3
+  delay: 5

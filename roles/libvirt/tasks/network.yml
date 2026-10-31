@@ -1,0 +1,66 @@
+---
+# virsh output is translated; the C locale keeps the parsed fields stable.
+# A missing network is expected; any other error fails the run. Check mode
+# on a host without libvirt has no virsh yet.
+- name: Network | Read default network state
+  ansible.builtin.command:
+    cmd: 'virsh --connect {{ __libvirt_uri }} net-info {{ __libvirt_default_network_name }}'
+  environment:
+    LC_ALL: 'C'
+  register: __libvirt_default_network_info
+  changed_when: false
+  failed_when:
+    - __libvirt_default_network_info.rc != 0
+    - "'Network not found' not in __libvirt_default_network_info.stderr | default('')"
+    - not ansible_check_mode
+  check_mode: false
+
+- name: Network | Evaluate default network state
+  ansible.builtin.set_fact:
+    __libvirt_default_network_defined: '{{ __libvirt_default_network_info.rc == 0 }}'
+    __libvirt_default_network_active: >-
+      {{ __libvirt_default_network_info.stdout_lines | default([])
+         | select('match', '^Active: +yes$') | list | length > 0 }}
+    __libvirt_default_network_autostarted: >-
+      {{ __libvirt_default_network_info.stdout_lines | default([])
+         | select('match', '^Autostart: +yes$') | list | length > 0 }}
+
+- name: Network | Define default network
+  ansible.builtin.command:
+    cmd: 'virsh --connect {{ __libvirt_uri }} net-define {{ __libvirt_default_network_file }}'
+  changed_when: true
+  when:
+    - libvirt_default_network_autostart | bool
+    - not __libvirt_default_network_defined | bool
+
+- name: Network | Enable default network autostart
+  ansible.builtin.command:
+    cmd: 'virsh --connect {{ __libvirt_uri }} net-autostart {{ __libvirt_default_network_name }}'
+  changed_when: true
+  when:
+    - libvirt_default_network_autostart | bool
+    - not __libvirt_default_network_autostarted | bool
+
+- name: Network | Start default network
+  ansible.builtin.command:
+    cmd: 'virsh --connect {{ __libvirt_uri }} net-start {{ __libvirt_default_network_name }}'
+  changed_when: true
+  when:
+    - libvirt_default_network_autostart | bool
+    - not __libvirt_default_network_active | bool
+
+- name: Network | Disable default network autostart
+  ansible.builtin.command:
+    cmd: 'virsh --connect {{ __libvirt_uri }} net-autostart --disable {{ __libvirt_default_network_name }}'
+  changed_when: true
+  when:
+    - not libvirt_default_network_autostart | bool
+    - __libvirt_default_network_autostarted | bool
+
+- name: Network | Stop default network
+  ansible.builtin.command:
+    cmd: 'virsh --connect {{ __libvirt_uri }} net-destroy {{ __libvirt_default_network_name }}'
+  changed_when: true
+  when:
+    - not libvirt_default_network_autostart | bool
+    - __libvirt_default_network_active | bool

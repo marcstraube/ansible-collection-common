@@ -384,6 +384,14 @@
     - podman
   when: podman_enabled | bool
 
+- name: Base System | Import libvirt role
+  ansible.builtin.import_role:
+    name: marcstraube.common.libvirt
+  tags:
+    - base-system
+    - libvirt
+  when: libvirt_enabled | bool
+
 - name: Base System | Import kubernetes role
   ansible.builtin.import_role:
     name: marcstraube.common.kubernetes
