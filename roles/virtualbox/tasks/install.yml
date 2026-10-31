@@ -1,0 +1,82 @@
+---
+#
+# Kernel Headers
+#
+# The modules are built against the headers of the kernel they load into.
+
+# Arch Linux: detect the kernels from the pacman database instead of the
+# running kernel, so the headers match every installed kernel (linux,
+# linux-lts, ...) even after an upgrade replaced the running one.
+# check_mode: false — read-only lookup, so --check builds the same list.
+- name: Install | Detect installed kernel packages (Arch)
+  ansible.builtin.command:
+    cmd: pacman -Qq
+  register: __virtualbox_installed_packages
+  changed_when: false
+  check_mode: false
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Build kernel headers list (Arch)
+  ansible.builtin.set_fact:
+    __virtualbox_kernel_headers: >-
+      {{
+        __virtualbox_installed_packages.stdout_lines
+        | select('match', __virtualbox_kernel_package_pattern)
+        | map('regex_replace', '$', '-headers')
+        | list
+      }}
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Assert at least one kernel detected (Arch)
+  ansible.builtin.assert:
+    that:
+      - __virtualbox_kernel_headers | length > 0
+    fail_msg: >-
+      No kernel package of the official repository detected (linux,
+      linux-lts, linux-zen, linux-hardened, linux-rt, linux-rt-lts).
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Module build dependencies
+  ansible.builtin.package:
+    name: '{{ __virtualbox_build_packages + __virtualbox_kernel_headers }}'
+    state: present
+  retries: 3
+  delay: 5
+
+#
+# Branch Change
+#
+# The branches are separate packages that conflict with each other; the
+# installed one is removed before the selected one is installed. Virtual
+# machines and their settings stay in place.
+
+- name: Install | Gather package facts
+  ansible.builtin.package_facts:
+  when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+- name: Install | Remove other VirtualBox branches
+  ansible.builtin.package:
+    name: '{{ __virtualbox_other_branches }}'
+    state: absent
+  vars:
+    __virtualbox_other_branches: >-
+      {{ ansible_facts['packages'] | default({}) | list
+         | select('match', __virtualbox_branch_pattern)
+         | reject('in', __virtualbox_packages)
+         | list }}
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] in ['Debian', 'RedHat']
+    - __virtualbox_other_branches | length > 0
+
+#
+# VirtualBox
+#
+
+- name: Install | VirtualBox packages
+  ansible.builtin.package:
+    name: '{{ __virtualbox_packages }}'
+    state: present
+  retries: 3
+  delay: 5

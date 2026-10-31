@@ -1,0 +1,36 @@
+---
+# Debian and EL: the vboxdrv service builds the modules for the running
+# kernel when they are missing and loads them.
+- name: Service | Manage vboxdrv service
+  ansible.builtin.systemd_service:
+    name: '{{ __virtualbox_service_name }}'
+    enabled: "{{ virtualbox_service_enabled | bool }}"
+    state: "{{ virtualbox_service_enabled | bool | ternary('started', 'stopped') }}"
+  when: __virtualbox_service_name | length > 0
+
+# Arch Linux: DKMS builds the modules on install and modules-load.d loads
+# them at boot. The role loads them for the running kernel as well, unless
+# an upgrade removed that kernel; the modules load after the next reboot.
+- name: Service | Check modules of the running kernel (Arch)
+  ansible.builtin.stat:
+    path: "/usr/lib/modules/{{ ansible_facts['kernel'] }}"
+  register: __virtualbox_running_kernel_modules
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Service | Load kernel modules (Arch)
+  community.general.modprobe:
+    name: '{{ item }}'
+    state: present
+  loop: '{{ __virtualbox_modules }}'
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __virtualbox_running_kernel_modules.stat.exists | default(false)
+
+- name: Service | Report pending reboot (Arch)
+  ansible.builtin.debug:
+    msg: >-
+      The running kernel was removed by an upgrade. The VirtualBox modules
+      load after the next reboot.
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - not (__virtualbox_running_kernel_modules.stat.exists | default(true))

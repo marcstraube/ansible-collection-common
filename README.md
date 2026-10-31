@@ -100,16 +100,17 @@ development toolchains, user management, editors, and more.
 
 ### Services & Infrastructure
 
-| Role          | Description              |
-| ------------- | ------------------------ |
-| **chrony**    | NTP time synchronization |
-| **logrotate** | Log rotation             |
-| **mta**       | Send-only mail (Postfix) |
-| **docker**    | Docker container runtime |
-| **podman**    | Podman container runtime |
-| **libvirt**   | libvirt with QEMU/KVM    |
-| **snmp**      | SNMP monitoring agent    |
-| **restic**    | Backup with restic       |
+| Role           | Description              |
+| -------------- | ------------------------ |
+| **chrony**     | NTP time synchronization |
+| **logrotate**  | Log rotation             |
+| **mta**        | Send-only mail (Postfix) |
+| **docker**     | Docker container runtime |
+| **podman**     | Podman container runtime |
+| **libvirt**    | libvirt with QEMU/KVM    |
+| **virtualbox** | VirtualBox hypervisor    |
+| **snmp**       | SNMP monitoring agent    |
+| **restic**     | Backup with restic       |
 
 ## Installation
 

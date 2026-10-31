@@ -1,0 +1,23 @@
+---
+# The group is created by the package. Under --check on a host without the
+# package the group does not exist yet, so the membership is skipped there.
+- name: Configure | Look up VirtualBox group
+  ansible.builtin.getent:
+    database: group
+    key: '{{ __virtualbox_group }}'
+    fail_key: false
+  check_mode: false
+  when: virtualbox_users | length > 0
+
+- name: Configure | Add users to VirtualBox group
+  ansible.builtin.user:
+    name: '{{ item }}'
+    groups: '{{ __virtualbox_group }}'
+    append: true
+  loop: '{{ virtualbox_users }}'
+  loop_control:
+    label: '{{ item }}'
+  when:
+    - virtualbox_users | length > 0
+    - not ansible_check_mode
+      or __virtualbox_group in (ansible_facts['getent_group'] | default({}))
