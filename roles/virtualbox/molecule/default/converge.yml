@@ -1,0 +1,15 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  pre_tasks:
+    - name: Converge | Create test user
+      ansible.builtin.user:
+        name: 'vbox-tester'
+        create_home: true
+
+  tasks:
+    - name: Converge | Include virtualbox role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

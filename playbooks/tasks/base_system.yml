@@ -400,6 +400,14 @@
     - kubernetes
   when: kubernetes_enabled | bool
 
+- name: Base System | Import virtualbox role
+  ansible.builtin.import_role:
+    name: marcstraube.common.virtualbox
+  tags:
+    - base-system
+    - virtualbox
+  when: virtualbox_enabled | bool
+
 - name: Base System | Import php role
   ansible.builtin.import_role:
     name: marcstraube.common.php
