@@ -9,14 +9,11 @@ Following the [Keep a Changelog](https://keepachangelog.com/) convention,
 the file always carries a persistent `## Unreleased` section at the top.
 Breaking-change PRs append their entries under that section; the release
 workflow dates it to `## v<X.Y.Z> - YYYY-MM-DD` at release time and
-inserts a fresh empty `## Unreleased` above it. Do not delete the
+inserts a fresh empty `## Unreleased` above it. A release without
+entries under `## Unreleased` gets no section of its own. Do not delete the
 heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
-
-## v3.0.2 - 2026-11-01
-
-## v3.0.1 - 2026-10-25
 
 ## v3.0.0 - 2026-10-19
 
@@ -367,12 +364,6 @@ sudo_keep_sudoers_files:
 
 With `sudo_purge_sudoers_d_enabled: true` and no such entry, the `sudo` role
 already removes the old file.
-
-## v2.3.0 - 2026-07-23
-
-## v2.2.0 - 2026-07-07
-
-## v2.1.1 - 2026-06-12
 
 ## v2.1.0 - 2026-06-11
 
