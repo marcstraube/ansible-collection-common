@@ -226,6 +226,12 @@ users_list:
         - 'AddKeysToAgent yes'
 ```
 
+> **Deprecation:** deriving `openssh_client_users` from the `users_list`
+> `ssh_client` attribute is deprecated and will be removed in v4.0.0. The role
+> prints a warning while it derives users this way. From v4.0.0 an empty
+> `openssh_client_users` means no users; set `openssh_client_users` explicitly.
+> See #494.
+
 ### SSH Agent
 
 | Variable                               | Default | Description                     |
