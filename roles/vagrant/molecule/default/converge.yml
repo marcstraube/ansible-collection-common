@@ -1,0 +1,29 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    vagrant_enabled: true
+    vagrant_default_provider: 'virtualbox'
+    # vagrant-hostmanager is pure Ruby and installs without a native build
+    vagrant_users:
+      - username: 'johndoe'
+        plugins:
+          - 'vagrant-hostmanager'
+      - username: 'janedoe'
+
+  pre_tasks:
+    - name: Converge | Create test users
+      ansible.builtin.user:
+        name: '{{ item }}'
+        create_home: true
+        shell: /bin/bash
+      loop:
+        - 'johndoe'
+        - 'janedoe'
+
+  tasks:
+    - name: Converge | Include vagrant role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

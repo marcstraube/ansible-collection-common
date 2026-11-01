@@ -1,0 +1,14 @@
+---
+# Vagrant is only available in the AUR on Arch Linux
+__vagrant_packages: []
+
+__vagrant_aur_packages:
+  vagrant:
+    - 'vagrant'
+
+# Native build of the vagrant-libvirt plugin against the system Ruby
+__vagrant_libvirt_build_packages:
+  - 'gcc'
+  - 'make'
+  - 'pkgconf'
+  - 'libvirt'

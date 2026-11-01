@@ -1,0 +1,53 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - always
+
+- name: Main | Validate configuration
+  ansible.builtin.assert:
+    that:
+      - vagrant_default_provider in (__vagrant_providers + [''])
+      - vagrant_users | rejectattr('username', 'defined') | list | length == 0
+      - >-
+        vagrant_users | selectattr('plugins', 'defined')
+        | selectattr('plugins', 'string') | list | length == 0
+    fail_msg: >-
+      vagrant_default_provider must be one of: {{ __vagrant_providers | join(', ') }}
+      or empty; every vagrant_users entry needs a username, and plugins, if
+      set, must be a list.
+  when: vagrant_enabled | bool
+  tags:
+    - always
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: vagrant_enabled | bool
+  tags:
+    - vagrant
+    - vagrant:install
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: vagrant_enabled | bool
+  tags:
+    - vagrant
+    - vagrant:configure
+
+- name: Main | Import plugin tasks
+  ansible.builtin.import_tasks: plugins.yml
+  when:
+    - vagrant_enabled | bool
+    - vagrant_users | length > 0
+  tags:
+    - vagrant
+    - vagrant:plugins

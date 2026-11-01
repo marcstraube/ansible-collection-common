@@ -408,6 +408,14 @@
     - virtualbox
   when: virtualbox_enabled | bool
 
+- name: Base System | Import vagrant role
+  ansible.builtin.import_role:
+    name: marcstraube.common.vagrant
+  tags:
+    - base-system
+    - vagrant
+  when: vagrant_enabled | bool
+
 - name: Base System | Import php role
   ansible.builtin.import_role:
     name: marcstraube.common.php

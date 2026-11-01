@@ -1,0 +1,43 @@
+---
+# Breaks the plugins of johndoe the way a Ruby version change does: Vagrant
+# keeps the plugin in plugins.json but finds no gems for the current Ruby. The
+# role has to reinstall the plugins; verify.yml checks the plugin list.
+- name: Side Effect
+  hosts: all
+  gather_facts: true
+
+  vars:
+    vagrant_enabled: true
+    vagrant_default_provider: 'virtualbox'
+    vagrant_users:
+      - username: 'johndoe'
+        plugins:
+          - 'vagrant-hostmanager'
+      - username: 'janedoe'
+
+  pre_tasks:
+    - name: Side Effect | Remove the plugin gems of johndoe
+      ansible.builtin.file:
+        path: /home/johndoe/.vagrant.d/gems
+        state: absent
+
+    - name: Side Effect | List plugins of johndoe
+      ansible.builtin.command:
+        cmd: vagrant plugin list
+      become: true
+      become_user: johndoe
+      register: __side_effect_plugin_list
+      changed_when: false
+      failed_when: false
+
+    - name: Side Effect | Assert the plugins fail to initialize
+      ansible.builtin.assert:
+        that:
+          - __side_effect_plugin_list.rc != 0
+          - "'plugins failed to initialize' in (__side_effect_plugin_list.stdout + __side_effect_plugin_list.stderr)"
+        fail_msg: 'Removing the gems did not break the plugins of johndoe'
+
+  tasks:
+    - name: Side Effect | Include vagrant role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
