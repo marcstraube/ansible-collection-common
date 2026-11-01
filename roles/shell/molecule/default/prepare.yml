@@ -142,3 +142,25 @@
         # cannot retrieve authentication info").
         password: "{{ 'molecule-testuser-noop' | password_hash('sha512') }}"
         update_password: 'on_create'
+
+    # Login shell fixtures: the shell role sets shelldefaultuser (no `shell:`
+    # in users_list) to shell_default and must leave root and shellkeepuser
+    # (`shell:` in users_list, owned by the users role) at the values set here.
+
+    - name: Prepare | Set root login shell
+      ansible.builtin.user:
+        name: root
+        shell: /bin/bash
+
+    - name: Prepare | Create login shell test users
+      ansible.builtin.user:
+        name: '{{ item.name }}'
+        create_home: true
+        shell: '{{ item.shell }}'
+      loop:
+        - name: 'shellkeepuser'
+          shell: '/bin/sh'
+        - name: 'shelldefaultuser'
+          shell: '/bin/bash'
+      loop_control:
+        label: '{{ item.name }}'

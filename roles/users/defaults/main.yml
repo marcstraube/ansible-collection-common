@@ -81,7 +81,7 @@ users_list: []
 # User Defaults
 #
 
-# Default shell for new users
+# Login shell for accounts created without `shell:` (existing accounts keep theirs)
 users_default_shell: '/bin/bash'
 
 # Default home base directory

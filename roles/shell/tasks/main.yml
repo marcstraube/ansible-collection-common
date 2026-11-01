@@ -3,6 +3,43 @@
 # Shell Main Tasks
 #
 
+# Login shells belong to the users role. Setting shell_default as login shell
+# is deprecated and will be removed in v4.0.0; until then it only covers users
+# without `shell:` on their users_list entry, and never root.
+- name: Main | Get users for the deprecated login shell tasks
+  ansible.builtin.set_fact:
+    __shell_login_users: >-
+      {{ (shell_users if shell_users | length > 0
+          else (users_list | default([]) | map(attribute='name') | list))
+         | reject('equalto', 'root')
+         | reject('in', users_list | default([]) | selectattr('shell', 'defined')
+                        | map(attribute='name') | list)
+         | list }}
+  when: shell_enabled | bool
+  tags:
+    - always
+
+# The flag is set on every run so the warning below fires only while the
+# deprecated path is in use.
+- name: Main | Detect deprecated login shell setting
+  ansible.builtin.set_fact:
+    __shell_default_login_shell_deprecated: >-
+      {{ shell_enabled | bool
+         and shell_default != 'bash'
+         and shell_user_config_mode != 'disabled'
+         and __shell_login_users | default([]) | length > 0 }}
+  tags:
+    - always
+
+- name: Main | Warn about login shell deprecation
+  ansible.builtin.debug:
+    msg: >
+      Setting login shells through shell_default is DEPRECATED and will be
+      removed in v4.0.0. Set shell: on users_list entries instead. See #496.
+  when: __shell_default_login_shell_deprecated | bool
+  tags:
+    - always
+
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:

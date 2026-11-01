@@ -44,6 +44,19 @@
     - base
   when: base_enabled | bool
 
+# The shell install phase runs before users: it only installs shells and
+# tools, so a zsh or fish set as login shell on a users_list entry exists when
+# the users role sets it. Per-user shell configuration stays in the full shell
+# role run below.
+- name: Base System | Import shell install
+  ansible.builtin.import_role:
+    name: marcstraube.common.shell
+    tasks_from: install.yml
+  tags:
+    - base-system
+    - shell
+  when: shell_enabled | bool
+
 - name: Base System | Import users role
   ansible.builtin.import_role:
     name: marcstraube.common.users

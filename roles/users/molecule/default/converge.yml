@@ -99,6 +99,15 @@
         password: '!'
         password_lock: true
 
+      # Existing account without shell: keeps its login shell (/bin/sh)
+      - name: 'keepshelluser'
+        uid: 3010
+
+      # Existing account with shell: gets the configured shell
+      - name: 'setshelluser'
+        uid: 3011
+        shell: '/bin/bash'
+
   tasks:
     - name: Converge | Include users role  # noqa: role-name[path]
       ansible.builtin.include_role:

@@ -132,6 +132,25 @@
       when: ansible_facts['os_family'] != 'Archlinux'
 
     #
+    # Login Shells
+    #
+
+    - name: Verify | Read passwd entries
+      ansible.builtin.getent:
+        database: passwd
+
+    - name: Verify | Assert login shells
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['getent_passwd']['root'][5] == '/bin/bash'
+          - ansible_facts['getent_passwd']['shellkeepuser'][5] == '/bin/sh'
+          - ansible_facts['getent_passwd']['shelldefaultuser'][5] == '/usr/bin/zsh'
+        fail_msg: >-
+          Unexpected login shells: root={{ ansible_facts['getent_passwd']['root'][5] }},
+          shellkeepuser={{ ansible_facts['getent_passwd']['shellkeepuser'][5] }},
+          shelldefaultuser={{ ansible_facts['getent_passwd']['shelldefaultuser'][5] }}
+
+    #
     # Oh My Zsh
     #
 
