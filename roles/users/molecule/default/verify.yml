@@ -64,6 +64,30 @@
           - basicuser.ansible_facts.getent_passwd.basicuser[5] == '/bin/bash'
         fail_msg: 'basicuser has incorrect shell'
 
+    #
+    # Login Shell Verification
+    #
+
+    - name: Verify | Read login shells
+      ansible.builtin.getent:
+        database: passwd
+      register: users_login_shells
+
+    - name: Verify | Check login shells
+      ansible.builtin.assert:
+        that:
+          # New account without shell: gets users_default_shell
+          - users_login_shells.ansible_facts.getent_passwd.genuser[5] == '/bin/bash'
+          # Existing account without shell: keeps its login shell
+          - users_login_shells.ansible_facts.getent_passwd.keepshelluser[5] == '/bin/sh'
+          # Existing account with shell: gets the configured shell
+          - users_login_shells.ansible_facts.getent_passwd.setshelluser[5] == '/bin/bash'
+        fail_msg: >-
+          Unexpected login shells:
+          genuser={{ users_login_shells.ansible_facts.getent_passwd.genuser[5] }},
+          keepshelluser={{ users_login_shells.ansible_facts.getent_passwd.keepshelluser[5] }},
+          setshelluser={{ users_login_shells.ansible_facts.getent_passwd.setshelluser[5] }}
+
     - name: Verify | Check devuser exists
       ansible.builtin.getent:
         database: passwd

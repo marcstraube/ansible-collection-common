@@ -11,6 +11,9 @@ shell_enabled: true
 #
 
 # Default shell for users: zsh, fish, bash
+# DEPRECATED: while not 'bash', the role sets it as login shell for users
+# without `shell:` on their users_list entry (never root). Set shell: on
+# users_list entries instead. Removal in v4.0.0 — see #496.
 shell_default: 'bash'
 
 # Users to change shell for (empty = all users from users_list)

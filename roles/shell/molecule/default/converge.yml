@@ -1,4 +1,34 @@
 ---
+# Runs first, before any play has loaded the role's OS variables, so the
+# install phase has to load them itself.
+- name: Converge — Install phase only
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_zsh_enabled: true
+    shell_zsh_plugins: []
+    shell_starship_enabled: false
+    shell_fzf_enabled: false
+
+  tasks:
+    - name: Converge | Include shell install phase  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: install.yml
+
+    - name: Converge | Check zsh binary after install phase
+      ansible.builtin.stat:
+        path: /usr/bin/zsh
+      register: __converge_install_zsh
+
+    - name: Converge | Assert install phase installed zsh
+      ansible.builtin.assert:
+        that:
+          - __converge_install_zsh.stat.exists
+        fail_msg: 'install phase did not install zsh'
+        quiet: true
+
 - name: Converge — Native framework
   hosts: all
   gather_facts: true
@@ -14,10 +44,59 @@
     shell_bash_completion_enabled: true
     shell_starship_enabled: "{{ ansible_facts['os_family'] == 'Archlinux' }}"
     shell_fzf_enabled: true
+    # Empty shell_users → every users_list entry. shelldefaultuser has no
+    # `shell:` and gets shell_default; shellkeepuser has `shell:` and root is
+    # never changed, so both keep the login shell set in prepare.
     shell_users: []
+    users_list:
+      - name: 'root'
+        shell: '/bin/bash'
+      - name: 'shellkeepuser'
+        shell: '/bin/bash'
+      - name: 'shelldefaultuser'
 
   tasks:
     - name: Converge | Include shell role (native)  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+    - name: Converge | Assert login shell deprecation warning
+      ansible.builtin.assert:
+        that:
+          - __shell_default_login_shell_deprecated | bool
+          - __shell_login_users == ['shelldefaultuser']
+        fail_msg: 'deprecated login shell users or their deprecation warning are wrong'
+        quiet: true
+
+- name: Converge — Login shells from shell_users
+  hosts: all
+  gather_facts: true
+
+  vars:
+    shell_enabled: true
+    shell_default: 'zsh'
+    shell_zsh_enabled: true
+    shell_zsh_framework: 'native'
+    shell_zsh_plugins: []
+    shell_fish_enabled: false
+    shell_bash_completion_enabled: false
+    shell_starship_enabled: false
+    shell_fzf_enabled: false
+    # Explicit names: root and shellkeepuser are still skipped. Same result
+    # as the native play, so the idempotence run catches any flip-flop.
+    shell_users:
+      - 'root'
+      - 'shellkeepuser'
+      - 'shelldefaultuser'
+    users_list:
+      - name: 'root'
+        shell: '/bin/bash'
+      - name: 'shellkeepuser'
+        shell: '/bin/bash'
+      - name: 'shelldefaultuser'
+
+  tasks:
+    - name: Converge | Include shell role (login shells)  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
 
@@ -74,6 +153,13 @@
     - name: Converge | Include shell role (starship)  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    - name: Converge | Assert no login shell deprecation warning
+      ansible.builtin.assert:
+        that:
+          - not (__shell_default_login_shell_deprecated | bool)
+        fail_msg: 'deprecation warning fired although shell_default is bash'
+        quiet: true
 
 - name: Converge — Zoxide init (all distros — zoxide ships in every repo)
   hosts: all

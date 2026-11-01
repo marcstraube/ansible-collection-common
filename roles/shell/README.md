@@ -29,6 +29,14 @@ overrides if needed.
 
 ### Default Shell
 
+> **Deprecation:** setting login shells through `shell_default` is deprecated
+> and will be removed in v4.0.0. Login shells belong to the `users` role; set
+> `shell:` on `users_list` entries instead. While `shell_default` is not
+> `'bash'`, the role still sets it as login shell for the users in
+> `shell_users` (or every `users_list` entry when `shell_users` is empty) that
+> have no `shell:` on their `users_list` entry, never for `root`, and prints a
+> warning. If the shell binary does not exist, it sets `/bin/bash`. See #496.
+
 | Variable                 | Default     | Description                                               |
 |--------------------------|-------------|-----------------------------------------------------------|
 | `shell_default`          | `'bash'`    | Default shell for users: zsh, fish, bash                  |
@@ -222,6 +230,23 @@ enabling one of the two.
 All three toggles honour `shell_user_config_mode` like the other
 init blocks. On platforms where the package is not available, the
 toggle is a silent no-op (no package install, no init block).
+
+## Install Phase
+
+Package installation runs as its own phase (`tasks/install.yml`). It loads the
+OS variables and installs shells, plugins and tools, without touching any user.
+A playbook that sets zsh or fish as login shell through the `users` role runs
+this phase before `users`, so the shell binary exists when the account gets it:
+
+```yaml
+- name: Install shells
+  ansible.builtin.import_role:
+    name: marcstraube.common.shell
+    tasks_from: install.yml
+```
+
+`playbooks/tasks/base_system.yml` does this before `users` and runs the full
+role afterwards.
 
 ## Tags
 
