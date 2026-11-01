@@ -7,7 +7,7 @@
 ## Description
 
 Shared Ansible roles for multi-OS infrastructure management.
-51 roles covering base system, security, networking, package management,
+Roles covering base system, security, networking, package management,
 development toolchains, user management, editors, and more.
 
 ## Supported Platforms
@@ -60,6 +60,7 @@ development toolchains, user management, editors, and more.
 | **security_scanners** | Socket CLI, trivy, gitleaks, osv-scanner, syft      |
 | **ansible_tools**     | Ansible, Molecule and linting tools                 |
 | **kubernetes**        | Kubernetes client tooling (kubectl, helm, minikube) |
+| **vagrant**           | Vagrant with per-user plugins                       |
 
 ### Networking
 
@@ -88,6 +89,7 @@ development toolchains, user management, editors, and more.
 | **lynis**         | Security auditing                        |
 | **rkhunter**      | Rootkit detection                        |
 | **clamav**        | ClamAV antivirus                         |
+| **wazuh_agent**   | Wazuh agent with manager enrollment      |
 
 ### Crypto & Authentication
 
@@ -99,15 +101,17 @@ development toolchains, user management, editors, and more.
 
 ### Services & Infrastructure
 
-| Role          | Description              |
-| ------------- | ------------------------ |
-| **chrony**    | NTP time synchronization |
-| **logrotate** | Log rotation             |
-| **mta**       | Send-only mail (Postfix) |
-| **docker**    | Docker container runtime |
-| **podman**    | Podman container runtime |
-| **snmp**      | SNMP monitoring agent    |
-| **restic**    | Backup with restic       |
+| Role           | Description              |
+| -------------- | ------------------------ |
+| **chrony**     | NTP time synchronization |
+| **logrotate**  | Log rotation             |
+| **mta**        | Send-only mail (Postfix) |
+| **docker**     | Docker container runtime |
+| **podman**     | Podman container runtime |
+| **libvirt**    | libvirt with QEMU/KVM    |
+| **virtualbox** | VirtualBox hypervisor    |
+| **snmp**       | SNMP monitoring agent    |
+| **restic**     | Backup with restic       |
 
 ## Installation
 

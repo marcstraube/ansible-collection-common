@@ -1,0 +1,16 @@
+---
+- name: Configure | Ensure libvirt group exists
+  ansible.builtin.group:
+    name: '{{ __libvirt_group }}'
+    state: present
+    system: true
+
+- name: Configure | Add users to libvirt group
+  ansible.builtin.user:
+    name: '{{ item }}'
+    groups: '{{ __libvirt_group }}'
+    append: true
+  loop: '{{ libvirt_users }}'
+  loop_control:
+    label: '{{ item }}'
+  when: libvirt_users | length > 0

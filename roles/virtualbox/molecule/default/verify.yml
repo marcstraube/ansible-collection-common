@@ -1,0 +1,158 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    #
+    # Load Variables
+    #
+
+    - name: Verify | Load role defaults
+      ansible.builtin.include_vars:
+        file: '../../defaults/main.yml'
+
+    - name: Verify | Load common variables
+      ansible.builtin.include_vars:
+        file: '../../vars/main.yml'
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    #
+    # Packages
+    #
+
+    - name: Verify | Gather package facts
+      ansible.builtin.package_facts:
+
+    - name: Verify | Assert VirtualBox packages are installed
+      ansible.builtin.assert:
+        that:
+          - __virtualbox_missing_packages | length == 0
+        fail_msg: 'Missing VirtualBox packages: {{ __virtualbox_missing_packages }}'
+        success_msg: 'VirtualBox packages are installed'
+      vars:
+        __virtualbox_missing_packages: >-
+          {{ __virtualbox_packages | difference(ansible_facts['packages'] | list) }}
+
+    - name: Verify | Assert headers of the running kernel are installed (Debian)
+      ansible.builtin.assert:
+        that:
+          - __virtualbox_missing_headers | length == 0
+        fail_msg: 'Missing kernel headers: {{ __virtualbox_missing_headers }}'
+        success_msg: 'Kernel headers are installed'
+      vars:
+        __virtualbox_missing_headers: >-
+          {{ __virtualbox_kernel_headers | difference(ansible_facts['packages'] | list) }}
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # Package facts carry the name only; rpm resolves the versioned name
+    - name: Verify | Check headers of the running kernel (RedHat)  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: "rpm -q {{ __virtualbox_kernel_headers | join(' ') }}"
+      changed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Assert kernel headers are installed (Arch)
+      ansible.builtin.assert:
+        that:
+          - __virtualbox_missing_headers | length == 0
+        fail_msg: 'Missing kernel headers: {{ __virtualbox_missing_headers }}'
+        success_msg: 'Headers are installed for every kernel'
+      vars:
+        __virtualbox_missing_headers: >-
+          {{ ansible_facts['packages'] | list
+             | select('match', __virtualbox_kernel_package_pattern)
+             | map('regex_replace', '$', '-headers')
+             | difference(ansible_facts['packages'] | list) }}
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Read VBoxManage version
+      ansible.builtin.command:
+        cmd: 'VBoxManage --version'
+      register: __virtualbox_vboxmanage_version
+      changed_when: false
+
+    - name: Verify | Assert VirtualBox branch (Debian, RedHat)
+      ansible.builtin.assert:
+        that:
+          - __virtualbox_reported_version is match(virtualbox_version | regex_escape ~ '[.]')
+        fail_msg: 'VBoxManage reports {{ __virtualbox_reported_version }}, expected branch {{ virtualbox_version }}'
+        success_msg: 'VirtualBox {{ virtualbox_version }} is installed'
+      vars:
+        __virtualbox_reported_version: '{{ __virtualbox_vboxmanage_version.stdout_lines | last }}'
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    #
+    # Users
+    #
+
+    - name: Verify | Look up VirtualBox group
+      ansible.builtin.getent:
+        database: group
+        key: '{{ __virtualbox_group }}'
+
+    - name: Verify | Assert test user is a member of the VirtualBox group
+      ansible.builtin.assert:
+        that:
+          - "'vbox-tester' in ansible_facts['getent_group'][__virtualbox_group][2].split(',')"
+        fail_msg: 'vbox-tester is not a member of {{ __virtualbox_group }}'
+        success_msg: 'vbox-tester is a member of {{ __virtualbox_group }}'
+
+    #
+    # Kernel Modules
+    #
+
+    - name: Verify | Check vboxdrv module
+      ansible.builtin.stat:
+        path: '/sys/module/vboxdrv'
+      register: __virtualbox_vboxdrv_module
+
+    - name: Verify | Assert vboxdrv module is loaded
+      ansible.builtin.assert:
+        that:
+          - __virtualbox_vboxdrv_module.stat.exists
+        fail_msg: 'The vboxdrv kernel module is not loaded'
+        success_msg: 'The vboxdrv kernel module is loaded'
+
+    - name: Verify | Check vboxdrv device
+      ansible.builtin.stat:
+        path: '/dev/vboxdrv'
+      register: __virtualbox_vboxdrv_device
+
+    - name: Verify | Assert vboxdrv device exists
+      ansible.builtin.assert:
+        that:
+          - __virtualbox_vboxdrv_device.stat.exists
+          - __virtualbox_vboxdrv_device.stat.ischr
+        fail_msg: '/dev/vboxdrv is missing'
+        success_msg: '/dev/vboxdrv exists'
+
+    #
+    # Service
+    #
+
+    - name: Verify | Check vboxdrv service (Debian, RedHat)
+      ansible.builtin.systemd_service:
+        name: '{{ __virtualbox_service_name }}'
+      register: __virtualbox_service_check
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']
+
+    - name: Verify | Assert vboxdrv service is active and enabled (Debian, RedHat)
+      ansible.builtin.assert:
+        that:
+          - __virtualbox_service_check.status.ActiveState == 'active'
+          - __virtualbox_service_check.status.UnitFileState == 'enabled'
+        fail_msg: 'The vboxdrv service is not active or not enabled'
+        success_msg: 'The vboxdrv service is active and enabled'
+      when: ansible_facts['os_family'] in ['Debian', 'RedHat']

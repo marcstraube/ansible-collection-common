@@ -1,0 +1,131 @@
+---
+name: Update Wazuh Agent Version
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6:00 UTC
+  workflow_dispatch:       # Manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-wazuh-agent:
+    name: Check for new Wazuh release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # Wazuh keeps releasing older minor series next to the current one,
+      # so the newest release is the highest version, not the latest
+      # published. Only releases of the pinned major series count; the
+      # package repository of the role is per major series. The bump waits
+      # until the packages are published.
+      - name: Get latest Wazuh release
+        id: wazuh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CURRENT=$(grep '^wazuh_agent_version:' roles/wazuh_agent/defaults/main.yml \
+            | sed "s/.*'\(.*\)'/\1/")
+          MAJOR="${CURRENT%%.*}"
+          LATEST=$(gh api --paginate 'repos/wazuh/wazuh/releases?per_page=100' \
+            --jq '.[] | select(.draft | not) | select(.prerelease | not) | .tag_name' \
+            | grep -E "^v${MAJOR}\.[0-9]+\.[0-9]+$" \
+            | sed 's/^v//' | sort -V | tail -n 1)
+          if ! [[ "$LATEST" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::No Wazuh ${MAJOR}.x release found: '$LATEST'"
+            exit 1
+          fi
+          REPO="https://packages.wazuh.com/${MAJOR}.x"
+          if curl -fsSL -o /dev/null -I \
+               "${REPO}/apt/pool/main/w/wazuh-agent/wazuh-agent_${LATEST}-1_amd64.deb" \
+             && curl -fsSL -o /dev/null -I \
+               "${REPO}/yum/wazuh-agent-${LATEST}-1.x86_64.rpm"; then
+            PACKAGES=true
+          else
+            PACKAGES=false
+            echo "::warning::Wazuh ${LATEST} packages not published yet"
+          fi
+          {
+            echo "latest=$LATEST"
+            echo "current=$CURRENT"
+            echo "packages=$PACKAGES"
+          } >> "$GITHUB_OUTPUT"
+          echo "Current: $CURRENT, Latest: $LATEST, packages published: $PACKAGES"
+
+      - name: Update defaults/main.yml
+        if: >-
+          steps.wazuh.outputs.latest != steps.wazuh.outputs.current
+          && steps.wazuh.outputs.packages == 'true'
+        run: |
+          sed -i "s/^wazuh_agent_version: '.*'/wazuh_agent_version: '${{ steps.wazuh.outputs.latest }}'/" \
+            roles/wazuh_agent/defaults/main.yml
+
+      # The Arch Linux build comes from the AUR, which may lag behind the
+      # upstream release. The body lives outside the checkout, so the pull
+      # request does not commit it.
+      - name: Write pull request body
+        if: >-
+          steps.wazuh.outputs.latest != steps.wazuh.outputs.current
+          && steps.wazuh.outputs.packages == 'true'
+        env:
+          CURRENT: ${{ steps.wazuh.outputs.current }}
+          LATEST: ${{ steps.wazuh.outputs.latest }}
+        run: |
+          AUR=$(curl -fsSL 'https://aur.archlinux.org/rpc/v5/info?arg[]=wazuh-agent' \
+            | jq -r '.results[0].Version // "unknown"')
+          {
+            echo "Automated update of \`wazuh_agent_version\` in \`roles/wazuh_agent/defaults/main.yml\`."
+            echo
+            echo "**Previous:** \`${CURRENT}\`"
+            echo "**New:** \`${LATEST}\`"
+            echo
+            echo "Release notes: https://github.com/wazuh/wazuh/releases/tag/v${LATEST}"
+            echo
+            echo "A manager rejects agents newer than itself. Merge this pull request only after marcstraube.server has released \`wazuh_server_version\` ${LATEST}."
+            echo
+            if [[ "${AUR%-*}" == "$LATEST" ]]; then
+              echo "The AUR package \`wazuh-agent\` is at \`${AUR}\`."
+            else
+              echo "The AUR package \`wazuh-agent\` is at \`${AUR}\`. The Arch Linux molecule job fails until the AUR package reaches ${LATEST}; rerun it then."
+            fi
+            echo
+            echo "---"
+            echo "This PR was created automatically by the \`update-wazuh-agent-version\` workflow."
+          } > "$RUNNER_TEMP/pr-body.md"
+
+      # Pull requests opened with github.token do not trigger the CI
+      # workflow; the release bot app token lets the bump PR run the
+      # wazuh_agent molecule matrix.
+      - name: Generate release bot token
+        if: >-
+          steps.wazuh.outputs.latest != steps.wazuh.outputs.current
+          && steps.wazuh.outputs.packages == 'true'
+        uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - name: Create Pull Request
+        if: >-
+          steps.wazuh.outputs.latest != steps.wazuh.outputs.current
+          && steps.wazuh.outputs.packages == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: >-
+            chore(wazuh_agent): update Wazuh version
+            ${{ steps.wazuh.outputs.current }} →
+            ${{ steps.wazuh.outputs.latest }}
+          branch: chore/update-wazuh-agent-${{ steps.wazuh.outputs.latest }}
+          title: >-
+            chore(wazuh_agent): update Wazuh version to
+            ${{ steps.wazuh.outputs.latest }}
+          body-path: ${{ runner.temp }}/pr-body.md
+          labels: dependencies
+          delete-branch: true

@@ -37,6 +37,7 @@ IgnoreGroup = {{ pacman_ignore_groups | join(' ') }}
 {% else %}
 #IgnoreGroup =
 {% endif %}
+Include     = {{ __package_management_pacman_ignore_dir }}/*.conf
 {% if pacman_no_upgrade %}
 
 NoUpgrade   = {{ pacman_no_upgrade | join(' ') }}

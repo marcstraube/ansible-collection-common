@@ -1,0 +1,28 @@
+---
+#
+# Role Control
+#
+
+# Enable the libvirt role
+libvirt_enabled: false
+
+# Enable and start the libvirt service
+libvirt_service_enabled: true
+
+#
+# Users
+#
+
+# Users to add to the libvirt group (manage system VMs without root)
+libvirt_users: []
+# Example:
+#   - 'johndoe'
+#   - 'developer'
+
+#
+# Default Network
+#
+
+# Start the default NAT network and enable its autostart. false disables the
+# autostart and stops the network; the definition is kept.
+libvirt_default_network_autostart: true

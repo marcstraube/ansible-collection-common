@@ -1,0 +1,102 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    #
+    # Package
+    #
+
+    - name: Verify | Gather package facts
+      ansible.builtin.package_facts:
+
+    - name: Verify | Assert Vagrant is installed
+      ansible.builtin.assert:
+        that:
+          - "'vagrant' in ansible_facts['packages']"
+        fail_msg: 'vagrant is not installed'
+
+    # Debian's own vagrant package is 2.3.x; the HashiCorp repository
+    # carries 2.4 and newer
+    - name: Verify | Assert Vagrant comes from the HashiCorp repository (Debian)
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['packages']['vagrant'][0]['version'] is version('2.4', '>=')
+        fail_msg: 'vagrant is not the HashiCorp release'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Run vagrant version
+      ansible.builtin.command:
+        cmd: vagrant --version
+      register: __vagrant_version
+      changed_when: false
+
+    - name: Verify | Assert Vagrant reports its version
+      ansible.builtin.assert:
+        that:
+          - __vagrant_version.stdout is match('^Vagrant [0-9]')
+        fail_msg: 'vagrant does not report its version'
+
+    #
+    # Default Provider
+    #
+
+    - name: Verify | Stat profile.d file
+      ansible.builtin.stat:
+        path: /etc/profile.d/vagrant.sh
+      register: __vagrant_profile
+
+    - name: Verify | Assert profile.d file permissions
+      ansible.builtin.assert:
+        that:
+          - __vagrant_profile.stat.exists
+          - __vagrant_profile.stat.pw_name == 'root'
+          - __vagrant_profile.stat.gr_name == 'root'
+          - __vagrant_profile.stat.mode == '0644'
+        fail_msg: '/etc/profile.d/vagrant.sh is missing or has wrong permissions'
+
+    - name: Verify | Read default provider from a login shell
+      ansible.builtin.command:
+        cmd: bash -lc 'echo "$VAGRANT_DEFAULT_PROVIDER"'
+      become: true
+      become_user: johndoe
+      register: __vagrant_login_provider
+      changed_when: false
+
+    - name: Verify | Assert default provider
+      ansible.builtin.assert:
+        that:
+          - __vagrant_login_provider.stdout == 'virtualbox'
+        fail_msg: 'VAGRANT_DEFAULT_PROVIDER is not virtualbox in a login shell'
+
+    #
+    # Plugins
+    #
+
+    - name: Verify | List plugins of the test users
+      ansible.builtin.command:
+        cmd: vagrant plugin list
+      become: true
+      become_user: '{{ item }}'
+      loop:
+        - 'johndoe'
+        - 'janedoe'
+      register: __vagrant_plugin_lists
+      changed_when: false
+
+    - name: Verify | Assert plugins per user
+      ansible.builtin.assert:
+        that:
+          - __vagrant_plugin_lists.results[0].stdout_lines
+            | select('match', '^vagrant-hostmanager [(]') | list | length == 1
+          - __vagrant_plugin_lists.results[1].stdout_lines
+            | select('match', '^vagrant-hostmanager [(]') | list | length == 0
+        fail_msg: 'vagrant-hostmanager is not installed for johndoe only'
+
+    - name: Verify | Assert the libvirt plugin is absent without vagrant_libvirt_plugin_enabled
+      ansible.builtin.assert:
+        that:
+          - __vagrant_plugin_lists.results
+            | map(attribute='stdout') | select('search', 'vagrant-libvirt') | list | length == 0
+        fail_msg: 'vagrant-libvirt is installed although vagrant_libvirt_plugin_enabled is false'

@@ -11,6 +11,8 @@
     pacman_color: true
     pacman_ilovecandy: true
     pacman_check_space: true
+    pacman_ignore_packages:
+      - 'molecule-ignored-package'
     reflector_enabled: true
     reflector:
       countries: []
@@ -22,6 +24,7 @@
     aur_helper: ''  # Skip AUR helper in tests
     paccache_enabled: true
     pacman_pkgfile_enabled: true
+    makepkg_tmpdir: '/var/cache/makepkg'
     makepkg_users:
       - username: 'testuser'
         mode: 'managed'
@@ -89,6 +92,8 @@
     pacman_color: true
     pacman_ilovecandy: true
     pacman_check_space: true
+    pacman_ignore_packages:
+      - 'molecule-ignored-package'
     reflector_enabled: true
     reflector:
       countries: []
@@ -100,6 +105,7 @@
     aur_helper: ''
     paccache_enabled: true
     pacman_pkgfile_enabled: true
+    makepkg_tmpdir: '/var/cache/makepkg'
     makepkg_user_config_mode: 'initial'
     makepkg_users:
       - username: 'initialnewuser'
@@ -166,6 +172,8 @@
     pacman_color: true
     pacman_ilovecandy: true
     pacman_check_space: true
+    pacman_ignore_packages:
+      - 'molecule-ignored-package'
     reflector_enabled: true
     reflector:
       countries: []
@@ -177,6 +185,7 @@
     aur_helper: ''
     paccache_enabled: true
     pacman_pkgfile_enabled: true
+    makepkg_tmpdir: '/var/cache/makepkg'
     makepkg_user_config_mode: 'disabled'
     makepkg_users:
       - username: 'globaldisableduser'

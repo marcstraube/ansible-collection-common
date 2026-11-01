@@ -1,0 +1,6 @@
+---
+- name: Service | Manage Wazuh agent service
+  ansible.builtin.systemd_service:
+    name: '{{ __wazuh_agent_service_name }}'
+    enabled: "{{ wazuh_agent_service_enabled | bool }}"
+    state: "{{ wazuh_agent_service_enabled | bool | ternary('started', 'stopped') }}"

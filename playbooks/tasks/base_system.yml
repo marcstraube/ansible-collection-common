@@ -384,6 +384,14 @@
     - podman
   when: podman_enabled | bool
 
+- name: Base System | Import libvirt role
+  ansible.builtin.import_role:
+    name: marcstraube.common.libvirt
+  tags:
+    - base-system
+    - libvirt
+  when: libvirt_enabled | bool
+
 - name: Base System | Import kubernetes role
   ansible.builtin.import_role:
     name: marcstraube.common.kubernetes
@@ -391,6 +399,22 @@
     - base-system
     - kubernetes
   when: kubernetes_enabled | bool
+
+- name: Base System | Import virtualbox role
+  ansible.builtin.import_role:
+    name: marcstraube.common.virtualbox
+  tags:
+    - base-system
+    - virtualbox
+  when: virtualbox_enabled | bool
+
+- name: Base System | Import vagrant role
+  ansible.builtin.import_role:
+    name: marcstraube.common.vagrant
+  tags:
+    - base-system
+    - vagrant
+  when: vagrant_enabled | bool
 
 - name: Base System | Import php role
   ansible.builtin.import_role:
@@ -474,6 +498,15 @@
     - security
     - lynis
   when: lynis_enabled | bool
+
+- name: Base System | Import wazuh_agent role
+  ansible.builtin.import_role:
+    name: marcstraube.common.wazuh_agent
+  tags:
+    - base-system
+    - security
+    - wazuh-agent
+  when: wazuh_agent_enabled | bool
 
 - name: Base System | Import hardware_tokens role
   ansible.builtin.import_role:

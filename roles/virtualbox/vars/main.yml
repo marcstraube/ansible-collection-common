@@ -1,0 +1,4 @@
+---
+# Group that grants access to USB devices and the host drivers, created by
+# the package
+__virtualbox_group: 'vboxusers'

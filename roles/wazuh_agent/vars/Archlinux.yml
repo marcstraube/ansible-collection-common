@@ -1,0 +1,19 @@
+---
+# Wazuh ships no Arch Linux packages; the AUR package repackages the
+# upstream RPM with the same layout
+__wazuh_agent_aur_packages:
+  agent:
+    - 'wazuh-agent'
+
+# The Arch Linux release is rolling, so a single profile
+__wazuh_agent_config_profiles:
+  - 'arch'
+
+# Package log, collected in addition to the journal
+__wazuh_agent_os_localfiles:
+  - log_format: 'syslog'
+    location: '/var/log/pacman.log'
+
+# pacman IgnorePkg drop-in; pacman reads it when the [options] section of
+# pacman.conf includes /etc/pacman.d/ignore.d/*.conf
+__wazuh_agent_pacman_ignore_file: '/etc/pacman.d/ignore.d/wazuh-agent.conf'

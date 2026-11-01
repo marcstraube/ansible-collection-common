@@ -1,0 +1,124 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __prepare_packages:
+      Archlinux:
+        - base-devel
+      Debian:
+        - ca-certificates
+        - python3-debian
+      RedHat: []
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Install container dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
+        state: present
+      retries: 3
+      delay: 5
+      when: __prepare_packages[ansible_facts["os_family"]] | length > 0
+
+    # The HashiCorp repositories as documented in the README; the
+    # package_management role adds them on real hosts (apt_custom_repos,
+    # dnf_custom_repos).
+
+    - name: Prepare | Add HashiCorp apt repository (Debian)
+      ansible.builtin.deb822_repository:
+        name: hashicorp
+        types: deb
+        uris: 'https://apt.releases.hashicorp.com'
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: main
+        signed_by: 'https://apt.releases.hashicorp.com/gpg'
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Update package cache after repository change (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Add HashiCorp dnf repository (RedHat)
+      ansible.builtin.yum_repository:
+        name: hashicorp
+        description: 'HashiCorp Stable - $basearch'
+        baseurl: 'https://rpm.releases.hashicorp.com/RHEL/$releasever/$basearch/stable'
+        gpgkey: 'https://rpm.releases.hashicorp.com/gpg'
+        gpgcheck: true
+      retries: 5
+      delay: 10
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Create aur_builder user for AUR packages (Arch)
+      ansible.builtin.user:
+        name: aur_builder
+        group: wheel
+        create_home: true
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Allow aur_builder passwordless sudo (Arch)
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/99-aur_builder
+        line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+        create: true
+        owner: root
+        group: root
+        mode: '0440'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    # Sudo PAM bypass — required for tasks using `become_user` on
+    # geerlingguy Rocky containers under GitHub-hosted runners
+    # (test container only).
+
+    - name: Prepare | Bypass sudo PAM stack (RedHat container)
+      ansible.builtin.copy:
+        content: |
+          #%PAM-1.0
+          auth       sufficient   pam_permit.so
+          account    sufficient   pam_permit.so
+          password   sufficient   pam_permit.so
+          session    sufficient   pam_permit.so
+        dest: /etc/pam.d/sudo
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Disable sudoers authentication (RedHat container)
+      ansible.builtin.copy:
+        content: 'Defaults !authenticate'
+        dest: /etc/sudoers.d/molecule-no-auth
+        owner: root
+        group: root
+        mode: '0440'
+        validate: 'visudo -cf %s'
+      when: ansible_facts['os_family'] == 'RedHat'

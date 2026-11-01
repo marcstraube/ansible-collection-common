@@ -118,6 +118,14 @@ BUILDDIR="{{ makepkg_builddir }}"
 {% else %}
 #BUILDDIR=/tmp/makepkg
 {% endif %}
+#
+#-- Temporary directory for build tools (pip, meson, ...) that run files
+#-- below TMPDIR; needed when /tmp is mounted noexec.
+{% if makepkg_tmpdir %}
+export TMPDIR="{{ makepkg_tmpdir }}"
+{% else %}
+#export TMPDIR=/var/cache/makepkg
+{% endif %}
 
 #########################################################################
 # GLOBAL PACKAGE OPTIONS

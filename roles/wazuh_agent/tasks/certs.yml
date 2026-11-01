@@ -1,0 +1,39 @@
+---
+# The certificates come from the paths in wazuh_agent_enrollment_*_file. The
+# agent daemons run as the wazuh group and cannot read keys that only root
+# may read, so the role copies the files into the agent configuration
+# directory. A changed source file changes the copy and restarts the agent.
+
+- name: Certs | Deploy enrollment CA certificate
+  ansible.builtin.copy:
+    src: '{{ wazuh_agent_enrollment_ca_cert_file }}'
+    dest: '{{ __wazuh_agent_enrollment_ca_cert_file }}'
+    remote_src: true
+    owner: root
+    group: '{{ __wazuh_agent_group }}'
+    mode: '0640'
+  when: wazuh_agent_enrollment_ca_cert_file | length > 0
+  notify: Restart Wazuh agent
+
+- name: Certs | Deploy enrollment agent certificate
+  ansible.builtin.copy:
+    src: '{{ wazuh_agent_enrollment_cert_file }}'
+    dest: '{{ __wazuh_agent_enrollment_cert_file }}'
+    remote_src: true
+    owner: root
+    group: '{{ __wazuh_agent_group }}'
+    mode: '0640'
+  when: wazuh_agent_enrollment_cert_file | length > 0
+  notify: Restart Wazuh agent
+
+- name: Certs | Deploy enrollment agent key
+  ansible.builtin.copy:
+    src: '{{ wazuh_agent_enrollment_key_file }}'
+    dest: '{{ __wazuh_agent_enrollment_key_file }}'
+    remote_src: true
+    owner: root
+    group: '{{ __wazuh_agent_group }}'
+    mode: '0640'
+  no_log: true
+  when: wazuh_agent_enrollment_key_file | length > 0
+  notify: Restart Wazuh agent

@@ -19,6 +19,12 @@
       This host is managed by Ansible. Manual changes are overwritten on the
       next run.
 
+    base_environment:
+      http_proxy: 'http://proxy.example.com:3128'
+      HTTP_PROXY: 'http://proxy.example.com:3128'
+      # Space, single quote and $ prove the value is shell-quoted
+      BASE_TEST_QUOTED: "it's $HOME"
+
     base_keymap: 'us'
     base_xkb_layout: 'us'
 
