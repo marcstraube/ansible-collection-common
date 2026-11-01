@@ -33,7 +33,8 @@
           - 'Same host as deploy-target'
         identity_agent: '/run/agent.sock'
 
-    # Per-user config derived from users_list (openssh_client_users empty)
+    # Per-user config derived from users_list (openssh_client_users empty
+    # in the main run)
     users_list:
       - name: 'alice'
         ssh_client:
@@ -76,6 +77,31 @@
               hostname: 'gw.example.com'
 
   tasks:
+    # Runs first: a derived openssh_client_users becomes a host fact and would
+    # turn every later run into one with a configured list. The disabled
+    # entry keeps this run away from all home directories.
+    - name: Converge | Include openssh role with a configured client user list  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        openssh_client_users:
+          - username: 'alice'
+            mode: 'disabled'
+
+    - name: Converge | Assert no users_list deprecation warning
+      ansible.builtin.assert:
+        that:
+          - not (__openssh_users_list_attribute_deprecated | bool)
+        fail_msg: 'deprecation warning fired although openssh_client_users is set'
+        quiet: true
+
     - name: Converge | Include openssh role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    - name: Converge | Assert users_list deprecation warning
+      ansible.builtin.assert:
+        that:
+          - __openssh_users_list_attribute_deprecated | bool
+        fail_msg: 'no deprecation warning for the users_list ssh_client attribute'
+        quiet: true

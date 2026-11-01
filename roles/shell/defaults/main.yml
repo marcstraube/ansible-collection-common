@@ -14,6 +14,9 @@ shell_enabled: true
 shell_default: 'bash'
 
 # Users to change shell for (empty = all users from users_list)
+# DEPRECATED: the empty default includes root and system users. From v4.0.0
+# an empty list covers all regular users from users_list only (root and
+# system users excluded). See #494.
 shell_users: []
 
 # User configuration mode: managed (always deploy), initial (only if absent), disabled

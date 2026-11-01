@@ -35,8 +35,11 @@ git_config:
 # Per-User Configuration
 #
 
-# Users receiving git configuration. Leave empty to derive the list from
-# users_list entries carrying a 'git' attribute (system users excluded).
+# Users receiving git configuration.
+#
+# DEPRECATED: left empty, the list derives from users_list entries carrying
+# a 'git' attribute (system users excluded). Removal in v4.0.0 — from then on
+# an empty list means no users; set git_users explicitly. See #494.
 #
 # Example:
 #   git_users:

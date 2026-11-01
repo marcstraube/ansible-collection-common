@@ -450,8 +450,12 @@ openssh_client_hosts: []
 
 # Users receiving a role-managed block in ~/.ssh/config. Each entry takes
 # 'hosts' (same shape as openssh_client_hosts) and 'extra' (lines for a
-# trailing Host * section). Leave empty to derive the list from users_list
-# entries carrying an 'ssh_client' attribute (system users excluded).
+# trailing Host * section).
+#
+# DEPRECATED: left empty, the list derives from users_list entries carrying
+# an 'ssh_client' attribute (system users excluded). Removal in v4.0.0 — from
+# then on an empty list means no users; set openssh_client_users explicitly.
+# See #494.
 #
 # Example:
 #   openssh_client_users:

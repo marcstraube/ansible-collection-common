@@ -35,6 +35,12 @@ overrides if needed.
 | `shell_users`            | `[]`        | Users to change shell (empty = all from users_list)       |
 | `shell_user_config_mode` | `'initial'` | User config mode: managed, initial (if absent), disabled  |
 
+> **Deprecation:** an empty `shell_users` covers every `users_list` entry,
+> `root` and `system: true` entries included. This is deprecated; from v4.0.0
+> an empty `shell_users` covers regular users only (`root` and `system: true`
+> entries excluded). Set `shell_users` explicitly to keep other accounts
+> managed. See #494.
+
 ### Zsh
 
 | Variable                 | Default    | Description                                          |

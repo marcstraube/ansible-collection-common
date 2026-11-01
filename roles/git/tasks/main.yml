@@ -27,6 +27,27 @@
   tags:
     - always
 
+# Deriving git_users from the users_list git attribute is deprecated and will
+# be removed in v4.0.0. The flag is set on every run so the warning below
+# fires only while the deprecated path is in use.
+- name: Main | Detect deprecated git attribute on users_list
+  ansible.builtin.set_fact:
+    __git_users_list_attribute_deprecated: >-
+      {{ git_enabled | bool
+         and __git_derive_users | default(false) | bool
+         and users_list | default([]) | selectattr('git', 'defined') | list | length > 0 }}
+  tags:
+    - always
+
+- name: Main | Warn about users_list git attribute deprecation
+  ansible.builtin.debug:
+    msg: >
+      Deriving git_users from the users_list git attribute is DEPRECATED and
+      will be removed in v4.0.0. Set git_users instead. See #494.
+  when: __git_users_list_attribute_deprecated | bool
+  tags:
+    - always
+
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:
