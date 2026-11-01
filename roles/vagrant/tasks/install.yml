@@ -1,0 +1,29 @@
+---
+# Debian and EL install Vagrant from the HashiCorp repository, which
+# marcstraube.common.package_management configures. Debian's own vagrant
+# package is older and supports VirtualBox only up to 7.0.
+- name: Install | Vagrant package
+  ansible.builtin.package:
+    name: '{{ __vagrant_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: __vagrant_packages | length > 0
+
+- name: Install | Vagrant package (AUR)
+  become: true
+  become_user: "{{ aur_builder_user | default('aur_builder') }}"
+  kewlfft.aur.aur:
+    name: '{{ __vagrant_aur_packages.vagrant }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Build dependencies of the vagrant-libvirt plugin
+  ansible.builtin.package:
+    name: '{{ __vagrant_libvirt_build_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: vagrant_libvirt_plugin_enabled | bool

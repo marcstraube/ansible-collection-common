@@ -60,6 +60,7 @@ development toolchains, user management, editors, and more.
 | **security_scanners** | Socket CLI, trivy, gitleaks, osv-scanner, syft      |
 | **ansible_tools**     | Ansible, Molecule and linting tools                 |
 | **kubernetes**        | Kubernetes client tooling (kubectl, helm, minikube) |
+| **vagrant**           | Vagrant with per-user plugins                       |
 
 ### Networking
 
