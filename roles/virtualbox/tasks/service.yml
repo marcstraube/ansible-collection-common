@@ -1,4 +1,8 @@
 ---
+# The service unit and the kernel modules ship with the VirtualBox packages
+# (on Arch built by DKMS). In check mode a first run only simulates the
+# installation, so neither exists yet.
+
 # Debian and EL: the vboxdrv service builds the modules for the running
 # kernel when they are missing and loads them.
 - name: Service | Manage vboxdrv service
@@ -6,7 +10,9 @@
     name: '{{ __virtualbox_service_name }}'
     enabled: "{{ virtualbox_service_enabled | bool }}"
     state: "{{ virtualbox_service_enabled | bool | ternary('started', 'stopped') }}"
-  when: __virtualbox_service_name | length > 0
+  when:
+    - __virtualbox_service_name | length > 0
+    - not (ansible_check_mode and __virtualbox_install | default({}) is changed)
 
 # Arch Linux: DKMS builds the modules on install and modules-load.d loads
 # them at boot. The role loads them for the running kernel as well, unless
@@ -25,6 +31,7 @@
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __virtualbox_running_kernel_modules.stat.exists | default(false)
+    - not (ansible_check_mode and __virtualbox_install | default({}) is changed)
 
 - name: Service | Report pending reboot (Arch)
   ansible.builtin.debug:
