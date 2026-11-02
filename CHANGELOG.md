@@ -2,6 +2,17 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.0.3 (2026-11-02)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(networkmanager): activate the VPN autoconnect only for ethernet and WiFi by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/509
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.0.2...v3.0.3
+
 ## 3.0.2 (2026-11-01)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
