@@ -55,8 +55,9 @@ overrides if needed.
 | `git_github_cli_enabled` | `true`  | Install the GitHub CLI (`gh`)   |
 | `git_gitlab_cli_enabled` | `true`  | Install the GitLab CLI (`glab`) |
 
-Setting a toggle to `false` removes the package again. Tools without an
-upstream package on the target platform are skipped either way.
+The toggles install only: setting one to `false` skips the install and does
+not uninstall the package. Tools without an upstream package on the target
+platform are skipped either way.
 
 ### Global Configuration
 

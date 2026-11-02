@@ -66,6 +66,8 @@
         fail_msg: '{{ __git_github_cli_package }} is not installed'
       when: __git_github_cli_package | length > 0
 
+    # The toggle is install-only: the package stays absent because nothing
+    # installed it in the fresh container, not because the role removed it.
     - name: Verify | GitLab CLI disabled — package not installed
       ansible.builtin.package:
         name: '{{ __git_gitlab_cli_package }}'
