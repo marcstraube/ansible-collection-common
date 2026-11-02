@@ -72,6 +72,9 @@ scenario:
     - dependency
     - create
     - prepare
+    # Run the role once in check mode against the fresh instance, before
+    # converge installs the agent: the first run must not need the package.
+    - check
     - converge
     - idempotence
     - verify

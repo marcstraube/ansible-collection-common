@@ -50,8 +50,8 @@
     - __wazuh_agent_package_name in ansible_facts.packages
     - __wazuh_agent_installed_version != wazuh_agent_version
 
-# The Wazuh repo file check (repos.yml) only exists on RedHat; on Debian the
-# gate falls through.
+# Skipped in check mode while the repository file is missing (repos.yml):
+# the package manager does not know the package before a real run.
 - name: Install | Wazuh agent package
   ansible.builtin.package:
     name: '{{ __wazuh_agent_package }}'

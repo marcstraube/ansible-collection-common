@@ -9,6 +9,7 @@ __wazuh_agent_dependency_packages:
 
 # Wazuh apt repository
 __wazuh_agent_repo_uri: 'https://packages.wazuh.com/{{ __wazuh_agent_repo_major }}/apt/'
+__wazuh_agent_repo_file: '/etc/apt/sources.list.d/wazuh.sources'
 
 # Debian releases carry no minor version in the profile
 __wazuh_agent_config_profiles:
