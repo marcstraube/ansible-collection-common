@@ -36,9 +36,16 @@ WG_CONNECTION="WireGuard ${WG_INTERFACE}"
   {% set _ = home_uuids.append(uuid_map[conn_name]) %}
 {% endfor %}
 
-# Only react to ethernet and wifi interfaces, skip loopback/bridge/docker/wg/etc.
-case "$1" in
-  lo|docker*|br-*|veth*|wg*|p2p-*)
+# Only react to ethernet and wifi connections. Virtual interfaces (libvirt,
+# LXC, Incus, Podman and Docker bridges, VirtualBox host-only adapters, veth,
+# WireGuard, ...) say nothing about the network the host is on. The type comes
+# from the connection profile, which still exists on "down" when the device is
+# already gone (e.g. an unplugged USB adapter).
+CONNECTION_TYPE="$(nmcli -g connection.type connection show "$CONNECTION_UUID" 2>/dev/null)"
+case "$CONNECTION_TYPE" in
+  802-3-ethernet|802-11-wireless)
+    ;;
+  *)
     exit 0
     ;;
 esac
