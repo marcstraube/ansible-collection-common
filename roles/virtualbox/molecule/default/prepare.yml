@@ -1,0 +1,117 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __prepare_oracle_key_url: 'https://www.virtualbox.org/download/oracle_vbox_2016.asc'
+
+  tasks:
+    #
+    # System Upgrade
+    #
+    # The repositories only carry the headers of the newest kernel, and the
+    # modules are built for the running one, so boot the upgraded kernel.
+
+    - name: Prepare | Upgrade packages (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      register: __prepare_upgrade_arch
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Upgrade packages (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+      register: __prepare_upgrade_debian
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # The Oracle packages need libraries from EPEL on EL; the
+    # package_management role enables it on real hosts.
+    - name: Prepare | Enable EPEL repository (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Upgrade packages (RedHat)  # noqa: package-latest
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+        update_cache: true
+      register: __prepare_upgrade_redhat
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Reboot into the upgraded kernel
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+      when: >-
+        __prepare_upgrade_arch is changed
+        or __prepare_upgrade_debian is changed
+        or __prepare_upgrade_redhat is changed
+
+    #
+    # Oracle Repository
+    #
+    # The package_management role configures the repository on real hosts
+    # (apt_custom_repos, dnf_custom_repos); these tasks write the same
+    # entries.
+
+    - name: Prepare | Install deb822 repository dependencies (Debian)
+      ansible.builtin.apt:
+        name:
+          - 'ca-certificates'
+          - 'python3-debian'
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Add Oracle VirtualBox repository (Debian)
+      ansible.builtin.deb822_repository:
+        name: 'virtualbox'
+        types: 'deb'
+        uris: 'https://download.virtualbox.org/virtualbox/debian'
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: 'contrib'
+        signed_by: '{{ __prepare_oracle_key_url }}'
+        architectures: 'amd64'
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Add Oracle VirtualBox repository (RedHat)
+      ansible.builtin.yum_repository:
+        name: 'virtualbox'
+        description: 'Oracle VirtualBox'
+        baseurl: 'https://download.virtualbox.org/virtualbox/rpm/el/$releasever/$basearch'
+        gpgkey: '{{ __prepare_oracle_key_url }}'
+        gpgcheck: true
+        enabled: true
+      retries: 5
+      delay: 10
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'

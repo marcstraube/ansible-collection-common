@@ -71,6 +71,32 @@ overrides if needed.
 The message is shown by `pam_motd` on interactive SSH logins. `/etc/motd` and
 other files in `/etc/motd.d/` stay untouched.
 
+### Environment
+
+| Variable           | Default | Description                                                         |
+|--------------------|---------|---------------------------------------------------------------------|
+| `base_environment` | `{}`    | Variables in `/etc/profile.d/base-environment.sh`; empty removes it |
+
+Every login shell that reads `/etc/profile.d` (bash, sh, zsh through its system
+profile) exports these variables for all users. fish and systemd services do
+not read it; services keep their own settings (e.g. `dnf_proxy`, unit
+`Environment=`). Names are used as given and must be valid shell variable
+names; values are shell-quoted. Per-user values from the `users` role
+(`users-environment.sh`) load later and override these.
+
+For an HTTP proxy, set both spellings, since tools differ in which one they
+read:
+
+```yaml
+base_environment:
+  http_proxy: 'http://proxy.example.com:3128'
+  https_proxy: 'http://proxy.example.com:3128'
+  no_proxy: 'localhost,127.0.0.1'
+  HTTP_PROXY: 'http://proxy.example.com:3128'
+  HTTPS_PROXY: 'http://proxy.example.com:3128'
+  NO_PROXY: 'localhost,127.0.0.1'
+```
+
 ### Keyboard
 
 | Variable            | Default        | Description          |
@@ -138,19 +164,20 @@ distributions, and to `systemd-boot` on Arch Linux (set via
 
 ## Tags
 
-| Tag               | Scope                                     |
-|-------------------|-------------------------------------------|
-| `base`            | All base tasks                            |
-| `base:hostname`   | Hostname and machine-info                 |
-| `base:locale`     | Locale generation and configuration       |
-| `base:timezone`   | Timezone and NTP                          |
-| `base:motd`       | Login message in /etc/motd.d              |
-| `base:keyboard`   | Console and X11 keyboard                  |
-| `base:packages`   | Package installation/removal              |
-| `base:sysctl`     | Kernel parameter tuning                   |
-| `base:systemd`    | Journald and coredump configuration       |
-| `base:kernel`     | Kernel, microcode, mkinitcpio (Arch only) |
-| `base:bootloader` | GRUB and systemd-boot configuration       |
+| Tag                | Scope                                     |
+|--------------------|-------------------------------------------|
+| `base`             | All base tasks                            |
+| `base:hostname`    | Hostname and machine-info                 |
+| `base:locale`      | Locale generation and configuration       |
+| `base:timezone`    | Timezone and NTP                          |
+| `base:motd`        | Login message in /etc/motd.d              |
+| `base:environment` | Environment variables in /etc/profile.d   |
+| `base:keyboard`    | Console and X11 keyboard                  |
+| `base:packages`    | Package installation/removal              |
+| `base:sysctl`      | Kernel parameter tuning                   |
+| `base:systemd`     | Journald and coredump configuration       |
+| `base:kernel`      | Kernel, microcode, mkinitcpio (Arch only) |
+| `base:bootloader`  | GRUB and systemd-boot configuration       |
 
 ## Example Playbook
 

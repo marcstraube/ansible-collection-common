@@ -9,7 +9,13 @@
     pki_min_protocol: 'TLSv1.2'
     pki_disable_legacy_enabled: true
     pki_create_dirs_enabled: true
-    pki_crypto_policy: 'DEFAULT'
+    pki_crypto_policy: 'DEFAULT:PKI-TEST'
+    pki_crypto_policy_modules:
+      - name: 'PKI-TEST'
+        content: |
+          hash@openssh-client = SHA1+
+          sign@openssh-client = RSA-SHA1+
+          hash@openssl = SHA1+
 
     # Test CA creation
     pki_ca_enabled: true

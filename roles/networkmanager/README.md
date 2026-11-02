@@ -208,7 +208,8 @@ manages the interface and firewalld is in use.
 
 #### WiFi Connections
 
-Same options as Ethernet, plus `ssid`:
+Same options as Ethernet, plus `ssid` and the optional wireless security
+keys `psk` and `key_mgmt`:
 
 ```yaml
 networkmanager_connections:
@@ -217,9 +218,16 @@ networkmanager_connections:
       ssid: "MyNetwork"
       ifname: "wlan0"
       autoconnect: true
+      psk: "{{ home_wifi_psk }}"        # keep the secret in a vault
+      key_mgmt: "wpa-psk"               # default; "sae" for WPA3-Personal
       settings:
         802-11-wireless.cloned-mac-address: "random"
 ```
+
+Without `psk` the role leaves the security settings of the connection
+untouched. The key is applied in a separate task with `no_log`, so it never
+shows up in the output or in `--diff`. A changed key takes effect on the
+next connect.
 
 #### Generic `settings:` dict
 

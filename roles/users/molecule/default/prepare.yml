@@ -78,3 +78,20 @@
         name: 'orphanuser'
         uid: 3099
         state: present
+
+    # Existing accounts with a login shell that differs from
+    # users_default_shell: one without `shell:` in users_list keeps it,
+    # one with `shell:` gets the configured shell
+    - name: Prepare | Create existing accounts for login shell tests
+      ansible.builtin.user:
+        name: '{{ item.name }}'
+        uid: '{{ item.uid }}'
+        shell: /bin/sh
+        state: present
+      loop:
+        - name: 'keepshelluser'
+          uid: 3010
+        - name: 'setshelluser'
+          uid: 3011
+      loop_control:
+        label: '{{ item.name }}'

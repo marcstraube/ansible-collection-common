@@ -1,0 +1,21 @@
+---
+# Package pinned to wazuh_agent_version
+__wazuh_agent_package: 'wazuh-agent={{ wazuh_agent_version }}-*'
+
+# Dependencies (deb822_repository: python3-debian)
+__wazuh_agent_dependency_packages:
+  - 'ca-certificates'
+  - 'python3-debian'
+
+# Wazuh apt repository
+__wazuh_agent_repo_uri: 'https://packages.wazuh.com/{{ __wazuh_agent_repo_major }}/apt/'
+
+# Debian releases carry no minor version in the profile
+__wazuh_agent_config_profiles:
+  - 'debian'
+  - "debian{{ ansible_facts['distribution_major_version'] }}"
+
+# Package log, collected in addition to the journal
+__wazuh_agent_os_localfiles:
+  - log_format: 'syslog'
+    location: '/var/log/dpkg.log'

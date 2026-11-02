@@ -1,0 +1,14 @@
+---
+# Package pinned to wazuh_agent_version
+__wazuh_agent_package: 'wazuh-agent-{{ wazuh_agent_version }}'
+
+# Dependencies (dnf_versionlock: versionlock plugin)
+__wazuh_agent_dependency_packages:
+  - 'python3-dnf-plugin-versionlock'
+
+# Wazuh yum repository
+__wazuh_agent_repo_baseurl: 'https://packages.wazuh.com/{{ __wazuh_agent_repo_major }}/yum/'
+__wazuh_agent_repo_file: '/etc/yum.repos.d/wazuh.repo'
+
+# The journal holds all system logs
+__wazuh_agent_os_localfiles: []

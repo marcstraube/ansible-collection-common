@@ -33,6 +33,20 @@
           - __openssh_verify_hosts_conf.stat.mode == '0644'
         fail_msg: '10-hosts.conf missing or wrong mode'
 
+    - name: Verify | Read system-wide Host blocks file
+      ansible.builtin.slurp:
+        src: /etc/ssh/ssh_config.d/10-hosts.conf
+      register: __openssh_verify_hosts_conf_content
+
+    - name: Verify | Assert Host block comments
+      ansible.builtin.assert:
+        that:
+          - (__openssh_verify_hosts_conf_content.content | b64decode)
+            is search('(?m)^# Deploy target behind the gateway\nHost deploy-target$')
+          - (__openssh_verify_hosts_conf_content.content | b64decode)
+            is search('(?m)^# Keys come from the agent socket\n# Same host as deploy-target\nHost agent-host$')
+        fail_msg: 'Host block comments missing or not directly above the Host line'
+
     - name: Verify | Get effective client config as root
       ansible.builtin.command:
         cmd: 'ssh -G {{ item }}'
@@ -100,6 +114,8 @@
         that:
           - (__openssh_verify_alice_config.content | b64decode).startswith(__openssh_verify_marker_begin)
           - "'HostName manual.example.com' in (__openssh_verify_alice_config.content | b64decode)"
+          - (__openssh_verify_alice_config.content | b64decode)
+            is search('(?m)^# Jump host for all targets\nHost gateway$')
           # Existing modes are kept
           - __openssh_verify_alice_stat.results[0].stat.mode == '0750'
           - __openssh_verify_alice_stat.results[1].stat.mode == '0644'

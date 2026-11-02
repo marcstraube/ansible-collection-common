@@ -45,9 +45,34 @@ overrides if needed.
 | `pki_ciphersuites_tls13` | `'TLS_AES_256_GCM_SHA384:...'` | TLS 1.3 cipher suites |
 | `pki_disable_legacy_enabled` | `true` | Enable disabling of legacy/insecure algorithms |
 | `pki_crypto_policy` | `'DEFAULT'` | RHEL/Rocky crypto-policy |
+| `pki_crypto_policy_modules` | `[]` | Custom crypto-policy modules (RHEL/Rocky) |
 
 On RHEL/Rocky, system-wide TLS is managed via `update-crypto-policies`. On Arch/Debian,
 a drop-in OpenSSL config is deployed.
+
+#### Custom Crypto-Policy Modules
+
+Each entry in `pki_crypto_policy_modules` is written to
+`/etc/crypto-policies/policies/modules/<name>.pmod` and becomes active once
+`pki_crypto_policy` references it as a subpolicy. `name` consists of uppercase
+letters, digits and hyphens; `content` holds the policy directives. When a
+module changes, the role sets the policy again, even if `pki_crypto_policy`
+itself is unchanged. Arch Linux and Debian have no crypto-policies; the
+variable is ignored there.
+
+Example: allow SHA-1 RSA host keys (`ssh-rsa`) for the OpenSSH client only,
+instead of the system-wide `SHA1` subpolicy. `hash@openssl` is required,
+otherwise OpenSSL rejects the SHA-1 signature:
+
+```yaml
+pki_crypto_policy: 'DEFAULT:SSH-SHA1'
+pki_crypto_policy_modules:
+  - name: 'SSH-SHA1'
+    content: |
+      hash@openssh-client = SHA1+
+      sign@openssh-client = RSA-SHA1+
+      hash@openssl = SHA1+
+```
 
 ### Certificate Authority
 

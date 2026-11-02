@@ -1,0 +1,25 @@
+---
+# Login shells source /etc/profile.d/*.sh. The role owns a single file there
+# and leaves the distribution's and other roles' files alone.
+- name: Environment | Validate variable names
+  ansible.builtin.assert:
+    that:
+      - item is match('^[A-Za-z_][A-Za-z0-9_]*$')
+    fail_msg: "base_environment: '{{ item }}' is not a valid shell variable name"
+    quiet: true
+  loop: '{{ base_environment | dict2items | map(attribute="key") | list }}'
+
+- name: Environment | Deploy environment variables
+  ansible.builtin.template:
+    src: base-environment.sh.j2
+    dest: '/etc/profile.d/base-environment.sh'
+    owner: root
+    group: root
+    mode: '0644'
+  when: base_environment | length > 0
+
+- name: Environment | Remove environment variables
+  ansible.builtin.file:
+    path: '/etc/profile.d/base-environment.sh'
+    state: absent
+  when: base_environment | length == 0

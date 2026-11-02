@@ -17,8 +17,8 @@ becomes a no-op instead of failing the run.
 Per-user configuration covers `user.name`, `user.email`, `user.signingkey` and
 `commit.gpgsign`, plus any settings given in `git_config`. Users are taken from
 `git_users`; when that list is empty, it is derived from `users_list` entries
-carrying a `git` attribute, so the git identity lives on the account it belongs
-to.
+carrying a `git` attribute (system users excluded; deprecated, see
+[Per-User Configuration](#per-user-configuration)).
 
 ## Requirements
 
@@ -81,6 +81,11 @@ Add `core.editor` here to enforce a specific editor; git falls back to the
 | `git_users`            | `[]`        | Users receiving git configuration          |
 | `git_user_config_mode` | `'initial'` | Default mode when user entry has no 'mode' |
 
+> **Deprecation:** deriving `git_users` from the `users_list` `git` attribute is
+> deprecated and will be removed in v4.0.0. The role prints a warning while it
+> derives users this way. From v4.0.0 an empty `git_users` means no users; set
+> `git_users` explicitly. See #494.
+
 Each entry accepts `username`, an optional `mode`, and the optional identity
 keys `git_name`, `git_email` and `git_signing_key`. Providing `git_signing_key`
 also enables `commit.gpgsign` for that user.
@@ -128,7 +133,8 @@ also enables `commit.gpgsign` for that user.
 Molecule tests package installation, toggle behavior and per-user
 configuration across Arch Linux, Debian Trixie and Rocky Linux 9/10. The
 scenario drives the user list through derivation from `users_list` and asserts
-that system accounts and entries without a `git` attribute are left untouched.
+that system accounts and entries without a `git` attribute are left untouched,
+and that the deprecation warning fires only while users are derived.
 
 ## Notes
 

@@ -13,6 +13,7 @@ Manage system users, groups, SSH authorized keys, and profile images.
 - Password auto-hashing (plaintext, pre-hashed, or locked)
 - Random password generation with optional file storage
 - Profile images via AccountsService with optional `~/.face` symlink
+- Per-user login shell environment variables in `/etc/profile.d`
 - Exclusive mode: remove unlisted users (with keep-list safety)
 
 ## Requirements
@@ -52,7 +53,7 @@ overrides if needed.
 | Variable                        | Default     | Description                                            |
 |---------------------------------|-------------|--------------------------------------------------------|
 | `users_list`                    | `[]`        | List of users to manage (see defaults for full schema) |
-| `users_default_shell`           | `/bin/bash` | Default shell for new users                            |
+| `users_default_shell`           | `/bin/bash` | Login shell for new accounts without `shell:`          |
 | `users_default_home_base`       | `/home`     | Default home base directory                            |
 | `users_default_skeleton`        | `/etc/skel` | Default skeleton directory                             |
 | `users_default_create_home`     | `true`      | Create home directory by default                       |
@@ -156,8 +157,62 @@ Each entry in `users_list` supports:
       src_public: 'deploy_key.pub'   # Optional public half
       dest: 'id_ed25519'             # ~/.ssh/id_ed25519 (public: id_ed25519.pub)
       mode: '0600'                   # Optional
+  environment:               # Login shell variables for this user only
+    HTTP_PROXY: 'http://proxy.example.com:3128'
   profile_image: ''          # Path to image file
   state: 'present'           # present, absent
+```
+
+### Login Shell
+
+- `shell:` on a `users_list` entry is set on every run.
+- Without `shell:`, `users_default_shell` applies when the role creates the
+  account. Existing accounts keep their login shell.
+- `root` accepts only bash or sh; any other value sets `/bin/bash`.
+- If the shell binary does not exist, the role prints a warning and sets
+  `/bin/bash` instead.
+
+A zsh or fish configured in `shell:` must be installed before `users` runs.
+`playbooks/tasks/base_system.yml` runs the install phase of the `shell` role
+first:
+
+```yaml
+- name: Install shells
+  ansible.builtin.import_role:
+    name: marcstraube.common.shell
+    tasks_from: install.yml
+```
+
+Without that order, the first run falls back to `/bin/bash` with a warning and
+the next run sets the configured shell.
+
+### Environment
+
+`environment` sets variables for one user's login shells. The role writes all
+entries into a single `/etc/profile.d/users-environment.sh`, which selects the
+block for the current user with `case "$(id -un)"`; files in the users' home
+directories stay untouched. The file is removed when no present user has
+`environment`.
+
+- Names are used as given and must be valid shell variable names; values are
+  shell-quoted.
+- `/etc/profile.d` loads alphabetically, so these values override the
+  system-wide `base_environment` of the `base` role (`base-environment.sh`).
+- Login shells that read `/etc/profile.d` (bash, sh, zsh through its system
+  profile) see the variables, including `sudo -iu <user>` and `su - <user>`.
+  fish and systemd services do not.
+
+Example: an HTTP proxy for a deployment user only, while other accounts keep no
+outbound access. Set both spellings, since tools differ in which one they read:
+
+```yaml
+users_list:
+  - name: 'deploy'
+    environment:
+      http_proxy: 'http://proxy.example.com:3128'
+      https_proxy: 'http://proxy.example.com:3128'
+      HTTP_PROXY: 'http://proxy.example.com:3128'
+      HTTPS_PROXY: 'http://proxy.example.com:3128'
 ```
 
 ## Tags
@@ -168,6 +223,7 @@ Each entry in `users_list` supports:
 | `users:groups`         | Group management         |
 | `users:users`          | User creation/removal    |
 | `users:ssh-keys`       | SSH key deployment       |
+| `users:environment`    | Per-user login variables |
 | `users:profile-images` | Profile image management |
 
 ## Example Playbook
@@ -192,7 +248,7 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 ## Notes
 
 - Root user receives special handling: only password, shell and SSH keys are managed; its home defaults to `/root`
-- Shell validation checks if the binary exists, falls back to `/bin/bash`
+- Shell validation checks if the binary exists, falls back to `/bin/bash` (see [Login Shell](#login-shell))
 - Password hashing is automatic: plaintext passwords are hashed with the configured algorithm
 - Use `users_password_salt` (stored in vault) for idempotent password hashing
 - Profile images use AccountsService and optionally `~/.face` symlinks for DM compatibility

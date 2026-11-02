@@ -1,0 +1,26 @@
+---
+galaxy_info:
+  author: Marc Straube
+  description: Install the Wazuh agent and enroll it with a Wazuh manager
+  license: MIT
+  min_ansible_version: '2.19'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - wazuh
+    - siem
+    - xdr
+    - security
+    - monitoring
+
+dependencies: []

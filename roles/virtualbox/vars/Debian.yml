@@ -1,0 +1,27 @@
+---
+# Oracle repository package of the selected branch
+__virtualbox_packages:
+  - 'virtualbox-{{ virtualbox_version }}'
+
+# Package names of all VirtualBox branches, to replace another branch
+__virtualbox_branch_pattern: '^virtualbox-[0-9]+[.][0-9]+$'
+
+# Module build dependencies
+__virtualbox_build_packages:
+  - 'gcc'
+  - 'make'
+  - 'perl'
+
+# Kernel flavor of the running kernel (amd64, cloud-amd64, rt-amd64)
+__virtualbox_kernel_flavor: >-
+  {{ ansible_facts['kernel'] | regex_search('(cloud-|rt-)?amd64$') | default('', true) }}
+
+# Headers of the running kernel, which the vboxdrv service builds the modules
+# for, and the headers metapackage of its flavor, which follows kernel updates
+__virtualbox_kernel_headers: >-
+  {{ ['linux-headers-' ~ ansible_facts['kernel']]
+     + (['linux-headers-' ~ __virtualbox_kernel_flavor]
+        if __virtualbox_kernel_flavor | length > 0 else []) }}
+
+# Service that builds and loads the kernel modules
+__virtualbox_service_name: 'vboxdrv'

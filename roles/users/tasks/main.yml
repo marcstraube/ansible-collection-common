@@ -20,6 +20,13 @@
     - users
     - users:ssh-keys
 
+- name: Main | Import environment tasks
+  ansible.builtin.import_tasks: environment.yml
+  when: users_enabled | bool
+  tags:
+    - users
+    - users:environment
+
 - name: Main | Import profile images tasks
   ansible.builtin.import_tasks: profile_images.yml
   when:

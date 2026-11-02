@@ -12,6 +12,26 @@
       delay: 5
       when: ansible_facts['os_family'] == 'Archlinux'
 
+    # The drop-in another role would place; the role must include it and
+    # leave it in place
+    - name: Prepare | Create pacman ignore drop-in directory (Arch)
+      ansible.builtin.file:
+        path: /etc/pacman.d/ignore.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Create pacman ignore drop-in (Arch)
+      ansible.builtin.copy:
+        content: "IgnorePkg = molecule-dropin-package\n"
+        dest: /etc/pacman.d/ignore.d/molecule.conf
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
     - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
         update_cache: true

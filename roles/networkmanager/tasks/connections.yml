@@ -164,6 +164,26 @@
     label: "{{ item.key }}"
   register: wifi_connections_result
 
+# The key goes in a task of its own: no_log hides the whole result, and the
+# other WiFi settings stay visible in the output and in --diff. A changed key
+# takes effect on the next connect; nmcli device reapply cannot change the
+# security setting of an active connection.
+- name: Connections | Configure NetworkManager WiFi security
+  community.general.nmcli:
+    type: wifi
+    conn_name: "{{ item.key }}"
+    ssid: "{{ item.value.ssid }}"
+    autoconnect: "{{ item.value.autoconnect | default(true) }}"
+    wifi_sec:
+      key-mgmt: "{{ item.value.key_mgmt | default('wpa-psk') }}"
+      psk: "{{ item.value.psk }}"
+    state: present
+  loop: "{{ networkmanager_connections.wifi | dict2items | selectattr('value.psk', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: item.value.state | default('present') == 'present'
+  no_log: true
+
 # Generic settings dict: a single check + modify + reapply pipeline for any
 # nmcli-native key. Replaces the per-setting check+modify pairs that used to
 # live here (cloned-mac, ipv4.dhcp-send-hostname, ipv6.dhcp-send-hostname).

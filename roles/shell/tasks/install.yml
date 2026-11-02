@@ -1,7 +1,25 @@
 ---
-#
-# Shell Installation
-#
+# Installs shells, plugins and tools, nothing else. Runs as its own phase so
+# playbooks can call it (tasks_from: install.yml) before the users role sets
+# login shells, so a configured zsh or fish exists when the account gets it.
+# Per-user configuration stays in the full role run after it.
+
+# Loads the OS variables itself when called as its own phase; within the full
+# role run main.yml has loaded them already.
+- name: Install | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  when: __shell_fzf_package is not defined
+  tags:
+    - always
 
 - name: Install | Build package list
   ansible.builtin.set_fact:
