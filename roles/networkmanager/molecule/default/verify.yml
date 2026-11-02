@@ -112,6 +112,33 @@
       loop: "{{ test_networkmanager_connections.wifi.keys() | list }}"
       when: test_networkmanager_connections.wifi | length > 0
 
+    - name: Verify | Read WiFi security settings
+      ansible.builtin.command:
+        cmd: >-
+          nmcli --show-secrets -t
+          -f 802-11-wireless-security.key-mgmt,802-11-wireless-security.psk
+          connection show {{ item.key | quote }}
+      register: verify_wifi_security
+      changed_when: false
+      loop: >-
+        {{ test_networkmanager_connections.wifi | dict2items
+           | selectattr('value.psk', 'defined') | list }}
+      loop_control:
+        label: "{{ item.key }}"
+
+    - name: Verify | Assert WiFi security matches inventory
+      ansible.builtin.assert:
+        that:
+          - >-
+            ('802-11-wireless-security.key-mgmt:'
+             ~ (item.item.value.key_mgmt | default('wpa-psk'))) in item.stdout_lines
+          - ('802-11-wireless-security.psk:' ~ item.item.value.psk) in item.stdout_lines
+        fail_msg: WiFi connection '{{ item.item.key }}' has wrong security settings
+        success_msg: WiFi connection '{{ item.item.key }}' has the expected security settings
+      loop: "{{ verify_wifi_security.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item.key }}"
+
     - name: Verify | Assert VPN connections exist
       ansible.builtin.assert:
         that:
