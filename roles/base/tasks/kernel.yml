@@ -30,6 +30,39 @@
     - __base_microcode_package is defined
     - __base_microcode_package | length > 0
 
+# A kernel upgrade removes the module directory of the running kernel; until
+# the next reboot no module can be loaded for the first time. The package
+# keeps the modules across the upgrade with pacman hooks and ships a unit that
+# removes the modules of uninstalled kernels at boot.
+- name: Kernel | Install kernel modules hook
+  ansible.builtin.package:
+    name: '{{ __base_kernel_keep_modules_package }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - base_kernel_keep_modules_enabled | bool
+    - __base_kernel_keep_modules_package | default('') | length > 0
+
+# The unit ships with the package: with the toggle off it may not exist, and in
+# check mode a first run only simulates the install.
+- name: Kernel | Check if kernel modules cleanup unit is installed
+  ansible.builtin.stat:
+    path: '/usr/lib/systemd/system/{{ __base_kernel_keep_modules_service }}'
+  register: __base_kernel_keep_modules_unit
+  when: __base_kernel_keep_modules_service | default('') | length > 0
+
+# The unit is a oneshot that runs at boot (WantedBy=basic.target): only its
+# enabled state is managed, not the running state. Turning the toggle off
+# disables the unit and leaves the package installed.
+- name: Kernel | Manage kernel modules cleanup service
+  ansible.builtin.systemd_service:
+    name: '{{ __base_kernel_keep_modules_service }}'
+    enabled: "{{ base_kernel_keep_modules_enabled | bool }}"
+  when:
+    - __base_kernel_keep_modules_service | default('') | length > 0
+    - __base_kernel_keep_modules_unit.stat.exists
+
 # mkinitcpio — only manage when explicitly configured
 # IMPORTANT: Do NOT template mkinitcpio.conf unless the user explicitly sets
 # hooks/modules/etc. The installer sets up mkinitcpio.conf with the correct

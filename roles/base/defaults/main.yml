@@ -140,6 +140,12 @@ base_kernel_extra_packages:
 # Options: 'intel-ucode', 'amd-ucode', 'auto', ''
 base_microcode: 'auto'
 
+# Keep the modules of the running kernel available after a kernel upgrade
+# (kernel-modules-hook): pacman hooks preserve them across the upgrade and
+# linux-modules-cleanup.service removes the modules of uninstalled kernels at
+# boot. Install-only: false disables the service and leaves the package.
+base_kernel_keep_modules_enabled: true
+
 #
 # Bootloader
 #
