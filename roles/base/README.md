@@ -110,14 +110,26 @@ base_environment:
 
 ### Kernel (Arch Linux only)
 
-| Variable                      | Default                         | Description                         |
-|-------------------------------|---------------------------------|-------------------------------------|
-| `base_kernel`                 | `'linux'`                       | Kernel package                      |
-| `base_kernel_extra_packages`  | `['{{ base_kernel }}-headers']` | Additional kernel packages          |
-| `base_microcode`              | `'auto'`                        | auto, intel-ucode, amd-ucode, or '' |
-| `base_mkinitcpio_hooks`       | `[]`                            | Override mkinitcpio hooks           |
-| `base_mkinitcpio_modules`     | `[]`                            | Additional mkinitcpio modules       |
-| `base_mkinitcpio_compression` | `'zstd'`                        | Initramfs compression               |
+| Variable                           | Default                         | Description                                  |
+|------------------------------------|---------------------------------|----------------------------------------------|
+| `base_kernel`                      | `'linux'`                       | Kernel package                               |
+| `base_kernel_extra_packages`       | `['{{ base_kernel }}-headers']` | Additional kernel packages                   |
+| `base_microcode`                   | `'auto'`                        | auto, intel-ucode, amd-ucode, or ''          |
+| `base_kernel_keep_modules_enabled` | `true`                          | Keep running kernel modules after an upgrade |
+| `base_mkinitcpio_hooks`            | `[]`                            | Override mkinitcpio hooks                    |
+| `base_mkinitcpio_modules`          | `[]`                            | Additional mkinitcpio modules                |
+| `base_mkinitcpio_compression`      | `'zstd'`                        | Initramfs compression                        |
+
+A kernel upgrade on Arch Linux removes the module directory of the running
+kernel; until the next reboot nothing that needs a module for the first time
+works (for example libvirt cannot create its bridge). With
+`base_kernel_keep_modules_enabled` the role installs `kernel-modules-hook`,
+whose pacman hooks keep the modules of the running kernel across the upgrade,
+and enables `linux-modules-cleanup.service`, which removes the modules of
+kernels no longer installed at the next boot. Setting it to `false` disables
+the service and leaves the package installed. Debian and EL keep older
+kernels installed side by side and are not affected; the setting does nothing
+there.
 
 ### Bootloader
 
@@ -164,20 +176,20 @@ distributions, and to `systemd-boot` on Arch Linux (set via
 
 ## Tags
 
-| Tag                | Scope                                     |
-|--------------------|-------------------------------------------|
-| `base`             | All base tasks                            |
-| `base:hostname`    | Hostname and machine-info                 |
-| `base:locale`      | Locale generation and configuration       |
-| `base:timezone`    | Timezone and NTP                          |
-| `base:motd`        | Login message in /etc/motd.d              |
-| `base:environment` | Environment variables in /etc/profile.d   |
-| `base:keyboard`    | Console and X11 keyboard                  |
-| `base:packages`    | Package installation/removal              |
-| `base:sysctl`      | Kernel parameter tuning                   |
-| `base:systemd`     | Journald and coredump configuration       |
-| `base:kernel`      | Kernel, microcode, mkinitcpio (Arch only) |
-| `base:bootloader`  | GRUB and systemd-boot configuration       |
+| Tag                | Scope                                                          |
+|--------------------|----------------------------------------------------------------|
+| `base`             | All base tasks                                                 |
+| `base:hostname`    | Hostname and machine-info                                      |
+| `base:locale`      | Locale generation and configuration                            |
+| `base:timezone`    | Timezone and NTP                                               |
+| `base:motd`        | Login message in /etc/motd.d                                   |
+| `base:environment` | Environment variables in /etc/profile.d                        |
+| `base:keyboard`    | Console and X11 keyboard                                       |
+| `base:packages`    | Package installation/removal                                   |
+| `base:sysctl`      | Kernel parameter tuning                                        |
+| `base:systemd`     | Journald and coredump configuration                            |
+| `base:kernel`      | Kernel, microcode, kernel modules hook, mkinitcpio (Arch only) |
+| `base:bootloader`  | GRUB and systemd-boot configuration                            |
 
 ## Example Playbook
 
@@ -233,6 +245,7 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 - [systemd](https://www.freedesktop.org/wiki/Software/systemd/) — System and service manager
 - [locale.conf(5)](https://man7.org/linux/man-pages/man5/locale.conf.5.html) — Locale configuration man page
+- [kernel-modules-hook](https://archlinux.org/packages/extra/any/kernel-modules-hook/) — Arch Linux package
 
 ## License
 
