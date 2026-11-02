@@ -78,5 +78,6 @@
   ansible.builtin.package:
     name: '{{ __virtualbox_packages }}'
     state: present
+  register: __virtualbox_install
   retries: 3
   delay: 5

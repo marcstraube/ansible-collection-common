@@ -19,5 +19,6 @@
     label: '{{ item }}'
   when:
     - virtualbox_users | length > 0
+    # getent with fail_key: false lists a missing group with the value None
     - not ansible_check_mode
-      or __virtualbox_group in (ansible_facts['getent_group'] | default({}))
+      or (ansible_facts['getent_group'] | default({}))[__virtualbox_group] | default(none) is not none
