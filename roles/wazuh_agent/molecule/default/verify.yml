@@ -1,0 +1,224 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # The release the role installs (wazuh_agent_version default)
+    __verify_version: >-
+      {{ (lookup('ansible.builtin.file', playbook_dir ~ '/../../defaults/main.yml')
+          | from_yaml).wazuh_agent_version }}
+    __verify_config_dir: '/var/ossec/etc'
+    # Any published release older than __verify_version
+    __verify_other_version: '4.14.8'
+    __verify_os_localfile:
+      Archlinux: '/var/log/pacman.log'
+      Debian: '/var/log/dpkg.log'
+      RedHat: ''
+
+  tasks:
+    #
+    # Package
+    #
+
+    - name: Verify | Gather package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Verify | Assert Wazuh agent version
+      ansible.builtin.assert:
+        that:
+          - "'wazuh-agent' in ansible_facts.packages"
+          - ansible_facts.packages['wazuh-agent'][0].version is match((__verify_version | regex_escape) ~ '(-|$)')
+        fail_msg: 'wazuh-agent {{ __verify_version }} is not installed'
+
+    - name: Verify | Query pacman ignored packages (Arch)
+      ansible.builtin.command:
+        cmd: pacman-conf IgnorePkg
+      register: __verify_pacman_ignore
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Assert package is ignored by pacman (Arch)
+      ansible.builtin.assert:
+        that:
+          - "'wazuh-agent' in __verify_pacman_ignore.stdout_lines"
+        fail_msg: 'pacman does not ignore wazuh-agent: {{ __verify_pacman_ignore.stdout }}'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Verify | Query package hold (Debian)
+      ansible.builtin.command:
+        cmd: dpkg --get-selections wazuh-agent
+      register: __verify_dpkg_selection
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Assert package is held (Debian)
+      ansible.builtin.assert:
+        that:
+          - __verify_dpkg_selection.stdout is search('\shold$')
+        fail_msg: 'wazuh-agent is not held: {{ __verify_dpkg_selection.stdout }}'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Query version lock (RedHat)
+      ansible.builtin.command:
+        cmd: dnf -q versionlock list
+      register: __verify_versionlock
+      changed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Assert version is locked (RedHat)
+      ansible.builtin.assert:
+        that:
+          - __verify_versionlock.stdout
+            is search('^wazuh-agent-0:' ~ (__verify_version | regex_escape) ~ '-', multiline=true)
+        fail_msg: 'wazuh-agent is not locked: {{ __verify_versionlock.stdout }}'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # The hold must keep the package manager from changing the version;
+    # --allow-downgrades leaves the hold as the only refusal reason. The apt
+    # module cannot simulate a refused transaction, hence apt-get.
+    - name: Verify | Simulate install of another version (Debian)  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: apt-get -s -y --allow-downgrades install wazuh-agent={{ __verify_other_version }}-1
+      register: __verify_apt_other
+      changed_when: false
+      failed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Assert hold blocks another version (Debian)
+      ansible.builtin.assert:
+        that:
+          - __verify_apt_other.rc != 0
+          - __verify_apt_other.stderr is search('Held packages were changed')
+        fail_msg: 'apt would change the held package: {{ __verify_apt_other.stdout }}'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # --assumeno aborts both transactions; without the plugin dnf would
+    # downgrade, with it the version is filtered out
+    - name: Verify | Simulate install of another version without lock (RedHat)
+      ansible.builtin.command:
+        cmd: dnf --assumeno --disableplugin=versionlock install wazuh-agent-{{ __verify_other_version }}
+      register: __verify_dnf_unlocked
+      changed_when: false
+      failed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Simulate install of another version (RedHat)
+      ansible.builtin.command:
+        cmd: dnf --assumeno install wazuh-agent-{{ __verify_other_version }}
+      register: __verify_dnf_locked
+      changed_when: false
+      failed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Verify | Assert lock blocks another version (RedHat)
+      ansible.builtin.assert:
+        that:
+          - __verify_dnf_unlocked.stdout is search('Downgrade')
+          - __verify_dnf_locked.rc != 0
+          - __verify_dnf_locked.stdout is search('filtered out by exclude filtering')
+        fail_msg: 'dnf would change the locked package: {{ __verify_dnf_locked.stdout }}'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    #
+    # Configuration
+    #
+
+    - name: Verify | Stat configuration files
+      ansible.builtin.stat:
+        path: '{{ __verify_config_dir }}/{{ item }}'
+      loop:
+        - 'ossec.conf'
+        - 'authd.pass'
+        - 'rootca.pem'
+        - 'sslagent.cert'
+        - 'sslagent.key'
+      register: __verify_config_stats
+
+    - name: Verify | Assert configuration file ownership and mode
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.pw_name == 'root'
+          - item.stat.gr_name == 'wazuh'
+          - item.stat.mode == '0640'
+        fail_msg: '{{ item.item }} is missing or not 0640 root:wazuh'
+      loop: '{{ __verify_config_stats.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Verify | Read ossec.conf
+      ansible.builtin.slurp:
+        src: '{{ __verify_config_dir }}/ossec.conf'
+      register: __verify_ossec_conf
+
+    - name: Verify | Assert ossec.conf content
+      ansible.builtin.assert:
+        that:
+          - "'<address>127.0.0.1</address>' in __verify_config"
+          - "'<protocol>tcp</protocol>' in __verify_config"
+          - "'<agent_name>' ~ inventory_hostname ~ '</agent_name>' in __verify_config"
+          - "'<groups>default,linux</groups>' in __verify_config"
+          - "'<authorization_pass_path>/var/ossec/etc/authd.pass</authorization_pass_path>' in __verify_config"
+          - "'<server_ca_path>/var/ossec/etc/rootca.pem</server_ca_path>' in __verify_config"
+          - "'<agent_certificate_path>/var/ossec/etc/sslagent.cert</agent_certificate_path>' in __verify_config"
+          - "'<agent_key_path>/var/ossec/etc/sslagent.key</agent_key_path>' in __verify_config"
+          - "'<location>/var/log/molecule-test.log</location>' in __verify_config"
+          - "'<directories realtime=\"yes\">/srv/molecule</directories>' in __verify_config"
+          - "'MANAGER_IP' not in __verify_config"
+        fail_msg: 'ossec.conf misses expected settings'
+      vars:
+        __verify_config: '{{ __verify_ossec_conf.content | b64decode }}'
+
+    - name: Verify | Assert OS-specific log source
+      ansible.builtin.assert:
+        that:
+          - "'<location>' ~ __verify_os_localfile[ansible_facts['os_family']] ~ '</location>' in __verify_config"
+        fail_msg: 'ossec.conf misses the package log of the platform'
+      vars:
+        __verify_config: '{{ __verify_ossec_conf.content | b64decode }}'
+      when: __verify_os_localfile[ansible_facts['os_family']] | length > 0
+
+    - name: Verify | Read enrollment password
+      ansible.builtin.slurp:
+        src: '{{ __verify_config_dir }}/authd.pass'
+      register: __verify_authd_pass
+      no_log: true
+
+    - name: Verify | Assert enrollment password
+      ansible.builtin.assert:
+        that:
+          - (__verify_authd_pass.content | b64decode | trim) == wazuh_agent_enrollment_password
+        fail_msg: 'authd.pass does not hold the enrollment password'
+        quiet: true
+      no_log: true
+
+    #
+    # Service
+    #
+
+    - name: Verify | Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: Verify | Assert Wazuh agent service is running and enabled
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['wazuh-agent.service'].state == 'running'
+          - ansible_facts.services['wazuh-agent.service'].status == 'enabled'
+        fail_msg: 'wazuh-agent.service is not running and enabled'
+
+    # The agent keeps retrying the unreachable manager; a configuration
+    # error would stop wazuh-agentd instead
+    - name: Verify | Query agent daemon status
+      ansible.builtin.command:
+        cmd: /var/ossec/bin/wazuh-control status
+      register: __verify_control_status
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert wazuh-agentd is running
+      ansible.builtin.assert:
+        that:
+          - "'wazuh-agentd is running' in __verify_control_status.stdout"
+        fail_msg: 'wazuh-agentd is not running: {{ __verify_control_status.stdout }}'

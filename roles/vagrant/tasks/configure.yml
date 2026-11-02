@@ -1,0 +1,17 @@
+---
+# Login shells source /etc/profile.d/*.sh; the file holds only the default
+# provider.
+- name: Configure | Deploy default provider
+  ansible.builtin.template:
+    src: vagrant.sh.j2
+    dest: '{{ __vagrant_profile_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  when: vagrant_default_provider | length > 0
+
+- name: Configure | Remove default provider
+  ansible.builtin.file:
+    path: '{{ __vagrant_profile_file }}'
+    state: absent
+  when: vagrant_default_provider | length == 0

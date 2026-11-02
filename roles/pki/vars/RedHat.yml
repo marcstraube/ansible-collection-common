@@ -11,4 +11,5 @@ __pki_private_dir: '/etc/pki/tls/private'
 __pki_ca_certificates_path: '/etc/pki/ca-trust/source/anchors'
 __pki_update_ca_trust_cmd: 'update-ca-trust'
 __pki_crypto_policies: true
+__pki_crypto_policy_modules_dir: '/etc/crypto-policies/policies/modules'
 __pki_openssl_conf_dir: '/etc/pki/tls'

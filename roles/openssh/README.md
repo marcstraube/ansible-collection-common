@@ -171,11 +171,13 @@ read before the distribution and role defaults; ssh uses the first value it
 reads, so these per-host settings win. The file is removed when the list is
 empty. Each entry takes `name` (Host patterns, space-separated) and any of
 `hostname`, `port`, `user`, `identity_file`, `identities_only`,
-`identity_agent`, `proxy_jump`, plus a free-form `extra` list:
+`identity_agent`, `proxy_jump`, plus a free-form `extra` list. `comment` (a
+string or a list) is rendered as comment lines directly above the `Host` line:
 
 ```yaml
 openssh_client_hosts:
   - name: 'deploy-target'
+    comment: 'Deploy target, reached through the gateway'
     hostname: '10.0.0.5'
     user: 'deploy'
     identity_file: '~/.ssh/deploy_key'
@@ -223,6 +225,12 @@ users_list:
       extra:
         - 'AddKeysToAgent yes'
 ```
+
+> **Deprecation:** deriving `openssh_client_users` from the `users_list`
+> `ssh_client` attribute is deprecated and will be removed in v4.0.0. The role
+> prints a warning while it derives users this way. From v4.0.0 an empty
+> `openssh_client_users` means no users; set `openssh_client_users` explicitly.
+> See #494.
 
 ### SSH Agent
 

@@ -1,5 +1,10 @@
 {#- Shared Host block macro for 10-hosts.conf and the per-user block -#}
 {% macro host_block(host) %}
+{% if host.comment is defined %}
+{% for line in ([host.comment] if host.comment is string else host.comment) %}
+# {{ line }}
+{% endfor %}
+{% endif %}
 Host {{ host.name }}
 {% if host.hostname is defined %}
     HostName {{ host.hostname }}

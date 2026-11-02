@@ -1,0 +1,45 @@
+---
+- name: Main | Load OS-specific variables
+  ansible.builtin.include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+        - '{{ ansible_facts["distribution"] }}.yml'
+        - '{{ ansible_facts["os_family"] }}.yml'
+      paths:
+        - 'vars'
+  tags:
+    - always
+
+- name: Main | Import install tasks
+  ansible.builtin.import_tasks: install.yml
+  when: libvirt_enabled | bool
+  tags:
+    - libvirt
+    - libvirt:install
+
+- name: Main | Import configure tasks
+  ansible.builtin.import_tasks: configure.yml
+  when: libvirt_enabled | bool
+  tags:
+    - libvirt
+    - libvirt:configure
+
+- name: Main | Import service tasks
+  ansible.builtin.import_tasks: service.yml
+  when: libvirt_enabled | bool
+  tags:
+    - libvirt
+    - libvirt:service
+
+# The default network is managed through the running daemon.
+- name: Main | Import network tasks
+  ansible.builtin.import_tasks: network.yml
+  when:
+    - libvirt_enabled | bool
+    - libvirt_service_enabled | bool
+  tags:
+    - libvirt
+    - libvirt:network

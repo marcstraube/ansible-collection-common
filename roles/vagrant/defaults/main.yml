@@ -1,0 +1,37 @@
+---
+#
+# Role Control
+#
+
+# Enable the vagrant role
+vagrant_enabled: false
+
+#
+# Provider
+#
+# The provider itself comes from its own role: marcstraube.common.virtualbox
+# (virtualbox_enabled) or marcstraube.common.libvirt (libvirt_enabled).
+
+# Default provider exported as VAGRANT_DEFAULT_PROVIDER in
+# /etc/profile.d/vagrant.sh ('virtualbox' or 'libvirt'). Empty removes the
+# file and leaves the choice to Vagrant, which uses the first usable provider.
+vagrant_default_provider: ''
+
+# Install the build dependencies of the vagrant-libvirt plugin and add the
+# plugin to every entry in vagrant_users
+vagrant_libvirt_plugin_enabled: false
+
+#
+# Plugins
+#
+
+# Users and the Vagrant plugins installed for each of them with
+# 'vagrant plugin install'. Plugins already listed by 'vagrant plugin list'
+# are skipped; plugins are never removed.
+# Example:
+# vagrant_users:
+#   - username: 'johndoe'
+#     plugins:
+#       - 'vagrant-hostmanager'
+#   - username: 'developer'
+vagrant_users: []

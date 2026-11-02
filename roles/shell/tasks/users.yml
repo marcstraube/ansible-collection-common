@@ -1,19 +1,33 @@
 ---
 #
-# Shell User Configuration
+# Shell User Configuration (deprecated)
+#
+# Sets shell_default as login shell for the users in __shell_login_users
+# (see main.yml): users without `shell:` on their users_list entry, never
+# root. A missing shell binary falls back to /bin/bash, like the users role.
 #
 
-- name: Users | Get users to configure
-  ansible.builtin.set_fact:
-    __shell_configure_users: >-
-      {{ shell_users if shell_users | length > 0
-         else (users_list | default([]) | map(attribute='name') | list) }}
+- name: Users | Check if the default shell exists
+  ansible.builtin.stat:
+    path: '{{ __shell_paths[shell_default] }}'
+  register: __shell_default_check
+  when:
+    - __shell_login_users | length > 0
+    - shell_user_config_mode != 'disabled'
+
+- name: Users | Warn about missing default shell (falling back to /bin/bash)
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: Shell '{{ __shell_paths[shell_default] }}' does not exist.
+      Falling back to /bin/bash.
+  when:
+    - __shell_default_check.stat is defined
+    - not __shell_default_check.stat.exists
 
 - name: Users | Change default shell for users
   ansible.builtin.user:
     name: '{{ item }}'
-    shell: '{{ __shell_paths[shell_default] }}'
-  loop: '{{ __shell_configure_users }}'
+    shell: "{{ __shell_paths[shell_default] if __shell_default_check.stat.exists else '/bin/bash' }}"
+  loop: '{{ __shell_login_users }}'
   when:
-    - __shell_configure_users | length > 0
-    - shell_user_config_mode != 'disabled'
+    - __shell_default_check.stat is defined

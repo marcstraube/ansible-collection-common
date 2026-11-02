@@ -1,0 +1,66 @@
+---
+# Wazuh package repository, one per major version. The agent package is
+# pinned to wazuh_agent_version in install.yml.
+
+- name: Repos | Ensure prerequisites
+  ansible.builtin.package:
+    name: '{{ __wazuh_agent_dependency_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+  register: __wazuh_agent_prerequisites
+
+#
+# Debian
+#
+
+# signed_by takes the key URL directly — the module downloads it and
+# stores it beside the .sources file, so no separate key task is needed.
+- name: Repos | Add Wazuh apt repository
+  ansible.builtin.deb822_repository:
+    name: wazuh
+    types: deb
+    uris: '{{ __wazuh_agent_repo_uri }}'
+    suites: stable
+    components: main
+    signed_by: '{{ __wazuh_agent_repo_key_url }}'
+    state: present
+  retries: 5
+  delay: 10
+  register: __wazuh_agent_apt_repo
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Repos | Update apt cache after repo change
+  ansible.builtin.apt:
+    update_cache: true
+  retries: 3
+  delay: 5
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - __wazuh_agent_apt_repo is changed
+
+#
+# RedHat
+#
+# dnf imports the signing key from gpgkey on first use.
+#
+
+- name: Repos | Add Wazuh yum repository (RedHat)
+  ansible.builtin.yum_repository:
+    name: wazuh
+    description: Wazuh repository
+    baseurl: '{{ __wazuh_agent_repo_baseurl }}'
+    gpgkey: '{{ __wazuh_agent_repo_key_url }}'
+    gpgcheck: true
+  retries: 5
+  delay: 10
+  when: ansible_facts['os_family'] == 'RedHat'
+
+# In check mode the repository task above writes nothing; without this
+# gate the package install fails with "No package wazuh-agent available".
+- name: Repos | Check Wazuh repository file presence (RedHat)
+  ansible.builtin.stat:
+    path: '{{ __wazuh_agent_repo_file }}'
+  register: __wazuh_agent_repo_stat
+  check_mode: false
+  when: ansible_facts['os_family'] == 'RedHat'

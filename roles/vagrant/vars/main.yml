@@ -1,0 +1,14 @@
+---
+# Values accepted for vagrant_default_provider ('' leaves it unset)
+__vagrant_providers:
+  - 'virtualbox'
+  - 'libvirt'
+
+__vagrant_profile_file: '/etc/profile.d/vagrant.sh'
+
+# Plugin added to every user with vagrant_libvirt_plugin_enabled
+__vagrant_libvirt_plugin: 'vagrant-libvirt'
+
+# Part of the error Vagrant prints when installed plugins no longer load,
+# typically after a Ruby version change
+__vagrant_plugin_init_error: 'plugins failed to initialize'

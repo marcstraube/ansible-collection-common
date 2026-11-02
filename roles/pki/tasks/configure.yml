@@ -1,5 +1,33 @@
 ---
 # RHEL/Rocky: use crypto-policies for system-wide TLS settings
+- name: Configure | Validate crypto-policy modules (RHEL)
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name is match('^[A-Z0-9][A-Z0-9-]*$')
+      - item.content is defined
+    fail_msg: >-
+      pki_crypto_policy_modules: entry '{{ item.name | default('(no name)') }}'
+      needs a name of uppercase letters, digits and hyphens and a content
+    quiet: true
+  loop: '{{ pki_crypto_policy_modules }}'
+  loop_control:
+    label: '{{ item.name | default("(no name)") }}'
+  when: __pki_crypto_policies | bool
+
+- name: Configure | Deploy crypto-policy modules (RHEL)
+  ansible.builtin.template:
+    src: 'crypto-policy-module.pmod.j2'
+    dest: '{{ __pki_crypto_policy_modules_dir }}/{{ item.name }}.pmod'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ pki_crypto_policy_modules }}'
+  loop_control:
+    label: '{{ item.name }}'
+  register: _pki_crypto_policy_modules_deployed
+  when: __pki_crypto_policies | bool
+
 - name: Configure | Query current crypto policy (RHEL)
   ansible.builtin.command:
     cmd: update-crypto-policies --show
@@ -11,9 +39,12 @@
   ansible.builtin.command:
     cmd: 'update-crypto-policies --set {{ pki_crypto_policy }}'
   changed_when: true
+  # A changed module only takes effect once the policy is set again, even
+  # when the policy string itself is unchanged.
   when:
     - __pki_crypto_policies | bool
-    - _pki_current_crypto_policy.stdout | trim != pki_crypto_policy
+    - (_pki_current_crypto_policy.stdout | trim != pki_crypto_policy)
+      or (_pki_crypto_policy_modules_deployed is changed)
   notify: Update CA trust
 
 # Arch/Debian: deploy system-wide OpenSSL defaults via conf.d

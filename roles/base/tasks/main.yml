@@ -41,6 +41,13 @@
     - base
     - base:motd
 
+- name: Main | Import environment tasks
+  ansible.builtin.import_tasks: environment.yml
+  when: base_enabled | bool
+  tags:
+    - base
+    - base:environment
+
 - name: Main | Import keyboard tasks
   ansible.builtin.import_tasks: keyboard.yml
   when: base_enabled | bool

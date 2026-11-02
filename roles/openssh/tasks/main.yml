@@ -26,6 +26,29 @@
   tags:
     - always
 
+# Deriving openssh_client_users from the users_list ssh_client attribute is
+# deprecated and will be removed in v4.0.0. The flag is set on every run so
+# the warning below fires only while the deprecated path is in use.
+- name: Main | Detect deprecated ssh_client attribute on users_list
+  ansible.builtin.set_fact:
+    __openssh_users_list_attribute_deprecated: >-
+      {{ openssh_enabled | bool
+         and openssh_client_enabled | bool
+         and __openssh_client_derive_users | default(false) | bool
+         and users_list | default([]) | selectattr('ssh_client', 'defined') | list | length > 0 }}
+  tags:
+    - always
+
+- name: Main | Warn about users_list ssh_client attribute deprecation
+  ansible.builtin.debug:
+    msg: >
+      Deriving openssh_client_users from the users_list ssh_client attribute
+      is DEPRECATED and will be removed in v4.0.0. Set openssh_client_users
+      instead. See #494.
+  when: __openssh_users_list_attribute_deprecated | bool
+  tags:
+    - always
+
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:

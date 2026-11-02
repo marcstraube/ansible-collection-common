@@ -316,6 +316,76 @@
         success_msg: "php-fpm reloaded after the ini change"
 
     #
+    # Targeted package update (side_effect rolled the packages back and ran
+    # the role with php_packages_state: latest)
+    #
+
+    - name: Verify | Read the CLI package versions around the rollback
+      ansible.builtin.slurp:
+        src: /root/php-update-versions
+      register: __verify_update_versions
+
+    - name: Verify | Stat the version record
+      ansible.builtin.stat:
+        path: /root/php-update-versions
+      register: __verify_update_stat
+
+    - name: Verify | Gather package facts after the update
+      ansible.builtin.package_facts:
+
+    - name: Verify | Set update version facts
+      ansible.builtin.set_fact:
+        __verify_version_latest: '{{ (__verify_update_versions.content | b64decode).splitlines()[0] | trim }}'
+        __verify_version_rolled_back: '{{ (__verify_update_versions.content | b64decode).splitlines()[1] | trim }}'
+        __verify_version_now: >-
+          {{ [(ansible_facts['packages'][__verify_cli_package] | first).version,
+              (ansible_facts['packages'][__verify_cli_package] | first).release | default('')] | select | join('-') }}
+      vars:
+        __verify_cli_package: >-
+          {{ {'Archlinux': 'php', 'RedHat': 'php-cli'}[ansible_facts['os_family']]
+             | default('php' + __verify_system_ver + '-cli') }}
+
+    - name: Verify | Assert the update restored the latest build (RedHat, Debian)
+      ansible.builtin.assert:
+        that:
+          - __verify_version_now == __verify_version_latest
+        fail_msg: >-
+          The CLI package is at {{ __verify_version_now }} after the update,
+          expected {{ __verify_version_latest }} (rolled back to
+          {{ __verify_version_rolled_back }})
+        success_msg: >-
+          Updated from {{ __verify_version_rolled_back }} to {{ __verify_version_now }}
+      when:
+        - ansible_facts['os_family'] in ['RedHat', 'Debian']
+        - __verify_version_rolled_back != __verify_version_latest
+
+    - name: Verify | Read the service log since the update
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - '--unit={{ __verify_auto_fpm }}'
+          - '--since=@{{ __verify_update_stat.stat.mtime }}'
+          - --no-pager
+      register: __verify_update_journal
+      changed_when: false
+      when:
+        - ansible_facts['os_family'] in ['RedHat', 'Debian']
+        - __verify_version_rolled_back != __verify_version_latest
+
+    - name: Verify | Assert php-fpm was restarted after the update
+      ansible.builtin.assert:
+        that:
+          - "'Stopped' in __verify_update_journal.stdout or 'Stopping' in __verify_update_journal.stdout"
+          - "'Started' in __verify_update_journal.stdout"
+        fail_msg: >-
+          No restart of {{ __verify_auto_fpm }} logged after the package update --
+          the master process still runs the old binary
+        success_msg: "php-fpm restarted after the package update"
+      when:
+        - ansible_facts['os_family'] in ['RedHat', 'Debian']
+        - __verify_version_rolled_back != __verify_version_latest
+
+    #
     # Configuration — second version (Debian/RedHat only)
     #
 

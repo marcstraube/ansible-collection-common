@@ -10,7 +10,7 @@
     git_config:
       init.defaultBranch: 'main'
       pull.rebase: 'true'
-    # git_users is deliberately left unset so the role derives it from
+    # git_users is deliberately left unset so the main run derives it from
     # users_list: testuser qualifies, svcuser is a system account and
     # plainuser carries no git attribute.
     users_list:
@@ -27,6 +27,32 @@
         comment: 'Plain User'
 
   tasks:
+    # Runs first: a derived git_users becomes a host fact and would turn
+    # every later run into one with a configured list. The disabled entry
+    # keeps this run away from all home directories.
+    - name: Converge | Include git role with a configured user list  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        git_users:
+          - username: 'testuser'
+            mode: 'disabled'
+
+    - name: Converge | Assert no users_list deprecation warning
+      ansible.builtin.assert:
+        that:
+          - not (__git_users_list_attribute_deprecated | bool)
+        fail_msg: 'deprecation warning fired although git_users is set'
+        quiet: true
+
     - name: Converge | Include git role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    - name: Converge | Assert users_list deprecation warning and derivation
+      ansible.builtin.assert:
+        that:
+          - __git_users_list_attribute_deprecated | bool
+          - git_users | map(attribute='username') | list == ['testuser']
+        fail_msg: 'users_list git attribute derivation or its deprecation warning is wrong'
+        quiet: true

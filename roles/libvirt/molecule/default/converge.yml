@@ -1,0 +1,22 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    libvirt_enabled: true
+    libvirt_service_enabled: true
+    libvirt_users:
+      - 'libvirt-test'
+    libvirt_default_network_autostart: true
+
+  pre_tasks:
+    - name: Converge | Create test user
+      ansible.builtin.user:
+        name: 'libvirt-test'
+        state: present
+
+  tasks:
+    - name: Converge | Include libvirt role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

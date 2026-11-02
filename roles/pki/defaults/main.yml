@@ -31,6 +31,18 @@ pki_disable_legacy_enabled: true
 # RHEL/Rocky crypto-policy (only used on RHEL-based systems)
 pki_crypto_policy: 'DEFAULT'
 
+# Custom crypto-policy modules (only used on RHEL-based systems). Each entry
+# is written to /etc/crypto-policies/policies/modules/<name>.pmod and can be
+# referenced as a subpolicy in pki_crypto_policy (e.g. 'DEFAULT:SSH-SHA1').
+# Keys: name (uppercase letters, digits, hyphens), content.
+pki_crypto_policy_modules: []
+# Example (allow SHA-1 RSA host keys for the OpenSSH client only):
+#   - name: 'SSH-SHA1'
+#     content: |
+#       hash@openssh-client = SHA1+
+#       sign@openssh-client = RSA-SHA1+
+#       hash@openssl = SHA1+
+
 #
 # Certificate Authority (CA)
 #

@@ -1,0 +1,22 @@
+---
+# Oracle repository package of the selected branch
+__virtualbox_packages:
+  - 'VirtualBox-{{ virtualbox_version }}'
+
+# Package names of all VirtualBox branches, to replace another branch
+__virtualbox_branch_pattern: '^VirtualBox-[0-9]+[.][0-9]+$'
+
+# Module build dependencies
+__virtualbox_build_packages:
+  - 'gcc'
+  - 'make'
+  - 'perl'
+  - 'elfutils-libelf-devel'
+
+# Headers of the running kernel, which the vboxdrv service builds the modules
+# for; dnf installs the headers of later kernels with the kernel updates
+__virtualbox_kernel_headers:
+  - "kernel-devel-{{ ansible_facts['kernel'] }}"
+
+# Service that builds and loads the kernel modules
+__virtualbox_service_name: 'vboxdrv'

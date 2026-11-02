@@ -207,6 +207,74 @@
         fail_msg: 'The role did not create /etc/motd.d and the drop-in'
 
     #
+    # Environment Verification
+    #
+
+    - name: Verify | Stat environment file
+      ansible.builtin.stat:
+        path: /etc/profile.d/base-environment.sh
+      register: base_environment_file
+
+    - name: Verify | Check environment file mode
+      ansible.builtin.assert:
+        that:
+          - base_environment_file.stat.exists
+          - base_environment_file.stat.mode == '0644'
+          - base_environment_file.stat.pw_name == 'root'
+        fail_msg: '/etc/profile.d/base-environment.sh is missing or has unexpected mode'
+
+    - name: Verify | Read variables in a login shell
+      ansible.builtin.command:
+        cmd: bash -lc 'printf "%s|%s|%s" "$http_proxy" "$HTTP_PROXY" "$BASE_TEST_QUOTED"'
+      register: base_environment_login
+      changed_when: false
+
+    - name: Verify | Check variables in a login shell
+      ansible.builtin.assert:
+        that:
+          - base_environment_login.stdout == "http://proxy.example.com:3128|http://proxy.example.com:3128|it's $HOME"
+        fail_msg: 'Login shell does not export base_environment: {{ base_environment_login.stdout }}'
+
+    - name: Verify | Run environment tasks with an invalid name  # noqa: role-name[path]
+      block:
+        - name: Verify | Include environment tasks with an invalid name  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+            tasks_from: environment.yml
+          vars:
+            base_environment:
+              'BAD-NAME': 'value'
+
+        - name: Verify | Fail when the invalid name was accepted
+          ansible.builtin.fail:
+            msg: 'base_environment accepted an invalid variable name'
+      rescue:
+        - name: Verify | Check the invalid name was rejected by the assert
+          ansible.builtin.assert:
+            that:
+              # The assert loops over the names, so the message sits in the item results
+              - (ansible_failed_result | string) is search('not a valid shell variable name')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result.msg }}'
+
+    - name: Verify | Run environment tasks with empty variables  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: environment.yml
+      vars:
+        base_environment: {}
+
+    - name: Verify | Stat environment file after removal
+      ansible.builtin.stat:
+        path: /etc/profile.d/base-environment.sh
+      register: base_environment_removed
+
+    - name: Verify | Check environment file removed
+      ansible.builtin.assert:
+        that:
+          - not base_environment_removed.stat.exists
+        fail_msg: 'Empty base_environment did not remove /etc/profile.d/base-environment.sh'
+
+    #
     # Keyboard Verification
     #
 

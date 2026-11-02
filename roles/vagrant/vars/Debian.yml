@@ -1,0 +1,13 @@
+---
+# From the HashiCorp apt repository, configured through
+# marcstraube.common.package_management (apt_custom_repos)
+__vagrant_packages:
+  - 'vagrant'
+
+# Native build of the vagrant-libvirt plugin against the Ruby that ships
+# inside the Vagrant package
+__vagrant_libvirt_build_packages:
+  - 'gcc'
+  - 'make'
+  - 'pkgconf'
+  - 'libvirt-dev'

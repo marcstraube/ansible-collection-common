@@ -1,0 +1,5 @@
+{{ ansible_managed | default('Ansible managed') | comment }}
+#
+# pacman.conf includes every *.conf file in this directory. Add IgnorePkg and
+# IgnoreGroup lines in files of their own; this file keeps the Include glob
+# matched, because pacman fails on a glob without a match.
