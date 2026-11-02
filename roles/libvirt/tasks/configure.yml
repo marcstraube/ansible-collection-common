@@ -4,7 +4,10 @@
     name: '{{ __libvirt_group }}'
     state: present
     system: true
+  register: __libvirt_group_result
 
+# In check mode a first run only simulates creating the group, so it does
+# not exist yet and the user module cannot add members to it.
 - name: Configure | Add users to libvirt group
   ansible.builtin.user:
     name: '{{ item }}'
@@ -13,4 +16,6 @@
   loop: '{{ libvirt_users }}'
   loop_control:
     label: '{{ item }}'
-  when: libvirt_users | length > 0
+  when:
+    - libvirt_users | length > 0
+    - not (ansible_check_mode and __libvirt_group_result is changed)

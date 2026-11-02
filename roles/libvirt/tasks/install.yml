@@ -3,5 +3,6 @@
   ansible.builtin.package:
     name: '{{ __libvirt_packages }}'
     state: present
+  register: __libvirt_install
   retries: 3
   delay: 5

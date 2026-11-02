@@ -1,4 +1,7 @@
 ---
+# The units ship with the libvirt packages. In check mode a first run only
+# simulates the installation, so the units do not exist yet.
+
 # The sockets activate the daemons on demand.
 - name: Service | Manage libvirt sockets
   ansible.builtin.systemd_service:
@@ -6,6 +9,7 @@
     enabled: "{{ libvirt_service_enabled | bool }}"
     state: "{{ libvirt_service_enabled | bool | ternary('started', 'stopped') }}"
   loop: '{{ __libvirt_socket_units }}'
+  when: not (ansible_check_mode and __libvirt_install | default({}) is changed)
 
 # Enabled daemons start at boot and bring up autostart networks and guests.
 # They are not started here: the daemons exit after two idle minutes
@@ -17,3 +21,4 @@
     enabled: "{{ libvirt_service_enabled | bool }}"
     state: "{{ libvirt_service_enabled | bool | ternary(omit, 'stopped') }}"
   loop: '{{ __libvirt_service_units }}'
+  when: not (ansible_check_mode and __libvirt_install | default({}) is changed)
