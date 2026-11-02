@@ -16,6 +16,8 @@
 
 # signed_by takes the key URL directly — the module downloads it and
 # stores it beside the .sources file, so no separate key task is needed.
+# The module needs python3-debian from the prerequisites, which check mode
+# does not install.
 - name: Repos | Add Wazuh apt repository
   ansible.builtin.deb822_repository:
     name: wazuh
@@ -28,7 +30,9 @@
   retries: 5
   delay: 10
   register: __wazuh_agent_apt_repo
-  when: ansible_facts['os_family'] == 'Debian'
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - not (ansible_check_mode and __wazuh_agent_prerequisites is changed)
 
 - name: Repos | Update apt cache after repo change
   ansible.builtin.apt:
@@ -56,11 +60,15 @@
   delay: 10
   when: ansible_facts['os_family'] == 'RedHat'
 
-# In check mode the repository task above writes nothing; without this
-# gate the package install fails with "No package wazuh-agent available".
-- name: Repos | Check Wazuh repository file presence (RedHat)
+#
+# Repository File
+#
+
+# In check mode the repository tasks above write nothing, so the package
+# manager does not know the agent package yet; install.yml skips the
+# install while the file is missing.
+- name: Repos | Check Wazuh repository file presence
   ansible.builtin.stat:
     path: '{{ __wazuh_agent_repo_file }}'
   register: __wazuh_agent_repo_stat
   check_mode: false
-  when: ansible_facts['os_family'] == 'RedHat'
