@@ -1,0 +1,155 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __verify_versions:
+      '9': '8.3'
+      '10': '8.4'
+    __verify_version: "{{ __verify_versions[ansible_facts['distribution_major_version']] }}"
+    # Package prefix of the requested version: php-* on Rocky 9 (the module
+    # stream selects the version), php8.4-* on Rocky 10.
+    __verify_prefixes:
+      '9': 'php-'
+      '10': 'php8.4-'
+    __verify_prefix: "{{ __verify_prefixes[ansible_facts['distribution_major_version']] }}"
+
+  tasks:
+    #
+    # Installed packages — the requested version was installed under the
+    # package names of that version, and the other set was left alone.
+    #
+
+    - name: Verify | Gather installed packages
+      ansible.builtin.package_facts:
+        manager: rpm
+
+    - name: Verify | Assert expected AppStream packages are installed
+      ansible.builtin.assert:
+        that:
+          - "item in ansible_facts.packages"
+        fail_msg: "Expected AppStream package not installed: {{ item }}"
+      loop:
+        - '{{ __verify_prefix }}cli'
+        - '{{ __verify_prefix }}fpm'
+        - '{{ __verify_prefix }}mbstring'
+        - '{{ __verify_prefix }}bcmath'
+        - '{{ __verify_prefix }}pecl-xdebug3'
+
+    - name: Verify | Assert the CLI package carries the requested version
+      ansible.builtin.assert:
+        that:
+          - >-
+            (ansible_facts.packages[__verify_prefix ~ 'cli'] | first).version
+            is match('^' + (__verify_version | regex_escape) + '\.')
+        fail_msg: >-
+          {{ __verify_prefix }}cli is
+          {{ (ansible_facts.packages[__verify_prefix ~ 'cli'] | first).version }},
+          expected PHP {{ __verify_version }}
+
+    - name: Verify | Assert the default package set was not installed (Rocky 10)
+      ansible.builtin.assert:
+        that:
+          - "item not in ansible_facts.packages"
+        fail_msg: "Default package set unexpectedly installed next to php8.4-*: {{ item }}"
+      loop:
+        - php-cli
+        - php-fpm
+        - php-common
+      when: ansible_facts['distribution_major_version'] == '10'
+
+    #
+    # Module stream — the role enabled php:8.3 on Rocky 9.
+    #
+
+    - name: Verify | Check enabled php module stream (Rocky 9)
+      ansible.builtin.command:
+        cmd: dnf module list --enabled php
+      register: __verify_module_list
+      changed_when: false
+      when: ansible_facts['distribution_major_version'] == '9'
+
+    - name: Verify | Assert the requested module stream is enabled (Rocky 9)
+      ansible.builtin.assert:
+        that:
+          - >-
+            __verify_module_list.stdout
+            is regex('^php\s+' + (__verify_version | regex_escape) + '\s+\[e\]', multiline=True)
+        fail_msg: >-
+          php:{{ __verify_version }} is not the enabled module stream:
+          {{ __verify_module_list.stdout }}
+      when: ansible_facts['distribution_major_version'] == '9'
+
+    #
+    # PHP CLI — /usr/bin/php runs the requested version and loads the
+    # requested extensions.
+    #
+
+    - name: Verify | Check PHP CLI
+      ansible.builtin.command:
+        cmd: php --version
+      register: __verify_php_cli
+      changed_when: false
+
+    - name: Verify | Assert php runs the requested version
+      ansible.builtin.assert:
+        that:
+          - __verify_php_cli.stdout is match('^PHP ' + (__verify_version | regex_escape) + '\.')
+        fail_msg: >-
+          Expected PHP {{ __verify_version }},
+          got {{ __verify_php_cli.stdout_lines[0] }}
+
+    - name: Verify | Check loaded PHP modules
+      ansible.builtin.command:
+        cmd: php -m
+      register: __verify_php_modules
+      changed_when: false
+
+    - name: Verify | Assert configured extensions loaded
+      ansible.builtin.assert:
+        that:
+          - "'curl' in __verify_php_modules.stdout_lines"
+          - "'mbstring' in __verify_php_modules.stdout_lines"
+          - "'bcmath' in __verify_php_modules.stdout_lines"
+          - "'xdebug' in __verify_php_modules.stdout_lines"
+        fail_msg: >-
+          Configured extension missing from php -m:
+          {{ ['curl', 'mbstring', 'bcmath', 'xdebug']
+             | reject('in', __verify_php_modules.stdout_lines) | list }}
+
+    #
+    # FPM service and configuration — same unit and paths for every
+    # AppStream version.
+    #
+
+    - name: Verify | Check php-fpm service
+      ansible.builtin.systemd_service:
+        name: php-fpm
+      register: __verify_fpm_status
+
+    - name: Verify | Assert php-fpm is active and enabled
+      ansible.builtin.assert:
+        that:
+          - __verify_fpm_status.status.ActiveState == 'active'
+          - __verify_fpm_status.status.UnitFileState == 'enabled'
+        fail_msg: >-
+          php-fpm not active/enabled:
+          {{ __verify_fpm_status.status.ActiveState }}
+
+    - name: Verify | Check config files
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: __verify_conf
+      loop:
+        - /etc/php.d/99-ansible.ini
+        - /etc/php-fpm.d/www.conf
+
+    - name: Verify | Assert config files deployed
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: 'Config file missing: {{ item.item }}'
+      loop: '{{ __verify_conf.results }}'
+      loop_control:
+        label: '{{ item.item }}'

@@ -1,0 +1,31 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    php_enabled: true
+    php_redhat_repo: 'appstream'
+    # The non-default AppStream version of each release: the php:8.3 module
+    # stream on Rocky 9, the php8.4-* package set on Rocky 10.
+    __converge_versions:
+      '9': '8.3'
+      '10': '8.4'
+    __converge_version: "{{ __converge_versions[ansible_facts['distribution_major_version']] }}"
+    php_versions:
+      - version: '{{ __converge_version }}'
+        extensions:
+          - curl        # built into the php package (skipped, not a package)
+          - mbstring    # separate package: php-mbstring / php8.4-mbstring
+          - bcmath      # separate package: php-bcmath / php8.4-bcmath
+          - xdebug      # PECL from AppStream: php-pecl-xdebug3 / php8.4-pecl-xdebug3
+        fpm: true
+    php_default_version: '{{ __converge_version }}'
+    # composer (EPEL) depends on the default php-cli, which conflicts with
+    # the php8.4-* set on Rocky 10.
+    php_composer_enabled: false
+
+  tasks:
+    - name: Converge | Include php role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
