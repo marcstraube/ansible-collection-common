@@ -54,6 +54,7 @@ list with availability notes per OS.
 | `utils_monitor_bottom_enabled` | `false` | System monitor (Arch only)                 |
 | `utils_monitor_atop_enabled`   | `false` | Advanced process monitor with logging      |
 | `utils_monitor_procs_enabled`  | `false` | Modern process viewer (Arch/Debian/EL9)    |
+| `utils_monitor_nvtop_enabled`  | `false` | GPU and VRAM utilization per process       |
 
 ### Disk Usage
 
@@ -219,6 +220,7 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - [ripgrep](https://github.com/BurntSushi/ripgrep) — fast recursive grep alternative
 - [fd](https://github.com/sharkdp/fd) — fast find alternative
 - [procs](https://github.com/dalance/procs) — modern `ps` replacement with colourised output
+- [nvtop](https://github.com/Syllo/nvtop) — GPU process monitor for AMD, Intel and NVIDIA
 - [dust](https://github.com/bootandy/dust) — `du` replacement showing disk usage as a tree
 - [duf](https://github.com/muesli/duf) — `df` replacement with colourised filesystem overview
 - [age](https://github.com/FiloSottile/age) — simple file encryption tool

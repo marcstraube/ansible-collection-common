@@ -12,6 +12,7 @@
           (utils_monitor_bottom_enabled | bool)    | ternary(__utils_monitor_bottom, ''),
           (utils_monitor_atop_enabled | bool)      | ternary(__utils_monitor_atop, ''),
           (utils_monitor_procs_enabled | bool)     | ternary(__utils_monitor_procs, ''),
+          (utils_monitor_nvtop_enabled | bool)     | ternary(__utils_monitor_nvtop, ''),
           (utils_disk_dust_enabled | bool)         | ternary(__utils_disk_dust, ''),
           (utils_disk_duf_enabled | bool)          | ternary(__utils_disk_duf, ''),
           (utils_secrets_age_enabled | bool)       | ternary(__utils_secrets_age, ''),

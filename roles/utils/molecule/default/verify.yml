@@ -343,6 +343,25 @@
                  and ansible_facts['distribution_major_version'] == '10')
 
     #
+    # nvtop (all platforms)
+    #
+
+    - name: Verify | Check nvtop package installed
+      ansible.builtin.package:
+        name: nvtop
+        state: present
+      check_mode: true
+      register: _utils_nvtop_pkg
+      failed_when: _utils_nvtop_pkg.changed
+
+    - name: Verify | Check nvtop version
+      ansible.builtin.command:
+        cmd: nvtop --version
+      register: _utils_nvtop_version
+      changed_when: false
+      failed_when: _utils_nvtop_version.rc != 0
+
+    #
     # dust (Arch/Debian — not in EL)
     #
 
