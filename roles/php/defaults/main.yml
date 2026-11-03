@@ -50,9 +50,13 @@ php_default_version: 'auto'
 
 # RHEL/Rocky/Alma: choose the PHP source repository.
 #
-#   'appstream' (default): Distro AppStream PHP via dnf module streams.
-#                          Single PHP version per host (streams are exclusive).
+#   'appstream' (default): Distro AppStream PHP, a single version per host.
+#                          The version selects the module stream on EL 9
+#                          (8.0 default, 8.1 to 8.3) and the package set on
+#                          EL 10 (8.3 default as php-*, 8.4 as php8.4-*);
+#                          'auto' installs the default.
 #                          Package names: php-cli, php-fpm, php-<ext>
+#                                         (php8.4-* for 8.4 on EL 10)
 #                          Paths:         /etc/php.d/, /etc/php-fpm.d/
 #                          Conservative lifecycle, no third-party repo.
 #

@@ -1,13 +1,27 @@
 ---
-# AppStream PHP defaults (used when php_redhat_repo == 'appstream', the
-# default). Remi patterns are applied as overrides in install_version.yml
-# when php_redhat_repo == 'remi' — they need __php_ver_compact, which is
-# set per-version inside the install loop.
+# AppStream defaults (php_redhat_repo == 'appstream'). The package names
+# are set per version in install_version.yml: AppStream from the prefix in
+# __php_redhat_versions, Remi from the versioned SCL prefix php<XX>-php-.
+# For EL 9, see RedHat-9.yml.
 
-__php_cli_package: 'php-cli'
-__php_fpm_package: 'php-fpm'
-__php_extension_prefix: 'php-'
 __php_fpm_service: 'php-fpm'
+
+#
+# AppStream Versions
+#
+
+# Version that 'auto' resolves to on a host without PHP
+__php_redhat_default_version: '8.3'
+
+# Available AppStream versions and the package prefix of each. EL 10 ships
+# the default as php-* and PHP 8.4 as the alternative set php8.4-*: same
+# paths, same php-fpm service, the two sets conflict with each other.
+__php_redhat_versions:
+  '8.3': 'php-'
+  '8.4': 'php8.4-'
+
+# Versions served as module streams (none on EL 10, modularity was removed)
+__php_redhat_streams: []
 
 # RHEL does not use update-alternatives for PHP (single stream at a time)
 __php_has_alternatives: false
@@ -23,9 +37,11 @@ __php_fpm_listen_default: '/run/php-fpm/www.sock'
 __php_fpm_default_user: 'apache'
 __php_fpm_default_group: 'apache'
 
-# Extension name mapping: generic name → RHEL AppStream package name.
-# Empty string = built into the php package (no separate package needed).
-# Missing keys fall back to '<__php_extension_prefix><name>'.
+# Extension name mapping: generic name → AppStream package SUFFIX, appended
+# to the prefix of the selected version ('mbstring' → php-mbstring or
+# php8.4-mbstring), like the Remi and Arch AUR maps. Empty string = built
+# into the php package (no separate package needed). Missing keys fall back
+# to '<__php_extension_prefix><name>'.
 __php_extension_map:
   # Built into the core php package on AppStream
   curl: ''
@@ -42,44 +58,46 @@ __php_extension_map:
   # Shipped as separate AppStream packages, despite being core extensions
   # upstream. php-pdo also arrives as a dependency of php-mysqlnd, which is why
   # a host with a database extension appears to have it without asking.
-  mbstring: 'php-mbstring'
-  pdo: 'php-pdo'
+  mbstring: 'mbstring'
+  pdo: 'pdo'
   # Naming differences vs. generic extension names
-  mysql: 'php-mysqlnd'
-  mysqli: 'php-mysqlnd'
-  mysqlnd: 'php-mysqlnd'
-  pdo_mysql: 'php-mysqlnd'
-  dom: 'php-xml'
-  simplexml: 'php-xml'
-  xmlreader: 'php-xml'
-  xmlwriter: 'php-xml'
-  xsl: 'php-xml'
+  mysql: 'mysqlnd'
+  mysqli: 'mysqlnd'
+  mysqlnd: 'mysqlnd'
+  pdo_mysql: 'mysqlnd'
+  dom: 'xml'
+  simplexml: 'xml'
+  xmlreader: 'xml'
+  xmlwriter: 'xml'
+  xsl: 'xml'
   # Separate AppStream packages
-  bcmath: 'php-bcmath'
-  dba: 'php-dba'
-  enchant: 'php-enchant'
-  gd: 'php-gd'
-  gmp: 'php-gmp'
-  intl: 'php-intl'
-  ldap: 'php-ldap'
-  odbc: 'php-odbc'
-  opcache: 'php-opcache'
-  pdo_sqlite: 'php-pdo'
-  pgsql: 'php-pgsql'
-  process: 'php-process'
-  snmp: 'php-snmp'
-  soap: 'php-soap'
-  sodium: 'php-sodium'
-  sqlite: 'php-pdo'
-  xml: 'php-xml'
-  zip: 'php-pecl-zip'
-  # PECL extensions (in EPEL or AppStream)
-  apcu: 'php-pecl-apcu'
-  imagick: 'php-pecl-imagick'
-  memcached: 'php-pecl-memcache'
-  mongodb: 'php-pecl-mongodb'
-  redis: 'php-pecl-redis'
-  xdebug: 'php-pecl-xdebug3'
+  bcmath: 'bcmath'
+  dba: 'dba'
+  enchant: 'enchant'
+  gd: 'gd'
+  gmp: 'gmp'
+  intl: 'intl'
+  ldap: 'ldap'
+  odbc: 'odbc'
+  opcache: 'opcache'
+  pdo_sqlite: 'pdo'
+  pgsql: 'pgsql'
+  process: 'process'
+  snmp: 'snmp'
+  soap: 'soap'
+  sodium: 'sodium'
+  sqlite: 'pdo'
+  xml: 'xml'
+  zip: 'pecl-zip'
+  # PECL extensions (in AppStream or EPEL). EPEL builds only against the
+  # default version, so on EL 10 the EPEL-only ones (imagick, memcache,
+  # mongodb) exist as php-pecl-* and not as php8.4-pecl-*.
+  apcu: 'pecl-apcu'
+  imagick: 'pecl-imagick'
+  memcached: 'pecl-memcache'
+  mongodb: 'pecl-mongodb'
+  redis: 'pecl-redis'
+  xdebug: 'pecl-xdebug3'
   # pcov is not packaged for AppStream or EPEL — it is only available via
   # the Remi repository (php_redhat_repo: 'remi', see
   # __php_extension_map_remi below). Mapped to '' so that an AppStream
@@ -87,10 +105,9 @@ __php_extension_map:
   pcov: ''
 
 # Extension name mapping for the Remi SCL layout (php_redhat_repo == 'remi').
-# Unlike __php_extension_map above (full AppStream package names used
-# verbatim), these values are SUFFIXES appended to the versioned Remi prefix
-# 'php<XX>-php-' (e.g. 'pecl-xdebug3' -> 'php84-php-pecl-xdebug3'), mirroring
-# the Arch AUR map. Empty string = built into the base php<XX>-php package
+# Like __php_extension_map above, these values are SUFFIXES, appended to the
+# versioned Remi prefix 'php<XX>-php-' (e.g. 'pecl-xdebug3' ->
+# 'php84-php-pecl-xdebug3'), mirroring the Arch AUR map. Empty string = built into the base php<XX>-php package
 # (php<XX>-php-common). Missing keys fall back to '<prefix><name>'. Suffixes
 # verified against rpms.remirepo.net; version digits (redis6, xdebug3,
 # imagick-im7) track Remi's current packaging and may shift on updates.

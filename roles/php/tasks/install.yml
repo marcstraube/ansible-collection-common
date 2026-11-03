@@ -65,22 +65,62 @@
     - ansible_facts['os_family'] == 'RedHat'
     - php_redhat_repo == 'remi'
 
-- name: Install | Detect current RedHat PHP version
-  ansible.builtin.shell:
-    cmd: set -o pipefail && dnf info php-cli 2>/dev/null | grep -m1 '^Version' | grep -oP '\d+\.\d+'
-    executable: /bin/bash
-  register: __php_redhat_repo_info
-  changed_when: false
-  check_mode: false
-  failed_when: __php_redhat_repo_info.stdout | default('') | trim | length == 0
+# The installed PHP version is read from the installed packages: the EL 10
+# php8.4-* set has no package named php-cli (php8.4-cli only provides it), so
+# 'dnf info php-cli' would report the default 8.3 on a host that runs 8.4.
+# The facts also feed the update transaction and the minimum version check.
+- name: Install | Gather package facts (RedHat)
+  ansible.builtin.package_facts:
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: Install | Set RedHat current PHP version fact
+- name: Install | Set RedHat installed PHP version fact
   ansible.builtin.set_fact:
-    __php_redhat_current_version: '{{ __php_redhat_repo_info.stdout | trim }}'
+    __php_redhat_installed_version: >-
+      {{ __php_redhat_versions.values() | unique
+         | map('regex_replace', '^(.*)$', '\1cli')
+         | select('in', ansible_facts['packages'])
+         | map('extract', ansible_facts['packages']) | map('first')
+         | map(attribute='version')
+         | map('regex_search', '^[0-9]+\.[0-9]+')
+         | first | default('') }}
+  when: ansible_facts['os_family'] == 'RedHat'
+
+# EL 9 serves PHP 8.1 and later as module streams; the enabled stream
+# decides which version the php-* packages resolve to.
+# check_mode: false — read-only lookup, must run under --check.
+- name: Install | Detect enabled PHP module stream (RedHat)
+  ansible.builtin.command:
+    cmd: dnf module list --enabled php
+  register: __php_redhat_module_list
+  changed_when: false
+  check_mode: false
+  # Exits non-zero when no stream is enabled
+  failed_when: false
   when:
     - ansible_facts['os_family'] == 'RedHat'
-    - __php_redhat_repo_info.stdout | default('') | trim | length > 0
+    - __php_redhat_streams | length > 0
+
+- name: Install | Set RedHat enabled PHP module stream fact
+  ansible.builtin.set_fact:
+    __php_redhat_enabled_stream: >-
+      {{ __php_redhat_module_list.stdout | default('')
+         | regex_search('^php\s+(\S+)\s+(?:\[d\])?\[e\]', '\1', multiline=True)
+         | default([], true) | first | default('') }}
+  when: ansible_facts['os_family'] == 'RedHat'
+
+# The installed version wins, then the enabled stream, then the AppStream
+# default of the release.
+- name: Install | Set RedHat current PHP version fact
+  ansible.builtin.set_fact:
+    __php_redhat_current_version: >-
+      {{ (__php_redhat_installed_version | length > 0)
+         | ternary(__php_redhat_installed_version,
+                   (__php_redhat_stream_version | length > 0)
+                   | ternary(__php_redhat_stream_version, __php_redhat_default_version)) }}
+  vars:
+    __php_redhat_stream_version: >-
+      {{ __php_redhat_enabled_stream | regex_search('[0-9]+\.[0-9]+') | default('', true) }}
+  when: ansible_facts['os_family'] == 'RedHat'
 
 - name: Install | Set unified system PHP version fact
   ansible.builtin.set_fact:
@@ -129,12 +169,12 @@
     - ansible_facts['os_family'] == 'Debian'
 
 # Installed packages, for merging PHP packages outside the configured list
-# into the update transaction.
-- name: Install | Gather package facts for update
+# into the update transaction (RedHat gathers them above).
+- name: Install | Gather package facts for update (Debian)
   ansible.builtin.package_facts:
   when:
     - php_packages_state == 'latest'
-    - ansible_facts['os_family'] in ['RedHat', 'Debian']
+    - ansible_facts['os_family'] == 'Debian'
 
 - name: Install | PHP versions
   ansible.builtin.include_tasks:

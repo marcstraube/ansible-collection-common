@@ -45,9 +45,9 @@
       - (php_redhat_repo == 'remi') or (php_versions | length == 1)
     fail_msg: |
       php_redhat_repo must be 'appstream' or 'remi'.
-      AppStream dnf module streams are exclusive — only a single PHP
-      version per host. For multi-version installs set
-      php_redhat_repo: 'remi'.
+      AppStream installs a single PHP version per host (module streams on
+      EL 9, conflicting package sets on EL 10). For multi-version installs
+      set php_redhat_repo: 'remi'.
   when:
     - php_enabled | bool
     - ansible_facts['os_family'] == 'RedHat'
