@@ -1,0 +1,17 @@
+# Maintainer: Marc Straube <email@marcstraube.de>
+# Molecule fixture: an AUR-style package whose only source is a file the
+# user downloads by hand (manual:// source). The archive is the dummy
+# vendor file of the scenario (files/vendor/vendor-dummy-1.0.0.zip).
+pkgname=vendor-dummy
+pkgver=1.0.0
+pkgrel=1
+pkgdesc='Dummy package built from a manually downloaded vendor file'
+arch=('any')
+url='https://example.com/vendor-dummy'
+license=('MIT')
+source=("manual://vendor-dummy-${pkgver}.zip")
+sha256sums=('0ddcea82faf5e45724a93c8569593eb03b0b8845cec03b0f92ed9f1eec945e49')  # pragma: allowlist secret
+
+package() {
+  install -Dm644 "${srcdir}/vendor-dummy/README" "${pkgdir}/usr/share/vendor-dummy/README"
+}

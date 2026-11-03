@@ -1,0 +1,108 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __verify_build_dir: '/var/cache/aur_builder/vendor_packages'
+
+  tasks:
+    #
+    # Packages
+    #
+
+    - name: Verify | Query the fixture packages
+      ansible.builtin.command:
+        cmd: 'pacman -Q {{ item }}'
+      loop:
+        - 'vendor-dummy'
+        - 'vendor-dummy-absent'
+        - 'vendor-repo-dummy'
+      register: __verify_packages
+      changed_when: false
+      # vendor-dummy-absent must not be installed
+      failed_when: false
+
+    - name: Verify | Assert vendor-dummy is installed in the PKGBUILD version
+      ansible.builtin.assert:
+        that:
+          - __verify_packages.results[0].rc == 0
+          - __verify_packages.results[0].stdout == 'vendor-dummy 1.0.0-1'
+        fail_msg: 'vendor-dummy 1.0.0-1 is not installed: {{ __verify_packages.results[0].stdout }}'
+
+    - name: Verify | Assert vendor-dummy-absent is not installed
+      ansible.builtin.assert:
+        that:
+          - __verify_packages.results[1].rc != 0
+        fail_msg: 'vendor-dummy-absent is installed although its vendor file is missing'
+
+    - name: Verify | Assert vendor-repo-dummy is installed from the repository
+      ansible.builtin.assert:
+        that:
+          - __verify_packages.results[2].rc == 0
+          - __verify_packages.results[2].stdout == 'vendor-repo-dummy 1.0.0-1'
+        fail_msg: 'vendor-repo-dummy 1.0.0-1 is not installed: {{ __verify_packages.results[2].stdout }}'
+
+    #
+    # Package Content
+    #
+
+    - name: Verify | Stat the file installed by vendor-dummy
+      ansible.builtin.stat:
+        path: /usr/share/vendor-dummy/README
+      register: __verify_readme
+
+    - name: Verify | Assert the file of vendor-dummy
+      ansible.builtin.assert:
+        that:
+          - __verify_readme.stat.exists
+          - __verify_readme.stat.pw_name == 'root'
+          - __verify_readme.stat.gr_name == 'root'
+          - __verify_readme.stat.mode == '0644'
+        fail_msg: '/usr/share/vendor-dummy/README is missing or has wrong permissions'
+
+    - name: Verify | Read the file installed by vendor-dummy
+      ansible.builtin.slurp:
+        src: /usr/share/vendor-dummy/README
+      register: __verify_readme_content
+
+    - name: Verify | Assert the file comes from the vendor archive
+      ansible.builtin.assert:
+        that:
+          - "'vendor-dummy fixture' in (__verify_readme_content.content | b64decode)"
+        fail_msg: '/usr/share/vendor-dummy/README does not hold the content of the vendor archive'
+
+    #
+    # Build Directory
+    #
+
+    - name: Verify | Stat the build directory entries
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - '{{ __verify_build_dir }}'
+        - '{{ __verify_build_dir }}/vendor-dummy/PKGBUILD'
+        - '{{ __verify_build_dir }}/sources/vendor-dummy-1.0.0.zip'
+        - '{{ __verify_build_dir }}/vendor-dummy-absent/PKGBUILD'
+        - '{{ __verify_build_dir }}/sources/vendor-dummy-absent-2.0.0.zip'
+        - '{{ __verify_build_dir }}/sources/vendor-dummy-absent-1.0.0.zip'
+        - '{{ __verify_build_dir }}/vendor-repo-dummy'
+        - '{{ __verify_build_dir }}/sources'
+      register: __verify_build_entries
+
+    - name: Verify | Assert the build directory, the clones, the sources directory and the removed staged files
+      ansible.builtin.assert:
+        that:
+          - __verify_build_entries.results[0].stat.isdir | default(false)
+          - __verify_build_entries.results[0].stat.pw_name == 'aur_builder'
+          - __verify_build_entries.results[1].stat.exists
+          - not __verify_build_entries.results[2].stat.exists
+          - __verify_build_entries.results[3].stat.exists
+          - not __verify_build_entries.results[4].stat.exists
+          - not __verify_build_entries.results[5].stat.exists
+          - not __verify_build_entries.results[6].stat.exists
+          - __verify_build_entries.results[7].stat.isdir | default(false)
+        fail_msg: >-
+          The build directory does not hold the clones only: the staged file of
+          vendor-dummy must be removed after the build, no file may be staged
+          for vendor-dummy-absent, and the repository package must not be cloned

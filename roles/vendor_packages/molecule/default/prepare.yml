@@ -1,0 +1,149 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # Fixture packages from files/aur, served as local bare repositories the
+    # way the AUR serves <name>.git
+    __prepare_aur_packages:
+      - 'vendor-dummy'
+      - 'vendor-dummy-absent'
+    __prepare_aur_src_dir: '/srv/aur-src'
+    __prepare_aur_repo_dir: '/srv/aur'
+    # Prebuilt fixture package from files/repo, served from a local pacman
+    # repository the way a private repository would
+    __prepare_repo_name: 'vendor-test'
+    __prepare_repo_src_dir: '/srv/repo-src'
+    __prepare_repo_dir: '/srv/pacman/vendor-test'
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Install git and the build tools for the fixtures
+      ansible.builtin.package:
+        name:
+          - git
+          - base-devel
+        state: present
+      retries: 3
+      delay: 5
+
+    # The AUR builder user as marcstraube.common.package_management creates
+    # it: own group, home below /var/cache, pacman without password
+    - name: Prepare | Create aur_builder group
+      ansible.builtin.group:
+        name: aur_builder
+        system: true
+
+    - name: Prepare | Create aur_builder user
+      ansible.builtin.user:
+        name: aur_builder
+        group: aur_builder
+        home: /var/cache/aur_builder
+        shell: /usr/bin/nologin
+        comment: 'umask=022'
+        system: true
+        create_home: true
+
+    - name: Prepare | Allow aur_builder passwordless pacman
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/99-aur_builder
+        line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+        create: true
+        owner: root
+        group: root
+        mode: '0440'
+        validate: 'visudo -cf %s'
+
+    # Owned by aur_builder: the role clones as that user, and git refuses
+    # repositories owned by another user
+    - name: Prepare | Create fixture directories
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: aur_builder
+        group: aur_builder
+        mode: '0755'
+      loop:
+        - '{{ __prepare_aur_src_dir }}'
+        - '{{ __prepare_aur_repo_dir }}'
+
+    - name: Prepare | Copy fixture PKGBUILDs
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/files/aur/'
+        dest: '{{ __prepare_aur_src_dir }}/'
+        owner: aur_builder
+        group: aur_builder
+        mode: '0644'
+        directory_mode: '0755'
+
+    # git init, commit and bare clone have no module equivalent
+    - name: Prepare | Create fixture bare repositories  # noqa: command-instead-of-module
+      ansible.builtin.shell:
+        cmd: >-
+          git init -q -b master
+          && git add -A
+          && git -c user.name=molecule -c user.email=molecule@example.com commit -q -m 'Initial import'
+          && git clone -q --bare . {{ __prepare_aur_repo_dir }}/{{ item }}.git
+        chdir: '{{ __prepare_aur_src_dir }}/{{ item }}'
+        creates: '{{ __prepare_aur_repo_dir }}/{{ item }}.git'
+      become: true
+      become_user: aur_builder
+      loop: '{{ __prepare_aur_packages }}'
+
+    #
+    # Local pacman repository with a prebuilt package
+    #
+
+    - name: Prepare | Create repository fixture directories
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: aur_builder
+        group: aur_builder
+        mode: '0755'
+      loop:
+        - '{{ __prepare_repo_src_dir }}'
+        - '{{ __prepare_repo_dir }}'
+
+    - name: Prepare | Copy the repository fixture PKGBUILD
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/files/repo/'
+        dest: '{{ __prepare_repo_src_dir }}/'
+        owner: aur_builder
+        group: aur_builder
+        mode: '0644'
+        directory_mode: '0755'
+
+    # makepkg refuses to run as root; repo-add has no module equivalent
+    - name: Prepare | Build the prebuilt package and add it to the repository  # noqa: command-instead-of-module
+      ansible.builtin.shell:
+        cmd: >-
+          makepkg -f --noconfirm
+          && repo-add {{ __prepare_repo_dir }}/{{ __prepare_repo_name }}.db.tar.gz
+          {{ __prepare_repo_dir }}/vendor-repo-dummy-*.pkg.tar.*
+        chdir: '{{ __prepare_repo_src_dir }}/vendor-repo-dummy'
+        creates: '{{ __prepare_repo_dir }}/{{ __prepare_repo_name }}.db'
+      environment:
+        PKGDEST: '{{ __prepare_repo_dir }}'
+      become: true
+      become_user: aur_builder
+
+    - name: Prepare | Add the local repository to pacman.conf
+      ansible.builtin.blockinfile:
+        path: /etc/pacman.conf
+        marker: '# {mark} MOLECULE LOCAL REPOSITORY'
+        block: |
+          [{{ __prepare_repo_name }}]
+          SigLevel = Optional TrustAll
+          Server = file://{{ __prepare_repo_dir }}
+
+    - name: Prepare | Refresh the package databases
+      community.general.pacman:
+        update_cache: true

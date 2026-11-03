@@ -1,0 +1,25 @@
+---
+#
+# Vendor Files
+#
+# Some software cannot be downloaded unattended (login, EULA). The user
+# downloads it on the Ansible controller and places the file in the vendor
+# directory; the role stages the file on the target and builds the package.
+# The entry points are called by other roles with include_role and
+# tasks_from; the package values come from the calling role as vars
+# (vendor_packages_aur_name, vendor_packages_file_pattern,
+# vendor_packages_download_url), never from the inventory.
+
+# Directory on the Ansible controller with the manually downloaded vendor
+# files: a path below the inventory or any absolute path, for example a
+# mounted network share. Keep it out of version control (files/vendor/ in
+# .gitignore when it lives in the inventory).
+vendor_packages_dir: '{{ inventory_dir }}/files/vendor'
+
+# Build directory on the target: holds the clone of every package repository
+# and, in sources/, the staged vendor file while the package builds. Needs
+# free space for the staged file, the extracted sources and the package,
+# about twice the vendor file plus the package. Empty: vendor_packages below
+# the home of the AUR builder user (aur_builder_home from
+# marcstraube.common.package_management, /var/cache/aur_builder by default).
+vendor_packages_build_dir: ''
