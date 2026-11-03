@@ -1,0 +1,59 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # Vendor files of the scenario: vendor-dummy-1.0.0.zip matches the
+    # PKGBUILD of vendor-dummy; vendor-dummy-absent-1.0.0.zip belongs to an
+    # older pkgver than the PKGBUILD of vendor-dummy-absent (2.0.0) wants
+    vendor_packages_dir: '{{ playbook_dir }}/files/vendor'
+    # Fixture packages from the local bare repositories of prepare.yml
+    __converge_aur_base_url: 'file:///srv/aur'
+
+  tasks:
+    # File present: built and installed, nothing to do on the second run
+    - name: Converge | Build vendor-dummy from the present vendor file  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: aur.yml
+      vars:
+        vendor_packages_aur_name: 'vendor-dummy'
+        vendor_packages_file_pattern: 'vendor-dummy-{pkgver}.zip'
+        vendor_packages_download_url: 'https://example.com/vendor-dummy'
+        __vendor_packages_aur_base_url: '{{ __converge_aur_base_url }}'
+
+    # Version mismatch: only the file of another pkgver exists, which has
+    # another name, so the role treats it as missing
+    - name: Converge | Skip vendor-dummy-absent with a vendor file of another version  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: aur.yml
+      vars:
+        vendor_packages_aur_name: 'vendor-dummy-absent'
+        vendor_packages_file_pattern: 'vendor-dummy-absent-{pkgver}.zip'
+        vendor_packages_download_url: 'https://example.com/vendor-dummy-absent'
+        __vendor_packages_aur_base_url: '{{ __converge_aur_base_url }}'
+
+    # File missing: the vendor directory does not even exist
+    - name: Converge | Skip vendor-dummy-absent without a vendor directory  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: aur.yml
+      vars:
+        vendor_packages_dir: '{{ playbook_dir }}/files/missing'
+        vendor_packages_aur_name: 'vendor-dummy-absent'
+        vendor_packages_file_pattern: 'vendor-dummy-absent-{pkgver}.zip'
+        __vendor_packages_aur_base_url: '{{ __converge_aur_base_url }}'
+
+    # Prebuilt package in a pacman repository: installed from there, no
+    # clone and no vendor file involved
+    - name: Converge | Install vendor-repo-dummy from the local pacman repository  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: aur.yml
+      vars:
+        vendor_packages_dir: '{{ playbook_dir }}/files/missing'
+        vendor_packages_aur_name: 'vendor-repo-dummy'
+        vendor_packages_file_pattern: 'vendor-repo-dummy-{pkgver}.zip'
+        __vendor_packages_aur_base_url: '{{ __converge_aur_base_url }}'

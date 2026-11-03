@@ -1,0 +1,11 @@
+pkgbase = vendor-dummy-absent
+	pkgdesc = Dummy package whose vendor file is missing in the molecule scenario
+	pkgver = 2.0.0
+	pkgrel = 1
+	url = https://example.com/vendor-dummy-absent
+	arch = any
+	license = MIT
+	source = manual://vendor-dummy-absent-2.0.0.zip
+	sha256sums = SKIP
+
+pkgname = vendor-dummy-absent

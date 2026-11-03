@@ -1,0 +1,15 @@
+# Maintainer: Marc Straube <email@marcstraube.de>
+# Molecule fixture: a prebuilt package served from a local pacman repository.
+# The role has to install it from there instead of building anything.
+pkgname=vendor-repo-dummy
+pkgver=1.0.0
+pkgrel=1
+pkgdesc='Dummy package provided by a pacman repository'
+arch=('any')
+url='https://example.com/vendor-repo-dummy'
+license=('MIT')
+
+package() {
+  install -d "${pkgdir}/usr/share/vendor-repo-dummy"
+  echo 'vendor-repo-dummy fixture' > "${pkgdir}/usr/share/vendor-repo-dummy/README"
+}

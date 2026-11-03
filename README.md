@@ -44,6 +44,7 @@ development toolchains, user management, editors, and more.
 | Role                   | Description                                    |
 | ---------------------- | ---------------------------------------------- |
 | **package_management** | pacman, APT, DNF, AUR helper (paru), reflector |
+| **vendor_packages**    | Packages from vendor files downloaded by hand  |
 
 ### Development
 
