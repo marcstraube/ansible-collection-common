@@ -41,6 +41,15 @@
     - libvirt_default_network_autostart | bool
     - not __libvirt_default_network_autostarted | bool
 
+# Starting the network creates the virbr0 bridge, which needs the bridge
+# kernel module. After an upgrade that removed the running kernel (Arch
+# Linux), the module cannot be loaded anymore; the network starts after the
+# next reboot through its autostart.
+- name: Network | Check modules of the running kernel
+  ansible.builtin.stat:
+    path: "/usr/lib/modules/{{ ansible_facts['kernel'] }}"
+  register: __libvirt_running_kernel_modules
+
 - name: Network | Start default network
   ansible.builtin.command:
     cmd: 'virsh --connect {{ __libvirt_uri }} net-start {{ __libvirt_default_network_name }}'
@@ -48,6 +57,17 @@
   when:
     - libvirt_default_network_autostart | bool
     - not __libvirt_default_network_active | bool
+    - __libvirt_running_kernel_modules.stat.exists | default(false)
+
+- name: Network | Report pending reboot
+  ansible.builtin.debug:
+    msg: >-
+      The running kernel was removed by an upgrade. The default network
+      starts after the next reboot.
+  when:
+    - libvirt_default_network_autostart | bool
+    - not __libvirt_default_network_active | bool
+    - not (__libvirt_running_kernel_modules.stat.exists | default(true))
 
 - name: Network | Disable default network autostart
   ansible.builtin.command:

@@ -130,6 +130,14 @@ The `default` network uses `192.168.122.0/24`. When that subnet is already in
 use on the host, starting the network fails; change the network with
 `virsh net-edit default` or set `libvirt_default_network_autostart: false`.
 
+### Kernel Upgrade
+
+Starting the `default` network creates the `virbr0` bridge, which needs the
+`bridge` kernel module. After an upgrade that replaced the running kernel
+(Arch Linux removes the modules of the replaced kernel), the role defines
+the network and enables its autostart but does not start it; the network
+starts after the next reboot.
+
 ## References
 
 - [libvirt](https://libvirt.org/) — virtualization API and daemons
