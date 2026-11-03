@@ -18,6 +18,9 @@ __graphics_amd_mesa: 'mesa'
 __graphics_amd_mesa_32bit: 'lib32-mesa'
 __graphics_amd_vulkan: 'vulkan-radeon'
 __graphics_amd_vulkan_32bit: 'lib32-vulkan-radeon'
+__graphics_amd_rocm_tools:
+  - 'rocminfo'
+  - 'rocm-smi-lib'
 
 #
 # NVIDIA

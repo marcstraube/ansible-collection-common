@@ -1,0 +1,64 @@
+---
+# EL 9 — same as RedHat.yml except where noted. RedHat-9.yml replaces the
+# os_family file entirely when present, so all entries are repeated here.
+
+#
+# Intel
+#
+
+__graphics_intel_mesa: 'mesa-dri-drivers'
+__graphics_intel_mesa_32bit: 'mesa-dri-drivers.i686'
+__graphics_intel_vulkan: 'mesa-vulkan-drivers'
+__graphics_intel_vulkan_32bit: 'mesa-vulkan-drivers.i686'
+__graphics_intel_vaapi_modern: 'intel-media-driver'
+__graphics_intel_vaapi_legacy: 'libva-intel-driver'
+
+#
+# AMD
+#
+
+__graphics_amd_mesa: 'mesa-dri-drivers'
+__graphics_amd_mesa_32bit: 'mesa-dri-drivers.i686'
+__graphics_amd_vulkan: 'mesa-vulkan-drivers'
+__graphics_amd_vulkan_32bit: 'mesa-vulkan-drivers.i686'
+# EPEL 9 ships rocm-smi only; rocminfo is not packaged for EL 9
+__graphics_amd_rocm_tools:
+  - 'rocm-smi'
+
+#
+# NVIDIA
+#
+# RPM Fusion required
+
+__graphics_nvidia_open: 'akmod-nvidia-open'
+__graphics_nvidia_proprietary: 'akmod-nvidia'
+__graphics_nvidia_utils: 'xorg-x11-drv-nvidia'
+__graphics_nvidia_utils_32bit: 'xorg-x11-drv-nvidia-libs.i686'
+__graphics_nvidia_nouveau: 'xorg-x11-drv-nouveau'
+__graphics_nvidia_cuda: 'xorg-x11-drv-nvidia-cuda'
+
+# Legacy NVIDIA
+__graphics_nvidia_legacy_packages:
+  '580xx': ''
+  '470xx': 'akmod-nvidia-470xx'
+  '390xx': ''
+__graphics_nvidia_legacy_aur: false
+
+#
+# Common Tools
+#
+
+__graphics_vulkan_icd_loader: 'vulkan-loader'
+__graphics_vulkan_tools: 'vulkan-tools'
+__graphics_vaapi_tools: 'libva-utils'
+__graphics_vdpau_tools: 'vdpauinfo'
+__graphics_mesa_utils: 'mesa-demos'
+
+#
+# Hybrid Graphics
+#
+
+__graphics_hybrid_prime_run: ''
+__graphics_hybrid_switcheroo: 'switcheroo-control'
+__graphics_hybrid_switcheroo_service: 'switcheroo-control.service'
+__graphics_nvidia_persistenced_service: 'nvidia-persistenced.service'
