@@ -1,11 +1,173 @@
 ---
+# A targeted update must see the current repository state; dnf otherwise
+# keeps cached metadata for up to metadata_expire. The cache is cleared
+# rather than refreshed: dnf on EL 9 keeps the cached mirror list on
+# makecache --refresh and stays on the mirror it picked first, even when
+# that mirror has stopped syncing. Clearing the cache fetches a new list.
+# check_mode: false — the metadata cache holds no package, and --check
+# must report the update the real run would install.
+- name: Install | Clear package metadata for update (RedHat)
+  ansible.builtin.command:
+    cmd: dnf clean metadata
+  changed_when: false
+  check_mode: false
+  when:
+    - clamav_packages_state == 'latest'
+    - ansible_facts['os_family'] == 'RedHat'
+
+- name: Install | Refresh package metadata for update (RedHat)
+  ansible.builtin.command:
+    cmd: dnf makecache
+  changed_when: false
+  check_mode: false
+  when:
+    - clamav_packages_state == 'latest'
+    - ansible_facts['os_family'] == 'RedHat'
+
+- name: Install | Refresh package metadata for update (Debian)
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+  check_mode: false
+  when:
+    - clamav_packages_state == 'latest'
+    - ansible_facts['os_family'] == 'Debian'
+
+# A targeted update covers every installed ClamAV package, not only the
+# configured ones: parts pulled in as dependencies (clamav-base and
+# libclamav12 on Debian, clamav-lib, clamav-filesystem and clamav-data on
+# EL) pin the exact version of the main package and must move in the same
+# transaction. The facts also hold the version before the update for the
+# minimum check and the report.
+- name: Install | Gather package facts for update
+  ansible.builtin.package_facts:
+  when: clamav_packages_state == 'latest' or __clamav_minimum | length > 0
+  tags:
+    - always
+
+- name: Install | Merge installed packages into the update
+  ansible.builtin.set_fact:
+    __clamav_update_packages: >-
+      {{ (__clamav_packages
+          + (ansible_facts['packages'] | list
+             | select('match', __clamav_update_pattern) | list))
+         | unique | list }}
+  when:
+    - clamav_packages_state == 'latest'
+    - ansible_facts['os_family'] in ['RedHat', 'Debian']
+
+# Full version of the main package as the package manager writes it:
+# [epoch:]version[-release]. package_facts reports a missing rpm epoch as
+# None, which counts as no epoch like 0.
+- name: Install | Record the installed ClamAV version
+  ansible.builtin.set_fact:
+    __clamav_version_package: '{{ __clamav_packages | first }}'
+    __clamav_version_before: '{{ __clamav_installed_version }}'
+  vars:
+    __clamav_pkg: "{{ ansible_facts['packages'][__clamav_packages | first] | default([{}]) | first }}"
+    __clamav_installed_version: >-
+      {{ ((__clamav_pkg.epoch ~ ':')
+          if ((__clamav_pkg.epoch | default('', true) | string) not in ['', 'None', '0']) else '')
+         ~ (__clamav_pkg.version | default(''))
+         ~ (('-' ~ __clamav_pkg.release) if (__clamav_pkg.release | default('', true)) else '') }}
+  when: clamav_packages_state == 'latest' or __clamav_minimum | length > 0
+  tags:
+    - always
+
+# Pre-check: ask the package manager which version the package task would
+# install, resolved like the install (dnf honors module streams, excludes
+# and versionlock, apt honors pinning). Arch Linux installs a missing
+# package from the sync database and otherwise keeps the installed version,
+# which the system upgrade updates. The queries change nothing, so they
+# also run under --check.
+- name: Install | Query the version the update would install (RedHat)
+  ansible.builtin.command:
+    argv:
+      - dnf
+      - --quiet
+      - repoquery
+      - --latest-limit=1
+      - '--queryformat=%{epoch}:%{version}-%{release}'
+      - '{{ __clamav_version_package }}'
+  register: __clamav_candidate_dnf
+  changed_when: false
+  check_mode: false
+  when:
+    - __clamav_minimum | length > 0
+    - ansible_facts['os_family'] == 'RedHat'
+    - clamav_packages_state == 'latest' or __clamav_version_before | length == 0
+  tags:
+    - always
+
+- name: Install | Query the version the update would install (Debian)
+  ansible.builtin.command:
+    argv:
+      - apt-cache
+      - policy
+      - '{{ __clamav_version_package }}'
+  environment:
+    LC_ALL: C
+  register: __clamav_candidate_apt
+  changed_when: false
+  check_mode: false
+  when:
+    - __clamav_minimum | length > 0
+    - ansible_facts['os_family'] == 'Debian'
+    - clamav_packages_state == 'latest' or __clamav_version_before | length == 0
+  tags:
+    - always
+
+- name: Install | Query the version the install would add (Archlinux)
+  ansible.builtin.command:
+    argv:
+      - pacman
+      - --sync
+      - --info
+      - '{{ __clamav_version_package }}'
+  environment:
+    LC_ALL: C
+  register: __clamav_candidate_pacman
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when:
+    - __clamav_minimum | length > 0
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __clamav_version_before | length == 0
+  tags:
+    - always
+
+- name: Install | Check the minimum version before the update
+  ansible.builtin.include_tasks:
+    file: version_check.yml
+    apply:
+      tags:
+        - always
+  vars:
+    __clamav_check_stage: 'pre'
+    __clamav_check_installed: '{{ __clamav_version_before }}'
+    # epoch 0 is the default and left out, as in the installed version
+    __clamav_check_candidate: >-
+      {{ (((__clamav_candidate_dnf.stdout_lines | default([])) + [''])
+          | first | regex_replace('^0:', ''))
+         ~ (((__clamav_candidate_apt.stdout | default('')) | regex_findall('(?m)^ *Candidate: *([^ ]+)$')) + [''])
+           | first | replace('(none)', '')
+         ~ (((__clamav_candidate_pacman.stdout | default('')) | regex_findall('(?m)^Version *: *([^ ]+)$')) + [''])
+           | first }}
+  when: __clamav_minimum | length > 0
+  tags:
+    - always
+
 - name: Install | ClamAV packages
   ansible.builtin.package:
-    name: '{{ __clamav_packages }}'
-    state: present
+    name: '{{ __clamav_update_packages | default(__clamav_packages) }}'
+    state: "{{ (ansible_facts['os_family'] == 'Archlinux') | ternary('present', clamav_packages_state) }}"
+  register: __clamav_packages_result
   retries: 3
   delay: 5
 
+# An installed milter package is part of the update above; this task only
+# adds a missing one.
 - name: Install | ClamAV milter packages
   ansible.builtin.package:
     name: '{{ __clamav_milter_packages }}'
@@ -15,3 +177,139 @@
   when:
     - clamav_milter_enabled | bool
     - __clamav_milter_packages | length > 0
+
+# Re-read the installed packages, the facts gathered before the update show
+# the old versions.
+- name: Install | Gather package facts after the update
+  ansible.builtin.package_facts:
+  when:
+    - not ansible_check_mode
+    - __clamav_minimum | length > 0
+      or (clamav_packages_state == 'latest' and (__clamav_packages_result | default({})) is changed)
+  tags:
+    - always
+
+- name: Install | Record the updated ClamAV version
+  ansible.builtin.set_fact:
+    __clamav_version_after: >-
+      {{ ((__clamav_pkg.epoch ~ ':')
+          if ((__clamav_pkg.epoch | default('', true) | string) not in ['', 'None', '0']) else '')
+         ~ (__clamav_pkg.version | default(''))
+         ~ (('-' ~ __clamav_pkg.release) if (__clamav_pkg.release | default('', true)) else '') }}
+  vars:
+    __clamav_pkg: "{{ ansible_facts['packages'][__clamav_version_package] | default([{}]) | first }}"
+  when:
+    - not ansible_check_mode
+    - __clamav_minimum | length > 0
+      or (clamav_packages_state == 'latest' and (__clamav_packages_result | default({})) is changed)
+  tags:
+    - always
+
+- name: Install | Report the ClamAV version change
+  ansible.builtin.debug:
+    msg: >-
+      {{ __clamav_version_package }} {{ __clamav_version_before | default('none', true) }}
+      -> {{ __clamav_version_after }}
+  when:
+    - not ansible_check_mode
+    - clamav_packages_state == 'latest'
+    - (__clamav_packages_result | default({})) is changed
+    - __clamav_version_before != __clamav_version_after
+
+# A running service keeps executing the old binary after an update. The
+# packages usually restart the services themselves (dpkg maintainer
+# scripts, rpm scriptlets), but policy-rc.d or the systemd update helper
+# can prevent that, and pacman never restarts them. With 'latest' the role
+# restarts each enabled ClamAV service while it still executes a replaced
+# binary, so an update never restarts a service twice. The check does not
+# depend on changed packages: a run that updated the packages but could not
+# restart a service restarts it on the next run.
+- name: Install | Collect the enabled ClamAV services
+  ansible.builtin.set_fact:
+    __clamav_update_services: >-
+      {{ (([__clamav_daemon_service] if clamav_daemon_enabled | bool else [])
+          + ([__clamav_freshclam_service] if clamav_freshclam_enabled | bool else [])
+          + ([__clamav_milter_service | default('')] if clamav_milter_enabled | bool else []))
+         | select | list }}
+  when: clamav_packages_state == 'latest'
+
+# The main PID comes from systemd: the role's configuration sets no PidFile,
+# and systemd tracks the main process of every unit, whether it runs in the
+# foreground (Debian, Arch Linux) or forks (the clamd@ and clamav-milter
+# units on EL leave a single process in their cgroup). A stopped service
+# reports PID 0. No module reads a unit property, hence systemctl show.
+- name: Install | Read the main PIDs of the ClamAV services  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    argv:
+      - systemctl
+      - show
+      - --property=MainPID
+      - --value
+      - '{{ item }}'
+  loop: '{{ __clamav_update_services | default([]) }}'
+  register: __clamav_service_pids
+  changed_when: false
+  check_mode: false
+  when: clamav_packages_state == 'latest'
+
+# readlink reports a replaced binary as "<path> (deleted)"
+- name: Install | Read the binaries of the running ClamAV services
+  ansible.builtin.command:
+    argv:
+      - readlink
+      - '/proc/{{ item.stdout | trim }}/exe'
+  loop: >-
+    {{ __clamav_service_pids.results | default([])
+       | selectattr('stdout', 'defined')
+       | rejectattr('stdout', 'in', ['', '0']) | list }}
+  loop_control:
+    label: '{{ item.item }}'
+  register: __clamav_service_exe
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: clamav_packages_state == 'latest'
+
+# Check mode installs nothing, so a pending update reports the restart of
+# every running service
+- name: Install | Decide on the restarts for replaced binaries
+  ansible.builtin.set_fact:
+    __clamav_restart_services: >-
+      {{ (__clamav_running | map(attribute='item.item') | list)
+         if (ansible_check_mode and __clamav_packages_result is changed)
+         else (__clamav_running
+               | selectattr('stdout', 'search', ' \(deleted\)$')
+               | map(attribute='item.item') | list) }}
+  vars:
+    __clamav_running: "{{ __clamav_service_exe.results | default([]) | selectattr('stdout', 'defined') | list }}"
+  when: clamav_packages_state == 'latest'
+
+# Restart right away rather than through the handlers: a failing minimum
+# check below would otherwise skip the restart and leave the old binary
+# running. A restart, never a reload: a reload only rereads the signature
+# database within the old binary.
+- name: Install | Restart ClamAV services for replaced binaries
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    state: restarted
+  loop: '{{ __clamav_restart_services | default([]) }}'
+  when: clamav_packages_state == 'latest'
+
+# Post-check: the transaction can install something else than the queried
+# candidate (dependencies, excludes), so the installed version is checked
+# again.
+- name: Install | Check the minimum version after the update
+  ansible.builtin.include_tasks:
+    file: version_check.yml
+    apply:
+      tags:
+        - always
+  vars:
+    __clamav_check_stage: 'post'
+    __clamav_check_installed: '{{ __clamav_version_after }}'
+    __clamav_check_candidate: ''
+  when:
+    - __clamav_minimum | length > 0
+    - not ansible_check_mode
+  tags:
+    - always

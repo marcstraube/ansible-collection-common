@@ -9,8 +9,9 @@
     clamav_rspamd_integration_enabled: false
     # Disable freshclam for faster testing (no DB download)
     clamav_freshclam_enabled: false
-    # Disable daemon (no DB = daemon can't start)
-    clamav_daemon_enabled: false
+    # Run the daemon on the test signature database from prepare.yml, so
+    # the targeted update in side_effect.yml has a running service
+    clamav_daemon_enabled: true
     # Disable firewall/apparmor for container testing
     clamav_firewalld_enabled: false
     clamav_apparmor_enabled: false

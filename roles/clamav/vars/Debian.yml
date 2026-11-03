@@ -15,3 +15,7 @@ __clamav_milter_config_file: '/etc/clamav/clamav-milter.conf'
 __clamav_user: 'clamav'
 __clamav_group: 'clamav'
 __clamav_apparmor_profile: 'usr.sbin.clamd'
+
+# Installed packages a targeted update moves along (clamav, clamav-base,
+# clamav-daemon, clamav-freshclam, clamav-milter, libclamav12)
+__clamav_update_pattern: '^(clamav(-.+)?|libclamav.+)$'

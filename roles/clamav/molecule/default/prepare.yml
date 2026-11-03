@@ -53,7 +53,10 @@
       retries: 3
       delay: 5
 
-    # ClamAV daemon may fail to start in containers without override
+    # ClamAV daemon may fail to start in containers without override. The
+    # Arch and Debian units also require the official daily database
+    # (ConditionPathExistsGlob); the tests run clamd on the test signature
+    # database below, so the condition is reset.
     - name: Prepare | Create systemd override directory for clamd (Arch)
       ansible.builtin.file:
         path: /etc/systemd/system/clamav-daemon.service.d
@@ -70,6 +73,8 @@
         group: root
         mode: '0644'
         content: |
+          [Unit]
+          ConditionPathExistsGlob=
           [Service]
           Type=simple
           ExecStart=
@@ -92,6 +97,8 @@
         group: root
         mode: '0644'
         content: |
+          [Unit]
+          ConditionPathExistsGlob=
           [Service]
           Type=simple
           ExecStart=
@@ -143,3 +150,23 @@
     - name: Prepare | Reload systemd daemon
       ansible.builtin.systemd_service:
         daemon_reload: true
+
+    # clamd refuses to start without a signature database and the tests do
+    # not download the official databases. One hand-written signature (the
+    # EICAR test file) is enough for clamd to load and run.
+    - name: Prepare | Create the ClamAV database directory
+      ansible.builtin.file:
+        path: /var/lib/clamav
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Prepare | Deploy a test signature database
+      ansible.builtin.copy:
+        dest: /var/lib/clamav/test.hdb
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          44d88612fea8a8f36de82e1278abb02f:68:Eicar-Test-Signature
