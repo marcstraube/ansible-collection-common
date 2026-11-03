@@ -79,6 +79,18 @@
       when: ansible_facts['os_family'] == 'RedHat'
 
     #
+    # ROCm Diagnostic Tools Verification
+    #
+
+    - name: Verify | Check ROCm diagnostic tools installed
+      ansible.builtin.package:
+        name: '{{ __graphics_amd_rocm_tools }}'
+        state: present
+      check_mode: true
+      register: __verify_rocm_tools
+      failed_when: __verify_rocm_tools.changed
+
+    #
     # Kernel Params Verification
     #
 

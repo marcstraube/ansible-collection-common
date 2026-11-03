@@ -18,6 +18,10 @@ __graphics_amd_mesa: 'mesa-dri-drivers'
 __graphics_amd_mesa_32bit: 'mesa-dri-drivers.i686'
 __graphics_amd_vulkan: 'mesa-vulkan-drivers'
 __graphics_amd_vulkan_32bit: 'mesa-vulkan-drivers.i686'
+# EPEL
+__graphics_amd_rocm_tools:
+  - 'rocminfo'
+  - 'rocm-smi'
 
 #
 # NVIDIA

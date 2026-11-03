@@ -13,6 +13,7 @@ hybrid graphics (PRIME render offload), and NVIDIA RTD3 power management.
 - ansible-core >= 2.19
 - `lspci` available on target (part of `pciutils`) when using `graphics_gpu: auto`
 - RPM Fusion repositories for NVIDIA on RHEL/Rocky
+- EPEL repository for the ROCm diagnostic tools on RHEL/Rocky
 - AUR helper for legacy NVIDIA drivers on Arch Linux
 
 ## Supported Platforms
@@ -57,12 +58,17 @@ overrides if needed.
 
 ### AMD GPU
 
-| Variable                      | Default | Description            |
-|-------------------------------|---------|------------------------|
-| `graphics_amd_enabled`        | `false` | Enable AMD GPU drivers |
-| `graphics_amd_mesa_enabled`   | `true`  | Enable Mesa 3D driver  |
-| `graphics_amd_vulkan_enabled` | `true`  | Enable Vulkan support  |
-| `graphics_amd_32bit_enabled`  | `false` | Enable 32-bit support  |
+| Variable                          | Default | Description                   |
+|-----------------------------------|---------|-------------------------------|
+| `graphics_amd_enabled`            | `false` | Enable AMD GPU drivers        |
+| `graphics_amd_mesa_enabled`       | `true`  | Enable Mesa 3D driver         |
+| `graphics_amd_vulkan_enabled`     | `true`  | Enable Vulkan support         |
+| `graphics_amd_32bit_enabled`      | `false` | Enable 32-bit support         |
+| `graphics_amd_rocm_tools_enabled` | `false` | Install ROCm diagnostic tools |
+
+`graphics_amd_rocm_tools_enabled` installs `rocminfo` (shows whether ROCm
+detects the GPU) and `rocm-smi` (VRAM, clocks, temperature, utilization). On
+EL both come from EPEL; EL 9 ships `rocm-smi` only.
 
 ### NVIDIA GPU
 

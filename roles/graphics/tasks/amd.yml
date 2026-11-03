@@ -8,7 +8,8 @@
         (graphics_amd_32bit_enabled | bool | ternary(
           [__graphics_amd_mesa_32bit, __graphics_amd_vulkan_32bit],
           []
-        ))
+        )) +
+        (graphics_amd_rocm_tools_enabled | bool | ternary(__graphics_amd_rocm_tools, []))
       }}
 
 - name: AMD | Install packages
