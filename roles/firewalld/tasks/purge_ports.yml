@@ -1,0 +1,72 @@
+---
+# Removes ports from managed zones that are not in the desired state.
+# Desired state = firewalld_ports + firewalld_zone_ports.
+# Ports are compared as firewall-cmd lists them (port/protocol, ranges as
+# first-last/protocol), which is the format of the role variables.
+
+#
+# Build desired ports map: zone -> [ports]
+#
+
+- name: Purge Ports | Initialize desired ports from default zone
+  ansible.builtin.set_fact:
+    __firewalld_purge_ports_desired: >-
+      {{ {firewalld_default_zone: (firewalld_ports | default([]) | unique | list)} }}
+
+- name: Purge Ports | Merge zone ports into desired map
+  ansible.builtin.set_fact:
+    __firewalld_purge_ports_desired: >-
+      {{ __firewalld_purge_ports_desired | combine({
+           item.zone:
+             ((__firewalld_purge_ports_desired[item.zone] | default([]))
+              + item.ports) | unique | list
+         }) }}
+  loop: "{{ firewalld_zone_ports | default([]) }}"
+  loop_control:
+    label: "{{ item.zone }}"
+
+#
+# Query active ports and compute excess
+#
+
+# check_mode: false — read-only query, must run under --check so the
+# downstream set_fact has a result to parse.
+- name: Purge Ports | Query active ports per managed zone
+  ansible.builtin.command:
+    cmd: "firewall-cmd --zone={{ item.key }} --list-ports --permanent"
+  register: __firewalld_purge_ports_active
+  changed_when: false
+  check_mode: false
+  loop: "{{ __firewalld_purge_ports_desired | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Purge Ports | Build list of excess ports to remove
+  ansible.builtin.set_fact:
+    __firewalld_purge_ports_excess: >-
+      {%- set ns = namespace(items=[]) -%}
+      {%- for result in __firewalld_purge_ports_active.results -%}
+        {%- set zone = result.item.key -%}
+        {%- set active = result.stdout.split() -%}
+        {%- set desired = result.item.value -%}
+        {%- for port in active if port not in desired -%}
+          {%- set ns.items = ns.items + [{'zone': zone, 'port': port}] -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ ns.items }}
+
+#
+# Remove excess ports
+#
+
+- name: Purge Ports | Remove unconfigured ports
+  ansible.posix.firewalld:
+    port: "{{ item.port }}"
+    zone: "{{ item.zone }}"
+    state: disabled
+    permanent: true
+    immediate: true
+  loop: "{{ __firewalld_purge_ports_excess }}"
+  loop_control:
+    label: "{{ item.zone }}: {{ item.port }}"
+  when: __firewalld_purge_ports_excess | length > 0

@@ -99,18 +99,22 @@ the full role afterwards.
 | `firewalld_services_disabled` | `[]`      | Services to explicitly disable                  |
 | `firewalld_purge_services`    | `false`   | Remove unconfigured services from managed zones |
 
+See [Purge](#purge) for what a managed zone is and what the purge removes.
+
 ### Ports
 
-| Variable               | Default | Description                                     |
-|------------------------|---------|-------------------------------------------------|
-| `firewalld_ports`      | `[]`    | Ports to open in default zone (`port/protocol`) |
-| `firewalld_zone_ports` | `[]`    | Ports per zone (`{zone, ports}`)                |
+| Variable                | Default | Description                                     |
+|-------------------------|---------|-------------------------------------------------|
+| `firewalld_ports`       | `[]`    | Ports to open in default zone (`port/protocol`) |
+| `firewalld_zone_ports`  | `[]`    | Ports per zone (`{zone, ports}`)                |
+| `firewalld_purge_ports` | `false` | Remove unconfigured ports from managed zones    |
 
 ### Rich Rules
 
-| Variable               | Default | Description                           |
-|------------------------|---------|---------------------------------------|
-| `firewalld_rich_rules` | `[]`    | Rich rules for complex firewall logic |
+| Variable                     | Default | Description                                       |
+|------------------------------|---------|---------------------------------------------------|
+| `firewalld_rich_rules`       | `[]`    | Rich rules for complex firewall logic             |
+| `firewalld_purge_rich_rules` | `false` | Remove unconfigured rich rules from managed zones |
 
 ### Source-Based Routing
 
@@ -167,14 +171,14 @@ the full role afterwards.
 
 ## Tags
 
-| Tag                   | Scope                       |
-|-----------------------|-----------------------------|
-| `firewalld`           | All role tasks              |
-| `firewalld:install`   | Package installation        |
-| `firewalld:zones`     | Zones and zone targets      |
-| `firewalld:configure` | Configuration and rules     |
-| `firewalld:purge`     | Purge unconfigured services |
-| `firewalld:service`   | Service management          |
+| Tag                   | Scope                                          |
+|-----------------------|------------------------------------------------|
+| `firewalld`           | All role tasks                                 |
+| `firewalld:install`   | Package installation                           |
+| `firewalld:zones`     | Zones and zone targets                         |
+| `firewalld:configure` | Configuration and rules                        |
+| `firewalld:purge`     | Purge unconfigured services, ports, rich rules |
+| `firewalld:service`   | Service management                             |
 
 ## Example Playbook
 
@@ -215,6 +219,63 @@ molecule test
 ```
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+## Notes
+
+### Purge
+
+With `firewalld_purge_services`, `firewalld_purge_ports` and
+`firewalld_purge_rich_rules` the inventory describes the complete desired
+state of the zones it manages. Managed zones are the default zone plus every
+zone that appears in the corresponding lists: `firewalld_zone_services` for
+services, `firewalld_zone_ports` for ports and the `zone` of a rich rule in
+`firewalld_rich_rules`. On every run the role compares the permanent
+configuration of each managed zone with the inventory and removes every
+service, port or rich rule that is not listed, whether it was added by hand,
+by another tool or by a package. Zones that appear in none of the lists are
+left alone.
+
+Rich rules are compared in the normalized form firewalld stores them in
+(fixed element order, every attribute value double-quoted), so
+`firewalld_rich_rules` may use any attribute order or quoting.
+`firewall-cmd --zone=<zone> --list-rich-rules --permanent` shows the form
+firewalld keeps.
+
+### Zones Shipped by Packages
+
+Some packages ship their own zones with services and rich rules. The `libvirt`
+zone (`/usr/lib/firewalld/zones/libvirt.xml`) carries the services `dhcp`,
+`dhcpv6`, `dns`, `ssh` and `tftp`, the target `ACCEPT` and the rich rule
+`rule priority="32767" reject`, which blocks guest traffic to the host except
+for the listed services. As soon as such a zone appears in one of the
+inventory lists it becomes a managed zone and the purge removes everything
+that is not listed:
+
+- `firewalld_purge_services` removes `dhcp` and `dns`, so guests get no
+  address and no name resolution.
+- `firewalld_purge_rich_rules` removes the reject rule; with the `ACCEPT`
+  target, guests then reach every service on the host.
+
+Managing a packaged zone with a purge toggle enabled therefore requires the
+complete zone content in the role variables: all its services and all its
+rich rules, as `firewall-cmd --zone=<zone> --list-services --permanent` and
+`--list-rich-rules --permanent` list them.
+
+```yaml
+firewalld_zone_services:
+  - zone: 'libvirt'
+    services:
+      - 'dhcp'
+      - 'dhcpv6'
+      - 'dns'
+      - 'ssh'
+      - 'tftp'
+firewalld_rich_rules:
+  - zone: 'libvirt'
+    rule: 'rule priority="32767" reject'
+firewalld_purge_services: true
+firewalld_purge_rich_rules: true
+```
 
 ## References
 

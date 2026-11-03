@@ -8,6 +8,8 @@
     firewalld_default_zone: 'public'
     firewalld_log_denied: 'all'
     firewalld_purge_services: true
+    firewalld_purge_ports: true
+    firewalld_purge_rich_rules: true
     firewalld_services:
       - 'ssh'
       - 'http'
@@ -17,8 +19,10 @@
       - 'cockpit'
     firewalld_ports:
       - '8080/tcp'
+    # Written in a different attribute order than firewalld lists it, so the
+    # rich rule purge must compare the normalized form to stay idempotent
     firewalld_rich_rules:
-      - rule: 'rule family="ipv4" source address="10.0.0.0/8" service name="https" accept'
+      - rule: 'rule service name="https" source address="10.0.0.0/8" family="ipv4" accept'
     # Custom zone created by the zones phase ahead of the full role
     firewalld_zones:
       - name: 'appzone'
