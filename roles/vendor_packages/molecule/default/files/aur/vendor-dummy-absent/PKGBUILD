@@ -1,0 +1,17 @@
+# Maintainer: Marc Straube <email@marcstraube.de>
+# Molecule fixture: an AUR-style package whose vendor file is never present
+# in the scenario. The vendor directory holds the archive of pkgver 1.0.0
+# only, the PKGBUILD wants 2.0.0, so the role has to skip the package.
+pkgname=vendor-dummy-absent
+pkgver=2.0.0
+pkgrel=1
+pkgdesc='Dummy package whose vendor file is missing in the molecule scenario'
+arch=('any')
+url='https://example.com/vendor-dummy-absent'
+license=('MIT')
+source=("manual://vendor-dummy-absent-${pkgver}.zip")
+sha256sums=('SKIP')
+
+package() {
+  install -Dm644 "${srcdir}/vendor-dummy-absent/README" "${pkgdir}/usr/share/vendor-dummy-absent/README"
+}

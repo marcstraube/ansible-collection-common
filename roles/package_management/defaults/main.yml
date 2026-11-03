@@ -257,6 +257,14 @@ makepkg_sign: false
 # Example: '/tmp/makepkg'
 makepkg_builddir: ''
 
+# Temporary directory exported as TMPDIR for every build (empty = /tmp).
+# Needed when /tmp is mounted noexec: build tools such as pip or meson run
+# files they create below TMPDIR. The role creates the directory (mode 1777)
+# and keeps it with a tmpfiles.d entry; it must be on a filesystem without
+# noexec.
+# Example: '/var/cache/makepkg'
+makepkg_tmpdir: ''
+
 #
 # Makepkg - Package Options
 #

@@ -1,0 +1,111 @@
+---
+name: Update VirtualBox Version
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6:00 UTC
+  workflow_dispatch:       # Manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-virtualbox:
+    name: Check for new VirtualBox branch
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # virtualbox_version is the branch (major.minor): the Oracle packages
+      # carry it in their name (virtualbox-7.2, VirtualBox-7.2), and patch
+      # releases of a branch arrive with the regular package updates. Only a
+      # newer branch is a bump. The bump waits until the release directory
+      # holds the packages for every platform the role installs from it.
+      - name: Get latest VirtualBox branch
+        id: virtualbox
+        run: |
+          CURRENT=$(grep '^virtualbox_version:' roles/virtualbox/defaults/main.yml \
+            | sed "s/.*'\(.*\)'/\1/")
+          RELEASE=$(curl -fsSL https://download.virtualbox.org/virtualbox/LATEST-STABLE.TXT \
+            | tr -d '[:space:]')
+          if ! [[ "$RELEASE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Unexpected LATEST-STABLE.TXT content: '$RELEASE'"
+            exit 1
+          fi
+          LATEST="${RELEASE%.*}"
+          NEWER=$(printf '%s\n%s\n' "$CURRENT" "$LATEST" | sort -V | tail -n 1)
+          if [[ "$LATEST" != "$CURRENT" && "$NEWER" == "$LATEST" ]]; then
+            BUMP=true
+          else
+            BUMP=false
+          fi
+          PACKAGES=false
+          if [[ "$BUMP" == 'true' ]]; then
+            LISTING=$(curl -fsSL "https://download.virtualbox.org/virtualbox/${RELEASE}/")
+            if grep -q "VirtualBox-${LATEST}-${RELEASE}_[0-9]*_el9-" <<< "$LISTING" \
+               && grep -q "VirtualBox-${LATEST}-${RELEASE}_[0-9]*_el10-" <<< "$LISTING" \
+               && grep -q "virtualbox-${LATEST}_${RELEASE}-[0-9]*~Debian~trixie_amd64" <<< "$LISTING"; then
+              PACKAGES=true
+            else
+              echo "::warning::VirtualBox ${RELEASE} packages not published for every platform yet"
+            fi
+          fi
+          {
+            echo "latest=$LATEST"
+            echo "current=$CURRENT"
+            echo "release=$RELEASE"
+            echo "update=$([[ "$BUMP" == 'true' && "$PACKAGES" == 'true' ]] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+          echo "Current: $CURRENT, Latest: $LATEST ($RELEASE), packages published: $PACKAGES"
+
+      - name: Update defaults/main.yml
+        if: steps.virtualbox.outputs.update == 'true'
+        run: |
+          sed -i "s/^virtualbox_version: '.*'/virtualbox_version: '${{ steps.virtualbox.outputs.latest }}'/" \
+            roles/virtualbox/defaults/main.yml
+
+      # Pull requests opened with github.token do not trigger the CI
+      # workflow; the release bot app token lets the bump PR run the CI.
+      - name: Generate release bot token
+        if: steps.virtualbox.outputs.update == 'true'
+        uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - name: Create Pull Request
+        if: steps.virtualbox.outputs.update == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: >-
+            chore(virtualbox): update VirtualBox version
+            ${{ steps.virtualbox.outputs.current }} →
+            ${{ steps.virtualbox.outputs.latest }}
+          branch: chore/update-virtualbox-${{ steps.virtualbox.outputs.latest }}
+          title: >-
+            chore(virtualbox): update VirtualBox version to
+            ${{ steps.virtualbox.outputs.latest }}
+          body: |
+            Automated update of `virtualbox_version` in
+            `roles/virtualbox/defaults/main.yml`.
+
+            **Previous:** `${{ steps.virtualbox.outputs.current }}`
+            **New:** `${{ steps.virtualbox.outputs.latest }}`
+            (release `${{ steps.virtualbox.outputs.release }}`)
+
+            Changelog: https://www.virtualbox.org/wiki/Changelog-${{ steps.virtualbox.outputs.latest }}
+
+            The role replaces the installed branch on Debian and Rocky Linux.
+            The virtualbox molecule scenario runs in VMs and is tested
+            locally, not in CI: run it on all platforms before merging.
+
+            ---
+            This PR was created automatically by the
+            `update-virtualbox-version` workflow.
+          labels: dependencies
+          delete-branch: true

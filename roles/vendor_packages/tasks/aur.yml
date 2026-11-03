@@ -1,0 +1,217 @@
+---
+# Builds one AUR package whose PKGBUILD takes its source from a file the user
+# downloaded by hand (a manual:// source, which makepkg only accepts when the
+# file already lies next to the PKGBUILD). Called by other roles with
+# include_role and tasks_from; the caller passes vendor_packages_aur_name,
+# vendor_packages_file_pattern and vendor_packages_download_url as vars.
+#
+# Flow: clone or update the package repository, read the version from its
+# .SRCINFO, compare it with the installed package, and only when the package
+# is missing or older: check the vendor file on the controller, stage it next
+# to the PKGBUILD and build with makepkg as the AUR builder user. A missing
+# vendor file (or one of another version, which has another name) prints a
+# notice and skips the package; the play goes on.
+#
+# The clone and the staged file stay in the build directory so a failed build
+# does not transfer the file again; after a successful build the staged file
+# is removed. The package is never removed or downgraded.
+
+- name: AUR | Assert platform and caller variables
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Archlinux'
+      - vendor_packages_aur_name | default('') | length > 0
+      - vendor_packages_file_pattern | default('') | length > 0
+    fail_msg: >-
+      The aur.yml entry point of marcstraube.common.vendor_packages runs on
+      Arch Linux only and needs vendor_packages_aur_name and
+      vendor_packages_file_pattern from the calling role.
+
+# A pacman repository, for example a private one, may carry the package
+# prebuilt. Then the package comes from the repository, the vendor path is
+# skipped, and updates arrive with the system upgrade. The query covers
+# every configured repository; the AUR is not one of them.
+- name: AUR | Query the package in the pacman repositories
+  ansible.builtin.command:
+    cmd: 'pacman -Si {{ vendor_packages_aur_name | quote }}'
+  register: __vendor_packages_repo
+  changed_when: false
+  check_mode: false
+  # Not in any repository: the package is built from the vendor file
+  failed_when: false
+
+- name: AUR | Install the package from the pacman repository
+  community.general.pacman:
+    name: '{{ vendor_packages_aur_name }}'
+    state: present
+  retries: 3
+  delay: 5
+  when: __vendor_packages_repo.rc == 0
+
+- name: AUR | Build the package from the vendor file
+  when: __vendor_packages_repo.rc != 0
+  block:
+    - name: AUR | Install build dependencies
+      ansible.builtin.package:
+        name: '{{ __vendor_packages_packages }}'
+        state: present
+      retries: 3
+      delay: 5
+
+    - name: AUR | Create build and sources directories
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: "{{ aur_builder_user | default('aur_builder') }}"
+        group: "{{ aur_builder_user | default('aur_builder') }}"
+        mode: '0755'
+      loop:
+        - '{{ __vendor_packages_build_dir }}'
+        - '{{ __vendor_packages_sources_dir }}'
+
+    # Same directory and mode as marcstraube.common.package_management creates
+    # for makepkg_tmpdir; a no-op when that role ran before.
+    - name: AUR | Create makepkg TMPDIR
+      ansible.builtin.file:
+        path: '{{ __vendor_packages_tmpdir }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '1777'
+      when: __vendor_packages_tmpdir != __vendor_packages_build_dir
+
+    # The clone decides what the installed package is compared with, so it
+    # runs in check mode too.
+    - name: AUR | Clone or update the package repository
+      ansible.builtin.git:
+        repo: '{{ __vendor_packages_aur_base_url }}/{{ vendor_packages_aur_name }}.git'
+        dest: '{{ __vendor_packages_clone_dir }}'
+        version: 'master'
+      become: true
+      become_user: "{{ aur_builder_user | default('aur_builder') }}"
+      retries: 5
+      delay: 10
+      check_mode: false
+
+    - name: AUR | Read .SRCINFO
+      ansible.builtin.slurp:
+        src: '{{ __vendor_packages_clone_dir }}/.SRCINFO'
+      register: __vendor_packages_srcinfo
+
+    # .SRCINFO lists pkgver, pkgrel and the optional epoch under pkgbase; the
+    # first pkgname is the package pacman knows (split packages share the
+    # version).
+    - name: AUR | Set package version and vendor file name
+      ansible.builtin.set_fact:
+        __vendor_packages_pkgname: '{{ __vendor_packages_srcinfo_pkgname }}'
+        __vendor_packages_pkgver: '{{ __vendor_packages_srcinfo_pkgver }}'
+        __vendor_packages_version: >-
+          {{ (__vendor_packages_srcinfo_epoch ~ ':' if __vendor_packages_srcinfo_epoch | length > 0 else '')
+             ~ __vendor_packages_srcinfo_pkgver ~ '-' ~ __vendor_packages_srcinfo_pkgrel }}
+        __vendor_packages_file: >-
+          {{ vendor_packages_file_pattern | replace('{pkgver}', __vendor_packages_srcinfo_pkgver) }}
+      vars:
+        __vendor_packages_srcinfo_text: '{{ __vendor_packages_srcinfo.content | b64decode }}'
+        __vendor_packages_srcinfo_pkgname: >-
+          {{ __vendor_packages_srcinfo_text | regex_findall('^\s*pkgname = (.+)$', multiline=True) | first }}
+        __vendor_packages_srcinfo_pkgver: >-
+          {{ __vendor_packages_srcinfo_text | regex_findall('^\s*pkgver = (.+)$', multiline=True) | first }}
+        __vendor_packages_srcinfo_pkgrel: >-
+          {{ __vendor_packages_srcinfo_text | regex_findall('^\s*pkgrel = (.+)$', multiline=True) | first }}
+        __vendor_packages_srcinfo_epoch: >-
+          {{ __vendor_packages_srcinfo_text | regex_findall('^\s*epoch = (.+)$', multiline=True)
+             | first | default('') }}
+
+    - name: AUR | Query installed version
+      ansible.builtin.command:
+        cmd: 'pacman -Q {{ __vendor_packages_pkgname | quote }}'
+      register: __vendor_packages_installed
+      changed_when: false
+      check_mode: false
+      # The package may not be installed yet
+      failed_when: false
+
+    # vercmp knows epochs and pkgrel, the Ansible version test does not
+    - name: AUR | Compare installed version with the PKGBUILD version
+      ansible.builtin.command:
+        cmd: 'vercmp {{ __vendor_packages_installed_version | quote }} {{ __vendor_packages_version | quote }}'
+      vars:
+        # pacman -Q prints '<name> <version>'
+        __vendor_packages_installed_version: '{{ __vendor_packages_installed.stdout.split() | last }}'
+      register: __vendor_packages_vercmp
+      changed_when: false
+      check_mode: false
+      when: __vendor_packages_installed.rc == 0
+
+    - name: AUR | Decide whether the package needs a build
+      ansible.builtin.set_fact:
+        __vendor_packages_needed: >-
+          {{ __vendor_packages_installed.rc != 0
+             or (__vendor_packages_vercmp.stdout | default('0') | trim | int) < 0 }}
+
+    # No checksum: the file may have several GB; the PKGBUILD verifies it
+    - name: AUR | Check the vendor file on the controller
+      ansible.builtin.stat:
+        path: '{{ vendor_packages_dir }}/{{ __vendor_packages_file }}'
+        get_checksum: false
+        get_mime: false
+      delegate_to: localhost
+      become: false
+      register: __vendor_packages_local_file
+      when: __vendor_packages_needed | bool
+
+    - name: AUR | Record whether the vendor file is present
+      ansible.builtin.set_fact:
+        __vendor_packages_file_present: >-
+          {{ __vendor_packages_needed | bool
+             and __vendor_packages_local_file.stat.exists | default(false)
+             and __vendor_packages_local_file.stat.isreg | default(false) }}
+
+    - name: AUR | Notice about the missing vendor file
+      ansible.builtin.debug:
+        msg: >-
+          Vendor file for {{ __vendor_packages_pkgname }} {{ __vendor_packages_version }}
+          not found on the Ansible controller: {{ vendor_packages_dir }}/{{ __vendor_packages_file }}.
+          Download {{ __vendor_packages_file }}
+          {{ 'from ' ~ vendor_packages_download_url
+             if vendor_packages_download_url | default('') | length > 0 else '' }}
+          and place it in {{ vendor_packages_dir }}; the package is skipped on this run.
+      when:
+        - __vendor_packages_needed | bool
+        - not __vendor_packages_file_present | bool
+
+    # Streams the file through the connection; no checksum skipping here, the
+    # copy module compares both sides itself and transfers only on a change
+    - name: AUR | Stage the vendor file in the sources directory
+      ansible.builtin.copy:
+        src: '{{ vendor_packages_dir }}/{{ __vendor_packages_file }}'
+        dest: '{{ __vendor_packages_sources_dir }}/{{ __vendor_packages_file }}'
+        owner: "{{ aur_builder_user | default('aur_builder') }}"
+        group: "{{ aur_builder_user | default('aur_builder') }}"
+        mode: '0644'
+      when: __vendor_packages_file_present | bool
+
+    # state: latest, because the role has already decided that the installed
+    # package is missing or older; present would skip an installed package of
+    # any version. makepkg looks for every source next to the PKGBUILD and
+    # then in SRCDEST before it downloads, so it finds the staged file in the
+    # sources directory and verifies it against the checksums of the PKGBUILD;
+    # the module copies only the clone below TMPDIR.
+    - name: AUR | Build and install the package from the local PKGBUILD
+      become: true
+      become_user: "{{ aur_builder_user | default('aur_builder') }}"
+      kewlfft.aur.aur:
+        name: '{{ __vendor_packages_pkgname }}'
+        use: makepkg
+        state: latest
+        local_pkgbuild: '{{ __vendor_packages_clone_dir }}'
+      environment:
+        TMPDIR: '{{ __vendor_packages_tmpdir }}'
+        SRCDEST: '{{ __vendor_packages_sources_dir }}'
+      when: __vendor_packages_file_present | bool
+
+    - name: AUR | Remove the staged vendor file after the install
+      ansible.builtin.file:
+        path: '{{ __vendor_packages_sources_dir }}/{{ __vendor_packages_file }}'
+        state: absent
+      when: __vendor_packages_file_present | bool

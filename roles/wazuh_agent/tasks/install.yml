@@ -1,0 +1,293 @@
+---
+# Debian and EL install exactly wazuh_agent_version, so a raised version
+# updates the agent. A lower version would downgrade it and fails here.
+# The package is held at that version so that a system upgrade cannot move
+# the agent past the manager; a version change releases the hold for the
+# install and sets it again afterwards.
+# The package facts also feed the check-mode guards of main.yml and the
+# handlers, so every sub-tag run gathers them.
+- name: Install | Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+  tags:
+    - always
+
+- name: Install | Assert wazuh_agent_version is not a downgrade
+  ansible.builtin.assert:
+    that:
+      - __wazuh_agent_installed_version is version(wazuh_agent_version, '<=')
+    fail_msg: >-
+      The installed Wazuh agent {{ __wazuh_agent_installed_version }} is newer
+      than wazuh_agent_version {{ wazuh_agent_version }}. The role does not
+      downgrade the agent.
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
+  when:
+    - ansible_facts['os_family'] in ['Debian', 'RedHat']
+    - __wazuh_agent_package_name in ansible_facts.packages
+
+- name: Install | Release package hold for the version change (Debian)
+  ansible.builtin.dpkg_selections:
+    name: '{{ __wazuh_agent_package_name }}'
+    selection: install
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - __wazuh_agent_package_name in ansible_facts.packages
+    - __wazuh_agent_installed_version != wazuh_agent_version
+
+- name: Install | Release version lock for the version change (RedHat)
+  community.general.dnf_versionlock:
+    name: '{{ __wazuh_agent_package_name }}'
+    state: absent
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __wazuh_agent_package_name in ansible_facts.packages
+    - __wazuh_agent_installed_version != wazuh_agent_version
+
+# A raised wazuh_agent_version must see the current repository state: the
+# cache is only refreshed after a repository change (repos.yml) and may not
+# carry the new release yet, so the install would fail with "no package
+# available". The dnf cache is cleared rather than refreshed: dnf on EL 9
+# keeps the cached mirror list on makecache --refresh and stays on the
+# mirror it picked first, even when that mirror has stopped syncing.
+# Clearing the cache fetches a new list.
+# check_mode: false — the metadata cache holds no package, and --check
+# must report the update the real run would install.
+- name: Install | Clear package metadata for the version change (RedHat)
+  ansible.builtin.command:
+    cmd: dnf clean metadata
+  changed_when: false
+  check_mode: false
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __wazuh_agent_package_name in ansible_facts.packages
+    - __wazuh_agent_installed_version != wazuh_agent_version
+    - __wazuh_agent_repo_stat.stat.exists | default(true)
+
+- name: Install | Refresh package metadata for the version change (RedHat)
+  ansible.builtin.command:
+    cmd: dnf makecache
+  changed_when: false
+  check_mode: false
+  retries: 5
+  delay: 10
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __wazuh_agent_package_name in ansible_facts.packages
+    - __wazuh_agent_installed_version != wazuh_agent_version
+    - __wazuh_agent_repo_stat.stat.exists | default(true)
+
+- name: Install | Refresh package metadata for the version change (Debian)
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+  check_mode: false
+  retries: 3
+  delay: 5
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - __wazuh_agent_package_name in ansible_facts.packages
+    - __wazuh_agent_installed_version != wazuh_agent_version
+    - __wazuh_agent_repo_stat.stat.exists | default(true)
+
+# Skipped in check mode while the repository file is missing (repos.yml):
+# the package manager does not know the package before a real run.
+# OS-specific modules instead of ansible.builtin.package: the hold release
+# above is only simulated in check mode, so the hold (versionlock) still
+# blocks the simulated install of a raised wazuh_agent_version. The
+# options let the simulation report the update; a real run released the
+# hold already, so they change nothing there.
+- name: Install | Wazuh agent package (Debian)
+  ansible.builtin.apt:
+    name: '{{ __wazuh_agent_package }}'
+    state: present
+    allow_change_held_packages: true
+  retries: 3
+  delay: 5
+  register: __wazuh_agent_install_apt
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - __wazuh_agent_repo_stat.stat.exists | default(true)
+  notify:
+    - Reload Wazuh agent systemd units
+    - Restart Wazuh agent
+
+- name: Install | Wazuh agent package (RedHat)
+  ansible.builtin.dnf:
+    name: '{{ __wazuh_agent_package }}'
+    state: present
+    disable_plugin:
+      - versionlock
+  retries: 3
+  delay: 5
+  register: __wazuh_agent_install_dnf
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __wazuh_agent_repo_stat.stat.exists | default(true)
+  notify:
+    - Reload Wazuh agent systemd units
+    - Restart Wazuh agent
+
+- name: Install | Refresh package facts after install
+  ansible.builtin.package_facts:
+    manager: auto
+  when:
+    - ansible_facts['os_family'] in ['Debian', 'RedHat']
+    - __wazuh_agent_install_apt is changed or __wazuh_agent_install_dnf is changed
+
+# Only an installed package can be held. In check mode the install above
+# changes nothing, so the package (or the versionlock plugin) may be missing.
+- name: Install | Hold Wazuh agent package (Debian)
+  ansible.builtin.dpkg_selections:
+    name: '{{ __wazuh_agent_package_name }}'
+    selection: hold
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - __wazuh_agent_package_name in ansible_facts.packages
+
+- name: Install | Lock Wazuh agent version (RedHat)
+  community.general.dnf_versionlock:
+    name: '{{ __wazuh_agent_package_name }}'
+    state: present
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __wazuh_agent_package_name in ansible_facts.packages
+    - not (ansible_check_mode and __wazuh_agent_prerequisites is changed)
+
+#
+# Arch Linux
+#
+# The AUR builds the current upstream release only. A release newer than
+# wazuh_agent_version would be newer than the manager, which rejects it.
+# The role installs or updates the agent only while the AUR release is not
+# newer than wazuh_agent_version; a newer AUR release fails a first install
+# and leaves an installed agent alone. A pacman IgnorePkg drop-in keeps
+# system upgrades from moving the agent; the explicit install below is not
+# affected by it.
+#
+
+- name: Install | pacman ignore drop-in directory
+  ansible.builtin.file:
+    path: '{{ __wazuh_agent_pacman_ignore_file | dirname }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | pacman ignore drop-in
+  ansible.builtin.template:
+    src: pacman-ignore.conf.j2
+    dest: '{{ __wazuh_agent_pacman_ignore_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Query AUR package version
+  ansible.builtin.uri:
+    url: 'https://aur.archlinux.org/rpc/v5/info?arg[]={{ __wazuh_agent_aur_packages.agent | first }}'
+    return_content: true
+  register: __wazuh_agent_aur_info
+  check_mode: false
+  retries: 3
+  delay: 5
+  until: __wazuh_agent_aur_info is succeeded
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Assert AUR package exists
+  ansible.builtin.assert:
+    that:
+      - __wazuh_agent_aur_info.json.results | length > 0
+    fail_msg: 'The AUR has no package {{ __wazuh_agent_aur_packages.agent | first }}.'
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Set AUR package version
+  ansible.builtin.set_fact:
+    __wazuh_agent_aur_version: '{{ (__wazuh_agent_aur_info.json.results | first).Version }}'
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+- name: Install | Assert AUR release is not newer than wazuh_agent_version
+  ansible.builtin.assert:
+    that:
+      - __wazuh_agent_aur_release is version(wazuh_agent_version, '<=')
+    fail_msg: >-
+      The AUR holds the Wazuh agent {{ __wazuh_agent_aur_release }}, newer
+      than wazuh_agent_version {{ wazuh_agent_version }}. The manager rejects
+      agents newer than itself. Update the manager to
+      {{ __wazuh_agent_aur_release }} and raise wazuh_agent_version.
+  vars:
+    __wazuh_agent_aur_release: "{{ __wazuh_agent_aur_version | regex_replace('-.*$', '') }}"
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __wazuh_agent_package_name not in ansible_facts.packages
+
+# latest rebuilds the package on every run, so it is only used when the
+# AUR holds a newer build that does not exceed wazuh_agent_version
+- name: Install | Wazuh agent package (AUR)
+  become: true
+  become_user: "{{ aur_builder_user | default('aur_builder') }}"
+  kewlfft.aur.aur:
+    name: '{{ __wazuh_agent_aur_packages.agent }}'
+    state: "{{ 'latest' if __wazuh_agent_aur_update | bool else 'present' }}"
+  retries: 3
+  delay: 5
+  register: __wazuh_agent_aur_install
+  vars:
+    __wazuh_agent_aur_update: >-
+      {{ __wazuh_agent_package_name in ansible_facts.packages
+         and ansible_facts.packages[__wazuh_agent_package_name][0].version
+             is version(__wazuh_agent_aur_version, '<')
+         and (__wazuh_agent_aur_version | regex_replace('-.*$', ''))
+             is version(wazuh_agent_version, '<=') }}
+  when: ansible_facts['os_family'] == 'Archlinux'
+  notify:
+    - Reload Wazuh agent systemd units
+    - Restart Wazuh agent
+
+- name: Install | Refresh package facts after AUR install
+  ansible.builtin.package_facts:
+    manager: auto
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __wazuh_agent_aur_install is changed
+
+# Catches a manual AUR upgrade past wazuh_agent_version
+- name: Install | Assert installed AUR version is not newer than wazuh_agent_version
+  ansible.builtin.assert:
+    that:
+      - __wazuh_agent_installed_version is version(wazuh_agent_version, '<=')
+    fail_msg: >-
+      The installed Wazuh agent {{ __wazuh_agent_installed_version }} is newer
+      than wazuh_agent_version {{ wazuh_agent_version }}. The manager rejects
+      agents newer than itself. Update the manager to
+      {{ __wazuh_agent_installed_version }} and raise wazuh_agent_version.
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
+  when:
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __wazuh_agent_package_name in ansible_facts.packages

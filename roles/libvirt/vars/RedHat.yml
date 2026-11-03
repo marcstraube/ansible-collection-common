@@ -1,0 +1,17 @@
+---
+# libvirt-daemon-config-network ships the default NAT network definition.
+__libvirt_packages:
+  - 'libvirt-daemon-kvm'
+  - 'libvirt-daemon-config-network'
+  - 'libvirt-client'
+  - 'qemu-kvm'
+  - 'dnsmasq'
+
+# Modular daemons, one per driver
+__libvirt_daemons:
+  - 'virtqemud'
+  - 'virtnetworkd'
+  - 'virtnodedevd'
+  - 'virtnwfilterd'
+  - 'virtsecretd'
+  - 'virtstoraged'

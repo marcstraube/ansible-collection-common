@@ -47,6 +47,7 @@ provisioner:
   playbooks:
     prepare: prepare.yml
     converge: converge.yml
+    side_effect: side_effect.yml
     verify: verify.yml
   inventory:
     host_vars:
@@ -73,5 +74,7 @@ scenario:
     # Run the role once in check mode against the converged instance; the
     # BTRFS detection runs there as well.
     - check
+    # Roll the packages back and run the targeted update
+    - side_effect
     - verify
     - destroy

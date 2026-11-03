@@ -5,20 +5,74 @@
       {{ (__php_version_item.version == 'auto')
          | ternary(__php_system_version, __php_version_item.version) }}
 
-- name: Install Version | Validate AppStream version matches active stream
+# AppStream: the version selects the packages. EL 9 serves 8.0 as plain
+# packages and 8.1 to 8.3 as module streams, EL 10 ships the default as
+# php-* and 8.4 as the php8.4-* set; __php_redhat_versions maps each version
+# to its package prefix.
+- name: Install Version | Assert AppStream carries the requested version
   ansible.builtin.assert:
     that:
-      - (__php_resolved_version | string) == (__php_system_version | string)
+      - (__php_resolved_version | string) in __php_redhat_versions
     fail_msg: |
-      The active AppStream PHP module stream is {{ __php_system_version }},
-      but the inventory requested PHP {{ __php_resolved_version }}.
-      AppStream streams are exclusive — switch the active stream with
-      'sudo dnf module reset -y php && sudo dnf module enable -y php:{{ __php_resolved_version }}'
-      before re-running this role, or set php_redhat_repo: 'remi' to use
-      Remi side-by-side packages instead.
+      AppStream on {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_major_version'] }}
+      does not carry PHP {{ __php_resolved_version }}. Available versions:
+      {{ __php_redhat_versions | list | join(', ') }}. For other versions set
+      php_redhat_repo: 'remi'.
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - php_redhat_repo == 'appstream'
+
+# The role never switches a host to another PHP version: with the new stream
+# enabled, or the other package set requested, the package task would replace
+# the installed version. The switch stays a manual step.
+- name: Install Version | Assert AppStream version matches the installed PHP
+  ansible.builtin.assert:
+    that:
+      - (__php_redhat_installed_version | length == 0)
+        or ((__php_resolved_version | string) == (__php_redhat_installed_version | string))
+    fail_msg: |
+      PHP {{ __php_redhat_installed_version }} is installed from AppStream, but
+      the inventory requested PHP {{ __php_resolved_version }}. The role does
+      not switch versions. Remove the installed packages with
+      'sudo dnf remove "{{ __php_redhat_versions[__php_redhat_installed_version] | default('php-') }}*"'{{
+        (__php_redhat_streams | length > 0)
+        | ternary(", reset the module stream with 'sudo dnf module reset -y php'", '') }}
+      and re-run this role, or set php_redhat_repo: 'remi' to install several
+      versions side by side.
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'appstream'
+
+- name: Install Version | Assert AppStream module stream matches the requested version
+  ansible.builtin.assert:
+    that:
+      - (__php_redhat_enabled_stream | length == 0)
+        or (__php_redhat_enabled_stream == (__php_resolved_version | string))
+    fail_msg: |
+      The enabled php module stream is {{ __php_redhat_enabled_stream }}, but
+      the inventory requested PHP {{ __php_resolved_version }}. Switch the
+      stream with 'sudo dnf module reset -y php{{
+        ((__php_resolved_version | string) in __php_redhat_streams)
+        | ternary(' && sudo dnf module enable -y php:' ~ __php_resolved_version, '') }}'
+      and re-run this role, or set php_redhat_repo: 'remi' to install several
+      versions side by side.
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'appstream'
+    - __php_redhat_streams | length > 0
+
+# A version served as a module stream needs the stream enabled before the
+# php-* packages resolve to it. Skipped under --check (the package task then
+# reports the install of the default version), never fails the run.
+- name: Install Version | Enable AppStream module stream  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    cmd: 'dnf module enable -y php:{{ __php_resolved_version }}'
+  changed_when: true
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'appstream'
+    - (__php_resolved_version | string) in __php_redhat_streams
+    - __php_redhat_enabled_stream | length == 0
 
 - name: Install Version | Set version facts
   ansible.builtin.set_fact:
@@ -51,6 +105,20 @@
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_ver != __php_system_version
+
+# AppStream package names from the prefix of the selected version (php-* or
+# php8.4-* on EL 10). The extension map holds suffixes, like the Remi map.
+- name: Install Version | Set RedHat AppStream package patterns
+  ansible.builtin.set_fact:
+    __php_cli_package: '{{ __php_redhat_prefix }}cli'
+    __php_fpm_package: '{{ __php_redhat_prefix }}fpm'
+    __php_extension_prefix: '{{ __php_redhat_prefix }}'
+    __php_extension_map_suffix: true
+  vars:
+    __php_redhat_prefix: '{{ __php_redhat_versions[__php_ver | string] }}'
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'appstream'
 
 # Override for Remi (RHEL multi-version side-by-side install).
 # vars/RedHat.yml ships AppStream defaults; switch to Remi naming +
@@ -90,9 +158,9 @@
     - not (__php_use_aur | bool)
 
 # On Remi, base and extension packages use versioned SCL names
-# (php<XX>-php-<...>). vars/RedHat.yml ships the AppStream map (full package
-# names) as the default, so switch to the Remi suffix map and prefix its
-# values with __php_extension_prefix like the Arch AUR path.
+# (php<XX>-php-<...>). vars/RedHat.yml ships the AppStream map as the
+# default, so switch to the Remi suffix map; its values are prefixed with
+# __php_extension_prefix like the AppStream and Arch AUR maps.
 - name: Install Version | Select RedHat Remi extension map
   ansible.builtin.set_fact:
     __php_extension_map: '{{ __php_extension_map_remi }}'
@@ -102,9 +170,9 @@
     - php_redhat_repo == 'remi'
 
 # Build the package list. When the active map holds suffixes (Arch AUR,
-# RedHat Remi) they must be prefixed with __php_extension_prefix (e.g.
-# 'php84-' or 'php84-php-'); otherwise the map values are full package names
-# and are used verbatim.
+# RedHat AppStream and Remi) they must be prefixed with __php_extension_prefix
+# (e.g. 'php84-', 'php8.4-' or 'php84-php-'); otherwise the map values are
+# full package names and are used verbatim.
 - name: Install Version | Build package list
   ansible.builtin.set_fact:
     __php_version_packages: >-
@@ -122,13 +190,42 @@
          | ternary(_mapped_raw | map('regex_replace', '^(.*)$', __php_extension_prefix + '\1') | list,
                    _mapped_raw) }}
 
+# A targeted update covers every installed package of this version, not only
+# the configured ones: parts pulled in as dependencies (e.g. php-opcache,
+# php-pdo) pin the exact version of the common package and must move in the
+# same transaction.
+- name: Install Version | Merge installed packages into the update (RedHat, Debian)
+  ansible.builtin.set_fact:
+    __php_version_packages: >-
+      {{ (__php_version_packages
+          + (ansible_facts['packages'] | default({}) | list
+             | select('match', '^' + (__php_extension_prefix | regex_escape) + '.+')
+             | list))
+         | unique | list }}
+  when:
+    - php_packages_state == 'latest'
+    - ansible_facts['os_family'] in ['RedHat', 'Debian']
+
 - name: Install Version | PHP packages
   ansible.builtin.package:
     name: '{{ __php_version_packages }}'
-    state: present
+    state: "{{ (ansible_facts['os_family'] == 'Archlinux') | ternary('present', php_packages_state) }}"
+  register: __php_packages_result
   retries: 3
   delay: 5
   when: not (__php_use_aur | bool)
+
+# A running FPM master keeps executing the old binary after an update; a
+# reload does not replace it, so the service is restarted.
+- name: Install Version | Queue FPM restart for package update
+  ansible.builtin.set_fact:
+    __php_fpm_restart_services: "{{ __php_fpm_restart_services + [__php_fpm_service] }}"
+  when:
+    - php_packages_state == 'latest'
+    - __php_version_item.fpm | default(true) | bool
+    - __php_packages_result is changed
+  changed_when: true
+  notify: 'Restart PHP-FPM'
 
 # Installed parts of the split package that are not in the configured
 # list (e.g. phpXX-pdo or phpXX-cli, pulled in earlier as dependencies)
@@ -257,3 +354,32 @@
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_use_aur | bool
+
+# Re-read the installed packages, the facts gathered before the update show
+# the old versions.
+- name: Install Version | Gather package facts for minimum version check
+  ansible.builtin.package_facts:
+  when:
+    - (__php_ver | string) in php_packages_minimum
+    - not ansible_check_mode
+
+- name: Install Version | Check minimum version
+  ansible.builtin.assert:
+    that:
+      - __php_installed_version | length > 0
+      - __php_installed_version is version(php_packages_minimum[__php_ver | string] | string, '>=')
+    fail_msg: >-
+      {{ __php_cli_package }} {{ __php_installed_version | default('(not installed)', true) }}
+      is installed, php_packages_minimum requires
+      {{ php_packages_minimum[__php_ver | string] }} for PHP {{ __php_ver }}.
+      The repository does not carry the required version yet.
+    success_msg: >-
+      {{ __php_cli_package }} {{ __php_installed_version }} meets the minimum
+      {{ php_packages_minimum[__php_ver | string] }}
+  vars:
+    __php_installed_version: >-
+      {{ (ansible_facts['packages'][__php_cli_package] | default([{'version': ''}]) | first)['version']
+         | regex_search('^[0-9]+(\.[0-9]+)*') | default('', true) }}
+  when:
+    - (__php_ver | string) in php_packages_minimum
+    - not ansible_check_mode

@@ -5,6 +5,21 @@
 
   tasks:
     #
+    # Load Role Variables
+    #
+
+    - name: Verify | Load OS-specific variables
+      ansible.builtin.include_vars: '{{ item }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_facts["distribution"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}-{{ ansible_facts["distribution_major_version"] }}.yml'
+            - '{{ ansible_facts["distribution"] }}.yml'
+            - '{{ ansible_facts["os_family"] }}.yml'
+          paths:
+            - '../../vars'
+
+    #
     # Package Verification
     #
 
@@ -218,3 +233,121 @@
         that:
           - "'ClamAV' in __verify_clamscan_version.stdout"
         fail_msg: 'clamscan version output unexpected'
+
+    #
+    # Service Verification
+    #
+
+    # No module reads a unit property, hence systemctl show
+    - name: Verify | Read the main PID of the ClamAV daemon  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - show
+          - --property=MainPID
+          - --value
+          - '{{ __clamav_daemon_service }}'
+      register: __verify_daemon_pid
+      changed_when: false
+
+    - name: Verify | Assert the ClamAV daemon is running
+      ansible.builtin.assert:
+        that:
+          - __verify_daemon_pid.stdout | trim not in ['', '0']
+        fail_msg: 'The ClamAV daemon {{ __clamav_daemon_service }} is not running'
+        success_msg: 'The ClamAV daemon runs with PID {{ __verify_daemon_pid.stdout | trim }}'
+
+    #
+    # Targeted package update (side_effect rolled the packages back and ran
+    # the converge playbook with clamav_packages_state: latest)
+    #
+
+    - name: Verify | Stat the version record
+      ansible.builtin.stat:
+        path: /root/clamav-update-versions
+      register: __verify_update_stat
+
+    - name: Verify | Read the clamav package versions around the rollback
+      ansible.builtin.slurp:
+        src: /root/clamav-update-versions
+      register: __verify_update_versions
+      when: __verify_update_stat.stat.exists
+
+    - name: Verify | Gather package facts after the update
+      ansible.builtin.package_facts:
+      when: __verify_update_stat.stat.exists
+
+    - name: Verify | Set update version facts
+      ansible.builtin.set_fact:
+        __verify_version_latest: '{{ (__verify_update_versions.content | b64decode).splitlines()[0] | trim }}'
+        __verify_version_rolled_back: '{{ (__verify_update_versions.content | b64decode).splitlines()[1] | trim }}'
+        __verify_version_now: >-
+          {{ [(ansible_facts['packages']['clamav'] | first).version,
+              (ansible_facts['packages']['clamav'] | first).release | default('')]
+             | select | join('-') }}
+      when: __verify_update_stat.stat.exists
+
+    # Without a rollback (the repository holds only one build) the update
+    # changed nothing and there is no restart to check
+    - name: Verify | Decide whether the update replaced the packages
+      ansible.builtin.set_fact:
+        __verify_update_replaced: >-
+          {{ __verify_update_stat.stat.exists
+             and __verify_version_rolled_back != __verify_version_latest }}
+
+    - name: Verify | Assert the update restored the latest build
+      ansible.builtin.assert:
+        that:
+          - __verify_version_now == __verify_version_latest
+        fail_msg: >-
+          clamav is at {{ __verify_version_now }} after the update, expected
+          {{ __verify_version_latest }} (rolled back to {{ __verify_version_rolled_back }})
+        success_msg: >-
+          Updated from {{ __verify_version_rolled_back }} to {{ __verify_version_now }}
+      when: __verify_update_replaced | bool
+
+    # readlink reports a replaced binary as "<path> (deleted)"
+    - name: Verify | Read the binary of the running ClamAV daemon
+      ansible.builtin.command:
+        argv:
+          - readlink
+          - '/proc/{{ __verify_daemon_pid.stdout | trim }}/exe'
+      register: __verify_daemon_exe
+      changed_when: false
+      when: __verify_update_replaced | bool
+
+    - name: Verify | Assert the ClamAV daemon runs the updated binary
+      ansible.builtin.assert:
+        that:
+          - __verify_daemon_exe.stdout is not search(' \(deleted\)$')
+        fail_msg: 'The ClamAV daemon still runs the replaced binary: {{ __verify_daemon_exe.stdout }}'
+        success_msg: 'The ClamAV daemon runs the updated binary'
+      when: __verify_update_replaced | bool
+
+    # side_effect blocks the package restart on Debian, so the role has to
+    # restart clamd there; where the package restarts it, the role must not
+    # restart it again. Either way the update starts clamd exactly once.
+    - name: Verify | Read the ClamAV daemon starts since the update
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - '--unit={{ __clamav_daemon_service }}'
+          - '--since=@{{ __verify_update_stat.stat.mtime }}'
+          - '--output=cat'
+          - '--no-pager'
+      register: __verify_update_journal
+      changed_when: false
+      when: __verify_update_replaced | bool
+
+    - name: Verify | Assert the update restarted the ClamAV daemon exactly once
+      ansible.builtin.assert:
+        that:
+          - __verify_update_starts | length == 1
+        fail_msg: >-
+          The ClamAV daemon started {{ __verify_update_starts | length }} times after the
+          package update: {{ __verify_update_starts }}
+        success_msg: 'The ClamAV daemon started once after the package update'
+      vars:
+        __verify_update_starts: >-
+          {{ __verify_update_journal.stdout_lines | select('match', '^Started ') | list }}
+      when: __verify_update_replaced | bool

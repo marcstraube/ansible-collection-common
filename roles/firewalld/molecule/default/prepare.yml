@@ -89,3 +89,34 @@
         name: polkit
         state: started
       when: ansible_facts['os_family'] == 'Debian'
+
+    #
+    # Purge Test State
+    #
+
+    # The role purges unconfigured ports and rich rules from managed zones.
+    # Seed the public zone with an extra port and an extra rich rule before
+    # the role runs. firewall-offline-cmd writes the permanent configuration
+    # without the daemon, which the role starts itself.
+    - name: Prepare | Install firewalld for the purge test state
+      ansible.builtin.package:
+        name: firewalld
+        state: present
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Open an unconfigured port in the public zone
+      ansible.builtin.command:
+        argv:
+          - firewall-offline-cmd
+          - --zone=public
+          - --add-port=9999/tcp
+      changed_when: true
+
+    - name: Prepare | Add an unconfigured rich rule to the public zone
+      ansible.builtin.command:
+        argv:
+          - firewall-offline-cmd
+          - --zone=public
+          - --add-rich-rule=rule family="ipv4" source address="203.0.113.0/24" port port="2222" protocol="tcp" accept
+      changed_when: true

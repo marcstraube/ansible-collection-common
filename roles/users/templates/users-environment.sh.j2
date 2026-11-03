@@ -1,0 +1,10 @@
+{{ ansible_managed | default('Ansible managed') | comment }}
+case "$(id -un)" in
+{% for user in __users_environment_list %}
+  {{ user.name | quote }})
+{% for name, value in user.environment.items() %}
+    export {{ name }}={{ value | string | quote }}
+{% endfor %}
+    ;;
+{% endfor %}
+esac

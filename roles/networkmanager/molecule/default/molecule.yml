@@ -71,6 +71,8 @@ provisioner:
             'Office WiFi':
               ifname: wlan2
               ssid: Office-Network
+              # key_mgmt defaults to wpa-psk
+              psk: molecule-office-psk
               state: present
               autoconnect: false
               vpn:
@@ -80,6 +82,8 @@ provisioner:
             'Home WiFi':
               ifname: wlan3
               ssid: Home-Network
+              psk: molecule-home-psk
+              key_mgmt: sae
               state: present
               autoconnect: false
               settings:

@@ -1,0 +1,11 @@
+pkgbase = vendor-dummy
+	pkgdesc = Dummy package built from a manually downloaded vendor file
+	pkgver = 1.0.0
+	pkgrel = 1
+	url = https://example.com/vendor-dummy
+	arch = any
+	license = MIT
+	source = manual://vendor-dummy-1.0.0.zip
+	sha256sums = 0ddcea82faf5e45724a93c8569593eb03b0b8845cec03b0f92ed9f1eec945e49
+
+pkgname = vendor-dummy

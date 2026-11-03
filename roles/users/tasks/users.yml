@@ -114,6 +114,16 @@
   delegate_to: localhost
   become: false
 
+# Existing Accounts (users_default_shell applies only on creation)
+
+- name: Users | Get existing accounts
+  ansible.builtin.getent:
+    database: passwd
+
+- name: Users | Build list of existing account names
+  ansible.builtin.set_fact:
+    __users_existing_names: "{{ ansible_facts['getent_passwd'] | list }}"
+
 # Shell Binary Validation (fallback to /bin/bash if missing)
 
 - name: Users | Check if configured shell exists for each user
@@ -144,16 +154,15 @@
     group: '{{ item.group | default(item.name) }}'
     groups: '{{ item.groups | default(users_default_groups) }}'
     append: '{{ item.append_groups | default(users_default_append_groups) }}'
+    # `shell:` is enforced on every run; users_default_shell only applies
+    # when the account is created, existing accounts keep their login shell.
     shell: >-
-      {%- set wanted = item.shell | default(users_default_shell) -%}
-      {%- set check = users_shell_check.results
-            | selectattr('item.name', 'equalto', item.name)
-            | first -%}
-      {%- if check.stat.exists | default(false) -%}
-        {{ wanted }}
-      {%- else -%}
-        /bin/bash
-      {%- endif -%}
+      {{ omit if (item.shell is not defined and item.name in __users_existing_names)
+         else ((item.shell | default(users_default_shell))
+               if (users_shell_check.results
+                   | selectattr('item.name', 'equalto', item.name)
+                   | map(attribute='stat.exists', default=false) | first)
+               else '/bin/bash') }}
     home: '{{ item.home | default(users_default_home_base + "/" + item.name) }}'
     create_home: '{{ item.create_home | default(users_default_create_home) }}'
     move_home: '{{ item.move_home | default(false) }}'

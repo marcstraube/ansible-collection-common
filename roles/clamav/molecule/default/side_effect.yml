@@ -1,0 +1,171 @@
+---
+# Targeted update: the first play rolls the ClamAV packages back to an older
+# build. A minimum the repository does not offer must fail before any
+# change and a mapping without a key for the host must fail. The converge
+# playbook then runs with clamav_packages_state: latest and the full
+# distribution version as minimum, and clamd must run the new binary after
+# exactly one start. Arch Linux ignores the state.
+- name: Side Effect | Roll back
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # version-release of the clamav package from the latest package facts
+    # (Debian has no separate release field)
+    __side_effect_version: >-
+      {{ [(ansible_facts['packages']['clamav'] | first).version,
+          (ansible_facts['packages']['clamav'] | first).release | default('')]
+         | select | join('-') }}
+
+  tasks:
+    - name: Side Effect | Gather package facts before the rollback
+      ansible.builtin.package_facts:
+
+    - name: Side Effect | Record the current clamav package version
+      ansible.builtin.set_fact:
+        __side_effect_version_current: '{{ __side_effect_version }}'
+
+    # Debian: policy-rc.d keeps the maintainer scripts from restarting
+    # clamd, so only the role can restart it
+    - name: Side Effect | Block service restarts by packages (Debian)
+      ansible.builtin.copy:
+        content: "#!/bin/sh\nexit 101\n"
+        dest: /usr/sbin/policy-rc.d
+        mode: '0755'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # EPEL usually carries only the latest build; clamd and the clamav
+    # subpackages require the exact clamav version and move back with it.
+    # When the repository holds only one build, nothing is rolled back and
+    # verify.yml skips the version comparison.
+    - name: Side Effect | Roll the ClamAV packages back (RedHat)
+      ansible.builtin.command:
+        cmd: dnf downgrade -y 'clamav*' clamd
+      changed_when: true
+      failed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Every installed package built from the clamav source carries its
+    # version and moves back with it.
+    - name: Side Effect | Roll the ClamAV packages back (Debian)
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          installed=$(dpkg-query -W -f '${Version}' clamav)
+          # madison lists the newest build first; take the first older one
+          old=$(apt-cache madison clamav \
+            | awk -F' [|] ' -v cur="${installed}" '$2 != cur { print $2; exit }')
+          [ -n "${old}" ] || exit 0
+          pkgs=$(dpkg-query -W -f '${Package} ${Version} ${db:Status-Abbrev}\n' 'clamav*' 'libclamav*' \
+            | awk -v cur="${installed}" '$2 == cur && $3 == "ii" { print $1 }')
+          args=''
+          for pkg in ${pkgs}; do args="${args} ${pkg}=${old}"; done
+          # shellcheck disable=SC2086
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-downgrades ${args}
+        executable: /bin/bash
+      changed_when: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Side Effect | Gather package facts after the rollback
+      ansible.builtin.package_facts:
+
+    - name: Side Effect | Record the rolled back clamav package version
+      ansible.builtin.set_fact:
+        __side_effect_version_rolled_back: '{{ __side_effect_version }}'
+
+    # verify.yml runs as a separate playbook; the versions before and after
+    # the rollback and the time of the update reach it through this file.
+    - name: Side Effect | Record the clamav package versions around the rollback
+      ansible.builtin.copy:
+        content: |
+          {{ __side_effect_version_current }}
+          {{ __side_effect_version_rolled_back }}
+        dest: /root/clamav-update-versions
+        mode: '0600'
+
+- name: Side Effect | Minimum
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __side_effect_version: >-
+      {{ [(ansible_facts['packages']['clamav'] | first).version,
+          (ansible_facts['packages']['clamav'] | first).release | default('')]
+         | select | join('-') }}
+
+  tasks:
+    # The pre-check runs before the package task, so a minimum the
+    # repository does not offer leaves the rolled back packages in place.
+    # It runs in the install stage, before the configuration, so the role
+    # needs no further settings.
+    - name: Side Effect | Run with a minimum the repository does not offer
+      block:
+        - name: Side Effect | Include clamav role with an unmet minimum  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            clamav_packages_state: 'latest'
+            clamav_packages_minimum: "{{ {ansible_facts['os_family']: '99.0'} }}"
+      rescue:
+        - name: Side Effect | Record the minimum check failure
+          ansible.builtin.set_fact:
+            __side_effect_minimum_error: '{{ ansible_failed_result.msg | default("") }}'
+
+    - name: Side Effect | Gather package facts after the unmet minimum
+      ansible.builtin.package_facts:
+
+    - name: Side Effect | Assert the unmet minimum failed without a change
+      ansible.builtin.assert:
+        that:
+          - __side_effect_minimum_error is defined
+          - "'requires 99.0' in __side_effect_minimum_error"
+          - "'nothing was changed' in __side_effect_minimum_error"
+          - __side_effect_version == __side_effect_version_rolled_back
+        fail_msg: >-
+          A minimum of 99.0 did not fail before the update (error:
+          {{ __side_effect_minimum_error | default('none') }}, clamav
+          {{ __side_effect_version_rolled_back }} -> {{ __side_effect_version }})
+        success_msg: 'The pre-check rejects a minimum the repository does not offer'
+
+    - name: Side Effect | Run with a mapping without a key for the host
+      block:
+        - name: Side Effect | Include clamav role with a mapping for another platform  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            clamav_packages_state: 'latest'
+            clamav_packages_minimum:
+              Solaris: '1.0'
+      rescue:
+        - name: Side Effect | Record the mapping failure
+          ansible.builtin.set_fact:
+            __side_effect_mapping_error: '{{ ansible_failed_result.msg | default("") }}'
+
+    - name: Side Effect | Assert the mapping without a key failed
+      ansible.builtin.assert:
+        that:
+          - __side_effect_mapping_error is defined
+          - "'has no key for this host' in __side_effect_mapping_error"
+        fail_msg: 'A mapping without a key for the host did not fail the run'
+        success_msg: 'A mapping without a key for the host fails the run'
+
+# On Debian the rolled back packages are updated here while policy-rc.d
+# blocks the package restart; the role restarts clamd, which still runs
+# the replaced binary. Where the packages restart clamd themselves, the
+# role must not restart it again.
+- name: Side Effect | Update
+  ansible.builtin.import_playbook: converge.yml
+  vars:
+    clamav_packages_state: 'latest'
+    clamav_packages_minimum: '{{ __side_effect_version_current }}'
+
+- name: Side Effect | Clean up
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Side Effect | Allow service restarts by packages again (Debian)
+      ansible.builtin.file:
+        path: /usr/sbin/policy-rc.d
+        state: absent
+      when: ansible_facts['os_family'] == 'Debian'

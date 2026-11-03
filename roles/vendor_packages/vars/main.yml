@@ -1,0 +1,31 @@
+---
+# Package repositories are cloned from <base URL>/<vendor_packages_aur_name>.git.
+# The molecule scenario points this at local bare repositories.
+__vendor_packages_aur_base_url: 'https://aur.archlinux.org'
+
+# git for the clone, base-devel for makepkg
+__vendor_packages_packages:
+  - 'git'
+  - 'base-devel'
+
+# Clones and staged vendor files; see vendor_packages_build_dir
+__vendor_packages_build_dir: >-
+  {{ vendor_packages_build_dir if vendor_packages_build_dir | length > 0
+     else (aur_builder_home | default('/var/cache/aur_builder')) ~ '/vendor_packages' }}
+
+# Clone of the package repository that is being processed
+__vendor_packages_clone_dir: '{{ __vendor_packages_build_dir }}/{{ vendor_packages_aur_name }}'
+
+# Staged vendor files; makepkg reads them from there (SRCDEST), so the clone
+# that kewlfft.aur.aur copies below TMPDIR stays small
+__vendor_packages_sources_dir: '{{ __vendor_packages_build_dir }}/sources'
+
+# TMPDIR of the build task. kewlfft.aur.aur copies the clone below TMPDIR and
+# runs makepkg there, which extracts the vendor file and builds the package
+# in that copy, so the build must never land in /tmp, which is often a
+# tmpfs in RAM: makepkg_tmpdir from
+# marcstraube.common.package_management when set, the build directory
+# otherwise.
+__vendor_packages_tmpdir: >-
+  {{ makepkg_tmpdir if makepkg_tmpdir | default('') | length > 0
+     else __vendor_packages_build_dir }}

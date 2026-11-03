@@ -83,6 +83,24 @@ base_ntp_fallback_servers: []
 base_motd_content: ''
 
 #
+# Environment
+#
+
+# Environment variables for login shells, written to
+# /etc/profile.d/base-environment.sh. Names are used as given; empty removes
+# the file. Shells that skip /etc/profile.d (fish) and systemd services do not
+# see them.
+# Example (proxy; tools differ in which spelling they read):
+#   base_environment:
+#     http_proxy: 'http://proxy.example.com:3128'
+#     https_proxy: 'http://proxy.example.com:3128'
+#     no_proxy: 'localhost,127.0.0.1'
+#     HTTP_PROXY: 'http://proxy.example.com:3128'
+#     HTTPS_PROXY: 'http://proxy.example.com:3128'
+#     NO_PROXY: 'localhost,127.0.0.1'
+base_environment: {}
+
+#
 # Keyboard
 #
 
@@ -121,6 +139,12 @@ base_kernel_extra_packages:
 # Microcode package (auto-detected if empty)
 # Options: 'intel-ucode', 'amd-ucode', 'auto', ''
 base_microcode: 'auto'
+
+# Keep the modules of the running kernel available after a kernel upgrade
+# (kernel-modules-hook): pacman hooks preserve them across the upgrade and
+# linux-modules-cleanup.service removes the modules of uninstalled kernels at
+# boot. Install-only: false disables the service and leaves the package.
+base_kernel_keep_modules_enabled: true
 
 #
 # Bootloader

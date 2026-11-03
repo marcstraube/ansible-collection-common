@@ -145,6 +145,11 @@ firewalld_zone_ports: []
 #     ports:
 #       - '3306/tcp'
 
+# Purge unconfigured ports from managed zones
+# When true, ports not in firewalld_ports / firewalld_zone_ports
+# are removed from their respective zones
+firewalld_purge_ports: false
+
 #
 # Rich Rules
 #
@@ -155,6 +160,12 @@ firewalld_rich_rules: []
 #   - zone: 'public'
 #     rule: 'rule family="ipv4" source address="192.168.1.0/24" service name="ssh" accept'
 #   - rule: 'rule family="ipv4" source address="10.0.0.0/8" port port="3306" protocol="tcp" accept'
+
+# Purge unconfigured rich rules from managed zones
+# When true, rich rules not in firewalld_rich_rules are removed from their
+# respective zones. Rules are compared in the normalized form firewalld
+# stores them in, so the inventory may use any attribute order or quoting.
+firewalld_purge_rich_rules: false
 
 #
 # Source-Based Routing

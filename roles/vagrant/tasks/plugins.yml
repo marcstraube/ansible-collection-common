@@ -1,0 +1,105 @@
+---
+# Vagrant keeps plugins in the user's home (~/.vagrant.d), so every call runs
+# as that user. A plugin is installed only when 'vagrant plugin list' does not
+# show it yet; installed plugins are never updated or removed.
+#
+# Vagrant stores plugins per Ruby version. After a Ruby version change every
+# Vagrant command fails until the plugins are reinstalled, so the role
+# reinstalls them for each user whose plugin list fails that way.
+
+- name: Plugins | List installed plugins
+  ansible.builtin.command:
+    cmd: vagrant plugin list
+  become: true
+  become_user: '{{ item.username }}'
+  loop: '{{ vagrant_users }}'
+  loop_control:
+    label: '{{ item.username }}'
+  register: __vagrant_plugin_lists
+  changed_when: false
+  check_mode: false
+  # In check mode the Vagrant package may not be installed yet
+  failed_when:
+    - __vagrant_plugin_lists.rc != 0
+    - __vagrant_plugin_init_error not in (__vagrant_plugin_lists.stdout + __vagrant_plugin_lists.stderr)
+    - not ansible_check_mode
+  when: >-
+    (item.plugins | default([])) | length > 0
+    or vagrant_libvirt_plugin_enabled | bool
+
+- name: Plugins | Reinstall plugins that fail to initialize
+  ansible.builtin.command:
+    cmd: vagrant plugin expunge --reinstall --force
+  become: true
+  become_user: '{{ item.item.username }}'
+  loop: '{{ __vagrant_plugin_lists.results }}'
+  loop_control:
+    label: '{{ item.item.username }}'
+  register: __vagrant_plugin_repairs
+  changed_when: true
+  retries: 5
+  delay: 10
+  until: __vagrant_plugin_repairs is succeeded
+  when:
+    - item is not skipped
+    - item.rc != 0
+    - __vagrant_plugin_init_error in (item.stdout + item.stderr)
+
+- name: Plugins | List installed plugins after the reinstall
+  ansible.builtin.command:
+    cmd: vagrant plugin list
+  become: true
+  become_user: '{{ item.item.item.username }}'
+  loop: '{{ __vagrant_plugin_repairs.results }}'
+  loop_control:
+    label: '{{ item.item.item.username }}'
+  register: __vagrant_plugin_lists_repaired
+  changed_when: false
+  check_mode: false
+  when: item is not skipped
+
+- name: Plugins | Reset missing plugin list
+  ansible.builtin.set_fact:
+    __vagrant_plugins_missing: []
+
+# 'vagrant plugin list' prints one line per plugin, for example
+# 'vagrant-hostmanager (1.8.10, global)', followed by indented detail lines.
+- name: Plugins | Collect missing plugins
+  ansible.builtin.set_fact:
+    __vagrant_plugins_missing: >-
+      {{ __vagrant_plugins_missing
+         + ([item.item.username] | product(__vagrant_wanted | difference(__vagrant_installed)) | list) }}
+  vars:
+    __vagrant_wanted: >-
+      {{ ((item.item.plugins | default([]))
+          + ([__vagrant_libvirt_plugin] if vagrant_libvirt_plugin_enabled | bool else []))
+         | unique }}
+    __vagrant_installed: >-
+      {{ (__vagrant_repaired_lists[item.item.username] | default(item)).stdout_lines
+         | default([])
+         | select('match', '^[^ ]+ [(]')
+         | map('regex_replace', ' [(].*$', '')
+         | list }}
+    # Plugin lists taken again after the reinstall, by user name
+    __vagrant_repaired_lists: >-
+      {{ dict(__vagrant_plugin_lists_repaired.results
+              | rejectattr('skipped', 'defined')
+              | map(attribute='item.item.item.username')
+              | zip(__vagrant_plugin_lists_repaired.results
+                    | rejectattr('skipped', 'defined'))) }}
+  loop: '{{ __vagrant_plugin_lists.results }}'
+  loop_control:
+    label: '{{ item.item.username }}'
+  when: item is not skipped
+
+- name: Plugins | Install missing plugins
+  ansible.builtin.command:
+    cmd: vagrant plugin install {{ item.1 | quote }}
+  become: true
+  become_user: '{{ item.0 }}'
+  loop: '{{ __vagrant_plugins_missing }}'
+  loop_control:
+    label: '{{ item.0 }}: {{ item.1 }}'
+  changed_when: true
+  retries: 5
+  delay: 10

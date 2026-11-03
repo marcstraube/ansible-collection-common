@@ -1,0 +1,26 @@
+---
+galaxy_info:
+  author: Marc Straube
+  description: Install Vagrant, set the default provider and install Vagrant plugins per user
+  license: MIT
+  min_ansible_version: '2.19'
+
+  platforms:
+    - name: ArchLinux
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - trixie
+    - name: EL
+      versions:
+        - all
+
+  galaxy_tags:
+    - vagrant
+    - virtualization
+    - virtualbox
+    - libvirt
+    - development
+
+dependencies: []

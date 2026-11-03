@@ -1,0 +1,23 @@
+---
+# Official repository packages; virtualbox-host-dkms builds the modules for
+# every kernel whose headers are installed
+__virtualbox_packages:
+  - 'virtualbox'
+  - 'virtualbox-host-dkms'
+
+# dkms pulls in the compiler and make
+__virtualbox_build_packages: []
+
+# Kernel packages of the official repository; the role installs the headers
+# of every one that is installed
+__virtualbox_kernel_package_pattern: '^linux(|-lts|-zen|-hardened|-rt|-rt-lts)$'
+
+# No vboxdrv service: virtualbox-host-dkms loads the modules at boot through
+# modules-load.d
+__virtualbox_service_name: ''
+
+# Modules the role loads for the running kernel
+__virtualbox_modules:
+  - 'vboxdrv'
+  - 'vboxnetadp'
+  - 'vboxnetflt'

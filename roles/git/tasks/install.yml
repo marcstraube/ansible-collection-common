@@ -10,26 +10,32 @@
   retries: 3
   delay: 5
 
-- name: Install | Manage git-lfs
+- name: Install | git-lfs
   ansible.builtin.package:
     name: '{{ __git_lfs_package }}'
-    state: "{{ 'present' if git_lfs_enabled | bool else 'absent' }}"
-  when: __git_lfs_package | default('') | length > 0
+    state: present
+  when:
+    - git_lfs_enabled | bool
+    - __git_lfs_package | default('') | length > 0
   retries: 3
   delay: 5
 
-- name: Install | Manage GitHub CLI
+- name: Install | GitHub CLI
   ansible.builtin.package:
     name: '{{ __git_github_cli_package }}'
-    state: "{{ 'present' if git_github_cli_enabled | bool else 'absent' }}"
-  when: __git_github_cli_package | default('') | length > 0
+    state: present
+  when:
+    - git_github_cli_enabled | bool
+    - __git_github_cli_package | default('') | length > 0
   retries: 3
   delay: 5
 
-- name: Install | Manage GitLab CLI
+- name: Install | GitLab CLI
   ansible.builtin.package:
     name: '{{ __git_gitlab_cli_package }}'
-    state: "{{ 'present' if git_gitlab_cli_enabled | bool else 'absent' }}"
-  when: __git_gitlab_cli_package | default('') | length > 0
+    state: present
+  when:
+    - git_gitlab_cli_enabled | bool
+    - __git_gitlab_cli_package | default('') | length > 0
   retries: 3
   delay: 5

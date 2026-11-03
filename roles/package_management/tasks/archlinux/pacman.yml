@@ -50,6 +50,24 @@
     - item.stdout | default('') is not search('^sig\s+L\s', multiline=True)
   changed_when: true
 
+- name: Pacman | Ensure ignore drop-in directory exists
+  ansible.builtin.file:
+    path: '{{ __package_management_pacman_ignore_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+# Deployed before pacman.conf includes the directory, because pacman fails
+# on an Include glob that matches no file
+- name: Pacman | Deploy ignore drop-in base file
+  ansible.builtin.template:
+    src: 'archlinux/pacman-ignore.conf.j2'
+    dest: '{{ __package_management_pacman_ignore_dir }}/{{ __package_management_pacman_ignore_base_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: Pacman | Deploy pacman.conf
   ansible.builtin.template:
     src: 'archlinux/pacman.conf.j2'

@@ -18,8 +18,9 @@ and full FPM pool templates.
 - ansible-core >= 2.19
 - Collections: `community.general`, `kewlfft.aur` (Arch only)
 - **Debian/Ubuntu**: Sury PHP repository is set up automatically by this role
-- **RHEL/Rocky**: Remi + EPEL repository via `package_management`
-  (`dnf_remi_enabled: true`, `dnf_epel_enabled: true`)
+- **RHEL/Rocky**: AppStream needs no extra repository; EPEL (PECL extensions
+  of the default version) and Remi (`php_redhat_repo: 'remi'`) via
+  `package_management` (`dnf_epel_enabled: true`, `dnf_remi_enabled: true`)
 
 ## Supported Platforms
 
@@ -27,8 +28,8 @@ and full FPM pool templates.
 |----------------------------|----------------------------------------------------------------|
 | Arch Linux                 | Official repo for current PHP, AUR for legacy versions         |
 | Debian Trixie              | Sury repository (multi-version side-by-side)                   |
-| EL 9 (Rocky, Alma, RHEL)   | AppStream (default, single stream) or Remi (`php_redhat_repo`) |
-| EL 10 (Rocky, Alma, RHEL)  | AppStream (default, single stream) or Remi (`php_redhat_repo`) |
+| EL 9 (Rocky, Alma, RHEL)   | AppStream (default, one version) or Remi (`php_redhat_repo`)   |
+| EL 10 (Rocky, Alma, RHEL)  | AppStream (default, one version) or Remi (`php_redhat_repo`)   |
 
 Other distributions in the same os_family (EndeavourOS, Manjaro, Ubuntu, Mint,
 Fedora) should work but are not actively tested. Use distro-specific vars
@@ -56,22 +57,57 @@ overrides if needed.
 | `php_default_version` | `'auto'`                | Default PHP version for CLI                       |
 | `php_redhat_repo`     | `'appstream'`           | RHEL repo: `appstream` (single) or `remi` (multi) |
 
+#### Available versions
+
+| Platform      | Source              | Versions                                                      |
+|---------------|---------------------|---------------------------------------------------------------|
+| Arch Linux    | official repository | current release (`auto`)                                      |
+| Arch Linux    | AUR                 | older branches as `php<XX>` bundles (e.g. `8.4`)              |
+| Debian Trixie | Sury                | every branch Sury builds (`auto` = Debian's own version)      |
+| EL 9          | AppStream           | `8.0` (default, `auto`), `8.1`, `8.2`, `8.3` (module streams) |
+| EL 10         | AppStream           | `8.3` (default, `auto`, `php-*`), `8.4` (`php8.4-*`)          |
+| EL 9 / EL 10  | Remi                | 5.6 through the current stable release, side by side          |
+
+A version the selected source does not carry fails the run with the
+available versions and the other source.
+
 #### `php_redhat_repo` — AppStream vs. Remi
 
-| Aspect                 | `'appstream'` (default)                   | `'remi'`                                      |
-|------------------------|-------------------------------------------|-----------------------------------------------|
-| Source                 | Distro AppStream (`dnf module` streams)   | Remi Collet's third-party repo                |
-| Package names          | `php-cli`, `php-fpm`, `php-<ext>`         | `php<XX>-php-cli`, `php<XX>-php-<ext>`        |
-| Paths                  | `/etc/php.d`, `/etc/php-fpm.d`            | `/etc/opt/remi/php<XX>/...`                   |
-| Available versions     | 8.0, 8.1, 8.2 on Rocky 9 (one at a time)  | 5.6 through current stable, side-by-side      |
-| Update cadence         | RHEL lifecycle (conservative)             | Upstream release day                          |
-| Lifecycle              | Application-stream support window         | Upstream PHP support per minor                |
-| `php_versions` length  | Must be 1 (streams are exclusive)         | Multiple versions allowed                     |
+| Aspect                | `'appstream'` (default)                          | `'remi'`                                 |
+|-----------------------|--------------------------------------------------|------------------------------------------|
+| Source                | Distro AppStream (module streams, package sets)  | Remi Collet's third-party repo           |
+| Package names         | `php-cli`, `php-fpm`, `php-<ext>` (`php8.4-*`)   | `php<XX>-php-cli`, `php<XX>-php-<ext>`   |
+| Paths                 | `/etc/php.d`, `/etc/php-fpm.d`                   | `/etc/opt/remi/php<XX>/...`              |
+| Available versions    | EL 9: 8.0–8.3, EL 10: 8.3, 8.4 (one per host)    | 5.6 through current stable, side-by-side |
+| Update cadence        | RHEL lifecycle (conservative)                    | Upstream release day                     |
+| Lifecycle             | Application-stream support window                | Upstream PHP support per minor           |
+| `php_versions` length | Must be 1 (one version per host)                 | Multiple versions allowed                |
 
-When `php_redhat_repo: 'appstream'` and `php_versions[0].version` differs
-from the active module stream, the role fails with a hint to either
-switch the stream (`sudo dnf module reset -y php && sudo dnf module enable
--y php:<X.Y>`) or use Remi.
+With `php_redhat_repo: 'appstream'` the version selects the AppStream
+packages:
+
+- EL 9 ships PHP 8.0 as plain packages and 8.1, 8.2 and 8.3 as module
+  streams. On a host without PHP the role enables the stream of the
+  requested version (`dnf module enable php:<X.Y>`); 8.0 needs no stream.
+  When another stream is already enabled, the run fails with the commands
+  to switch it (`sudo dnf module reset -y php && sudo dnf module enable -y
+  php:<X.Y>`).
+- EL 10 ships PHP 8.3 as `php-*` and PHP 8.4 as the package set `php8.4-*`.
+  The version selects the package names (`php8.4-cli`, `php8.4-fpm`,
+  `php8.4-mbstring`, …); paths and the `php-fpm` service are the same for
+  both sets. The two sets conflict, so a host runs one of them.
+- `auto` installs the AppStream default of the release (EL 9: 8.0, EL 10:
+  8.3). On a host that already has PHP, `auto` resolves to the installed
+  version, so a host set up with 8.4 stays idempotent.
+- The role never switches a host to another version: when the installed
+  version differs from the requested one, the run fails with both versions
+  and the commands to remove the installed packages (and to reset the
+  stream on EL 9) first.
+
+PECL extensions come from AppStream for every version (`apcu`, `redis`,
+`xdebug`, `zip`); the ones only EPEL carries (`imagick`, `memcached`,
+`mongodb`) are built against the default version and have no `php8.4-*`
+package on EL 10.
 
 When `php_redhat_repo: 'remi'`, the Remi repository must already be on
 the host. Remi is multi-purpose (PHP, MariaDB, Redis, …) and is managed
@@ -228,6 +264,33 @@ Full template deployed for each version with FPM enabled.
 |------------------------|---------|-------------------------------------|
 | `php_composer_enabled` | `false` | Install Composer (PHP dep. manager) |
 
+### Package Updates
+
+| Variable               | Default     | Description                                                          |
+|------------------------|-------------|----------------------------------------------------------------------|
+| `php_packages_state`   | `'present'` | `present` installs missing packages only, `latest` updates them      |
+| `php_packages_minimum` | `{}`        | Lowest acceptable version per PHP branch, checked after the packages |
+
+A regular run never updates PHP. A targeted update, for example for a
+security release, is requested on the command line:
+
+```bash
+ansible-playbook site.yml --tags php \
+  -e php_packages_state=latest \
+  -e '{"php_packages_minimum": {"8.3": "8.3.34"}}'
+```
+
+With `latest` the role refreshes the package metadata, updates every
+installed package of each configured version in one transaction (including
+parts pulled in as dependencies) and restarts the PHP-FPM services whose
+packages changed. `php_packages_minimum` then fails the run for every
+configured branch whose installed version is still lower, which shows that
+the repository does not carry the fix yet; branches that are not configured
+on the host are ignored. The check is skipped under `--check`.
+
+On Arch Linux `php_packages_state` is ignored: updating single packages is a
+partial upgrade there, PHP updates with the full system upgrade.
+
 ## Tags
 
 | Tag             | Scope                             |
@@ -282,20 +345,28 @@ php_composer_enabled: true
 ```bash
 cd roles/php
 molecule test
+molecule test -s appstream
+molecule test -s remi
 ```
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+The `appstream` scenario installs a non-default AppStream version on Rocky
+Linux (the `php:8.3` module stream on Rocky 9, the `php8.4-*` package set
+on Rocky 10); the `remi` scenario installs two Remi versions side by side.
 
 ## Notes
 
 ### Package Naming Per OS
 
-| OS              | Base            | FPM                | Extension            |
-|-----------------|-----------------|--------------------|----------------------|
-| Arch (official) | `php`           | `php-fpm`          | `php-<ext>`          |
-| Arch (AUR)      | `php84`         | `php84-fpm`        | `php84-<ext>`        |
-| Debian (Sury)   | `php8.4-cli`    | `php8.4-fpm`       | `php8.4-<ext>`       |
-| RHEL (Remi)     | `php84-php-cli` | `php84-php-fpm`    | `php84-php-<ext>`    |
+| OS                          | Base            | FPM                | Extension            |
+|-----------------------------|-----------------|--------------------|----------------------|
+| Arch (official)             | `php`           | `php-fpm`          | `php-<ext>`          |
+| Arch (AUR)                  | `php84`         | `php84-fpm`        | `php84-<ext>`        |
+| Debian (Sury)               | `php8.4-cli`    | `php8.4-fpm`       | `php8.4-<ext>`       |
+| RHEL (AppStream)            | `php-cli`       | `php-fpm`          | `php-<ext>`          |
+| RHEL (AppStream 8.4, EL 10) | `php8.4-cli`    | `php8.4-fpm`       | `php8.4-<ext>`       |
+| RHEL (Remi)                 | `php84-php-cli` | `php84-php-fpm`    | `php84-php-<ext>`    |
 
 ### Arch Linux Version Detection
 
@@ -336,16 +407,17 @@ therefore absent from `__php_extension_map_official`.
 RHEL uses two maps for the same reason Arch does — the AppStream and Remi
 package layouts differ:
 
-| Map                        | `php_redhat_repo` | Value semantics           |
-|----------------------------|-------------------|---------------------------|
-| `__php_extension_map`      | `appstream`       | Concrete package name     |
-| `__php_extension_map_remi` | `remi`            | Suffix (prefix applied)   |
+| Map                        | `php_redhat_repo` | Prefix applied                      |
+|----------------------------|-------------------|-------------------------------------|
+| `__php_extension_map`      | `appstream`       | `php-` (`php8.4-` for 8.4 on EL 10) |
+| `__php_extension_map_remi` | `remi`            | `php<XX>-php-`                      |
 
-On AppStream, values are full package names (`php-gd`, `php-pecl-xdebug3`).
-On Remi (SCL parallel install), values are suffixes applied after the
-versioned prefix `php<XX>-php-`, so `xdebug` resolves to
-`php84-php-pecl-xdebug3` and `gd` to `php84-php-gd`. Empty string `''` marks
-an extension as built into the base `php<XX>-php` package. Remi ships no
+Both maps hold suffixes that are appended to the prefix of the selected
+version. On AppStream `gd` resolves to `php-gd`, or to `php8.4-gd` for
+PHP 8.4 on EL 10, and `xdebug` to `php-pecl-xdebug3`. On Remi (SCL
+parallel install) the versioned prefix `php<XX>-php-` applies, so `xdebug`
+resolves to `php84-php-pecl-xdebug3` and `gd` to `php84-php-gd`. Empty
+string `''` marks an extension as built into the base package. Remi ships no
 unversioned ImageMagick binding — `imagick` maps to `pecl-imagick-im7`
 (ImageMagick 7). Version digits in PECL suffixes (`redis6`, `xdebug3`) track
 Remi's current packaging and are verified against `rpms.remirepo.net`.

@@ -1,0 +1,14 @@
+---
+# From the HashiCorp dnf repository, configured through
+# marcstraube.common.package_management (dnf_custom_repos)
+__vagrant_packages:
+  - 'vagrant'
+
+# Native build of the vagrant-libvirt plugin against the Ruby that ships
+# inside the Vagrant package. libvirt-devel comes from CRB, enabled through
+# marcstraube.common.package_management (dnf_powertools_enabled).
+__vagrant_libvirt_build_packages:
+  - 'gcc'
+  - 'make'
+  - 'pkgconf-pkg-config'
+  - 'libvirt-devel'

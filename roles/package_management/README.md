@@ -53,6 +53,14 @@ overrides if needed.
 | `pacman_download_user`         | `alpm`                      | Sandboxed download user               |
 | `pacman_hook_dir`              | `/etc/pacman.d/hooks`       | Custom hook directory                 |
 
+`pacman.conf` includes every `*.conf` file in `/etc/pacman.d/ignore.d`, so
+other roles can add `IgnorePkg` and `IgnoreGroup` lines in files of their
+own. pacman merges them with `pacman_ignore_packages` and
+`pacman_ignore_groups`. The role places `00-package-management.conf` in the
+directory, because pacman fails on an `Include` glob that matches no file.
+An ignored package is still installed by an explicit `pacman -S` or
+`pacman -U`.
+
 ### Arch Linux - Reflector
 
 | Variable                  | Default | Description                                                   |
@@ -74,9 +82,17 @@ overrides if needed.
 | `makepkg_devtools_enabled`  | `false`      | Install devtools (chrooted builds)              |
 | `makepkg_nvchecker_enabled` | `false`      | Install nvchecker (upstream version tracking)   |
 | `makepkg_check`             | `true`       | Run check() in PKGBUILDs                        |
+| `makepkg_tmpdir`            | `''`         | TMPDIR for builds (empty = /tmp; see below)     |
 | `makepkg_sign`              | `false`      | Sign built packages                             |
 | `makepkg_debug`             | `true`       | Build with debug symbols                        |
 | `makepkg_lto`               | `true`       | Build with LTO                                  |
+
+`makepkg_tmpdir` is exported as `TMPDIR` in `/etc/makepkg.conf`. Set it when
+`/tmp` is mounted `noexec`: some PKGBUILDs run pip or meson, which execute
+files they create below `TMPDIR`, and the build fails with `Permission denied`.
+The role creates the directory with mode `1777` and a tmpfiles.d entry that
+recreates it at boot and removes files older than 10 days. The directory must
+be on a filesystem without `noexec`, for example `/var/cache/makepkg`.
 
 ### Arch Linux - Paru (AUR Helper)
 

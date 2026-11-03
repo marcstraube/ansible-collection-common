@@ -20,10 +20,11 @@
 - name: DNF | Install fastest mirror plugin (EL8 only)
   ansible.builtin.package:
     name: 'dnf-plugin-fastestmirror'
-    state: "{{ 'present' if dnf_fastestmirror | bool else 'absent' }}"
+    state: present
   retries: 3
   delay: 5
   when:
+    - dnf_fastestmirror | bool
     - ansible_facts['distribution'] != 'Fedora'
     - ansible_facts['distribution_major_version'] | int < 9
 

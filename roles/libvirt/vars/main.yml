@@ -1,0 +1,20 @@
+---
+# Group whose members manage system VMs through polkit without root
+__libvirt_group: 'libvirt'
+
+# Connection URI for the system instance
+__libvirt_uri: 'qemu:///system'
+
+# Default NAT network and the definition the packages ship for it
+__libvirt_default_network_name: 'default'
+__libvirt_default_network_file: '/usr/share/libvirt/networks/default.xml'
+
+# Every libvirt daemon listens on a read-write, a read-only and an admin socket
+__libvirt_socket_suffixes:
+  - '.socket'
+  - '-ro.socket'
+  - '-admin.socket'
+
+# Units derived from the daemon list in the OS-specific vars file
+__libvirt_service_units: "{{ __libvirt_daemons | product(['.service']) | map('join') | list }}"
+__libvirt_socket_units: "{{ __libvirt_daemons | product(__libvirt_socket_suffixes) | map('join') | list }}"

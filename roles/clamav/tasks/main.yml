@@ -13,6 +13,59 @@
   tags:
     - always
 
+- name: Main | Validate package update settings
+  ansible.builtin.assert:
+    that:
+      - clamav_packages_state in ['present', 'latest']
+      - clamav_packages_minimum is string or clamav_packages_minimum is mapping
+    fail_msg: >-
+      clamav_packages_state must be 'present' or 'latest' (got
+      '{{ clamav_packages_state }}'), clamav_packages_minimum must be a
+      version string, e.g. '1.4.4', or a mapping per platform
+  when: clamav_enabled | bool
+  tags:
+    - always
+
+# A mapping selects the minimum by '<os_family>-<major>', then
+# '<os_family>'. A host without a matching key fails here, before any
+# change, so a platform left out of the mapping cannot pass unchecked.
+- name: Main | Select the minimum version for this platform
+  ansible.builtin.set_fact:
+    __clamav_minimum: >-
+      {{ (clamav_packages_minimum[__clamav_minimum_key] if __clamav_minimum_key | length > 0 else '')
+         if clamav_packages_minimum is mapping
+         else clamav_packages_minimum }}
+    __clamav_minimum_key_found: '{{ clamav_packages_minimum is not mapping or __clamav_minimum_key | length > 0 }}'
+  vars:
+    __clamav_minimum_key: >-
+      {{ ([ansible_facts['os_family'] ~ '-' ~ ansible_facts['distribution_major_version'],
+           ansible_facts['os_family']]
+          | select('in', clamav_packages_minimum) | list + [''])
+         | first
+         if clamav_packages_minimum is mapping
+         else '' }}
+  when: clamav_enabled | bool
+  tags:
+    - always
+
+# The value reaches dpkg, rpm and vercmp as an argument; only characters of
+# a package version are accepted.
+- name: Main | Validate the minimum version for this platform
+  ansible.builtin.assert:
+    that:
+      - __clamav_minimum_key_found | bool
+      - __clamav_minimum | string is match('^[0-9A-Za-z.+~:_-]*$')
+    fail_msg: >-
+      {{ ('clamav_packages_minimum has no key for this host (expected '
+          ~ ansible_facts['os_family'] ~ '-' ~ ansible_facts['distribution_major_version']
+          ~ ' or ' ~ ansible_facts['os_family'] ~ ')')
+         if not (__clamav_minimum_key_found | bool)
+         else ('clamav_packages_minimum ' ~ __clamav_minimum ~ ' is not a package version') }}
+    quiet: true
+  when: clamav_enabled | bool
+  tags:
+    - always
+
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: clamav_enabled | bool

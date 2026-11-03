@@ -1,0 +1,25 @@
+---
+# The role has no standalone run. Other roles include one of its entry points
+# with include_role and tasks_from and pass the package values as vars:
+#
+#   - name: Game Engines | Install Unreal Engine from the vendor file
+#     ansible.builtin.include_role:
+#       name: marcstraube.common.vendor_packages
+#       tasks_from: aur.yml
+#     vars:
+#       vendor_packages_aur_name: 'unreal-engine-bin'
+#       vendor_packages_file_pattern: 'Linux_Unreal_Engine_{pkgver}.zip'
+#       vendor_packages_download_url: 'https://www.unrealengine.com/linux'
+#
+# Entry points:
+#   aur.yml - Arch Linux, AUR package whose PKGBUILD has a manual:// source
+
+- name: Main | Fail on a direct role run
+  ansible.builtin.fail:
+    msg: >-
+      marcstraube.common.vendor_packages has no standalone run. Include an
+      entry point with include_role and tasks_from (aur.yml) and pass
+      vendor_packages_aur_name, vendor_packages_file_pattern and
+      vendor_packages_download_url as vars; see the role README.
+  tags:
+    - always

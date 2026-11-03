@@ -1,0 +1,97 @@
+---
+#
+# Role Control
+#
+
+# Enable the wazuh_agent role
+wazuh_agent_enabled: false
+
+# Enable and start the wazuh_agent service
+wazuh_agent_service_enabled: true
+
+#
+# Installation
+#
+# The agent must not be newer than the Wazuh manager. Update the manager
+# first, then raise wazuh_agent_version.
+
+# Wazuh agent release. Debian and EL install exactly this version and update
+# to it when it changes; a version lower than the installed one fails the
+# run. Arch Linux installs the AUR package, and the run fails when the AUR
+# version is newer than this one.
+wazuh_agent_version: '4.14.9'
+
+#
+# Manager Connection
+#
+
+# Wazuh managers the agent reports to (required). The agent connects to the
+# first one and fails over to the next.
+# Example:
+# wazuh_agent_managers:
+#   - address: 'wazuh.example.com'
+#     port: 1514          # optional, default 1514
+#     protocol: 'tcp'     # optional, 'tcp' or 'udp', default 'tcp'
+wazuh_agent_managers: []
+
+#
+# Enrollment
+#
+# The agent enrolls with the manager on its first start and stores its key
+# in client.keys.
+
+# Enroll the agent automatically
+wazuh_agent_enrollment_enabled: true
+
+# Port of the enrollment service on the manager
+wazuh_agent_enrollment_port: 1515
+
+# Name the agent enrolls with
+wazuh_agent_name: '{{ inventory_hostname }}'
+
+# Agent groups assigned on enrollment (centralized configuration)
+wazuh_agent_groups: []
+
+# Enrollment password the manager requires. Empty enrolls without a
+# password. Keep it in an Ansible Vault.
+wazuh_agent_enrollment_password: ''
+
+# Paths on the managed host to PEM files, for example deployed by
+# marcstraube.common.pki. The role copies them into the agent configuration
+# directory.
+
+# CA certificate to verify the manager on enrollment. Empty skips the
+# verification.
+wazuh_agent_enrollment_ca_cert_file: ''
+
+# Agent certificate and key for certificate-based enrollment. Set both or
+# neither.
+wazuh_agent_enrollment_cert_file: ''
+wazuh_agent_enrollment_key_file: ''
+
+#
+# Configuration
+#
+# ossec.conf follows the upstream agent default. Tune modules per agent group
+# in the centralized agent.conf on the manager.
+
+# Additional log sources, rendered as <localfile> entries. Each key becomes
+# an element.
+# Example:
+# wazuh_agent_localfiles:
+#   - log_format: 'syslog'
+#     location: '/var/log/nginx/error.log'
+#   - log_format: 'command'
+#     command: 'df -P'
+#     frequency: 360
+wazuh_agent_localfiles: []
+
+# Additional directories for file integrity monitoring. Each attribute
+# becomes an attribute of the <directories> element.
+# Example:
+# wazuh_agent_syscheck_directories:
+#   - path: '/srv/www'
+#     attributes:
+#       realtime: 'yes'
+#       report_changes: 'yes'
+wazuh_agent_syscheck_directories: []

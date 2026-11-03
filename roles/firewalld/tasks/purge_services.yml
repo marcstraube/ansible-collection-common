@@ -6,12 +6,12 @@
 # Build desired services map: zone -> [services]
 #
 
-- name: Purge | Initialize desired services from default zone
+- name: Purge Services | Initialize desired services from default zone
   ansible.builtin.set_fact:
     __firewalld_purge_desired: >-
       {{ {firewalld_default_zone: (firewalld_services | default([]) | unique | list)} }}
 
-- name: Purge | Merge zone services into desired map
+- name: Purge Services | Merge zone services into desired map
   ansible.builtin.set_fact:
     __firewalld_purge_desired: >-
       {{ __firewalld_purge_desired | combine({
@@ -27,16 +27,17 @@
 # Query active services and compute excess
 #
 
-- name: Purge | Query active services per managed zone
+- name: Purge Services | Query active services per managed zone
   ansible.builtin.command:
     cmd: "firewall-cmd --zone={{ item.key }} --list-services --permanent"
   register: __firewalld_purge_active
   changed_when: false
+  check_mode: false
   loop: "{{ __firewalld_purge_desired | dict2items }}"
   loop_control:
     label: "{{ item.key }}"
 
-- name: Purge | Build list of excess services to remove
+- name: Purge Services | Build list of excess services to remove
   ansible.builtin.set_fact:
     __firewalld_purge_excess: >-
       {%- set ns = namespace(items=[]) -%}
@@ -54,7 +55,7 @@
 # Remove excess services
 #
 
-- name: Purge | Remove unconfigured services
+- name: Purge Services | Remove unconfigured services
   ansible.posix.firewalld:
     service: "{{ item.service }}"
     zone: "{{ item.zone }}"

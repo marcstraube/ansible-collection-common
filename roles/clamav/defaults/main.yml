@@ -7,6 +7,34 @@
 clamav_enabled: true
 
 #
+# Package Updates
+#
+
+# State of the ClamAV packages:
+#   'present' installs missing packages and never updates (default).
+#   'latest'  updates the installed ClamAV packages in one transaction and
+#             restarts clamd, freshclam and the milter while they still run
+#             the replaced binary.
+# Pass 'latest' for a targeted update instead of setting it in inventory:
+#   --tags clamav -e clamav_packages_state=latest
+# Ignored on Arch Linux: updating single packages is a partial upgrade there,
+# ClamAV updates with the full system upgrade.
+clamav_packages_state: 'present'
+
+# Lowest acceptable version, checked before the update (nothing changes when
+# the repository does not offer it yet) and again after it. Meant to be passed
+# with the update command to require a fix. Either an upstream version, which
+# accepts every distribution release of it:
+#   -e clamav_packages_minimum=1.4.4
+# or the full distribution version, which also covers fixes the distribution
+# backports without a new upstream version:
+#   -e clamav_packages_minimum=1.4.3+dfsg-1~deb13u1
+# A mapping per platform (keys '<os_family>-<major>' or '<os_family>') covers
+# mixed hosts in one run; a host without a matching key fails:
+#   -e @clamav-minimum.yml
+clamav_packages_minimum: ''
+
+#
 # Process / Privileges
 #
 
