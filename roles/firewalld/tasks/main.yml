@@ -13,9 +13,9 @@
     - firewalld
     - firewalld:configure
 
-- name: Main | Include purge tasks
+- name: Main | Include purge services tasks
   ansible.builtin.include_tasks:
-    file: purge.yml
+    file: purge_services.yml
     apply:
       tags:
         - firewalld
