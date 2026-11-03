@@ -168,10 +168,15 @@ molecule test -p wazuh-agent-rocky-10
 
 # Converge only
 molecule converge -p wazuh-agent-rocky-10
+
+# Check-mode run with the service sub-tag on a fresh instance
+molecule test -s service-tag -p wazuh-agent-service-tag-rocky-10
 ```
 
-Driver: `podman` | Scenario: `default` (no manager; certificates issued by
-`marcstraube.common.pki` in `prepare.yml`).
+Driver: `podman` | Scenarios: `default` (no manager; certificates issued by
+`marcstraube.common.pki` in `prepare.yml`; a check-mode run precedes the
+converge), `service-tag` (`--check --tags wazuh-agent:service` against an
+instance without the agent).
 
 ## Notes
 

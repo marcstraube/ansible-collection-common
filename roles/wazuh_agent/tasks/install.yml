@@ -4,9 +4,13 @@
 # The package is held at that version so that a system upgrade cannot move
 # the agent past the manager; a version change releases the hold for the
 # install and sets it again afterwards.
+# The package facts also feed the check-mode guards of main.yml and the
+# handlers, so every sub-tag run gathers them.
 - name: Install | Gather package facts
   ansible.builtin.package_facts:
     manager: auto
+  tags:
+    - always
 
 - name: Install | Assert wazuh_agent_version is not a downgrade
   ansible.builtin.assert:
@@ -50,17 +54,97 @@
     - __wazuh_agent_package_name in ansible_facts.packages
     - __wazuh_agent_installed_version != wazuh_agent_version
 
-# Skipped in check mode while the repository file is missing (repos.yml):
-# the package manager does not know the package before a real run.
-- name: Install | Wazuh agent package
-  ansible.builtin.package:
-    name: '{{ __wazuh_agent_package }}'
-    state: present
+# A raised wazuh_agent_version must see the current repository state: the
+# cache is only refreshed after a repository change (repos.yml) and may not
+# carry the new release yet, so the install would fail with "no package
+# available". The dnf cache is cleared rather than refreshed: dnf on EL 9
+# keeps the cached mirror list on makecache --refresh and stays on the
+# mirror it picked first, even when that mirror has stopped syncing.
+# Clearing the cache fetches a new list.
+# check_mode: false — the metadata cache holds no package, and --check
+# must report the update the real run would install.
+- name: Install | Clear package metadata for the version change (RedHat)
+  ansible.builtin.command:
+    cmd: dnf clean metadata
+  changed_when: false
+  check_mode: false
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __wazuh_agent_package_name in ansible_facts.packages
+    - __wazuh_agent_installed_version != wazuh_agent_version
+    - __wazuh_agent_repo_stat.stat.exists | default(true)
+
+- name: Install | Refresh package metadata for the version change (RedHat)
+  ansible.builtin.command:
+    cmd: dnf makecache
+  changed_when: false
+  check_mode: false
+  retries: 5
+  delay: 10
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - __wazuh_agent_package_name in ansible_facts.packages
+    - __wazuh_agent_installed_version != wazuh_agent_version
+    - __wazuh_agent_repo_stat.stat.exists | default(true)
+
+- name: Install | Refresh package metadata for the version change (Debian)
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+  check_mode: false
   retries: 3
   delay: 5
-  register: __wazuh_agent_install
+  vars:
+    __wazuh_agent_installed_version: >-
+      {{ ansible_facts.packages[__wazuh_agent_package_name][0].version
+         | regex_replace('-.*$', '') }}
   when:
-    - ansible_facts['os_family'] in ['Debian', 'RedHat']
+    - ansible_facts['os_family'] == 'Debian'
+    - __wazuh_agent_package_name in ansible_facts.packages
+    - __wazuh_agent_installed_version != wazuh_agent_version
+    - __wazuh_agent_repo_stat.stat.exists | default(true)
+
+# Skipped in check mode while the repository file is missing (repos.yml):
+# the package manager does not know the package before a real run.
+# OS-specific modules instead of ansible.builtin.package: the hold release
+# above is only simulated in check mode, so the hold (versionlock) still
+# blocks the simulated install of a raised wazuh_agent_version. The
+# options let the simulation report the update; a real run released the
+# hold already, so they change nothing there.
+- name: Install | Wazuh agent package (Debian)
+  ansible.builtin.apt:
+    name: '{{ __wazuh_agent_package }}'
+    state: present
+    allow_change_held_packages: true
+  retries: 3
+  delay: 5
+  register: __wazuh_agent_install_apt
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - __wazuh_agent_repo_stat.stat.exists | default(true)
+  notify:
+    - Reload Wazuh agent systemd units
+    - Restart Wazuh agent
+
+- name: Install | Wazuh agent package (RedHat)
+  ansible.builtin.dnf:
+    name: '{{ __wazuh_agent_package }}'
+    state: present
+    disable_plugin:
+      - versionlock
+  retries: 3
+  delay: 5
+  register: __wazuh_agent_install_dnf
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
     - __wazuh_agent_repo_stat.stat.exists | default(true)
   notify:
     - Reload Wazuh agent systemd units
@@ -71,7 +155,7 @@
     manager: auto
   when:
     - ansible_facts['os_family'] in ['Debian', 'RedHat']
-    - __wazuh_agent_install is changed
+    - __wazuh_agent_install_apt is changed or __wazuh_agent_install_dnf is changed
 
 # Only an installed package can be held. In check mode the install above
 # changes nothing, so the package (or the versionlock plugin) may be missing.
