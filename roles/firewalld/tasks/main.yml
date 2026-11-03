@@ -27,6 +27,34 @@
     - firewalld
     - firewalld:purge
 
+- name: Main | Include purge ports tasks
+  ansible.builtin.include_tasks:
+    file: purge_ports.yml
+    apply:
+      tags:
+        - firewalld
+        - firewalld:purge
+  when:
+    - firewalld_enabled | bool
+    - firewalld_purge_ports | bool
+  tags:
+    - firewalld
+    - firewalld:purge
+
+- name: Main | Include purge rich rules tasks
+  ansible.builtin.include_tasks:
+    file: purge_rich_rules.yml
+    apply:
+      tags:
+        - firewalld
+        - firewalld:purge
+  when:
+    - firewalld_enabled | bool
+    - firewalld_purge_rich_rules | bool
+  tags:
+    - firewalld
+    - firewalld:purge
+
 - name: Main | Import service tasks
   ansible.builtin.import_tasks: service.yml
   when: firewalld_enabled | bool

@@ -1,0 +1,101 @@
+---
+# Removes rich rules from managed zones that are not in the desired state.
+# Desired state = firewalld_rich_rules.
+
+#
+# Normalize configured rich rules
+#
+
+# firewall-cmd lists rich rules in the normalized form firewalld stores them
+# in (fixed element order, every attribute value double-quoted), which can
+# differ from the way they are written in the inventory. The desired list is
+# normalized with the same class firewalld and ansible.posix.firewalld use
+# (firewall.core.rich.Rich_Rule), run on the target so the comparison is
+# exact for the installed firewalld version. One call takes all rules as a
+# JSON list on stdin and prints them as a JSON list in the same order.
+# check_mode: false — read-only, must run under --check so the downstream
+# set_fact has a result to parse.
+- name: Purge Rich Rules | Normalize configured rich rules
+  ansible.builtin.command:
+    argv:
+      - "{{ __firewalld_python }}"
+      - "-c"
+      - |
+        import json
+        import sys
+        from firewall.core.rich import Rich_Rule
+        print(json.dumps([str(Rich_Rule(rule_str=rule)) for rule in json.load(sys.stdin)]))
+    stdin: "{{ firewalld_rich_rules | default([]) | map(attribute='rule') | list | to_json }}"
+  register: __firewalld_purge_rich_rules_normalized
+  changed_when: false
+  check_mode: false
+
+#
+# Build desired rich rules map: zone -> [rules]
+#
+
+- name: Purge Rich Rules | Initialize desired rich rules from default zone
+  ansible.builtin.set_fact:
+    __firewalld_purge_rich_rules_desired: >-
+      {{ {firewalld_default_zone: []} }}
+
+- name: Purge Rich Rules | Merge normalized rich rules into desired map
+  ansible.builtin.set_fact:
+    __firewalld_purge_rich_rules_desired: >-
+      {{ __firewalld_purge_rich_rules_desired | combine({
+           (item.0.zone | default(firewalld_default_zone)):
+             ((__firewalld_purge_rich_rules_desired[item.0.zone | default(firewalld_default_zone)]
+               | default([]))
+              + [item.1]) | unique | list
+         }) }}
+  loop: >-
+    {{ firewalld_rich_rules | default([])
+       | zip(__firewalld_purge_rich_rules_normalized.stdout | from_json) | list }}
+  loop_control:
+    label: "{{ item.0.zone | default(firewalld_default_zone) }}: {{ item.1 | truncate(50) }}"
+
+#
+# Query active rich rules and compute excess
+#
+
+# check_mode: false — read-only query, must run under --check so the
+# downstream set_fact has a result to parse.
+- name: Purge Rich Rules | Query active rich rules per managed zone
+  ansible.builtin.command:
+    cmd: "firewall-cmd --zone={{ item.key }} --list-rich-rules --permanent"
+  register: __firewalld_purge_rich_rules_active
+  changed_when: false
+  check_mode: false
+  loop: "{{ __firewalld_purge_rich_rules_desired | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Purge Rich Rules | Build list of excess rich rules to remove
+  ansible.builtin.set_fact:
+    __firewalld_purge_rich_rules_excess: >-
+      {%- set ns = namespace(items=[]) -%}
+      {%- for result in __firewalld_purge_rich_rules_active.results -%}
+        {%- set zone = result.item.key -%}
+        {%- set active = result.stdout_lines | map('trim') | reject('equalto', '') | list -%}
+        {%- set desired = result.item.value -%}
+        {%- for rule in active if rule not in desired -%}
+          {%- set ns.items = ns.items + [{'zone': zone, 'rule': rule}] -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ ns.items }}
+
+#
+# Remove excess rich rules
+#
+
+- name: Purge Rich Rules | Remove unconfigured rich rules
+  ansible.posix.firewalld:
+    rich_rule: "{{ item.rule }}"
+    zone: "{{ item.zone }}"
+    state: disabled
+    permanent: true
+    immediate: true
+  loop: "{{ __firewalld_purge_rich_rules_excess }}"
+  loop_control:
+    label: "{{ item.zone }}: {{ item.rule | truncate(50) }}"
+  when: __firewalld_purge_rich_rules_excess | length > 0

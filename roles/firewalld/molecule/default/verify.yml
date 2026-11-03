@@ -191,6 +191,50 @@
           Public zone has unexpected services: {{ __verify_purge.stdout }}.
           Expected only ssh, http and myapp after purge.
 
+    - name: Verify | Get public zone ports
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --list-ports --permanent
+      register: __verify_purge_ports
+      changed_when: false
+
+    - name: Verify | Assert only configured ports remain after purge
+      ansible.builtin.assert:
+        that:
+          - __verify_purge_ports.stdout.split() == ['8080/tcp']
+        fail_msg: >-
+          Public zone has unexpected ports: {{ __verify_purge_ports.stdout }}.
+          Expected only 8080/tcp after purge.
+
+    - name: Verify | Check purged port is closed at runtime
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --query-port=9999/tcp
+      register: __verify_purge_port_runtime
+      changed_when: false
+      failed_when: __verify_purge_port_runtime.rc == 0
+
+    - name: Verify | Get public zone rich rules
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --list-rich-rules --permanent
+      register: __verify_purge_rich
+      changed_when: false
+
+    - name: Verify | Assert only the configured rich rule remains after purge
+      ansible.builtin.assert:
+        that:
+          - __verify_purge_rich.stdout_lines | length == 1
+          - "'10.0.0.0/8' in __verify_purge_rich.stdout"
+          - "'203.0.113.0/24' not in __verify_purge_rich.stdout"
+        fail_msg: >-
+          Public zone has unexpected rich rules: {{ __verify_purge_rich.stdout }}.
+          Expected only the 10.0.0.0/8 rule after purge.
+
+    - name: Verify | Check purged rich rule is removed at runtime
+      ansible.builtin.command:
+        cmd: firewall-cmd --zone=public --list-rich-rules
+      register: __verify_purge_rich_runtime
+      changed_when: false
+      failed_when: "'203.0.113.0/24' in __verify_purge_rich_runtime.stdout"
+
     #
     # Version-Conditional Checks (firewalld 2.x+)
     #
