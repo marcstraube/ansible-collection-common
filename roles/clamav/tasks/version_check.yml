@@ -1,0 +1,54 @@
+---
+# Compares the ClamAV main package with the minimum version, using the
+# distribution's own version rules (epochs, Debian revisions such as
+# +dfsg-1~deb13u1, EL release strings). Passes when the installed version
+# or the version the update would install meets the minimum.
+#
+# Input:
+#   __clamav_check_stage      'pre' (before the package task) or 'post'
+#   __clamav_check_installed  installed version, '' when not installed
+#   __clamav_check_candidate  version the update would install, '' if none
+#
+# A minimum without an epoch takes the epoch of the compared version: dpkg,
+# rpm and vercmp treat a missing epoch as 0, so for a package with an epoch
+# (1:1.4.3) a minimum of 1.4.4 would otherwise count as older.
+
+- name: Version Check | Compare with the minimum version
+  ansible.builtin.command:
+    argv: '{{ __clamav_vercmp_argv[ansible_facts["os_family"]] }}'
+  vars:
+    __clamav_check_minimum: >-
+      {{ (item.split(':') | first ~ ':' ~ __clamav_minimum)
+         if (':' not in (__clamav_minimum | string) and item is match('^[0-9]+:'))
+         else (__clamav_minimum | string) }}
+    # dpkg answers with its exit code, rpm and vercmp print -1, 0 or 1
+    __clamav_vercmp_argv:
+      Debian: ['dpkg', '--compare-versions', '{{ item }}', 'ge', '{{ __clamav_check_minimum }}']
+      RedHat: ['rpm', '--eval', '%{lua: print(rpm.vercmp("{{ item }}", "{{ __clamav_check_minimum }}"))}']
+      Archlinux: ['vercmp', '{{ item }}', '{{ __clamav_check_minimum }}']
+  loop: '{{ [__clamav_check_installed, __clamav_check_candidate] | select | unique | list }}'
+  register: __clamav_check_result
+  changed_when: false
+  failed_when: __clamav_check_result.rc not in [0, 1]
+  check_mode: false
+
+- name: Version Check | Assert the minimum version
+  ansible.builtin.assert:
+    that:
+      - __clamav_check_met | length > 0
+    fail_msg: >-
+      clamav_packages_minimum requires {{ __clamav_minimum }};
+      installed: {{ __clamav_check_installed | default('none', true) }}{{
+        ('; the update would install: ' ~ (__clamav_check_candidate | default('none', true)))
+        if __clamav_check_stage == 'pre' else '' }}.
+      The repository does not carry the required version yet{{
+        ', nothing was changed' if __clamav_check_stage == 'pre' else '' }}.
+    success_msg: >-
+      {{ __clamav_version_package }} {{ (__clamav_check_met + ['']) | first }} meets the
+      minimum {{ __clamav_minimum }}
+  vars:
+    __clamav_check_met: >-
+      {{ (__clamav_check_result.results | default([]) | selectattr('rc', 'eq', 0) | map(attribute='item') | list)
+         if ansible_facts['os_family'] == 'Debian'
+         else (__clamav_check_result.results | default([]) | selectattr('stdout', 'in', ['0', '1'])
+               | map(attribute='item') | list) }}

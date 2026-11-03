@@ -15,3 +15,8 @@ __clamav_milter_config_file: '/etc/mail/clamav-milter.conf'
 __clamav_user: 'clamscan'
 __clamav_group: 'clamscan'
 __clamav_apparmor_profile: ''  # not applicable (SELinux)
+
+# Installed packages a targeted update moves along (the EPEL clamav,
+# clamav-lib, clamav-filesystem, clamav-data, clamav-update, clamav-milter
+# and clamd packages)
+__clamav_update_pattern: '^(clamav(-.+)?|clamd)$'
