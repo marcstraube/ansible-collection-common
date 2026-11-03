@@ -2,6 +2,45 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.1.0 (2026-11-03)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Features
+* feat(php): allow a targeted package update with a minimum version check by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/418
+* feat(base): set system-wide environment variables for login shells by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/457
+* feat(users): set per-user environment variables for login shells by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/458
+* feat(pki): support custom crypto-policy modules by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/464
+* feat(package_management): include pacman IgnorePkg drop-ins by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/478
+* feat(wazuh_agent): add Wazuh agent role by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/479
+* feat(openssh): support comments on client Host blocks by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/481
+* feat(package_management): add makepkg_tmpdir for noexec /tmp by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/486
+* feat(libvirt): add a libvirt role by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/490
+* feat(virtualbox): add a virtualbox role by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/491
+* feat(vagrant): add a vagrant role by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/492
+* feat: deprecate role attributes on users_list entries by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/497
+* feat(users): make the users role the only owner of login shells by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/498
+* feat(networkmanager): set the pre-shared key for WiFi connections by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/512
+* feat(base): keep the running kernel's modules available after a kernel upgrade on Arch Linux by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/515
+* feat(firewalld): purge unconfigured ports and rich rules from managed zones by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/518
+* feat(clamav): allow a targeted package update by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/519
+* feat(php): select non-default AppStream PHP versions on EL by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/521
+* feat(vendor_packages): add a role for packages built from manually downloaded vendor files by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/523
+### Bug Fixes
+* fix(php): clear the dnf metadata cache before a targeted update by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/429
+* fix: run the libvirt and virtualbox roles in check mode on a first run by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/503
+* fix(wazuh_agent): run check mode on a host without the agent by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/517
+* fix(wazuh_agent): run check mode on a sub-tag run and on a version bump by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/520
+* fix(libvirt): skip starting the default network when the running kernel's modules are missing by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/522
+### Code Refactoring
+* refactor: make the package toggles in git and package_management install-only by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/514
+### Documentation
+* docs: drop the role count from the collection description by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/416
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.0.3...v3.1.0
+
 ## 3.0.3 (2026-11-02)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
