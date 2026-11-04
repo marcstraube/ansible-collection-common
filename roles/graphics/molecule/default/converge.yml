@@ -12,12 +12,14 @@
     graphics_intel_vulkan_enabled: false
     graphics_intel_vaapi_enabled: false
     graphics_intel_32bit_enabled: false
-    # AMD: ROCm diagnostic tools only (Mesa comes with the Intel stack)
+    # AMD: ROCm diagnostic tools and rocRAND only (Mesa comes with the Intel
+    # stack)
     graphics_amd_enabled: true
     graphics_amd_mesa_enabled: false
     graphics_amd_vulkan_enabled: false
     graphics_amd_32bit_enabled: false
     graphics_amd_rocm_tools_enabled: true
+    graphics_amd_rocrand_enabled: true
     graphics_nvidia_enabled: false
     # Test common tools
     graphics_vulkan_tools_enabled: false

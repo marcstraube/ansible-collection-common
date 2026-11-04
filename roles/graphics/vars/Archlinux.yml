@@ -21,6 +21,7 @@ __graphics_amd_vulkan_32bit: 'lib32-vulkan-radeon'
 __graphics_amd_rocm_tools:
   - 'rocminfo'
   - 'rocm-smi-lib'
+__graphics_amd_rocrand: 'rocrand'
 
 #
 # NVIDIA

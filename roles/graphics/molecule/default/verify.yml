@@ -90,6 +90,16 @@
       register: __verify_rocm_tools
       failed_when: __verify_rocm_tools.changed
 
+    # Not packaged for EL 9: the role skips it there
+    - name: Verify | Check rocRAND installed
+      ansible.builtin.package:
+        name: '{{ __graphics_amd_rocrand }}'
+        state: present
+      check_mode: true
+      register: __verify_rocrand
+      failed_when: __verify_rocrand.changed
+      when: __graphics_amd_rocrand | length > 0
+
     #
     # Kernel Params Verification
     #

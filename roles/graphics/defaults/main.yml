@@ -66,6 +66,12 @@ graphics_amd_32bit_enabled: false
 # ships rocm-smi only.
 graphics_amd_rocm_tools_enabled: false
 
+# Install rocRAND, the ROCm random number generator library, for applications
+# that need it at runtime without depending on it. Large on Arch Linux (about
+# 8.5 GiB installed: hip-runtime-amd pulls in rocm-llvm); EPEL on EL 10; not
+# packaged for EL 9.
+graphics_amd_rocrand_enabled: false
+
 #
 # NVIDIA GPU
 #
