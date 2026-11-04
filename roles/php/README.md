@@ -257,6 +257,29 @@ Full template deployed for each version with FPM enabled.
 | `php_fpm_pool_catch_workers_output`        | `'no'`      | Capture worker output in log    |
 | `php_fpm_pool_admin_values`                | `{}`        | Pool `php_admin_value` mapping  |
 | `php_fpm_pool_admin_flags`                 | `{}`        | Pool `php_admin_flag` mapping   |
+| `php_fpm_pool_env`                         | `{}`        | Pool `env[...]` mapping         |
+
+#### Worker environment
+
+PHP-FPM clears the environment of its workers (`clear_env = yes`), so an
+application that reads settings through `getenv()` sees none of the host's
+variables. `php_fpm_pool_env` writes each entry as `env[NAME] = value` into the
+pool; `clear_env` stays on, so only the listed variables reach the workers.
+Per-version entries in `php_versions[].fpm_pool.env` are merged over the global
+mapping.
+
+Example for an outbound proxy:
+
+```yaml
+php_fpm_pool_env:
+  HTTPS_PROXY: 'http://proxy.example.com:3128'
+  NO_PROXY: 'localhost,127.0.0.1,.example.com'
+```
+
+Guzzle reads `HTTPS_PROXY` and `NO_PROXY` from the environment. It ignores
+`HTTP_PROXY` under a web SAPI, since a request header `Proxy:` would show up
+as `HTTP_PROXY` there (httpoxy). libcurl reads the lowercase `http_proxy` and
+`https_proxy` itself, which a request header cannot set.
 
 ### Composer
 

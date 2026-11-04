@@ -269,7 +269,70 @@
           - >-
             'php_admin_flag[log_errors] = on'
             in (__verify_auto_pool_content.content | b64decode)
+          - >-
+            'env[HTTPS_PROXY] = http://proxy.invalid:3128'
+            in (__verify_auto_pool_content.content | b64decode)
+          - >-
+            'env[MOLECULE_FPM_ENV] = global'
+            in (__verify_auto_pool_content.content | b64decode)
         fail_msg: "www.conf content unexpected"
+
+    #
+    # Worker environment reaches getenv() in a script served through FPM.
+    # getenv() also sees the FastCGI request parameters, and cgi-fcgi sends its
+    # own environment as such; the two test variables are not part of it, so
+    # their values can only come from the pool. A restart recreates the socket
+    # file (see the reload note below).
+    #
+
+    - name: Verify | Create FPM test script directory
+      ansible.builtin.file:
+        path: /srv/molecule-php
+        state: directory
+        mode: '0755'
+
+    - name: Verify | Deploy getenv() test script
+      ansible.builtin.copy:
+        dest: /srv/molecule-php/env.php
+        content: |
+          <?php
+          echo getenv('MOLECULE_FPM_ENV'), '|', getenv('HTTPS_PROXY');
+        mode: '0644'
+
+    - name: Verify | Restart the auto FPM service
+      ansible.builtin.systemd_service:
+        name: '{{ __verify_auto_fpm }}'
+        state: restarted
+
+    - name: Verify | Read the auto FPM socket
+      ansible.builtin.set_fact:
+        __verify_auto_socket: >-
+          {{ (__verify_auto_pool_content.content | b64decode)
+             | regex_search('^listen = (.+)$', '\1', multiline=True) | first }}
+
+    - name: Verify | Wait for the auto FPM socket
+      ansible.builtin.wait_for:
+        path: '{{ __verify_auto_socket }}'
+        timeout: 30
+
+    - name: Verify | Request the test script through FPM
+      ansible.builtin.command:
+        argv:
+          - cgi-fcgi
+          - -bind
+          - -connect
+          - '{{ __verify_auto_socket }}'
+      environment:
+        SCRIPT_FILENAME: /srv/molecule-php/env.php
+        REQUEST_METHOD: GET
+      register: __verify_fpm_env
+      changed_when: false
+
+    - name: Verify | Assert the workers see the pool environment
+      ansible.builtin.assert:
+        that:
+          - "'global|http://proxy.invalid:3128' in __verify_fpm_env.stdout"
+        fail_msg: 'getenv() through FPM returned: {{ __verify_fpm_env.stdout }}'
 
     #
     # FPM picks up ini changes (side_effect changed max_input_vars while the
@@ -437,6 +500,27 @@
         that:
           - __verify_second_pool_stat.stat.exists
         fail_msg: "Second version www.conf not found at {{ __verify_second_pool }}"
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Check second www.conf content
+      ansible.builtin.slurp:
+        src: '{{ __verify_second_pool }}'
+      register: __verify_second_pool_content
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Assert per-version env overrides the global mapping
+      ansible.builtin.assert:
+        that:
+          - >-
+            'env[MOLECULE_FPM_ENV] = per-version'
+            in (__verify_second_pool_content.content | b64decode)
+          - >-
+            'env[MOLECULE_FPM_ENV] = global'
+            not in (__verify_second_pool_content.content | b64decode)
+          - >-
+            'env[HTTPS_PROXY] = http://proxy.invalid:3128'
+            in (__verify_second_pool_content.content | b64decode)
+        fail_msg: 'second www.conf env lines unexpected'
       when: ansible_facts['os_family'] == 'Debian'
 
     #
