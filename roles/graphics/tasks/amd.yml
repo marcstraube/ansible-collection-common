@@ -9,7 +9,9 @@
           [__graphics_amd_mesa_32bit, __graphics_amd_vulkan_32bit],
           []
         )) +
-        (graphics_amd_rocm_tools_enabled | bool | ternary(__graphics_amd_rocm_tools, []))
+        (graphics_amd_rocm_tools_enabled | bool | ternary(__graphics_amd_rocm_tools, [])) +
+        ((graphics_amd_rocrand_enabled | bool and __graphics_amd_rocrand | length > 0)
+         | ternary([__graphics_amd_rocrand], []))
       }}
 
 - name: AMD | Install packages

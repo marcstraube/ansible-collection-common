@@ -24,6 +24,8 @@ __graphics_amd_vulkan_32bit: 'mesa-vulkan-drivers.i686'
 # EPEL 9 ships rocm-smi only; rocminfo is not packaged for EL 9
 __graphics_amd_rocm_tools:
   - 'rocm-smi'
+# Not packaged for EL 9
+__graphics_amd_rocrand: ''
 
 #
 # NVIDIA

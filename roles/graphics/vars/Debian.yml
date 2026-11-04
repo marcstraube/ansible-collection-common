@@ -21,6 +21,7 @@ __graphics_amd_vulkan_32bit: 'mesa-vulkan-drivers:i386'
 __graphics_amd_rocm_tools:
   - 'rocminfo'
   - 'rocm-smi'
+__graphics_amd_rocrand: 'librocrand1'
 
 #
 # NVIDIA
