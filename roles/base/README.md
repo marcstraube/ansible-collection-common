@@ -132,8 +132,10 @@ base_environment:
 | Debian     | `linux-image-amd64` (`linux-image-arm64` on ARM) | `[]`                         |
 | EL         | `kernel`                                         | `[]`                         |
 
-Microcode is managed on Arch Linux only (`auto` selects the package by CPU
-vendor).
+Microcode is managed on Arch Linux only. `auto` selects the package by CPU
+vendor and installs none in a virtual machine: a guest gets microcode updates
+from its host, not from inside. Set the package explicitly to install it in a
+guest anyway.
 
 #### Kernel Updates
 
