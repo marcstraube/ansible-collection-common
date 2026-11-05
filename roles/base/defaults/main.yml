@@ -140,8 +140,9 @@ base_kernel: '{{ __base_default_kernel | default("linux") }}'
 #   Debian, RHEL-fam → [] (only the kernel the installer set up)
 base_kernel_extra_packages: '{{ __base_default_kernel_extra_packages | default([]) }}'
 
-# Microcode package (Arch Linux only, auto-detected by CPU vendor)
-# Options: 'intel-ucode', 'amd-ucode', 'auto', ''
+# Microcode package (Arch Linux only). 'auto' selects it by CPU vendor and
+# installs none in a virtual machine, which gets microcode updates from its
+# host. Options: 'intel-ucode', 'amd-ucode', 'auto', ''
 base_microcode: 'auto'
 
 # Keep the modules of the running kernel available after a kernel upgrade

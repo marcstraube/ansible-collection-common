@@ -1,18 +1,16 @@
 ---
 # Arch Linux only: microcode, the kernel modules hook and mkinitcpio.
 
+# A virtual machine gets microcode updates from its host, the hypervisor
+# rejects them from the guest: 'auto' installs no microcode there.
 - name: Kernel Archlinux | Detect CPU vendor for microcode
   ansible.builtin.set_fact:
-    __base_microcode_package: |-
-      {% if base_microcode == 'auto' %}
-      {%
-        if 'GenuineIntel' in ansible_facts['processor']
-      %}intel-ucode{%
-        elif 'AuthenticAMD' in ansible_facts['processor']
-      %}amd-ucode{%
-        endif
-      %}
-      {% else %}{{ base_microcode }}{% endif %}
+    __base_microcode_package: >-
+      {{ base_microcode if base_microcode != 'auto'
+         else '' if ansible_facts['virtualization_role'] | default('') == 'guest'
+         else 'intel-ucode' if 'GenuineIntel' in ansible_facts['processor']
+         else 'amd-ucode' if 'AuthenticAMD' in ansible_facts['processor']
+         else '' }}
   when: base_microcode != ''
 
 - name: Kernel Archlinux | Install microcode package
