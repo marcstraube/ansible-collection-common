@@ -81,3 +81,74 @@
       retries: 3
       delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
+
+    #
+    # Kernel Update Test State
+    #
+
+    # The targeted kernel update (side_effect.yml) needs an outdated kernel.
+    # EL keeps the older builds of a minor release in BaseOS (repoquery lists
+    # them oldest first); Debian keeps the point release kernel in main next to
+    # the newer one from security (madison lists the newest first). Without an
+    # older build the newest is installed and the update has nothing to do.
+    - name: Prepare | List the kernel builds (RedHat)
+      ansible.builtin.command:
+        argv:
+          - dnf
+          - --quiet
+          - repoquery
+          - --showduplicates
+          - '--queryformat=%{version}-%{release}'
+          - kernel-core
+      register: __prepare_kernel_builds_dnf
+      changed_when: false
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | List the kernel builds (Debian)
+      ansible.builtin.command:
+        argv:
+          - apt-cache
+          - madison
+          - linux-image-amd64
+      register: __prepare_kernel_builds_apt
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Select the older and the newest kernel build
+      ansible.builtin.set_fact:
+        __prepare_kernel_older: '{{ __prepare_kernel_builds[-2] | default(__prepare_kernel_builds[-1]) }}'
+        __prepare_kernel_newest: '{{ __prepare_kernel_builds[-1] }}'
+      vars:
+        __prepare_kernel_builds: >-
+          {{ (__prepare_kernel_builds_dnf.stdout_lines | unique | list)
+             if ansible_facts['os_family'] == 'RedHat'
+             else (__prepare_kernel_builds_apt.stdout_lines
+                   | map('split', '|') | map(attribute=1) | map('trim') | unique | reverse | list) }}
+      when: ansible_facts['os_family'] in ['RedHat', 'Debian']
+
+    - name: Prepare | Install the older kernel (RedHat)
+      ansible.builtin.dnf:
+        name: 'kernel-{{ __prepare_kernel_older }}'
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Install the older kernel (Debian)
+      ansible.builtin.apt:
+        name: 'linux-image-amd64={{ __prepare_kernel_older }}'
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Record the kernel builds for the update test
+      ansible.builtin.copy:
+        content: |
+          older: '{{ __prepare_kernel_older }}'
+          newest: '{{ __prepare_kernel_newest }}'
+        dest: /root/kernel-builds.yml
+        owner: root
+        group: root
+        mode: '0600'
+      when: ansible_facts['os_family'] in ['RedHat', 'Debian']

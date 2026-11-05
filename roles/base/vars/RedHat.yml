@@ -16,6 +16,16 @@ __base_locale_packages:
 
 __base_dialog_package: 'dialog'
 
+# Kernel: kernel is installonly, every version stays installed next to the
+# others (installonly_limit) and kernel-core of each holds the kernel image
+__base_default_kernel: 'kernel'
+__base_default_kernel_extra_packages: []
+# Installed packages that a targeted update moves along
+__base_kernel_update_pattern: '^kernel(-core|-modules(-core|-extra)?|-devel(-matched)?|-headers|-tools(-libs)?)?$'
+# Package that installs one kernel per version, compared with the minimum
+# and the running kernel
+__base_kernel_version_pattern: '^kernel-core$'
+
 # Default bootloader (RHEL-family ships GRUB by default)
 __base_default_bootloader: 'grub'
 

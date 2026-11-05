@@ -129,14 +129,18 @@ base_xkb_options: ''
 # Kernel
 #
 
-# Kernel package to install
-base_kernel: 'linux'
+# Kernel package to install. Default is OS-aware via vars/<OS>.yml:
+#   Arch Linux → linux
+#   Debian     → linux-image-amd64 (linux-image-arm64 on aarch64)
+#   RHEL-fam   → kernel
+base_kernel: '{{ __base_default_kernel | default("linux") }}'
 
-# Additional kernel packages (headers, etc.)
-base_kernel_extra_packages:
-  - '{{ base_kernel }}-headers'
+# Additional kernel packages (headers, etc.). Default is OS-aware:
+#   Arch Linux → ['<base_kernel>-headers']
+#   Debian, RHEL-fam → [] (only the kernel the installer set up)
+base_kernel_extra_packages: '{{ __base_default_kernel_extra_packages | default([]) }}'
 
-# Microcode package (auto-detected if empty)
+# Microcode package (Arch Linux only, auto-detected by CPU vendor)
 # Options: 'intel-ucode', 'amd-ucode', 'auto', ''
 base_microcode: 'auto'
 
@@ -145,6 +149,46 @@ base_microcode: 'auto'
 # linux-modules-cleanup.service removes the modules of uninstalled kernels at
 # boot. Install-only: false disables the service and leaves the package.
 base_kernel_keep_modules_enabled: true
+
+#
+# Kernel Updates
+#
+
+# State of the kernel packages:
+#   'present' installs a missing kernel and never updates (default).
+#   'latest'  updates the installed kernel packages in one transaction. EL
+#             installs the new kernel next to the running one, Debian moves
+#             the metapackage to the new kernel ABI.
+# Pass 'latest' for a targeted update instead of setting it in inventory:
+#   --tags base:kernel -e base_kernel_packages_state=latest
+# Ignored on Arch Linux: updating single packages is a partial upgrade there,
+# the kernel updates with the full system upgrade.
+base_kernel_packages_state: 'present'
+
+# Lowest acceptable kernel version, checked before the update (nothing
+# changes when the repository does not offer it yet) and again after it.
+# Meant to be passed with the update command to require a fix. Either an
+# upstream version, which accepts every distribution release of it:
+#   -e base_kernel_packages_minimum=6.12.115
+# or the full distribution version, which also covers fixes the distribution
+# backports without a new upstream version:
+#   -e base_kernel_packages_minimum=5.14.0-687.65.1.el9_8
+# A mapping per platform (keys '<os_family>-<major>' or '<os_family>') covers
+# mixed hosts in one run; a host without a matching key fails:
+#   -e @kernel-minimum.yml
+base_kernel_packages_minimum: ''
+
+# A new kernel takes effect after a reboot. The role reports a pending reboot
+# whenever it checks the kernel (state 'latest', a minimum or this toggle):
+# the running kernel is not the newest installed one. true reboots the host
+# when a reboot is pending and then checks that the newest kernel runs and
+# meets base_kernel_packages_minimum. Pass it with the update command; the
+# order of reboots across hosts is up to the caller (--forks, --limit):
+#   -e base_kernel_reboot=true
+base_kernel_reboot: false
+
+# Seconds to wait for the host to come back after the reboot
+base_kernel_reboot_timeout: 600
 
 #
 # Bootloader

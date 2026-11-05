@@ -1,0 +1,96 @@
+---
+# Finds the package version of the running kernel and whether a reboot is
+# pending: the running kernel is not an installed kernel package, or a newer
+# kernel is installed.
+#
+# Input:
+#   __base_kernel_running_versions  installed kernel versions
+# Output:
+#   __base_kernel_running_release   release of the running kernel (uname -r)
+#   __base_kernel_running_version   its package version, '' if unknown
+#   __base_kernel_reboot_pending    true when a reboot is pending
+
+- name: Kernel Running | Read the running kernel release
+  ansible.builtin.command:
+    argv:
+      - uname
+      - --kernel-release
+  register: __base_kernel_uname_release
+  changed_when: false
+  check_mode: false
+
+# Debian keeps the kernel release (the ABI) across package revisions, the
+# package version is part of the kernel version string
+- name: Kernel Running | Read the running kernel version (Debian)
+  ansible.builtin.command:
+    argv:
+      - uname
+      - --kernel-version
+  register: __base_kernel_uname_version
+  changed_when: false
+  check_mode: false
+  when: ansible_facts['os_family'] == 'Debian'
+
+# The package installs its kernel under /usr/lib/modules/<release>/
+- name: Kernel Running | Read the release of the installed kernel (Archlinux)
+  ansible.builtin.command:
+    argv:
+      - pacman
+      - --query
+      - --list
+      - --quiet
+      - '{{ base_kernel }}'
+  register: __base_kernel_pacman_files
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+# EL: the uname release is <version>-<release>.<arch>. Debian: the version in
+# the kernel version string. Arch Linux: the installed package, when its
+# kernel release is the running one. Only an installed version counts.
+- name: Kernel Running | Find the package version of the running kernel
+  ansible.builtin.set_fact:
+    __base_kernel_running_release: '{{ __base_kernel_release }}'
+    __base_kernel_running_version: >-
+      {{ __base_kernel_running_candidate
+         if __base_kernel_running_candidate in __base_kernel_running_versions else '' }}
+  vars:
+    __base_kernel_release: '{{ __base_kernel_uname_release.stdout | trim }}'
+    __base_kernel_arch_releases: >-
+      {{ (__base_kernel_pacman_files.stdout | default(''))
+         | regex_findall('(?m)^/usr/lib/modules/([^/]+)/vmlinuz$') }}
+    __base_kernel_running_candidate: >-
+      {{ (__base_kernel_release | regex_replace('\.' ~ (ansible_facts['architecture'] | regex_escape) ~ '$', ''))
+         if ansible_facts['os_family'] == 'RedHat'
+         else ((((__base_kernel_uname_version.stdout | default('')) | regex_findall('Debian ([^ ]+)')) + ['']) | first)
+         if ansible_facts['os_family'] == 'Debian'
+         else ((__base_kernel_running_versions + ['']) | first)
+         if __base_kernel_release in __base_kernel_arch_releases
+         else '' }}
+
+- name: Kernel Running | Compare the installed kernels with the running one
+  ansible.builtin.command:
+    argv: '{{ __base_kernel_newer_argv[ansible_facts["os_family"]] }}'
+  vars:
+    # dpkg answers with its exit code (0: newer), rpm and vercmp print 1
+    __base_kernel_newer_argv:
+      Debian: ['dpkg', '--compare-versions', '{{ item }}', 'gt', '{{ __base_kernel_running_version }}']
+      RedHat: ['rpm', '--eval', '%{lua: print(rpm.vercmp("{{ item }}", "{{ __base_kernel_running_version }}"))}']
+      Archlinux: ['vercmp', '{{ item }}', '{{ __base_kernel_running_version }}']
+  loop: '{{ __base_kernel_running_versions }}'
+  register: __base_kernel_newer_result
+  changed_when: false
+  failed_when: __base_kernel_newer_result.rc not in [0, 1]
+  check_mode: false
+  when: __base_kernel_running_version | length > 0
+
+- name: Kernel Running | Decide whether a reboot is pending
+  ansible.builtin.set_fact:
+    __base_kernel_reboot_pending: >-
+      {{ __base_kernel_running_version | length == 0
+         or ((__base_kernel_newer_result.results | default([]) | selectattr('rc', 'defined')
+              | selectattr('rc', 'eq', 0) | list | length > 0)
+             if ansible_facts['os_family'] == 'Debian'
+             else (__base_kernel_newer_result.results | default([]) | selectattr('stdout', 'defined')
+                   | selectattr('stdout', 'eq', '1') | list | length > 0)) }}
