@@ -13,6 +13,8 @@
   changed_when: false
   # Unit may not exist on the system
   failed_when: false
+  # Read-only lookup; must run under --check so the guard below holds
+  check_mode: false
 
 # A static unit (no [Install] section) cannot be enabled
 - name: Service | Set ssh-agent unit enable guard
