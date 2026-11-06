@@ -13,6 +13,14 @@
     # Global ssh-agent with SSH_AUTH_SOCK export
     openssh_agent_global_service_enabled: true
 
+    # custom askpass with SSH_ASKPASS export. The package is the already
+    # installed client package, so the run pulls in no graphical stack; the
+    # program path only has to reach the export.
+    openssh_askpass_enabled: true
+    openssh_askpass: 'custom'
+    openssh_askpass_program: '/usr/bin/molecule-askpass'
+    openssh_askpass_package: "{{ __openssh_packages | last }}"
+
     # Global client config
     openssh_client_extra_config:
       - 'ServerAliveInterval 60'

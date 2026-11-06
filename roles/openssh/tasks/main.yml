@@ -63,6 +63,58 @@
   tags:
     - always
 
+- name: Main | Validate openssh_askpass choice
+  ansible.builtin.assert:
+    that:
+      - openssh_askpass in ['default', 'lxqt', 'ksshaskpass', 'seahorse', 'custom']
+    fail_msg: >-
+      openssh_askpass must be 'default', 'lxqt', 'ksshaskpass', 'seahorse' or
+      'custom', got '{{ openssh_askpass }}'
+  when:
+    - openssh_enabled | bool
+    - openssh_askpass_enabled | bool
+  tags:
+    - always
+
+- name: Main | Validate openssh_askpass_program for custom
+  ansible.builtin.assert:
+    that:
+      - openssh_askpass_program | length > 0
+    fail_msg: "openssh_askpass 'custom' needs the path of the program in openssh_askpass_program"
+  when:
+    - openssh_enabled | bool
+    - openssh_askpass_enabled | bool
+    - openssh_askpass == 'custom'
+  tags:
+    - always
+
+- name: Main | Validate openssh_askpass_program with another choice
+  ansible.builtin.assert:
+    that:
+      - openssh_askpass_program | length == 0
+    fail_msg: >-
+      openssh_askpass_program only applies to openssh_askpass 'custom', got
+      '{{ openssh_askpass }}'
+  when:
+    - openssh_enabled | bool
+    - openssh_askpass_enabled | bool
+    - openssh_askpass != 'custom'
+  tags:
+    - always
+
+# A listed choice without an entry in the OS vars has no package on this
+# distribution: empty package and program, a silent no-op.
+- name: Main | Resolve askpass package and program
+  ansible.builtin.set_fact:
+    __openssh_askpass_selected: >-
+      {{ {'package': openssh_askpass_package, 'program': openssh_askpass_program}
+         if openssh_askpass == 'custom'
+         else __openssh_askpass_choices[openssh_askpass]
+              | default({'package': '', 'program': ''}) }}
+  when: openssh_enabled | bool
+  tags:
+    - always
+
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: openssh_enabled | bool
