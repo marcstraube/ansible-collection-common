@@ -39,9 +39,11 @@
     owner: 'root'
     group: 'root'
     mode: '0755'
-  when:
-    - openssh_agent_global_service_enabled | bool
-    - __openssh_agent_unit_enableable | bool
+  when: >-
+    (openssh_agent_global_service_enabled | bool
+     and __openssh_agent_unit_enableable | bool)
+    or (openssh_askpass_enabled | bool
+        and __openssh_askpass_selected.program | length > 0)
 
 - name: Service | Export SSH_AUTH_SOCK for the global ssh-agent service
   ansible.builtin.copy:
@@ -63,3 +65,27 @@
   when: >-
     not (openssh_agent_global_service_enabled | bool)
     or not (__openssh_agent_unit_enableable | bool)
+
+# ssh-agent runs the askpass program to confirm a key added with a
+# confirmation constraint; without SSH_ASKPASS it falls back to its
+# compiled-in path, where only the 'default' choice installs its program.
+- name: Service | Export SSH_ASKPASS for the askpass program
+  ansible.builtin.copy:
+    content: |
+      # askpass program (managed by Ansible)
+      SSH_ASKPASS={{ __openssh_askpass_selected.program }}
+    dest: '/etc/environment.d/40-ssh-askpass.conf'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  when:
+    - openssh_askpass_enabled | bool
+    - __openssh_askpass_selected.program | length > 0
+
+- name: Service | Remove SSH_ASKPASS export
+  ansible.builtin.file:
+    path: '/etc/environment.d/40-ssh-askpass.conf'
+    state: absent
+  when: >-
+    not (openssh_askpass_enabled | bool)
+    or __openssh_askpass_selected.program | length == 0

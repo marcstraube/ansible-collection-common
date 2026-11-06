@@ -462,3 +462,28 @@
         that:
           - not __openssh_verify_agent_env.stat.exists
         fail_msg: 'SSH_AUTH_SOCK export left although the global ssh-agent is disabled'
+
+    - name: Verify | Stat SSH_ASKPASS export
+      ansible.builtin.stat:
+        path: /etc/environment.d/40-ssh-askpass.conf
+      register: __openssh_verify_askpass_env
+
+    - name: Verify | Assert stale SSH_ASKPASS export was removed for the default choice
+      ansible.builtin.assert:
+        that:
+          - not __openssh_verify_askpass_env.stat.exists
+        fail_msg: "SSH_ASKPASS export left although askpass uses the 'default' choice"
+
+    - name: Verify | Stat askpass program at the compiled-in path
+      ansible.builtin.stat:
+        path: >-
+          {{ {'Archlinux': '/usr/lib/ssh/ssh-askpass',
+              'Debian': '/usr/bin/ssh-askpass',
+              'RedHat': '/usr/libexec/openssh/ssh-askpass'}[ansible_facts['os_family']] }}
+      register: __openssh_verify_askpass_default
+
+    - name: Verify | Assert the distribution askpass is installed
+      ansible.builtin.assert:
+        that:
+          - __openssh_verify_askpass_default.stat.exists
+        fail_msg: "no askpass program at ssh-agent's compiled-in path"
