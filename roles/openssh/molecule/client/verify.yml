@@ -222,3 +222,53 @@
           - not __openssh_verify_skipped.results[0].stat.exists
           - not __openssh_verify_skipped.results[1].stat.exists
         fail_msg: 'config written for a user without ssh_client or a system user'
+
+    #
+    # Global ssh-agent — Debian and EL 9 ship a static unit
+    #
+
+    - name: Verify | Set ssh-agent expectation
+      ansible.builtin.set_fact:
+        __openssh_verify_agent_managed: >-
+          {{ ansible_facts['os_family'] == 'Archlinux'
+             or (ansible_facts['os_family'] == 'RedHat'
+                 and ansible_facts['distribution_major_version'] | int >= 10) }}
+
+    - name: Verify | Get ssh-agent socket unit state  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: 'systemctl --global is-enabled ssh-agent.socket'
+      register: __openssh_verify_agent_socket
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Stat SSH_AUTH_SOCK export
+      ansible.builtin.stat:
+        path: /etc/environment.d/40-ssh-agent.conf
+      register: __openssh_verify_agent_env
+
+    # The environment.d generator expands the file as the user manager does
+    - name: Verify | Expand user session environment
+      ansible.builtin.command:
+        cmd: '/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator'
+      environment:
+        XDG_RUNTIME_DIR: '/run/user/1000'
+      register: __openssh_verify_agent_session_env
+      changed_when: false
+
+    - name: Verify | Assert ssh-agent socket and SSH_AUTH_SOCK export
+      ansible.builtin.assert:
+        that:
+          - __openssh_verify_agent_socket.stdout == 'enabled'
+          - __openssh_verify_agent_env.stat.exists
+          - __openssh_verify_agent_env.stat.mode == '0644'
+          - "'SSH_AUTH_SOCK=/run/user/1000/ssh-agent.socket'
+            in __openssh_verify_agent_session_env.stdout_lines"
+        fail_msg: 'ssh-agent socket not enabled or SSH_AUTH_SOCK not exported'
+      when: __openssh_verify_agent_managed | bool
+
+    - name: Verify | Assert no SSH_AUTH_SOCK export for a static agent unit
+      ansible.builtin.assert:
+        that:
+          - not __openssh_verify_agent_env.stat.exists
+        fail_msg: 'SSH_AUTH_SOCK exported although the agent unit cannot be enabled'
+      when: not (__openssh_verify_agent_managed | bool)

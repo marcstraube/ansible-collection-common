@@ -27,6 +27,8 @@ __openssh_ssh_audit_package: 'ssh-audit'
 __openssh_askpass_package: 'x11-ssh-askpass'
 
 __openssh_agent_service: 'ssh-agent.service'
+# Socket of the agent in $XDG_RUNTIME_DIR, exported as SSH_AUTH_SOCK
+__openssh_agent_socket: 'ssh-agent.socket'
 
 __openssh_apparmor_profile: '/usr/bin/sshd'
 
