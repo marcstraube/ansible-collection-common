@@ -24,6 +24,8 @@ __openssh_ssh_audit_package: 'ssh-audit'
 __openssh_askpass_package: 'openssh-askpass'
 
 __openssh_agent_service: 'ssh-agent.service'
+# Socket of the agent in $XDG_RUNTIME_DIR, exported as SSH_AUTH_SOCK
+__openssh_agent_socket: 'ssh-agent.socket'
 
 # Optional SSH client tools (from EPEL; empty string = not packaged)
 # sshm is not packaged for EL → no-op (Layer-1); see drift workflow.

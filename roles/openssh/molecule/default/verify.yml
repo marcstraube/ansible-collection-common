@@ -451,3 +451,14 @@
         that:
           - "'OpenSSH' in __openssh_ssh_version.stderr"
         fail_msg: 'SSH version output unexpected'
+
+    - name: Verify | Stat SSH_AUTH_SOCK export
+      ansible.builtin.stat:
+        path: /etc/environment.d/40-ssh-agent.conf
+      register: __openssh_verify_agent_env
+
+    - name: Verify | Assert stale SSH_AUTH_SOCK export was removed
+      ansible.builtin.assert:
+        that:
+          - not __openssh_verify_agent_env.stat.exists
+        fail_msg: 'SSH_AUTH_SOCK export left although the global ssh-agent is disabled'

@@ -10,6 +10,9 @@
     openssh_server_harden_moduli_enabled: false
     openssh_ssh_audit_enabled: false
 
+    # Global ssh-agent with SSH_AUTH_SOCK export
+    openssh_agent_global_service_enabled: true
+
     # Global client config
     openssh_client_extra_config:
       - 'ServerAliveInterval 60'

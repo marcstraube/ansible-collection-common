@@ -239,6 +239,15 @@ users_list:
 | `openssh_agent_global_service_enabled` | `false` | Enable global ssh-agent service |
 | `openssh_askpass_enabled`              | `false` | Enable SSH askpass program      |
 
+With the global service enabled, `/etc/environment.d/40-ssh-agent.conf`
+points `SSH_AUTH_SOCK` at `$XDG_RUNTIME_DIR/ssh-agent.socket` for every user
+session, so `ssh` and tools that add keys to the agent (e.g. KeePassXC) find
+it. A user-level export such as `50-gpg-ssh.conf` from
+`marcstraube.common.gnupg` takes precedence. The file is removed when the
+service is disabled. Debian and EL 9 ship the agent service as a static unit
+that cannot be enabled, so the role neither enables it nor exports its socket
+there; on Debian the agent's socket unit sets `SSH_AUTH_SOCK` itself.
+
 ### Escape Hatch
 
 | Variable                           | Default | Description             |

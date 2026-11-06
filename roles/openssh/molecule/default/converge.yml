@@ -75,6 +75,23 @@
     openssh_tools_autossh_enabled: true
 
   tasks:
+    - name: Converge | Ensure environment.d directory
+      ansible.builtin.file:
+        path: /etc/environment.d
+        state: directory
+        mode: '0755'
+
+    # The global ssh-agent stays disabled; the role must remove the export
+    - name: Converge | Pre-seed stale SSH_AUTH_SOCK export to prove removal
+      ansible.builtin.copy:
+        content: |
+          SSH_AUTH_SOCK=${XDG_RUNTIME_DIR}/ssh-agent.socket
+        dest: /etc/environment.d/40-ssh-agent.conf
+        mode: '0644'
+      # Re-seeding on the idempotence run would report a change.
+      tags:
+        - molecule-idempotence-notest
+
     - name: Converge | Include openssh role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
