@@ -36,8 +36,9 @@ Debian and EL.
 |--------------------------|---------|--------------------------------------------------------|
 | `go_govulncheck_enabled` | `false` | Install govulncheck (Go vulnerability database checks) |
 
-govulncheck is packaged on Arch Linux and Debian. EL gets a notice and can
-install it with `go install golang.org/x/vuln/cmd/govulncheck@latest`.
+govulncheck is packaged on Arch Linux and Debian. EL has no package, so the
+toggle is a no-op there; install it with
+`go install golang.org/x/vuln/cmd/govulncheck@latest`.
 
 ## Tags
 
