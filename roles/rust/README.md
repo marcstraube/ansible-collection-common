@@ -66,8 +66,8 @@ Only used when `rust_install_method` is `rustup`.
 |----------------------------|---------|----------------------------------------------------|
 | `rust_cargo_audit_enabled` | `false` | Install cargo-audit (RustSec advisory audit)       |
 
-cargo-audit is packaged on Arch Linux only. Debian and EL get a notice and
-can install it with `cargo install cargo-audit`.
+cargo-audit is packaged on Arch Linux only. Debian and EL have no package, so
+the toggle is a no-op there; install it with `cargo install cargo-audit`.
 
 ## Tags
 
