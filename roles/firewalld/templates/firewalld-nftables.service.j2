@@ -1,0 +1,17 @@
+{{ ansible_managed | default('Ansible managed') | comment }}
+
+[Unit]
+Description=Custom nftables tables next to firewalld
+Documentation=man:nft(8)
+Wants=network-pre.target
+After=firewalld.service
+Before=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart={{ __firewalld_nftables_binary }} -f {{ __firewalld_nftables_config_file }}
+ExecReload={{ __firewalld_nftables_binary }} -f {{ __firewalld_nftables_config_file }}
+
+[Install]
+WantedBy=multi-user.target

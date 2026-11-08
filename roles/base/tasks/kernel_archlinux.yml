@@ -1,0 +1,114 @@
+---
+# Arch Linux only: microcode, the kernel modules hook and mkinitcpio.
+
+# A virtual machine gets microcode updates from its host, the hypervisor
+# rejects them from the guest: 'auto' installs no microcode there.
+- name: Kernel Archlinux | Detect CPU vendor for microcode
+  ansible.builtin.set_fact:
+    __base_microcode_package: >-
+      {{ base_microcode if base_microcode != 'auto'
+         else '' if ansible_facts['virtualization_role'] | default('') == 'guest'
+         else 'intel-ucode' if 'GenuineIntel' in ansible_facts['processor']
+         else 'amd-ucode' if 'AuthenticAMD' in ansible_facts['processor']
+         else '' }}
+  when: base_microcode != ''
+
+- name: Kernel Archlinux | Install microcode package
+  ansible.builtin.package:
+    name: '{{ __base_microcode_package }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - __base_microcode_package is defined
+    - __base_microcode_package | length > 0
+
+# A kernel upgrade removes the module directory of the running kernel; until
+# the next reboot no module can be loaded for the first time. The package
+# keeps the modules across the upgrade with pacman hooks and ships a unit that
+# removes the modules of uninstalled kernels at boot.
+- name: Kernel Archlinux | Install kernel modules hook
+  ansible.builtin.package:
+    name: '{{ __base_kernel_keep_modules_package }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - base_kernel_keep_modules_enabled | bool
+    - __base_kernel_keep_modules_package | default('') | length > 0
+
+# The unit ships with the package: with the toggle off it may not exist, and in
+# check mode a first run only simulates the install.
+- name: Kernel Archlinux | Check if kernel modules cleanup unit is installed
+  ansible.builtin.stat:
+    path: '/usr/lib/systemd/system/{{ __base_kernel_keep_modules_service }}'
+  register: __base_kernel_keep_modules_unit
+  when: __base_kernel_keep_modules_service | default('') | length > 0
+
+# The unit is a oneshot that runs at boot (WantedBy=basic.target): only its
+# enabled state is managed, not the running state. Turning the toggle off
+# disables the unit and leaves the package installed.
+- name: Kernel Archlinux | Manage kernel modules cleanup service
+  ansible.builtin.systemd_service:
+    name: '{{ __base_kernel_keep_modules_service }}'
+    enabled: "{{ base_kernel_keep_modules_enabled | bool }}"
+  when:
+    - __base_kernel_keep_modules_service | default('') | length > 0
+    - __base_kernel_keep_modules_unit.stat.exists
+
+# mkinitcpio — only manage when explicitly configured
+# IMPORTANT: Do NOT template mkinitcpio.conf unless the user explicitly sets
+# hooks/modules/etc. The installer sets up mkinitcpio.conf with the correct
+# hooks for the system (encrypt, gpg, sd-encrypt, etc.). Templating it
+# changes the file format which triggers mkinitcpio -P. If hardware state
+# differs at regeneration time (e.g. smartcard not present), the initramfs
+# breaks and the system becomes unbootable.
+
+- name: Kernel Archlinux | Check if mkinitcpio is explicitly configured
+  ansible.builtin.set_fact:
+    __base_mkinitcpio_managed: >-
+      {{ (base_mkinitcpio_hooks | length > 0) or
+         (base_mkinitcpio_modules | length > 0) or
+         (base_mkinitcpio_binaries | length > 0) or
+         (base_mkinitcpio_files | length > 0) }}
+
+- name: Kernel Archlinux | Update mkinitcpio hooks
+  ansible.builtin.lineinfile:
+    path: '/etc/mkinitcpio.conf'
+    regexp: '^HOOKS=\(.*\)'
+    line: 'HOOKS=({{ base_mkinitcpio_hooks | join(" ") }})'
+    backup: true
+  notify: 'regenerate initramfs'
+  when: base_mkinitcpio_hooks | length > 0
+
+- name: Kernel Archlinux | Update mkinitcpio modules
+  ansible.builtin.lineinfile:
+    path: '/etc/mkinitcpio.conf'
+    regexp: '^MODULES=\(.*\)'
+    line: 'MODULES=({{ base_mkinitcpio_modules | join(" ") }})'
+  notify: 'regenerate initramfs'
+  when: base_mkinitcpio_modules | length > 0
+
+- name: Kernel Archlinux | Update mkinitcpio binaries
+  ansible.builtin.lineinfile:
+    path: '/etc/mkinitcpio.conf'
+    regexp: '^BINARIES=\(.*\)'
+    line: 'BINARIES=({{ base_mkinitcpio_binaries | join(" ") }})'
+  notify: 'regenerate initramfs'
+  when: base_mkinitcpio_binaries | length > 0
+
+- name: Kernel Archlinux | Update mkinitcpio files
+  ansible.builtin.lineinfile:
+    path: '/etc/mkinitcpio.conf'
+    regexp: '^FILES=\(.*\)'
+    line: 'FILES=({{ base_mkinitcpio_files | join(" ") }})'
+  notify: 'regenerate initramfs'
+  when: base_mkinitcpio_files | length > 0
+
+- name: Kernel Archlinux | Update mkinitcpio compression
+  ansible.builtin.lineinfile:
+    path: '/etc/mkinitcpio.conf'
+    regexp: '^COMPRESSION='
+    line: 'COMPRESSION="{{ base_mkinitcpio_compression }}"'
+  notify: 'regenerate initramfs'
+  when: __base_mkinitcpio_managed | bool

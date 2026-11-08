@@ -26,6 +26,9 @@ utils_monitor_atop_enabled: false
 # Not available on Rocky 10
 utils_monitor_procs_enabled: false
 
+# GPU and VRAM utilization per process for AMD, Intel and NVIDIA (nvtop)
+utils_monitor_nvtop_enabled: false
+
 #
 # Disk Usage
 #

@@ -12,6 +12,17 @@ __base_default_packages:
 
 __base_dialog_package: 'dialog'
 
+# Kernel: the metapackage depends on the image of the current kernel ABI;
+# each image package (linux-image-<abi>-<flavour>) installs one kernel
+__base_default_kernel: "linux-image-{{ (ansible_facts['architecture'] == 'aarch64') | ternary('arm64', 'amd64') }}"
+__base_default_kernel_extra_packages: []
+# Installed packages that a targeted update moves along: the image and
+# header metapackages (versioned packages start with a digit)
+__base_kernel_update_pattern: '^linux-(image|headers)-(?![0-9])[a-z0-9-]+$'
+# Packages that each install one kernel, compared with the minimum and the
+# running kernel
+__base_kernel_version_pattern: '^linux-image-[0-9][^ ]*-(amd64|arm64|cloud-amd64|cloud-arm64|rt-amd64|rt-arm64)$'
+
 # Default bootloader (Debian ships GRUB by default)
 __base_default_bootloader: 'grub'
 

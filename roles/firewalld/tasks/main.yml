@@ -13,6 +13,13 @@
     - firewalld
     - firewalld:configure
 
+- name: Main | Import nftables tasks
+  ansible.builtin.import_tasks: nftables.yml
+  when: firewalld_enabled | bool
+  tags:
+    - firewalld
+    - firewalld:nftables
+
 - name: Main | Include purge services tasks
   ansible.builtin.include_tasks:
     file: purge_services.yml

@@ -10,6 +10,7 @@
     utils_monitor_htop_enabled: true
     utils_monitor_btop_enabled: true
     utils_monitor_procs_enabled: true
+    utils_monitor_nvtop_enabled: true
 
     # Disk usage
     utils_disk_dust_enabled: true

@@ -1,0 +1,54 @@
+---
+# Compares kernel versions with the minimum, using the distribution's own
+# version rules (Debian revisions such as +deb13u1, EL release strings).
+# Passes when one of the versions or the version the update would install
+# meets the minimum. Kernel packages carry no epoch on any platform.
+#
+# Input:
+#   __base_kernel_check_stage      'pre' (before the package task), 'post'
+#                                  (after it) or 'running' (after a reboot)
+#   __base_kernel_check_versions   installed versions (or the running one)
+#   __base_kernel_check_candidate  version the update would install, '' if none
+
+- name: Kernel Version Check | Compare with the minimum version
+  ansible.builtin.command:
+    argv: '{{ __base_kernel_vercmp_argv[ansible_facts["os_family"]] }}'
+  vars:
+    # dpkg answers with its exit code, rpm and vercmp print -1, 0 or 1
+    __base_kernel_vercmp_argv:
+      Debian: ['dpkg', '--compare-versions', '{{ item }}', 'ge', '{{ __base_kernel_minimum }}']
+      RedHat: ['rpm', '--eval', '%{lua: print(rpm.vercmp("{{ item }}", "{{ __base_kernel_minimum }}"))}']
+      Archlinux: ['vercmp', '{{ item }}', '{{ __base_kernel_minimum }}']
+  loop: '{{ (__base_kernel_check_versions + [__base_kernel_check_candidate]) | select | unique | list }}'
+  register: __base_kernel_check_result
+  changed_when: false
+  failed_when: __base_kernel_check_result.rc not in [0, 1]
+  check_mode: false
+
+- name: Kernel Version Check | Assert the minimum version
+  ansible.builtin.assert:
+    that:
+      - __base_kernel_check_met | length > 0
+    fail_msg: >-
+      base_kernel_packages_minimum requires {{ __base_kernel_minimum }};
+      {{ 'running' if __base_kernel_check_stage == 'running' else 'installed' }}:
+      {{ __base_kernel_check_versions | join(', ') | default('none', true) }}{{ __base_kernel_check_would }}.
+      {{ __base_kernel_check_hint[__base_kernel_check_stage] }}
+    success_msg: >-
+      {{ base_kernel }} {{ (__base_kernel_check_met + ['']) | first }} meets the
+      minimum {{ __base_kernel_minimum }}
+  vars:
+    # A folded message keeps the line breaks of more-indented lines, so the
+    # multi-line parts are set here
+    __base_kernel_check_would: >-
+      {{ ('; the update would install: ' ~ (__base_kernel_check_candidate | default('none', true)))
+         if __base_kernel_check_stage == 'pre' else '' }}
+    __base_kernel_check_hint:
+      pre: 'The repository does not carry the required kernel yet, nothing was changed.'
+      post: 'The repository does not carry the required kernel yet.'
+      running: 'The host booted a kernel older than the minimum; check the default boot entry.'
+    __base_kernel_check_met: >-
+      {{ (__base_kernel_check_result.results | default([]) | selectattr('rc', 'eq', 0) | map(attribute='item') | list)
+         if ansible_facts['os_family'] == 'Debian'
+         else (__base_kernel_check_result.results | default([]) | selectattr('stdout', 'in', ['0', '1'])
+               | map(attribute='item') | list) }}
