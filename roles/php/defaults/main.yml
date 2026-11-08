@@ -209,5 +209,18 @@ php_fpm_pool_env: {}
 # Composer
 #
 
-# Enable Composer (PHP dependency manager)
+# Enable Composer (PHP dependency manager). Installs one Composer and the
+# wrappers /usr/local/bin/composer (runs on php_default_version) and
+# /usr/local/bin/composer<XX> for every version in php_versions.
 php_composer_enabled: false
+
+# Composer release downloaded from getcomposer.org where the source of PHP
+# ships no Composer package (Sury, Remi, EL 10 php8.4-*, AUR versions only);
+# elsewhere the distribution package is installed. A channel such as
+# 'latest-stable' or 'latest-2.2.x' (LTS, PHP 5.3 to 7.2) follows upstream,
+# with php_composer_checksum set to the matching .sha256sum URL.
+php_composer_version: '2.11.1'
+
+# SHA-256 checksum of composer.phar of php_composer_version, set together
+# with it: 'sha256:<hash>' or 'sha256:<url of the .sha256sum file>'
+php_composer_checksum: 'sha256:6f1b891e1d4927d62740276c540fb490e47689e19e102c49e8da849794882f8c'

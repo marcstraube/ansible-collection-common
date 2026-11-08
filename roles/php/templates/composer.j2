@@ -1,0 +1,6 @@
+#!{{ __php_composer_php }}
+<?php
+{{ ansible_managed | default('Ansible managed') | comment }}
+
+# Composer on PHP {{ item.value }}
+require '{{ __php_composer_script }}';

@@ -1,0 +1,126 @@
+---
+name: Update Composer Version
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6:00 UTC
+  workflow_dispatch:       # Manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-composer:
+    name: Check for new Composer release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # php_composer_version is the composer.phar the php role downloads where
+      # the source of PHP ships no Composer package. The newest stable release is the first non-LTS entry of
+      # the versions feed; the 2.2 LTS branch is listed next to it.
+      - name: Get latest Composer release
+        id: composer
+        run: |
+          CURRENT=$(grep '^php_composer_version:' roles/php/defaults/main.yml \
+            | sed "s/.*'\(.*\)'/\1/")
+          LATEST=$(curl -fsSL https://getcomposer.org/versions \
+            | jq -r '[.stable[] | select(.lts | not)][0].version')
+          if ! [[ "$LATEST" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Unexpected Composer version: '$LATEST'"
+            exit 1
+          fi
+          NEWER=$(printf '%s\n%s\n' "$CURRENT" "$LATEST" | sort -V | tail -n 1)
+          if [[ "$LATEST" != "$CURRENT" && "$NEWER" == "$LATEST" ]]; then
+            UPDATE=true
+          else
+            UPDATE=false
+          fi
+          {
+            echo "latest=$LATEST"
+            echo "current=$CURRENT"
+            echo "update=$UPDATE"
+          } >> "$GITHUB_OUTPUT"
+          echo "Current: $CURRENT, Latest: $LATEST"
+
+      # The checksum is taken from the downloaded file only after its
+      # signature verifies against the Composer release key, and must match
+      # the published .sha256sum.
+      - name: Verify the release and compute its checksum
+        id: checksum
+        if: steps.composer.outputs.update == 'true'
+        env:
+          LATEST: ${{ steps.composer.outputs.latest }}
+          COMPOSER_KEY: '161DFBE342889F01DDAC4E61CBB3D576F2A0946F'
+        run: |
+          WORK="$RUNNER_TEMP/composer"
+          mkdir -p "$WORK"
+          export GNUPGHOME="$WORK/gnupg"
+          mkdir -m 700 "$GNUPGHOME"
+          BASE="https://getcomposer.org/download/${LATEST}"
+          curl -fsSL -o "$WORK/composer.phar" "${BASE}/composer.phar"
+          curl -fsSL -o "$WORK/composer.phar.asc" "${BASE}/composer.phar.asc"
+          curl -fsSL -o "$WORK/composer.phar.sha256sum" "${BASE}/composer.phar.sha256sum"
+          curl -fsSL -o "$WORK/key.asc" \
+            "https://keys.openpgp.org/vks/v1/by-fingerprint/${COMPOSER_KEY}"
+          gpg --batch --import "$WORK/key.asc"
+          gpg --batch --status-fd 1 --verify "$WORK/composer.phar.asc" "$WORK/composer.phar" \
+            | grep -q "^\[GNUPG:\] VALIDSIG ${COMPOSER_KEY} "
+          SHA256=$(sha256sum "$WORK/composer.phar" | cut -d' ' -f1)
+          PUBLISHED=$(cut -d' ' -f1 "$WORK/composer.phar.sha256sum")
+          if [[ "$SHA256" != "$PUBLISHED" ]]; then
+            echo "::error::composer.phar checksum ${SHA256} differs from the published ${PUBLISHED}"
+            exit 1
+          fi
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+
+      - name: Update defaults/main.yml
+        if: steps.composer.outputs.update == 'true'
+        run: |
+          sed -i \
+            -e "s/^php_composer_version: '.*'/php_composer_version: '${{ steps.composer.outputs.latest }}'/" \
+            -e "s/^php_composer_checksum: '.*'/php_composer_checksum: 'sha256:${{ steps.checksum.outputs.sha256 }}'/" \
+            roles/php/defaults/main.yml
+
+      # Pull requests opened with github.token do not trigger the CI
+      # workflow; the release bot app token lets the bump PR run the php
+      # molecule matrix.
+      - name: Generate release bot token
+        if: steps.composer.outputs.update == 'true'
+        uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - name: Create Pull Request
+        if: steps.composer.outputs.update == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: >-
+            chore(php): update Composer version
+            ${{ steps.composer.outputs.current }} →
+            ${{ steps.composer.outputs.latest }}
+          branch: chore/update-composer-${{ steps.composer.outputs.latest }}
+          title: >-
+            chore(php): update Composer version to
+            ${{ steps.composer.outputs.latest }}
+          body: |
+            Automated update of `php_composer_version` and `php_composer_checksum` in `roles/php/defaults/main.yml`.
+
+            - **Previous:** `${{ steps.composer.outputs.current }}`
+            - **New:** `${{ steps.composer.outputs.latest }}`
+            - **SHA-256:** `${{ steps.checksum.outputs.sha256 }}` (signature verified against the Composer release key)
+
+            Release notes: https://github.com/composer/composer/releases/tag/${{ steps.composer.outputs.latest }}
+
+            The php role downloads this release where the source of PHP ships no Composer package (Sury, Remi, EL 10 `php8.4-*`, AUR versions only); the `default`, `ubuntu` and `remi` molecule scenarios cover it.
+
+            ---
+            This PR was created automatically by the `update-composer-version` workflow.
+          labels: dependencies
+          delete-branch: true

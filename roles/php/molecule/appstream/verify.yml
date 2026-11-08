@@ -164,3 +164,50 @@
         that:
           - "'env[' not in (__verify_pool_content.content | b64decode)"
         fail_msg: 'www.conf carries env[...] lines without php_fpm_pool_env'
+
+    #
+    # Composer — the EPEL package for the php-* set on Rocky 9,
+    # composer.phar for the php8.4-* set on Rocky 10.
+    #
+
+    - name: Verify | Check composer.phar
+      ansible.builtin.stat:
+        path: /usr/local/lib/composer.phar
+      register: __verify_composer_phar
+
+    - name: Verify | Assert Composer comes from the source of PHP
+      ansible.builtin.assert:
+        that:
+          - ('composer' in ansible_facts.packages) == (__verify_prefix == 'php-')
+          - __verify_composer_phar.stat.exists == (__verify_prefix != 'php-')
+        fail_msg: >-
+          Expected Composer from
+          {{ (__verify_prefix == 'php-') | ternary('the EPEL package', 'composer.phar') }}
+          for the {{ __verify_prefix }}* set.
+
+    - name: Verify | Check Composer wrappers
+      ansible.builtin.command:
+        argv:
+          - '/usr/local/bin/{{ item }}'
+          - --version
+      environment:
+        COMPOSER_ALLOW_SUPERUSER: '1'
+      register: __verify_composer
+      changed_when: false
+      loop:
+        - composer
+        - "composer{{ __verify_version | replace('.', '') }}"
+
+    - name: Verify | Assert Composer wrappers run on the requested version
+      ansible.builtin.assert:
+        that:
+          - "'Composer version' in item.stdout"
+          # Composer prints the PHP version line on stderr
+          - __verify_composer_lines | select('match', __verify_php_pattern) | list | length > 0
+        fail_msg: '{{ item.item }} does not run on PHP {{ __verify_version }}: {{ item.stdout }}'
+      loop: '{{ __verify_composer.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+      vars:
+        __verify_composer_lines: '{{ item.stdout_lines + item.stderr_lines }}'
+        __verify_php_pattern: '^PHP version {{ __verify_version | regex_escape }}\.'
