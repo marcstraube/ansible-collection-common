@@ -39,6 +39,19 @@
       check_mode: true
       register: pcsc_tools_pkg
       failed_when: pcsc_tools_pkg.changed
+      # pcsc-tools is not packaged for EL 10
+      when: >-
+        not (ansible_facts['os_family'] == 'RedHat'
+             and ansible_facts['distribution_major_version'] == '10')
+
+    - name: Verify | Check pcsc-lite package is installed (EL only)
+      ansible.builtin.package:
+        name: pcsc-lite
+        state: present
+      check_mode: true
+      register: pcsc_lite_pkg
+      failed_when: pcsc_lite_pkg.changed
+      when: ansible_facts['os_family'] == 'RedHat'
 
     #
     # Udev Rules Verification
