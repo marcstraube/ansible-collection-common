@@ -43,3 +43,7 @@ targets:
     platform: rocky-10
     package: autossh
     vars_file: vars/RedHat.yml
+  - role: hardware_tokens
+    platform: rocky-10
+    package: pcsc-tools
+    vars_file: vars/RedHat.yml

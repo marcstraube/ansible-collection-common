@@ -7,10 +7,10 @@ __hardware_tokens_fido2_packages:
   - 'libfido2'
   - 'fido2-tools'
 
-# Smartcard packages (pcsc-lite daemon + diagnostics)
+# Smartcard packages (pcsc-lite daemon; pcsc-tools is not packaged for
+# EL 10, see the drift workflow)
 __hardware_tokens_smartcard_packages:
   - 'pcsc-lite'
-  - 'pcsc-tools'
 
 # OpenSC smart card tools
 __hardware_tokens_opensc_package: 'opensc'

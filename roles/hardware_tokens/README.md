@@ -55,11 +55,14 @@ overrides if needed.
 
 ### Smartcard / PKCS#11
 
-| Variable                            | Default | Description                   |
-|-------------------------------------|---------|-------------------------------|
-| `hardware_tokens_smartcard_enabled` | `true`  | Enable pcsc-tools diagnostics |
-| `hardware_tokens_opensc_enabled`    | `true`  | Enable OpenSC PKCS#11 tools   |
-| `hardware_tokens_pcscd_enabled`     | `true`  | Enable pcscd.socket           |
+| Variable                            | Default | Description                                    |
+|-------------------------------------|---------|------------------------------------------------|
+| `hardware_tokens_smartcard_enabled` | `true`  | Enable pcscd and pcsc-tools diagnostics        |
+| `hardware_tokens_opensc_enabled`    | `true`  | Enable OpenSC PKCS#11 tools                    |
+| `hardware_tokens_pcscd_enabled`     | `true`  | Enable pcscd.socket                            |
+
+pcsc-tools is packaged on Arch Linux, Debian and EL 9 (EPEL). EL 10 has no
+package, so the smartcard toggle installs only pcsc-lite there.
 
 ### PAM U2F
 
