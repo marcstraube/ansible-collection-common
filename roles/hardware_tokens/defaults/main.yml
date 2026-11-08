@@ -104,5 +104,8 @@ hardware_tokens_lock_on_removal_devices:
 # User Configuration
 #
 
-# Users with hardware token access (group membership)
+# DEPRECATED: removed in v4.0.0. Add the users to the device access group
+# through users_list[].groups of marcstraube.common.users instead (plugdev on
+# Debian and EL; Arch Linux needs no group). While set, the role still adds the
+# users to plugdev on Debian and EL and prints a deprecation warning.
 hardware_tokens_users: []
