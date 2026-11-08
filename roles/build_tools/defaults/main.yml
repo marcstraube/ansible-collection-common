@@ -30,8 +30,8 @@ build_tools_ninja_enabled: true
 # clang with clangd, clang-format and clang-tidy, gdb and pkgconf
 build_tools_c_enabled: false
 
-# codelldb LLDB debug adapter (Arch Linux AUR only; upstream ships a VSIX
-# archive, no package elsewhere)
+# codelldb LLDB debug adapter (Arch Linux only, from the AUR; Debian and EL
+# have no package)
 build_tools_c_codelldb_enabled: false
 
 # ccache compiler cache (EPEL on EL)

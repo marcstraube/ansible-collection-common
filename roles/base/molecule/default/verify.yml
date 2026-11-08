@@ -438,6 +438,23 @@
         fail_msg: 'journald config missing ansible_managed header'
 
     #
+    # Kernel Verification
+    #
+
+    - name: Verify | Check kernel package installed
+      ansible.builtin.package:
+        name: '{{ __verify_kernel_package[ansible_facts["os_family"]] }}'
+        state: present
+      vars:
+        __verify_kernel_package:
+          Archlinux: 'linux'
+          Debian: 'linux-image-amd64'
+          RedHat: 'kernel'
+      check_mode: true
+      register: base_kernel_check
+      failed_when: base_kernel_check.changed
+
+    #
     # Kernel Modules Hook Verification (Arch)
     #
 
@@ -485,7 +502,7 @@
       when: ansible_facts['os_family'] == 'Archlinux'
 
     #
-    # Kernel Tasks Not Run on Non-Arch
+    # Arch Linux Kernel Tasks Not Run on Non-Arch
     #
 
     - name: Verify | Check mkinitcpio not present on RedHat/Debian

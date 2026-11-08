@@ -42,6 +42,17 @@
         source_ports:
           - port: '1234'
             protocol: 'udp'
+    # Rule from the interim mitigation in RHSB-2026-016; prepare.yml seeds a
+    # stale table that the role must remove
+    firewalld_nftables_tables:
+      - name: 'molecule_block'
+        family: 'inet'
+        chains:
+          - name: 'input'
+            hook: 'input'
+            priority: -310
+            rules:
+              - 'ip protocol tcp ip hdrlength > 5 counter drop'
 
   tasks:
     # Mirrors base_system.yml: the zones phase runs on its own before the
@@ -61,3 +72,30 @@
     - name: Converge | Include firewalld role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    # prepare.yml loads inet molecule_foreign without the role. Configuring a
+    # table of the same name must fail before anything is written.
+    - name: Converge | Configure a table name taken by a foreign table
+      block:
+        - name: Converge | Include firewalld nftables tasks with a colliding table  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+            tasks_from: nftables.yml
+          vars:
+            firewalld_nftables_tables:
+              - name: 'molecule_foreign'
+                family: 'inet'
+                chains:
+                  - name: 'input'
+                    hook: 'input'
+                    priority: 0
+
+        - name: Converge | Fail because the colliding table was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a table name taken by a foreign table.'
+      rescue:
+        - name: Converge | Assert the collision check stopped the run
+          ansible.builtin.assert:
+            that:
+              - "'collide with foreign' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'

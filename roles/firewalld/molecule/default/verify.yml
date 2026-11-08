@@ -236,6 +236,130 @@
       failed_when: "'203.0.113.0/24' in __verify_purge_rich_runtime.stdout"
 
     #
+    # Custom nftables Tables
+    #
+
+    - name: Verify | Check custom nftables table file exists
+      ansible.builtin.stat:
+        path: /etc/firewalld/nftables.d/inet-molecule_block.nft
+      register: __verify_nft_file
+      failed_when: not __verify_nft_file.stat.exists
+
+    - name: Verify | Check firewalld nftables service is active and enabled
+      ansible.builtin.systemd_service:
+        name: firewalld-nftables
+      register: __verify_nft_svc
+      failed_when: >-
+        __verify_nft_svc.status.ActiveState != 'active'
+        or __verify_nft_svc.status.UnitFileState != 'enabled'
+
+    - name: Verify | Get custom nftables table
+      ansible.builtin.command:
+        cmd: nft --numeric-priority list table inet molecule_block
+      register: __verify_nft_table
+      changed_when: false
+
+    - name: Verify | Assert custom nftables table carries the configured chain and rule
+      ansible.builtin.assert:
+        that:
+          - "'hook input priority -310' in __verify_nft_table.stdout"
+          - "'ip hdrlength > 5' in __verify_nft_table.stdout"
+          - "'drop' in __verify_nft_table.stdout"
+        fail_msg: 'Unexpected table content: {{ __verify_nft_table.stdout }}'
+
+    - name: Verify | Check custom nftables table is loaded exactly once
+      ansible.builtin.command:
+        cmd: nft list tables
+      register: __verify_nft_tables
+      changed_when: false
+      failed_when: >-
+        __verify_nft_tables.stdout_lines
+        | select('equalto', 'table inet molecule_block') | list | length != 1
+
+    - name: Verify | Check stale custom nftables table is deleted
+      ansible.builtin.assert:
+        that:
+          - "'table inet molecule_stale' not in __verify_nft_tables.stdout_lines"
+        fail_msg: 'Stale table still loaded: {{ __verify_nft_tables.stdout }}'
+
+    - name: Verify | Check stale custom nftables table file is removed
+      ansible.builtin.stat:
+        path: /etc/firewalld/nftables.d/inet-molecule_stale.nft
+      register: __verify_nft_stale_file
+      failed_when: __verify_nft_stale_file.stat.exists
+
+    - name: Verify | Check hand-made custom nftables table file is left in place
+      ansible.builtin.stat:
+        path: /etc/firewalld/nftables.d/inet-molecule_handmade.nft
+      register: __verify_nft_handmade_file
+      failed_when: not __verify_nft_handmade_file.stat.exists
+
+    - name: Verify | Check hand-made and foreign tables are still loaded
+      ansible.builtin.assert:
+        that:
+          - "'table inet molecule_handmade' in __verify_nft_tables.stdout_lines"
+          - "'table inet molecule_foreign' in __verify_nft_tables.stdout_lines"
+        fail_msg: 'Foreign table removed: {{ __verify_nft_tables.stdout }}'
+
+    - name: Verify | Check the colliding table wrote no file
+      ansible.builtin.stat:
+        path: /etc/firewalld/nftables.d/inet-molecule_foreign.nft
+      register: __verify_nft_foreign_file
+      failed_when: __verify_nft_foreign_file.stat.exists
+
+    - name: Verify | Read custom nftables main file
+      ansible.builtin.slurp:
+        src: /etc/firewalld/nftables.conf
+      register: __verify_nft_main
+
+    - name: Verify | Assert main file includes only the configured table
+      ansible.builtin.assert:
+        that:
+          - "'inet-molecule_block.nft' in (__verify_nft_main.content | b64decode)"
+          - "'molecule_handmade' not in (__verify_nft_main.content | b64decode)"
+        fail_msg: 'Unexpected main file: {{ __verify_nft_main.content | b64decode }}'
+
+    - name: Verify | Reload firewalld
+      ansible.builtin.command:
+        cmd: firewall-cmd --reload
+      changed_when: false
+
+    - name: Verify | Check custom nftables table survives a firewalld reload
+      ansible.builtin.command:
+        cmd: nft list table inet molecule_block
+      register: __verify_nft_after_reload
+      changed_when: false
+      failed_when: "'ip hdrlength > 5' not in __verify_nft_after_reload.stdout"
+
+    - name: Verify | Restart firewalld
+      ansible.builtin.systemd_service:
+        name: firewalld
+        state: restarted
+      changed_when: false
+
+    - name: Verify | Check custom nftables table survives a firewalld restart
+      ansible.builtin.command:
+        cmd: nft list table inet molecule_block
+      register: __verify_nft_after_restart
+      changed_when: false
+      failed_when: "'ip hdrlength > 5' not in __verify_nft_after_restart.stdout"
+
+    - name: Verify | Restart firewalld nftables service as at boot
+      ansible.builtin.systemd_service:
+        name: firewalld-nftables
+        state: restarted
+      changed_when: false
+
+    - name: Verify | Check custom nftables table is still loaded exactly once after the restart
+      ansible.builtin.command:
+        cmd: nft list tables
+      register: __verify_nft_tables_after
+      changed_when: false
+      failed_when: >-
+        __verify_nft_tables_after.stdout_lines
+        | select('equalto', 'table inet molecule_block') | list | length != 1
+
+    #
     # Version-Conditional Checks (firewalld 2.x+)
     #
 

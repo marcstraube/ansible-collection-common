@@ -1,0 +1,13 @@
+#!{{ __firewalld_nftables_binary }} -f
+{{ ansible_managed | default('Ansible managed') | comment }}
+#
+# Custom nftables tables next to the firewalld table, one file per table.
+# Only the configured tables are included; other files in the directory are
+# not loaded.
+#
+{% for table in firewalld_nftables_tables %}
+{% if loop.first %}
+
+{% endif %}
+include "{{ __firewalld_nftables_config_dir }}/{{ table.family }}-{{ table.name }}.nft"
+{% endfor %}

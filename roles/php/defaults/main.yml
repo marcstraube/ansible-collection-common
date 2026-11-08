@@ -194,6 +194,17 @@ php_fpm_pool_catch_workers_output: 'no'
 php_fpm_pool_admin_values: {}
 php_fpm_pool_admin_flags: {}
 
+# Environment variables for the pool workers, as a mapping of name to value,
+# written as env[NAME] = value. PHP-FPM clears the worker environment
+# (clear_env = yes), so these are the only variables an application finds in
+# its environment through getenv(). Per-version entries in
+# php_versions[].fpm_pool.env are merged over this mapping.
+php_fpm_pool_env: {}
+# Example — outbound proxy for HTTP clients such as Guzzle:
+#   php_fpm_pool_env:
+#     HTTPS_PROXY: 'http://proxy.example.com:3128'
+#     NO_PROXY: 'localhost,127.0.0.1'
+
 #
 # Composer
 #

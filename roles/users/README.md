@@ -58,8 +58,8 @@ overrides if needed.
 | `users_default_skeleton`        | `/etc/skel` | Default skeleton directory                             |
 | `users_default_create_home`     | `true`      | Create home directory by default                       |
 | `users_default_group`           | `''`        | Default primary group (empty = username)               |
-| `users_default_groups`          | `[]`        | Default additional groups                              |
-| `users_default_append_groups`   | `true`      | Append to groups (vs replace)                          |
+| `users_default_groups`          | `[]`        | Supplementary groups for users without `groups:`       |
+| `users_default_append_groups`   | `true`      | Add to groups (`false`: set exactly `groups`)          |
 | `users_default_update_password` | `always`    | Password update policy: `on_create`, `always`          |
 | `users_default_ssh_key_type`    | `ed25519`   | Default SSH key type for generated keys                |
 
@@ -131,8 +131,8 @@ Each entry in `users_list` supports:
   default: true              # Use this user's password for become_password
   uid: 1001
   group: 'username'          # Primary group
-  groups: ['wheel', 'docker']
-  append_groups: true
+  groups: ['wheel', 'docker']  # Supplementary groups
+  append_groups: true        # false: set exactly `groups`
   shell: '/bin/bash'
   home: '/home/username'
   home_mode: '0700'
@@ -162,6 +162,45 @@ Each entry in `users_list` supports:
   profile_image: ''          # Path to image file
   state: 'present'           # present, absent
 ```
+
+### Supplementary Groups
+
+`groups` on a `users_list` entry lists the user's supplementary groups; without
+it, `users_default_groups` applies. `append_groups` (default:
+`users_default_append_groups`) decides how the list is applied:
+
+- `true` adds the user to every listed group and leaves all other memberships
+  in place. Removing a group from `groups` does not remove the user from it.
+- `false` sets the supplementary groups to exactly `groups`. The user leaves
+  every group that is not listed. Without `groups` (and an empty
+  `users_default_groups`), the user ends up with no supplementary groups.
+
+Roles that create an application group, such as `docker`, `libvirt` or
+`vboxusers`, add their users to it and leave the other memberships alone. With
+`append_groups: false`, the users role removes those memberships again, so list
+the application groups in `groups` as well:
+
+```yaml
+users_list:
+  - name: 'johndoe'
+    groups: ['wheel', 'audio', 'video', 'docker', 'libvirt']
+    append_groups: false
+```
+
+To remove stale memberships, switch to replace mode once:
+
+1. Run the play in check mode with replace mode for all users:
+   `ansible-playbook <playbook> -e users_default_append_groups=false --check`.
+   The `Users | Create users` task reports `changed` for every user whose
+   memberships would change. It shows no diff, so compare `groups` with
+   `id -nG <user>` on the host to see which groups would be dropped.
+2. Add every group that has to stay to `users_list[].groups`, including
+   application groups of other roles.
+3. Apply the play without `--check`; the same extra var removes every
+   membership that is not listed.
+
+A per-user `append_groups: true` overrides the extra var, so users configured
+that way keep their memberships during the cleanup.
 
 ### Login Shell
 

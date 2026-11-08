@@ -29,6 +29,9 @@
       error_log: '/var/log/php-fpm/www-error.log'
     php_fpm_pool_admin_flags:
       log_errors: 'on'
+    php_fpm_pool_env:
+      MOLECULE_FPM_ENV: 'global'
+      HTTPS_PROXY: 'http://proxy.invalid:3128'
     # Changed while php-fpm is already running: the ini drop-in is rewritten and
     # the workers must pick the new value up, which only happens if the role
     # queues a reload. verify.yml asserts both the file content and the reload.
@@ -71,6 +74,9 @@
             ini:
               extra_settings:
                 realpath_cache_size: '8192k'
+            fpm_pool:
+              env:
+                MOLECULE_FPM_ENV: 'per-version'
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Side Effect | Detect the system PHP branch

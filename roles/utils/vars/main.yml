@@ -9,6 +9,7 @@
 __utils_monitor_htop: 'htop'
 __utils_monitor_btop: 'btop'
 __utils_monitor_atop: 'atop'
+__utils_monitor_nvtop: 'nvtop'
 
 #
 # Disk Usage

@@ -153,3 +153,14 @@
       loop: '{{ __verify_conf.results }}'
       loop_control:
         label: '{{ item.item }}'
+
+    - name: Verify | Read www.conf
+      ansible.builtin.slurp:
+        src: /etc/php-fpm.d/www.conf
+      register: __verify_pool_content
+
+    - name: Verify | Assert an empty php_fpm_pool_env writes no env lines
+      ansible.builtin.assert:
+        that:
+          - "'env[' not in (__verify_pool_content.content | b64decode)"
+        fail_msg: 'www.conf carries env[...] lines without php_fpm_pool_env'
