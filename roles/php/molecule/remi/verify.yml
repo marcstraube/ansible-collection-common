@@ -40,6 +40,10 @@
       loop:
         - php-pecl-xdebug3
         - php-gd
+        # Composer comes as composer.phar, not as the EPEL package that
+        # pulls in the AppStream PHP CLI
+        - composer
+        - php-cli
 
     #
     # Loaded modules — the SCL php84 binary loads the requested extensions.
@@ -128,3 +132,55 @@
       loop: '{{ __verify_remi_conf.results }}'
       loop_control:
         label: '{{ item.item }}'
+
+    #
+    # Composer — one composer.phar, the wrappers run on their SCL binary.
+    #
+
+    - name: Verify | Check composer.phar
+      ansible.builtin.stat:
+        path: /usr/local/lib/composer.phar
+      register: __verify_composer_phar
+
+    - name: Verify | Assert composer.phar downloaded
+      ansible.builtin.assert:
+        that:
+          - __verify_composer_phar.stat.exists
+          - __verify_composer_phar.stat.mode == '0644'
+        fail_msg: >-
+          /usr/local/lib/composer.phar missing or with mode
+          {{ __verify_composer_phar.stat.mode | default('-') }}
+
+    - name: Verify | Check Composer wrappers
+      ansible.builtin.command:
+        argv:
+          - '/usr/local/bin/{{ item.key }}'
+          - --version
+      environment:
+        COMPOSER_ALLOW_SUPERUSER: '1'
+      register: __verify_composer
+      changed_when: false
+      loop: '{{ __verify_composer_wrappers | dict2items }}'
+      loop_control:
+        label: '{{ item.key }}'
+      vars:
+        __verify_composer_wrappers:
+          composer: '8.4'
+          composer84: '8.4'
+          composer83: '8.3'
+
+    - name: Verify | Assert Composer wrappers run on their PHP version
+      ansible.builtin.assert:
+        that:
+          - "'Composer version' in item.stdout"
+          # Composer prints the PHP version line on stderr
+          - __verify_composer_lines | select('match', __verify_php_pattern) | list | length > 0
+        fail_msg: >-
+          {{ item.item.key }} does not run on PHP {{ item.item.value }}:
+          {{ item.stdout }}
+      loop: '{{ __verify_composer.results }}'
+      loop_control:
+        label: '{{ item.item.key }}'
+      vars:
+        __verify_composer_lines: '{{ item.stdout_lines + item.stderr_lines }}'
+        __verify_php_pattern: '^PHP version {{ item.item.value | regex_escape }}\.'

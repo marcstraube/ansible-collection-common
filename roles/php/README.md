@@ -283,9 +283,89 @@ as `HTTP_PROXY` there (httpoxy). libcurl reads the lowercase `http_proxy` and
 
 ### Composer
 
-| Variable               | Default | Description                         |
-|------------------------|---------|-------------------------------------|
-| `php_composer_enabled` | `false` | Install Composer (PHP dep. manager) |
+| Variable                | Default        | Description                                       |
+|-------------------------|----------------|---------------------------------------------------|
+| `php_composer_enabled`  | `false`        | Install Composer and its wrappers                 |
+| `php_composer_version`  | pinned release | Upstream release where `composer.phar` is used    |
+| `php_composer_checksum` | its SHA-256    | Checksum of that `composer.phar` (hash or URL)    |
+
+Composer itself does not depend on a PHP version; the interpreter that starts
+it decides which version it resolves dependencies for. The role installs one
+Composer and puts a wrapper per PHP version into `/usr/local/bin`:
+
+| Wrapper        | Runs on                                                     |
+|----------------|-------------------------------------------------------------|
+| `composer`     | `php_default_version`                                       |
+| `composer<XX>` | each entry in `php_versions` (e.g. `composer84` for `8.4`)  |
+
+Each wrapper starts the CLI binary of its version directly:
+
+| Platform                    | PHP binary                            |
+|-----------------------------|---------------------------------------|
+| Arch Linux (official `php`) | `/usr/bin/php`                        |
+| Arch Linux (AUR `php<XX>`)  | `/usr/bin/php<XX>`                    |
+| Debian and Ubuntu (Sury)    | `/usr/bin/php<X.Y>`                   |
+| EL (AppStream)              | `/usr/bin/php` (one version per host) |
+| EL (Remi)                   | `/usr/bin/php<XX>`                    |
+
+The wrappers are PHP scripts with the binary in the shebang line, not shell
+aliases, so scripts, cron jobs and CI pick the version up as well.
+`community.general.composer` starts Composer as `php <composer>`; it uses
+the default version with the `composer` wrapper, and for another version
+takes both paths:
+
+```yaml
+- name: Install dependencies on PHP 8.3
+  community.general.composer:
+    command: install
+    working_dir: /srv/app
+    executable: /usr/bin/php83
+    composer_executable: /usr/local/bin/composer83
+```
+
+Composer comes from the source of PHP where that source ships it. The
+distribution package depends on the distribution's default PHP, so it is
+only installed when that PHP is one of the configured versions; everywhere
+else it would pull in a second PHP:
+
+| PHP source                                         | Composer               |
+|----------------------------------------------------|------------------------|
+| Arch Linux with the official `php` configured      | distribution package   |
+| Arch Linux with AUR versions only                  | `composer.phar`        |
+| Debian and Ubuntu (Sury, no Composer package)      | `composer.phar`        |
+| EL AppStream `php-*` (EL 9, default on EL 10)      | EPEL package           |
+| EL 10 AppStream `php8.4-*`                         | `composer.phar`        |
+| EL Remi (no Composer package)                      | `composer.phar`        |
+
+The role downloads `composer.phar` from getcomposer.org to
+`/usr/local/lib/composer.phar` and verifies it against
+`php_composer_checksum`. The download is skipped while the file matches the
+checksum; changing `php_composer_version` together with
+`php_composer_checksum` replaces it on the next run. A scheduled workflow
+proposes both when Composer publishes a new release. To follow upstream
+instead, select a channel and its published checksum:
+
+```yaml
+php_composer_version: 'latest-stable'
+php_composer_checksum: 'sha256:https://getcomposer.org/download/latest-stable/composer.phar.sha256sum'
+```
+
+Composer 2.3 and later needs PHP 7.2.5; for older PHP versions use the LTS
+channel `latest-2.2.x`.
+
+Notes:
+
+- A wrapper needs the extensions Composer uses (`phar`, `openssl`, `zip` or
+  `unzip`, …) in its version. They are built in everywhere except in the AUR
+  `php<XX>` bundles; add them to `php_versions[].extensions` there.
+- A Composer package installed earlier on a host that now uses
+  `composer.phar`, and the PHP it pulled in, stay installed; the wrappers in
+  `/usr/local/bin` take precedence in `PATH`. Remove the package with the
+  package manager once nothing else needs it.
+- The wrappers replace an existing `/usr/local/bin/composer`. A wrapper of a
+  version removed from `php_versions` stays in place.
+- `sudo` on EL resets `PATH` to `secure_path`, which leaves out
+  `/usr/local/bin`.
 
 ### Package Updates
 
@@ -376,7 +456,9 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 The `appstream` scenario installs a non-default AppStream version on Rocky
 Linux (the `php:8.3` module stream on Rocky 9, the `php8.4-*` package set
-on Rocky 10); the `remi` scenario installs two Remi versions side by side.
+on Rocky 10), with Composer from EPEL on Rocky 9 and from `composer.phar`
+on Rocky 10; the `remi` scenario installs two Remi versions side by side,
+with Composer from `composer.phar`.
 
 ## Notes
 
