@@ -3,7 +3,37 @@
   hosts: all
   gather_facts: true
 
+  pre_tasks:
+    # EL does not ship a plugdev group; the deprecated path adds users to it.
+    - name: Converge | Create plugdev group (Debian, EL)
+      ansible.builtin.group:
+        name: 'plugdev'
+        system: true
+        state: present
+      when: ansible_facts['os_family'] != 'Archlinux'
+
   tasks:
     - name: Converge | Include hardware_tokens role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    - name: Converge | Assert no hardware_tokens_users deprecation warning
+      ansible.builtin.assert:
+        that:
+          - not (__hardware_tokens_users_deprecated | bool)
+        fail_msg: 'deprecation warning fired although hardware_tokens_users is empty'
+        quiet: true
+
+    - name: Converge | Include hardware_tokens role with hardware_tokens_users  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        hardware_tokens_users:
+          - username: 'vagrant'
+
+    - name: Converge | Assert hardware_tokens_users deprecation warning
+      ansible.builtin.assert:
+        that:
+          - __hardware_tokens_users_deprecated | bool
+        fail_msg: 'no deprecation warning although hardware_tokens_users is set'
+        quiet: true
