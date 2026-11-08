@@ -47,7 +47,7 @@ users_groups: []
 #       uid: 1001
 #       group: 'johndoe'           # Primary group
 #       groups: ['wheel', 'docker'] # Additional groups
-#       append_groups: true        # Append to groups (don't replace)
+#       append_groups: true        # false: set exactly `groups`, leave all others
 #       shell: '/bin/bash'
 #       home: '/home/johndoe'
 #       create_home: true
@@ -96,10 +96,13 @@ users_default_create_home: true
 # Default primary group (empty = same as username)
 users_default_group: ''
 
-# Default additional groups
+# Supplementary groups for users without `groups:`
 users_default_groups: []
 
-# Append to groups by default (vs replace)
+# true: add users to `groups`, keep their other memberships.
+# false: set supplementary groups to exactly `groups` (no `groups` = none),
+# which also drops groups that other roles added (docker, libvirt, ...).
+# Overridden per user by `append_groups`.
 users_default_append_groups: true
 
 # Default password update policy: on_create, always
