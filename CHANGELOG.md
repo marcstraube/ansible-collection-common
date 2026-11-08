@@ -2,6 +2,17 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.1.1 (2026-11-08)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(hardware_tokens): skip pcsc-tools on EL 10 by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/558
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.1.0...v3.1.1
+
 ## 3.1.0 (2026-11-03)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
