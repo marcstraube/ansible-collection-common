@@ -193,6 +193,14 @@
       register: service_home
       failed_when: service_home.stat.exists
 
+    # The container's home is not on BTRFS, so the role must not create
+    # ~/.cache; the btrfs scenario covers the subvolume itself.
+    - name: Verify | Check basicuser has no cache directory on a non-BTRFS home
+      ansible.builtin.stat:
+        path: /home/basicuser/.cache
+      register: basicuser_cache
+      failed_when: basicuser_cache.stat.exists
+
     #
     # SSH Directory Verification
     #

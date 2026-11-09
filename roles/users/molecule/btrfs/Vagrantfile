@@ -1,0 +1,26 @@
+# marcstraube.common.users/molecule/btrfs/Vagrantfile
+# Arch Linux only — the scenario mounts a loop-backed BTRFS filesystem as the
+# home base, which needs a real kernel instead of a container.
+#
+# MOLECULE_PLATFORM_NAME filters which VM to create.
+
+platform = ENV['MOLECULE_PLATFORM_NAME'] || ''
+
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  if platform.empty? || platform == "users-btrfs-archlinux"
+    config.vm.define "users-btrfs-archlinux" do |node|
+      node.vm.box = "marcstraube/archlinux-ansible"
+      node.vm.hostname = "users-btrfs-archlinux"
+      node.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh", auto_correct: false
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = 1
+        vb.name = "molecule-users-btrfs-archlinux"
+      end
+    end
+  end
+end

@@ -1,0 +1,139 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __prepare_disk_dir: '/var/lib/molecule-users'
+    __prepare_home_base: '/srv/btrfs-home'
+
+  tasks:
+    #
+    # Package Cache
+    #
+
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+
+    # A kernel upgrade removes the modules of the running kernel; loop and
+    # btrfs are loaded on demand, so boot the new kernel.
+    - name: Prepare | Check modules of the running kernel
+      ansible.builtin.stat:
+        path: '/usr/lib/modules/{{ ansible_facts["kernel"] }}'
+      register: __prepare_kernel_modules
+
+    - name: Prepare | Reboot into the upgraded kernel
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+      when: not __prepare_kernel_modules.stat.exists
+
+    - name: Prepare | Install btrfs-progs
+      ansible.builtin.package:
+        name: btrfs-progs
+        state: present
+      retries: 3
+      delay: 5
+
+    #
+    # BTRFS Home Base
+    #
+
+    # Loop-backed BTRFS filesystem as the home base of the test users; its
+    # top level stands in for the home subvolume of a real system.
+    - name: Prepare | Create test disk directory
+      ansible.builtin.file:
+        path: '{{ __prepare_disk_dir }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Prepare | Create sparse disk image
+      ansible.builtin.command:
+        cmd: 'truncate --size 1G {{ __prepare_disk_dir }}/btrfs-home.img'
+        creates: '{{ __prepare_disk_dir }}/btrfs-home.img'
+
+    - name: Prepare | Create BTRFS filesystem on the disk image
+      community.general.filesystem:
+        fstype: btrfs
+        dev: '{{ __prepare_disk_dir }}/btrfs-home.img'
+
+    - name: Prepare | Mount the BTRFS home base
+      ansible.posix.mount:
+        path: '{{ __prepare_home_base }}'
+        src: '{{ __prepare_disk_dir }}/btrfs-home.img'
+        fstype: btrfs
+        opts: loop
+        state: mounted
+
+    # Home base on another filesystem, independent of the box's root
+    # filesystem
+    - name: Prepare | Mount a tmpfs home base
+      ansible.posix.mount:
+        path: '/srv/other-home'
+        src: tmpfs
+        fstype: tmpfs
+        opts: 'size=64m,mode=0755'
+        state: mounted
+
+    #
+    # Existing Accounts
+    #
+
+    # Accounts the role finds with a ~/.cache already in place: an empty
+    # directory, one holding only a dotfile, and a symlink.
+    - name: Prepare | Create existing accounts on the BTRFS home base
+      ansible.builtin.user:
+        name: '{{ item.name }}'
+        uid: '{{ item.uid }}'
+        home: '{{ __prepare_home_base }}/{{ item.name }}'
+        create_home: true
+        state: present
+      loop:
+        - name: 'emptycache'
+          uid: 3101
+        - name: 'fullcache'
+          uid: 3102
+        - name: 'linkcache'
+          uid: 3103
+      loop_control:
+        label: '{{ item.name }}'
+
+    - name: Prepare | Create cache directories
+      ansible.builtin.file:
+        path: '{{ __prepare_home_base }}/{{ item }}/.cache'
+        state: directory
+        owner: '{{ item }}'
+        group: '{{ item }}'
+        mode: '0755'
+      loop:
+        - 'emptycache'
+        - 'fullcache'
+
+    - name: Prepare | Put a dotfile into the populated cache directory
+      ansible.builtin.copy:
+        content: "cached\n"
+        dest: '{{ __prepare_home_base }}/fullcache/.cache/.keep'
+        owner: fullcache
+        group: fullcache
+        mode: '0644'
+
+    - name: Prepare | Create symlink target for the linked cache directory
+      ansible.builtin.file:
+        path: '/var/tmp/linkcache-cache'
+        state: directory
+        owner: linkcache
+        group: linkcache
+        mode: '0700'
+
+    - name: Prepare | Link the cache directory
+      ansible.builtin.file:
+        src: '/var/tmp/linkcache-cache'
+        dest: '{{ __prepare_home_base }}/linkcache/.cache'
+        state: link
+        owner: linkcache
+        group: linkcache
