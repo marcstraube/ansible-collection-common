@@ -1,0 +1,44 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    users_enabled: true
+    # Loop-backed BTRFS filesystem mounted by prepare.yml
+    users_default_home_base: '/srv/btrfs-home'
+
+    users_groups:
+      - name: 'cachegroup'
+        gid: 3200
+
+    users_list:
+      # New account: the role creates the home and the subvolume; the
+      # primary group differs from the user name
+      - name: 'newuser'
+        uid: 3100
+        group: 'cachegroup'
+
+      # Existing accounts from prepare.yml
+      - name: 'emptycache'
+        uid: 3101
+      - name: 'fullcache'
+        uid: 3102
+      - name: 'linkcache'
+        uid: 3103
+
+      # System user with a home on BTRFS
+      - name: 'svcuser'
+        system: true
+        create_home: true
+        shell: '/usr/bin/nologin'
+
+      # Home on tmpfs, not BTRFS
+      - name: 'otheruser'
+        uid: 3104
+        home: '/srv/other-home/otheruser'
+
+  tasks:
+    - name: Converge | Include users role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'

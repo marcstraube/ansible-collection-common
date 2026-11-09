@@ -14,12 +14,14 @@ Manage system users, groups, SSH authorized keys, and profile images.
 - Random password generation with optional file storage
 - Profile images via AccountsService with optional `~/.face` symlink
 - Per-user login shell environment variables in `/etc/profile.d`
+- `~/.cache` as a BTRFS subvolume on BTRFS homes, kept out of home snapshots
 - Exclusive mode: remove unlisted users (with keep-list safety)
 
 ## Requirements
 
 - ansible-core >= 2.19
 - `ansible.posix` collection (for `authorized_key` module)
+- `btrfs-progs` on hosts with homes on BTRFS (see [Cache Subvolume](#cache-subvolume))
 
 ## Supported Platforms
 
@@ -254,16 +256,39 @@ users_list:
       HTTPS_PROXY: 'http://proxy.example.com:3128'
 ```
 
+### Cache Subvolume
+
+On a BTRFS home the role turns `~/.cache` of every present user into a nested
+subvolume, owned by the user and its primary group with mode `0700`. root and
+system users are skipped, and so are homes on other filesystems. Snapshots of
+the home subvolume skip nested subvolumes, so browser caches, package manager
+caches and the downloads of tools such as the Hugging Face CLI stay out of
+them; inside a snapshot `~/.cache` is an empty directory. The data is
+disposable and gets rebuilt on demand. Cached files keep copy-on-write, so
+BTRFS checksums and compression still apply to them.
+
+The subvolume is created only when `~/.cache` is missing or an empty
+directory. A populated directory is left alone, as is a symlink or another
+filesystem mounted there. To move an existing user onto a subvolume:
+
+1. Log the user out, so no program writes to `~/.cache`.
+2. Move the directory aside: `mv ~/.cache ~/.cache.old`.
+3. Run the role (`--tags users:users`), or create the subvolume by hand:
+   `btrfs subvolume create ~/.cache`, then
+   `chown <user>:<group> ~/.cache` and `chmod 0700 ~/.cache`.
+4. Delete the old directory: `rm -rf ~/.cache.old`. Its contents are
+   disposable; programs fill the new cache again.
+
 ## Tags
 
-| Tag                    | Scope                    |
-|------------------------|--------------------------|
-| `users`                | All role tasks           |
-| `users:groups`         | Group management         |
-| `users:users`          | User creation/removal    |
-| `users:ssh-keys`       | SSH key deployment       |
-| `users:environment`    | Per-user login variables |
-| `users:profile-images` | Profile image management |
+| Tag                    | Scope                                       |
+|------------------------|---------------------------------------------|
+| `users`                | All role tasks                              |
+| `users:groups`         | Group management                            |
+| `users:users`          | User creation/removal, `~/.cache` subvolume |
+| `users:ssh-keys`       | SSH key deployment                          |
+| `users:environment`    | Per-user login variables                    |
+| `users:profile-images` | Profile image management                    |
 
 ## Example Playbook
 
@@ -283,6 +308,16 @@ molecule test
 ```
 
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+The `btrfs` scenario covers the `~/.cache` subvolume on a loop-mounted BTRFS
+home base. It needs a kernel of its own and runs in a Vagrant VM:
+
+```bash
+cd roles/users
+molecule test -s btrfs
+```
+
+Driver: `default` (Vagrant) | Platforms: Arch Linux
 
 ## Notes
 

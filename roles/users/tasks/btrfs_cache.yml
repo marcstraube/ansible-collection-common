@@ -1,0 +1,89 @@
+---
+# ~/.cache as a BTRFS subvolume for one user, included from btrfs.yml with
+# loop_var __users_btrfs_user. Only a missing or empty directory becomes a
+# subvolume; a populated one is left alone, the role never moves data.
+
+- name: BTRFS Cache | Set cache path facts
+  ansible.builtin.set_fact:
+    __users_btrfs_home: >-
+      {{ __users_btrfs_user.home | default(users_default_home_base ~ '/' ~ __users_btrfs_user.name) }}
+    __users_btrfs_cache: >-
+      {{ __users_btrfs_user.home | default(users_default_home_base ~ '/' ~ __users_btrfs_user.name) }}/.cache
+
+- name: BTRFS Cache | Check cache directory
+  ansible.builtin.stat:
+    path: '{{ __users_btrfs_cache }}'
+    follow: false
+    get_checksum: false
+    get_mime: false
+  register: __users_btrfs_cache_stat
+
+# Probes the cache directory itself when it exists, so another filesystem
+# mounted on ~/.cache is not taken for the home filesystem. A symlink or a
+# file at the path is left alone.
+- name: BTRFS Cache | Check if the filesystem is BTRFS
+  ansible.builtin.command:
+    cmd: >-
+      stat -f -c %T
+      {{ __users_btrfs_cache if __users_btrfs_cache_stat.stat.exists else __users_btrfs_home }}
+  register: __users_btrfs_fstype
+  changed_when: false
+  check_mode: false
+  # stat fails if the home directory does not exist
+  failed_when: false
+  when: >-
+    not __users_btrfs_cache_stat.stat.exists
+    or (__users_btrfs_cache_stat.stat.isdir and not __users_btrfs_cache_stat.stat.islnk)
+
+- name: BTRFS Cache | Set BTRFS detection fact
+  ansible.builtin.set_fact:
+    __users_btrfs_is_btrfs: "{{ (__users_btrfs_fstype.stdout | default('')) == 'btrfs' }}"
+
+# Inode 256 is the root of every BTRFS subvolume. Unlike 'btrfs subvolume
+# show' this needs no btrfs-progs, so an existing subvolume is never taken
+# for a plain directory and removed.
+- name: BTRFS Cache | Set subvolume detection fact
+  ansible.builtin.set_fact:
+    __users_btrfs_is_subvol: >-
+      {{ __users_btrfs_cache_stat.stat.exists
+         and __users_btrfs_cache_stat.stat.inode | default(0) == 256 }}
+
+# hidden: an entry starting with a dot counts as content as well
+- name: BTRFS Cache | Check if the cache directory has content
+  ansible.builtin.find:
+    paths: '{{ __users_btrfs_cache }}'
+    file_type: any
+    hidden: true
+  register: __users_btrfs_cache_contents
+  when:
+    - __users_btrfs_is_btrfs | bool
+    - __users_btrfs_cache_stat.stat.exists
+    - not (__users_btrfs_is_subvol | bool)
+
+- name: BTRFS Cache | Create subvolume for the cache directory
+  when:
+    - __users_btrfs_is_btrfs | bool
+    - >-
+      not __users_btrfs_cache_stat.stat.exists
+      or (not (__users_btrfs_is_subvol | bool)
+          and __users_btrfs_cache_contents.matched == 0)
+  block:
+    # rmdir refuses a directory that gained content since the check
+    - name: BTRFS Cache | Remove empty cache directory for subvolume creation
+      ansible.builtin.command:
+        cmd: rmdir {{ __users_btrfs_cache }}
+      changed_when: true
+      when: __users_btrfs_cache_stat.stat.exists
+
+    - name: BTRFS Cache | Create BTRFS subvolume
+      ansible.builtin.command:
+        cmd: btrfs subvolume create {{ __users_btrfs_cache }}
+      changed_when: true
+
+    - name: BTRFS Cache | Set ownership on subvolume
+      ansible.builtin.file:
+        path: '{{ __users_btrfs_cache }}'
+        owner: '{{ __users_btrfs_user.name }}'
+        group: '{{ __users_btrfs_user.group | default(__users_btrfs_user.name) }}'
+        mode: '0700'
+        state: directory

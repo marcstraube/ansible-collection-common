@@ -1,0 +1,139 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __verify_home_base: '/srv/btrfs-home'
+    __verify_snapshot: '/srv/btrfs-home/molecule-snapshot'
+
+  tasks:
+    #
+    # Test Environment
+    #
+
+    - name: Verify | Read filesystem types of the home bases
+      ansible.builtin.command:
+        cmd: 'stat -f -c %T {{ item }}'
+      register: __verify_fstypes
+      loop:
+        - '{{ __verify_home_base }}'
+        - '/srv/other-home'
+      changed_when: false
+
+    - name: Verify | Assert the test homes sit on the expected filesystems
+      ansible.builtin.assert:
+        that:
+          - __verify_fstypes.results[0].stdout == 'btrfs'
+          - __verify_fstypes.results[1].stdout != 'btrfs'
+        fail_msg: 'prepare.yml did not mount the BTRFS and the tmpfs home bases'
+
+    #
+    # Subvolumes
+    #
+
+    - name: Verify | Check cache directories are BTRFS subvolumes
+      ansible.builtin.command:
+        cmd: 'btrfs subvolume show {{ __verify_home_base }}/{{ item }}/.cache'
+      register: __verify_subvolumes
+      loop:
+        - 'newuser'
+        - 'emptycache'
+      changed_when: false
+      failed_when: __verify_subvolumes.rc != 0
+
+    - name: Verify | Stat subvolume cache directories
+      ansible.builtin.stat:
+        path: '{{ __verify_home_base }}/{{ item.user }}/.cache'
+      register: __verify_cache_stat
+      loop:
+        - user: 'newuser'
+          group: 'cachegroup'
+        - user: 'emptycache'
+          group: 'emptycache'
+      loop_control:
+        label: '{{ item.user }}'
+
+    - name: Verify | Assert subvolume cache ownership and permissions
+      ansible.builtin.assert:
+        that:
+          - item.stat.isdir
+          - item.stat.pw_name == item.item.user
+          - item.stat.gr_name == item.item.group
+          - item.stat.mode == '0700'
+        fail_msg: '~/.cache of {{ item.item.user }} has wrong owner, group or mode'
+      loop: '{{ __verify_cache_stat.results }}'
+      loop_control:
+        label: '{{ item.item.user }}'
+
+    #
+    # Untouched Directories
+    #
+
+    - name: Verify | Check populated cache directory is not a subvolume
+      ansible.builtin.command:
+        cmd: 'btrfs subvolume show {{ __verify_home_base }}/fullcache/.cache'
+      register: __verify_fullcache_subvol
+      changed_when: false
+      failed_when: __verify_fullcache_subvol.rc == 0
+
+    - name: Verify | Stat populated cache content
+      ansible.builtin.stat:
+        path: '{{ __verify_home_base }}/fullcache/.cache/.keep'
+      register: __verify_fullcache_keep
+      failed_when: not __verify_fullcache_keep.stat.exists
+
+    - name: Verify | Stat linked cache directory
+      ansible.builtin.stat:
+        path: '{{ __verify_home_base }}/linkcache/.cache'
+        follow: false
+      register: __verify_linkcache
+      failed_when: >-
+        not __verify_linkcache.stat.islnk
+        or __verify_linkcache.stat.lnk_target != '/var/tmp/linkcache-cache'
+
+    - name: Verify | Check no cache directory for the system user and the non-BTRFS home
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: __verify_no_cache
+      loop:
+        - '{{ __verify_home_base }}/svcuser/.cache'
+        - '/srv/other-home/otheruser/.cache'
+      failed_when: __verify_no_cache.stat.exists
+
+    #
+    # Snapshot Effect
+    #
+
+    # A snapshot of the home filesystem shows the nested subvolume as an
+    # empty directory, so cached files stay out of it.
+    - name: Verify | Put a file into the cache subvolume
+      ansible.builtin.copy:
+        content: "cached\n"
+        dest: '{{ __verify_home_base }}/newuser/.cache/molecule-file'
+        owner: newuser
+        group: cachegroup
+        mode: '0600'
+
+    - name: Verify | Snapshot the home filesystem
+      ansible.builtin.command:
+        cmd: 'btrfs subvolume snapshot -r {{ __verify_home_base }} {{ __verify_snapshot }}'
+        creates: '{{ __verify_snapshot }}'
+
+    - name: Verify | List cache directory in the snapshot
+      ansible.builtin.find:
+        paths: '{{ __verify_snapshot }}/newuser/.cache'
+        file_type: any
+        hidden: true
+      register: __verify_snapshot_cache
+
+    - name: Verify | Assert the snapshot carries no cached files
+      ansible.builtin.assert:
+        that:
+          - __verify_snapshot_cache.matched == 0
+        fail_msg: 'the home snapshot contains files from ~/.cache'
+
+    - name: Verify | Delete the snapshot
+      ansible.builtin.command:
+        cmd: 'btrfs subvolume delete {{ __verify_snapshot }}'
+      changed_when: true
