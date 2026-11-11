@@ -171,12 +171,16 @@ jobs:
       - name: Determine roles and platforms to test
         id: set-matrix
         run: |
-          # Auto-detect podman roles from molecule driver config
+          # Auto-detect podman roles from molecule driver config. Every
+          # scenario counts: a role does not need a 'default' scenario.
           ALL_PODMAN_ROLES=""
-          for f in roles/*/molecule/default/molecule.yml; do
+          for f in roles/*/molecule/*/molecule.yml; do
             if grep -q 'name: podman' "$f"; then
               role=$(echo "$f" | cut -d/ -f2)
-              ALL_PODMAN_ROLES="$ALL_PODMAN_ROLES $role"
+              case " $ALL_PODMAN_ROLES " in
+                *" $role "*) ;;
+                *) ALL_PODMAN_ROLES="$ALL_PODMAN_ROLES $role" ;;
+              esac
             fi
           done
 
@@ -271,12 +275,19 @@ jobs:
               mol="${scenario_dir}molecule.yml"
               [ -f "$mol" ] || continue
               grep -q 'name: podman' "$mol" || continue
+              # Platforms on a podman network talk to each other (server
+              # and client in one scenario), so the scenario needs all of
+              # them in one job: it gets a single entry 'all'.
               platforms=$(python3 -c "
           import yaml, sys
           with open(sys.argv[1]) as f:
               data = yaml.safe_load(f)
-          for p in data.get('platforms', []):
-              print(p['name'])
+          platforms = data.get('platforms', [])
+          if any(p.get('network') for p in platforms):
+              print('all')
+          else:
+              for p in platforms:
+                  print(p['name'])
           " "$mol")
               for platform in $platforms; do
                 if [ "$FIRST" = "true" ]; then
@@ -348,7 +359,9 @@ jobs:
         working-directory: roles/${{ matrix.role }}
         run: molecule test -s ${{ matrix.scenario }}
         env:
-          MOLECULE_PLATFORM_NAME: ${{ matrix.platform }}
+          # Empty for a multi-host scenario: molecule then creates all
+          # of its platforms
+          MOLECULE_PLATFORM_NAME: ${{ matrix.platform != 'all' && matrix.platform || '' }}
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
 
