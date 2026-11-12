@@ -2,6 +2,17 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.1.2 (2026-11-12)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(php): map pdo_pgsql and iconv to the right packages on every platform by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/572
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.1.1...v3.1.2
+
 ## 3.1.1 (2026-11-08)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
