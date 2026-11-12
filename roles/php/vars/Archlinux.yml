@@ -117,6 +117,10 @@ __php_extension_map_official:
   gd: 'php-gd'
   imagick: 'php-imagick'
   pgsql: 'php-pgsql'
+  # The PDO driver ships in php-pgsql; there is no php-pdo_pgsql. The
+  # extension= directive still follows the listed name, so pdo_pgsql alone
+  # loads only the PDO driver and pgsql alone only the native one.
+  pdo_pgsql: 'php-pgsql'
   sqlite: 'php-sqlite'
   sodium: 'php-sodium'
   tidy: 'php-tidy'
@@ -196,6 +200,8 @@ __php_extension_map_aur:
   gd: 'gd'
   imagick: 'imagick'
   pgsql: 'pgsql'
+  # The PDO driver ships in phpXX-pgsql; there is no phpXX-pdo_pgsql
+  pdo_pgsql: 'pgsql'
   sqlite: 'sqlite'
   sodium: 'sodium'
   tidy: 'tidy'
