@@ -1,0 +1,129 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+
+  vars:
+    php_enabled: true
+    php_default_version: 'auto'
+    # The www pool answers with this marker; the named pools override it.
+    php_fpm_pool_env:
+      MOLECULE_POOL: 'www'
+    __converge_pools:
+      # Socket for the web server group, open_basedir for this pool only
+      - name: 'app1'
+        user: 'molecule-app1'
+        group: 'molecule-app1'
+        listen_owner: 'molecule-app1'
+        listen_group: 'molecule-web'
+        listen_mode: '0660'
+        admin_values:
+          open_basedir: '/srv/molecule-pools:/tmp'
+        env:
+          MOLECULE_POOL: 'app1'
+      # Socket for the pool user alone, a process manager of its own
+      - name: 'app2'
+        user: 'molecule-app2'
+        group: 'molecule-app2'
+        listen_owner: 'molecule-app2'
+        listen_group: 'molecule-app2'
+        listen_mode: '0600'
+        pm: 'static'
+        pm_max_children: 2
+        env:
+          MOLECULE_POOL: 'app2'
+      # Removed again by side_effect.yml through state: absent
+      - name: 'app3'
+        user: 'molecule-app3'
+        group: 'molecule-app3'
+        env:
+          MOLECULE_POOL: 'app3'
+
+  tasks:
+    # The steps without fpm_pools run only on the first converge. On the
+    # idempotence run it would drop the named pools' OPcache settings from
+    # php.ini and report a change that the second include reverts.
+    - name: Converge | Check whether the host was converged before
+      ansible.builtin.stat:
+        path: '/root/molecule-www-conf.sha256'
+      register: __converge_record
+
+    - name: Converge | Run the role without fpm_pools on the first converge
+      when: not __converge_record.stat.exists
+      block:
+        - name: Converge | Include php role without fpm_pools  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            php_versions:
+              - version: 'auto'
+                extensions: ['opcache']
+                fpm: true
+
+        - name: Converge | Assert no fpm_pool deprecation warning
+          ansible.builtin.assert:
+            that:
+              - not (__php_fpm_pool_deprecated | bool)
+            fail_msg: 'deprecation warning fired although no version sets fpm_pool'
+            quiet: true
+
+        - name: Converge | Detect the PHP branch
+          ansible.builtin.command:
+            argv: ['php', '-r', 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;']
+          register: __converge_branch
+          changed_when: false
+
+        - name: Converge | Stat www.conf without fpm_pools
+          ansible.builtin.stat:
+            path: >-
+              {{ {'Archlinux': '/etc/php/php-fpm.d',
+                  'Debian': '/etc/php/' + __converge_branch.stdout + '/fpm/pool.d',
+                  'RedHat': '/etc/php-fpm.d'}[ansible_facts['os_family']] }}/www.conf
+            checksum_algorithm: sha256
+          register: __converge_www_stat
+
+        # verify.yml runs as a separate playbook and compares the final www.conf
+        # with this one: named pools, exclusive mode and an empty www entry must
+        # not change it.
+        - name: Converge | Record the www.conf checksum without fpm_pools
+          ansible.builtin.copy:
+            content: '{{ __converge_www_stat.stat.checksum }}'
+            dest: '/root/molecule-www-conf.sha256'
+            owner: root
+            group: root
+            mode: '0600'
+
+        # The OPcache checks belong to versions with named pools only, so hosts
+        # without them keep their php.ini drop-in.
+        - name: Converge | Read the php.ini drop-in without fpm_pools
+          ansible.builtin.slurp:
+            src: >-
+              {{ {'Archlinux': '/etc/php/conf.d',
+                  'Debian': '/etc/php/' + __converge_branch.stdout + '/fpm/conf.d',
+                  'RedHat': '/etc/php.d'}[ansible_facts['os_family']] }}/99-ansible.ini
+          register: __converge_ini
+
+        - name: Converge | Assert no OPcache checks without named pools
+          ansible.builtin.assert:
+            that:
+              - "'opcache.validate_permission' not in (__converge_ini.content | b64decode)"
+              - "'opcache.validate_root' not in (__converge_ini.content | b64decode)"
+            fail_msg: 'OPcache checks set although the version has no named pools'
+            quiet: true
+
+    - name: Converge | Include php role with fpm_pools  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        php_versions:
+          - version: 'auto'
+            extensions: ['opcache']
+            fpm: true
+            fpm_pools: '{{ __converge_pools }}'
+
+    - name: Converge | Assert still no fpm_pool deprecation warning
+      ansible.builtin.assert:
+        that:
+          - not (__php_fpm_pool_deprecated | bool)
+        fail_msg: 'deprecation warning fired although no version sets fpm_pool'
+        quiet: true

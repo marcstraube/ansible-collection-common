@@ -61,9 +61,10 @@
             ini:
               extra_settings:
                 realpath_cache_size: '8192k'
-            fpm_pool:
-              env:
-                MOLECULE_FPM_ENV: 'per-version'
+            fpm_pools:
+              - name: 'www'
+                env:
+                  MOLECULE_FPM_ENV: 'per-version'
       when: ansible_facts['os_family'] == 'Debian'
 
   tasks:

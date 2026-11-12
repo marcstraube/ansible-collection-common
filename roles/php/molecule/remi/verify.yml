@@ -134,6 +134,42 @@
         label: '{{ item.item }}'
 
     #
+    # Named pool of 8.4 — its file and socket live in the php84 trees.
+    #
+
+    - name: Verify | Read the named Remi pool
+      ansible.builtin.slurp:
+        src: /etc/opt/remi/php84/php-fpm.d/app.conf
+      register: __verify_remi_pool
+
+    - name: Verify | Assert the named Remi pool listens next to the www socket
+      ansible.builtin.assert:
+        that:
+          - "'[app]' in (__verify_remi_pool.content | b64decode)"
+          - >-
+            'listen = /var/opt/remi/php84/run/php-fpm/app.sock'
+            in (__verify_remi_pool.content | b64decode)
+        fail_msg: 'app.conf content unexpected'
+
+    - name: Verify | Check the named Remi pool socket and the other version
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: __verify_remi_pool_paths
+      loop:
+        - /var/opt/remi/php84/run/php-fpm/app.sock
+        - /etc/opt/remi/php83/php-fpm.d/app.conf
+
+    - name: Verify | Assert the named Remi pool stays with its version
+      ansible.builtin.assert:
+        that:
+          - __verify_remi_pool_paths.results[0].stat.exists
+          - __verify_remi_pool_paths.results[0].stat.issock
+          - not __verify_remi_pool_paths.results[1].stat.exists
+        fail_msg: >-
+          app.sock missing under php84 or app.conf written for php83:
+          {{ __verify_remi_pool_paths.results | map(attribute='stat.exists') | list }}
+
+    #
     # Composer — one composer.phar, the wrappers run on their SCL binary.
     #
 

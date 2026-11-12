@@ -1,0 +1,80 @@
+---
+# Named FPM pools on one PHP version: two pools serving requests under their
+# own users and sockets, a third one removed through state: absent, exclusive
+# pruning, the deprecated fpm_pool dict and the fpm_pools validation. The
+# AppStream PHP on Rocky; the remi scenario covers the Remi paths.
+driver:
+  name: podman
+platforms:
+  - name: php-pools-archlinux
+    image: docker.io/marcstraube/archlinux-ansible:latest
+    pre_build_image: true
+    command: /usr/lib/systemd/systemd
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      /run: rw,nosuid,nodev,size=65536k
+      /tmp: rw,nosuid,nodev
+  - name: php-pools-debian-trixie
+    image: docker.io/geerlingguy/docker-debian13-ansible:latest
+    pre_build_image: true
+    command: /lib/systemd/systemd
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      /run: rw,nosuid,nodev,size=65536k
+      /tmp: rw,nosuid,nodev
+  - name: php-pools-rocky-9
+    image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest
+    pre_build_image: true
+    command: /usr/lib/systemd/systemd
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      /run: rw,nosuid,nodev,size=65536k
+      /tmp: rw,nosuid,nodev
+  - name: php-pools-rocky-10
+    image: docker.io/geerlingguy/docker-rockylinux10-ansible:latest
+    pre_build_image: true
+    command: /usr/lib/systemd/systemd
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      /run: rw,nosuid,nodev,size=65536k
+      /tmp: rw,nosuid,nodev
+provisioner:
+  name: ansible
+  playbooks:
+    prepare: prepare.yml
+    converge: converge.yml
+    side_effect: side_effect.yml
+    verify: verify.yml
+  inventory:
+    host_vars:
+      php-pools-archlinux:
+        ansible_python_interpreter: /usr/bin/python
+      php-pools-debian-trixie:
+        ansible_python_interpreter: /usr/bin/python3
+      php-pools-rocky-9:
+        ansible_python_interpreter: /usr/bin/python3
+      php-pools-rocky-10:
+        ansible_python_interpreter: /usr/bin/python3
+  config_options:
+    defaults:
+      allow_broken_conditionals: true
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - dependency
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - destroy
