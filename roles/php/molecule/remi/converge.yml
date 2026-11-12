@@ -22,6 +22,11 @@
           - redis       # versioned PECL: php84-php-pecl-redis6
           - pcov        # PECL, Remi-only: php84-php-pecl-pcov
         fpm: true
+        # Named pool on the first version: install_version.yml leaves the
+        # paths of the last version (8.3) behind, so a pool that lands under
+        # php84 shows that the pool paths are computed per version.
+        fpm_pools:
+          - name: 'app'
       # Second version proves Remi side-by-side multi-version installs (#192):
       # both php<XX>-php-fpm services and per-version /etc/opt/remi paths.
       - version: '8.3'

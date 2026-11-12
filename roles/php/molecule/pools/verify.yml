@@ -1,0 +1,293 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  vars:
+    __verify_paths:
+      Archlinux:
+        pool_dir: '/etc/php/php-fpm.d'
+        www_socket: '/run/php-fpm/php-fpm.sock'
+        socket_prefix: '/run/php-fpm/php-fpm-'
+        service: 'php-fpm'
+      Debian:
+        pool_dir: '/etc/php/{{ __verify_branch.stdout }}/fpm/pool.d'
+        www_socket: '/run/php/php{{ __verify_branch.stdout }}-fpm.sock'
+        socket_prefix: '/run/php/php{{ __verify_branch.stdout }}-fpm-'
+        service: 'php{{ __verify_branch.stdout }}-fpm'
+      RedHat:
+        pool_dir: '/etc/php-fpm.d'
+        www_socket: '/run/php-fpm/www.sock'
+        socket_prefix: '/run/php-fpm/'
+        service: 'php-fpm'
+    __verify_pool_dir: '{{ __verify_paths[ansible_facts["os_family"]].pool_dir }}'
+    __verify_www_socket: '{{ __verify_paths[ansible_facts["os_family"]].www_socket }}'
+    __verify_socket_prefix: '{{ __verify_paths[ansible_facts["os_family"]].socket_prefix }}'
+    __verify_service: '{{ __verify_paths[ansible_facts["os_family"]].service }}'
+    # Configured socket owner, group and mode and the expected response
+    __verify_pools:
+      - name: 'app1'
+        user: 'molecule-app1'
+        listen_owner: 'molecule-app1'
+        listen_group: 'molecule-web'
+        listen_mode: '0660'
+        response: 'app1|/srv/molecule-pools:/tmp'
+      - name: 'app2'
+        user: 'molecule-app2'
+        listen_owner: 'molecule-app2'
+        listen_group: 'molecule-app2'
+        listen_mode: '0600'
+        response: 'app2|'
+
+  tasks:
+    - name: Verify | Detect the PHP branch
+      ansible.builtin.command:
+        argv: ['php', '-r', 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;']
+      register: __verify_branch
+      changed_when: false
+
+    #
+    # Pool files
+    #
+
+    - name: Verify | Read the named pool files
+      ansible.builtin.slurp:
+        src: '{{ __verify_pool_dir }}/{{ item.name }}.conf'
+      loop: '{{ __verify_pools }}'
+      loop_control:
+        label: '{{ item.name }}'
+      register: __verify_pool_files
+
+    # The socket defaults to a path of its own next to the www socket.
+    - name: Verify | Assert the named pool files
+      ansible.builtin.assert:
+        that:
+          - "('[' + item.item.name + ']') in __verify_content"
+          - "('user = ' + item.item.user) in __verify_content"
+          - "('listen = ' + __verify_socket_prefix + item.item.name + '.sock') in __verify_content"
+          - "('listen.owner = ' + item.item.listen_owner) in __verify_content"
+          - "('listen.group = ' + item.item.listen_group) in __verify_content"
+          - "('listen.mode = ' + item.item.listen_mode) in __verify_content"
+        fail_msg: '{{ item.item.name }}.conf content unexpected'
+      vars:
+        __verify_content: '{{ item.content | b64decode }}'
+      loop: '{{ __verify_pool_files.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'
+
+    - name: Verify | Read www.conf
+      ansible.builtin.slurp:
+        src: '{{ __verify_pool_dir }}/www.conf'
+      register: __verify_www
+
+    - name: Verify | Assert www.conf keeps the www pool on its own socket
+      ansible.builtin.assert:
+        that:
+          - "'[www]' in __verify_www_content"
+          - "('listen = ' + __verify_www_socket + '\n') in __verify_www_content"
+          - "'pm.max_children = 5' in __verify_www_content"
+        fail_msg: 'www.conf content unexpected'
+      vars:
+        __verify_www_content: '{{ __verify_www.content | b64decode }}'
+
+    - name: Verify | Stat www.conf
+      ansible.builtin.stat:
+        path: '{{ __verify_pool_dir }}/www.conf'
+        checksum_algorithm: sha256
+      register: __verify_www_stat
+
+    - name: Verify | Read the www.conf checksum without fpm_pools
+      ansible.builtin.slurp:
+        src: '/root/molecule-www-conf.sha256'
+      register: __verify_www_checksum
+
+    - name: Verify | Assert www.conf is the same as without fpm_pools
+      ansible.builtin.assert:
+        that:
+          - __verify_www_stat.stat.checksum == (__verify_www_checksum.content | b64decode)
+        fail_msg: >-
+          www.conf differs from the one written without fpm_pools; named pools,
+          the exclusive mode or an empty www entry changed it
+
+    #
+    # state: absent and exclusive mode (side_effect.yml)
+    #
+
+    - name: Verify | Check the removed and pruned pool files
+      ansible.builtin.stat:
+        path: '{{ __verify_pool_dir }}/{{ item }}'
+      loop:
+        - 'app3.conf'
+        - 'molecule-orphan.conf'
+        - 'molecule-handwritten.conf'
+        - 'molecule-kept.conf'
+        - 'www.conf'
+        - 'broken.conf'
+        - 'nouser.conf'
+      register: __verify_pool_stats
+
+    - name: Verify | Assert absent and exclusive mode removed only the right files
+      ansible.builtin.assert:
+        that:
+          - not __verify_exists['app3.conf']
+          - not __verify_exists['molecule-orphan.conf']
+          - __verify_exists['molecule-handwritten.conf']
+          - __verify_exists['molecule-kept.conf']
+          - __verify_exists['www.conf']
+          # Rolled back after the FPM test, never written
+          - not __verify_exists['broken.conf']
+          - not __verify_exists['nouser.conf']
+        fail_msg: 'pool files after the side effect: {{ __verify_exists }}'
+      vars:
+        __verify_exists: >-
+          {{ dict(__verify_pool_stats.results | map(attribute='item')
+                  | zip(__verify_pool_stats.results | map(attribute='stat.exists'))) }}
+
+    #
+    # Sockets, workers and requests
+    #
+
+    - name: Verify | Check the FPM service
+      ansible.builtin.systemd_service:
+        name: '{{ __verify_service }}'
+      register: __verify_service_status
+
+    - name: Verify | Assert the FPM service is active
+      ansible.builtin.assert:
+        that:
+          - __verify_service_status.status.ActiveState == 'active'
+        fail_msg: '{{ __verify_service }} is not active'
+
+    # FPM removes the socket of a pool that is gone from its configuration
+    # when it reloads.
+    - name: Verify | Check the socket of the removed pool
+      ansible.builtin.stat:
+        path: '{{ __verify_socket_prefix }}app3.sock'
+      register: __verify_app3_socket
+
+    - name: Verify | Assert the socket of the removed pool is gone
+      ansible.builtin.assert:
+        that:
+          - not __verify_app3_socket.stat.exists
+        fail_msg: '{{ __verify_socket_prefix }}app3.sock still exists'
+
+    - name: Verify | Check the named pool sockets
+      ansible.builtin.stat:
+        path: '{{ __verify_socket_prefix }}{{ item.name }}.sock'
+      loop: '{{ __verify_pools }}'
+      loop_control:
+        label: '{{ item.name }}'
+      register: __verify_sockets
+
+    - name: Verify | Assert the named pool sockets
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.issock
+          - item.stat.pw_name == item.item.listen_owner
+          - item.stat.gr_name == item.item.listen_group
+          - item.stat.mode == item.item.listen_mode
+        fail_msg: 'socket of {{ item.item.name }}: {{ item.stat }}'
+      loop: '{{ __verify_sockets.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'
+
+    - name: Verify | List the FPM worker processes
+      ansible.builtin.command:
+        argv: ['ps', '-eo', 'user:32,args']
+      register: __verify_ps
+      changed_when: false
+
+    - name: Verify | Assert the workers of each pool run as its user
+      ansible.builtin.assert:
+        that:
+          - __verify_workers | length > 0
+          - __verify_workers | map('split') | map('first') | unique == [item.user]
+        fail_msg: 'workers of pool {{ item.name }}: {{ __verify_workers }}'
+      vars:
+        __verify_workers: >-
+          {{ __verify_ps.stdout_lines
+             | select('search', 'pool ' + item.name + '\s*$') | list }}
+      loop: '{{ __verify_pools }}'
+      loop_control:
+        label: '{{ item.name }}'
+
+    - name: Verify | Request the test script through each pool socket
+      ansible.builtin.command:
+        argv:
+          - cgi-fcgi
+          - -bind
+          - -connect
+          - '{{ __verify_socket_prefix }}{{ item.name }}.sock'
+      environment:
+        SCRIPT_FILENAME: '/srv/molecule-pools/{{ item.name }}.php'
+        REQUEST_METHOD: 'GET'
+      loop: '{{ __verify_pools }}'
+      loop_control:
+        label: '{{ item.name }}'
+      register: __verify_requests
+      changed_when: false
+
+    - name: Verify | Assert each pool served its own request
+      ansible.builtin.assert:
+        that:
+          - item.stdout_lines | last == item.item.response
+        fail_msg: 'pool {{ item.item.name }} answered: {{ item.stdout }}'
+      loop: '{{ __verify_requests.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'
+
+    #
+    # OPcache isolation: the pools share one OPcache, the role turns on its
+    # permission checks for a version with named pools.
+    #
+
+    - name: Verify | Request the OPcache settings through app1
+      ansible.builtin.command:
+        argv: ['cgi-fcgi', '-bind', '-connect', '{{ __verify_socket_prefix }}app1.sock']
+      environment:
+        SCRIPT_FILENAME: '/srv/molecule-pools/app1-opcache.php'
+        REQUEST_METHOD: 'GET'
+      register: __verify_opcache_settings
+      changed_when: false
+
+    - name: Verify | Assert OPcache checks file access in the pools
+      ansible.builtin.assert:
+        that:
+          - __verify_opcache_settings.stdout_lines | last == '1|1|1'
+        fail_msg: >-
+          opcache.enable|validate_permission|validate_root in app1:
+          {{ __verify_opcache_settings.stdout_lines | last }}
+
+    # app2 caches its own script first; app1 must neither include it nor run
+    # it directly from the shared cache.
+    - name: Verify | Request the app2 script through each pool
+      ansible.builtin.command:
+        argv: ['cgi-fcgi', '-bind', '-connect', '{{ __verify_socket_prefix }}{{ item.pool }}.sock']
+      environment:
+        SCRIPT_FILENAME: '/srv/molecule-pools/{{ item.script }}'
+        REQUEST_METHOD: 'GET'
+      loop:
+        - pool: 'app2'
+          script: 'app2-secret.php'
+        - pool: 'app1'
+          script: 'app1-include.php'
+        - pool: 'app1'
+          script: 'app2-secret.php'
+      loop_control:
+        label: '{{ item.pool }} {{ item.script }}'
+      register: __verify_opcache_requests
+      changed_when: false
+      # A refused script may end the request with an error status
+      failed_when: false
+
+    - name: Verify | Assert app1 cannot run the cached script of app2
+      ansible.builtin.assert:
+        that:
+          - __verify_opcache_requests.results[0].stdout_lines | last == 'app2-secret'
+          - __verify_opcache_requests.results[1].stdout_lines | last == 'denied'
+          - "'app2-secret' not in __verify_opcache_requests.results[2].stdout"
+        fail_msg: >-
+          app2: {{ __verify_opcache_requests.results[0].stdout }},
+          app1 include: {{ __verify_opcache_requests.results[1].stdout }},
+          app1 direct: {{ __verify_opcache_requests.results[2].stdout }}

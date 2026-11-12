@@ -10,7 +10,14 @@
     __php_ver: '{{ __php_resolved_version }}'
     __php_ver_compact: "{{ __php_resolved_version | replace('.', '') }}"
     __php_ini: '{{ __php_config_item.ini | default({}) }}'
-    __php_pool: '{{ __php_config_item.fpm_pool | default({}) }}'
+    # Named pools share the OPcache of their FPM master with the www pool and
+    # with each other; 99-ansible.ini then makes OPcache check file access.
+    __php_ini_named_pools: >-
+      {{ (__php_config_item.fpm | default(true) | bool)
+         and (__php_config_item.fpm_pools | default([])
+              | rejectattr('name', 'equalto', 'www')
+              | map(attribute='state', default='present')
+              | select('equalto', 'present') | list | length > 0) }}
 
 # Reset Arch paths to official defaults (overridden by set_fact in previous AUR iterations)
 - name: Configure Version | Reset Arch config paths
@@ -19,7 +26,10 @@
       - '/etc/php/conf.d'
     __php_fpm_pool_dir: '/etc/php/php-fpm.d'
     __php_fpm_listen_default: '/run/php-fpm/php-fpm.sock'
+    __php_fpm_listen_pool_prefix: '/run/php-fpm/php-fpm-'
     __php_fpm_service: 'php-fpm'
+    __php_fpm_binary: '/usr/bin/php-fpm'
+    __php_fpm_config: '/etc/php/php-fpm.conf'
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_ver == __php_system_version
@@ -31,7 +41,10 @@
       - '/etc/php{{ __php_ver_compact }}/conf.d'
     __php_fpm_pool_dir: '/etc/php{{ __php_ver_compact }}/php-fpm.d'
     __php_fpm_listen_default: '/run/php{{ __php_ver_compact }}-fpm/php{{ __php_ver_compact }}-fpm.sock'
+    __php_fpm_listen_pool_prefix: '/run/php{{ __php_ver_compact }}-fpm/php{{ __php_ver_compact }}-fpm-'
     __php_fpm_service: 'php{{ __php_ver_compact }}-fpm'
+    __php_fpm_binary: '/usr/bin/php-fpm{{ __php_ver_compact }}'
+    __php_fpm_config: '/etc/php{{ __php_ver_compact }}/php-fpm.conf'
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - __php_ver != __php_system_version
@@ -39,7 +52,7 @@
 # Override for RedHat Remi (versioned SCL paths, one set per side-by-side
 # version). install_version.yml bakes these facts to the last installed
 # version, so recompute them per version here — otherwise every version's
-# php.ini/www.conf is written to the last version's /etc/opt/remi/php<XX> dir.
+# php.ini and pools are written to the last version's /etc/opt/remi/php<XX> dir.
 - name: Configure Version | Set RedHat Remi config paths
   ansible.builtin.set_fact:
     __php_conf_dirs:
@@ -47,7 +60,10 @@
     __php_fpm_pool_dir: '/etc/opt/remi/php{{ __php_ver_compact }}/php-fpm.d'
     __php_fpm_listen_default: >-
       /var/opt/remi/php{{ __php_ver_compact }}/run/php-fpm/www.sock
+    __php_fpm_listen_pool_prefix: '/var/opt/remi/php{{ __php_ver_compact }}/run/php-fpm/'
     __php_fpm_service: 'php{{ __php_ver_compact }}-php-fpm'
+    __php_fpm_binary: '/opt/remi/php{{ __php_ver_compact }}/root/usr/sbin/php-fpm'
+    __php_fpm_config: '/etc/opt/remi/php{{ __php_ver_compact }}/php-fpm.conf'
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - php_redhat_repo == 'remi'
@@ -93,22 +109,193 @@
   changed_when: true
   notify: 'Reload PHP-FPM'
 
-# Deploy FPM pool configuration
-- name: Configure Version | Deploy www.conf
-  ansible.builtin.template:
-    src: www.conf.j2
-    dest: '{{ __php_fpm_pool_dir }}/www.conf'
-    owner: root
-    group: root
-    mode: '0644'
-  register: __php_www_conf_result
+#
+# FPM Pools
+#
+
+# The www pool is always written: the FPM package ships www.conf and may
+# restore it on update, so the role owns it instead of removing it. Its
+# settings come from the fpm_pools entry named www, else from the deprecated
+# fpm_pool dict, else from the global defaults alone. Named pools get a socket
+# of their own; the global php_fpm_pool_listen addresses the www pool only, as
+# one address shared by several pools would make FPM fail to start.
+- name: Configure Version | Build FPM pool lists
+  ansible.builtin.set_fact:
+    __php_pools: >-
+      {% set entries = __php_config_item.fpm_pools | default([]) -%}
+      {% set www = entries | selectattr('name', 'equalto', 'www') | first
+                   | default(__php_config_item.fpm_pool | default({}), true) -%}
+      {% set result = [www | combine({
+           'name': 'www',
+           'listen': www.listen | default(php_fpm_pool_listen | default(__php_effective_listen, true))
+         })] -%}
+      {% for pool in entries
+         if pool.name != 'www' and pool.state | default('present') == 'present' -%}
+        {% set _ = result.append(pool | combine({
+             'listen': pool.listen | default(__php_fpm_listen_pool_prefix ~ pool.name ~ '.sock')
+           })) -%}
+      {%- endfor -%}
+      {{ result }}
+    __php_pools_absent: >-
+      {{ __php_config_item.fpm_pools | default([])
+         | selectattr('state', 'defined') | selectattr('state', 'equalto', 'absent')
+         | map(attribute='name') | list }}
+    __php_pools_pruned: []
+
+# The role does not create pool users: application users come from the role
+# of the application, general groups from marcstraube.common.users. Checking
+# them before any pool file is written names the missing accounts instead of
+# leaving it to the FPM configuration test.
+- name: Configure Version | Read FPM pool accounts
+  ansible.builtin.getent:
+    database: '{{ item }}'
+  loop:
+    - 'passwd'
+    - 'group'
   when: __php_config_item.fpm | default(true) | bool
 
-- name: Configure Version | Queue FPM reload
+- name: Configure Version | Assert FPM pool users and groups exist
+  ansible.builtin.assert:
+    that:
+      - __php_pool_users | reject('in', ansible_facts['getent_passwd']) | list | length == 0
+      - __php_pool_groups | reject('in', ansible_facts['getent_group']) | list | length == 0
+    fail_msg: >-
+      The FPM pools of PHP {{ __php_ver }} run as accounts that do not exist.
+      Missing users: {{ __php_pool_users | reject('in', ansible_facts['getent_passwd']) | join(', ') or '-' }};
+      missing groups: {{ __php_pool_groups | reject('in', ansible_facts['getent_group']) | join(', ') or '-' }}.
+      The role does not create pool users; create them before it runs.
+    quiet: true
+  vars:
+    __php_pool_users: >-
+      {{ __php_pools | map(attribute='user', default='')
+         | map('default', php_fpm_pool_user | default(__php_fpm_default_user, true), true)
+         | unique | list }}
+    __php_pool_groups: >-
+      {{ __php_pools | map(attribute='group', default='')
+         | map('default', php_fpm_pool_group | default(__php_fpm_default_group, true), true)
+         | unique | list }}
+  when: __php_config_item.fpm | default(true) | bool
+
+# The pool files as they are before this run, so that a configuration the FPM
+# test rejects can be rolled back to them. The content is kept because pool
+# files may hold secrets in env[] or php_admin_value[] entries, hence no_log.
+- name: Configure Version | Find FPM pool files before the change
+  ansible.builtin.find:
+    paths: '{{ __php_fpm_pool_dir }}'
+    patterns: '*.conf'
+    file_type: file
+  register: __php_pools_before
+  when: __php_config_item.fpm | default(true) | bool
+
+- name: Configure Version | Read FPM pool files before the change
+  ansible.builtin.slurp:
+    src: '{{ item.path }}'
+  loop: '{{ __php_pools_before.files | default([]) }}'
+  loop_control:
+    label: '{{ item.path }}'
+  register: __php_pools_snapshot
+  no_log: true
+  when: __php_config_item.fpm | default(true) | bool
+
+- name: Configure Version | Write FPM pools
+  when: __php_config_item.fpm | default(true) | bool
+  block:
+    - name: Configure Version | Deploy FPM pools
+      ansible.builtin.template:
+        src: pool.conf.j2
+        dest: '{{ __php_fpm_pool_dir }}/{{ __php_pool.name }}.conf'
+        owner: root
+        group: root
+        mode: '0644'
+      loop: '{{ __php_pools }}'
+      loop_control:
+        loop_var: __php_pool
+        label: '{{ __php_pool.name }}'
+      register: __php_pools_result
+
+    - name: Configure Version | Remove absent FPM pools
+      ansible.builtin.file:
+        path: '{{ __php_fpm_pool_dir }}/{{ item }}.conf'
+        state: absent
+      loop: '{{ __php_pools_absent }}'
+      register: __php_pools_absent_result
+
+    - name: Configure Version | Prune unlisted FPM pools
+      ansible.builtin.include_tasks:
+        file: fpm_pools_exclusive.yml
+      when: php_fpm_pools_exclusive | bool
+
+    # A reload with a broken pool stops the FPM master and with it every pool
+    # of this version. Testing the full configuration first fails the run
+    # while the running master still serves the previous one.
+    - name: Configure Version | Test the FPM configuration
+      ansible.builtin.command:
+        argv:
+          - '{{ __php_fpm_binary }}'
+          - '--test'
+          - '--fpm-config'
+          - '{{ __php_fpm_config }}'
+      changed_when: false
+      when: >-
+        (__php_pools_result is changed)
+        or (__php_pools_absent_result is changed)
+        or (__php_pools_pruned | length > 0)
+
+  # Put every pool file back as it was before this run, so the next restart of
+  # FPM does not trip over the rejected configuration either, then fail with
+  # the reason.
+  rescue:
+    - name: Configure Version | Find FPM pool files after the failed change
+      ansible.builtin.find:
+        paths: '{{ __php_fpm_pool_dir }}'
+        patterns: '*.conf'
+        file_type: file
+      register: __php_pools_after
+
+    - name: Configure Version | Remove FPM pool files created by the failed change
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop: >-
+        {{ __php_pools_after.files | map(attribute='path')
+           | reject('in', __php_pools_before.files | map(attribute='path') | list) | list }}
+
+    - name: Configure Version | Restore FPM pool files from before the failed change
+      ansible.builtin.copy:
+        content: '{{ item.content | b64decode }}'
+        dest: '{{ item.item.path }}'
+        owner: '{{ item.item.pw_name }}'
+        group: '{{ item.item.gr_name }}'
+        mode: '{{ item.item.mode }}'
+      loop: '{{ __php_pools_snapshot.results }}'
+      loop_control:
+        label: '{{ item.item.path }}'
+      no_log: true
+
+    - name: Configure Version | Fail with the rejected FPM pool change
+      ansible.builtin.fail:
+        msg: >-
+          '{{ ansible_failed_task.name }}' failed for PHP {{ __php_ver }}; the
+          pool files in {{ __php_fpm_pool_dir }} were restored to their state
+          before this run and FPM was not reloaded.
+          {{ ansible_failed_result.stderr | default(ansible_failed_result.msg | default('')) }}
+
+# The AppArmor override grants FPM the unix sockets of the named pools. The
+# www pool is left out, so hosts without named pools keep their override.
+- name: Configure Version | Collect named FPM pool sockets
+  ansible.builtin.set_fact:
+    __php_fpm_sockets: >-
+      {{ __php_fpm_sockets + (__php_pools | rejectattr('name', 'equalto', 'www')
+         | map(attribute='listen') | map('string') | select('match', '/') | list) }}
+  when: __php_config_item.fpm | default(true) | bool
+
+- name: Configure Version | Queue FPM reload for pool change
   ansible.builtin.set_fact:
     __php_fpm_changed_services: "{{ __php_fpm_changed_services + [__php_fpm_service] }}"
   when:
     - __php_config_item.fpm | default(true) | bool
-    - __php_www_conf_result is changed
+    - (__php_pools_result is changed)
+      or (__php_pools_absent_result is changed)
+      or (__php_pools_pruned | length > 0)
   changed_when: true
   notify: 'Reload PHP-FPM'

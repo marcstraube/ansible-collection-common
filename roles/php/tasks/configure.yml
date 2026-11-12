@@ -1,7 +1,8 @@
 ---
-- name: Configure | Reset FPM reload list
+- name: Configure | Reset FPM reload and socket lists
   ansible.builtin.set_fact:
     __php_fpm_changed_services: []
+    __php_fpm_sockets: []
 
 - name: Configure | PHP versions
   ansible.builtin.include_tasks:

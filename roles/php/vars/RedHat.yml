@@ -33,6 +33,14 @@ __php_conf_dirs:
 __php_fpm_pool_dir: '/etc/php-fpm.d'
 __php_fpm_listen_default: '/run/php-fpm/www.sock'
 
+# Socket path of a named pool: this prefix plus '<name>.sock'. EL names the
+# socket of the www pool after the pool (www.sock), so named pools follow suit.
+__php_fpm_listen_pool_prefix: '/run/php-fpm/'
+
+# FPM binary and master config, for the configuration test after a pool change
+__php_fpm_binary: '/usr/sbin/php-fpm'
+__php_fpm_config: '/etc/php-fpm.conf'
+
 # FPM pool defaults
 __php_fpm_default_user: 'apache'
 __php_fpm_default_group: 'apache'

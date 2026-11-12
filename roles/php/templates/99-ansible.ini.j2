@@ -39,6 +39,13 @@ opcache.memory_consumption = {{ __php_ini.opcache_memory_consumption | default(p
 opcache.max_accelerated_files = {{ __php_ini.opcache_max_accelerated_files | default(php_ini_opcache_max_accelerated_files) }}
 opcache.validate_timestamps = {{ __php_ini.opcache_validate_timestamps | default(php_ini_opcache_validate_timestamps) }}
 opcache.revalidate_freq = {{ __php_ini.opcache_revalidate_freq | default(php_ini_opcache_revalidate_freq) }}
+{% if __php_ini_named_pools | default(false) | bool %}
+; The FPM pools of this version share one OPcache. Without these checks a
+; pool runs a script another pool has cached even when its own user may not
+; read the file, or when it lies outside the chroot of the pool.
+opcache.validate_permission = 1
+opcache.validate_root = 1
+{% endif %}
 {% set __php_ini_extra = php_ini_extra_settings | combine(__php_ini.extra_settings | default({})) %}
 {% if __php_ini_extra %}
 

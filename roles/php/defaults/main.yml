@@ -19,7 +19,8 @@ php_fpm_enabled: true
 
 # PHP versions to install side by side
 # Each entry supports: version (required), extensions (list, default: []), fpm (bool, default: true)
-# Per-version config overrides via ini (dict) and fpm_pool (dict) — keys without prefix.
+# Per-version config overrides via ini (dict, keys without the php_ini_ prefix)
+# and fpm_pools (list of FPM pools, see PHP-FPM Pools below).
 # Example:
 #   php_versions:
 #     - version: '8.3'
@@ -37,8 +38,9 @@ php_fpm_enabled: true
 #       ini:
 #         memory_limit: '512M'
 #         display_errors: 'On'
-#       fpm_pool:
-#         pm_max_children: 50
+#       fpm_pools:
+#         - name: 'www'
+#           pm_max_children: 50
 php_versions:
   - version: 'auto'
     extensions: []
@@ -149,15 +151,43 @@ php_ini_opcache_revalidate_freq: 2
 php_ini_extra_settings: {}
 
 #
-# PHP-FPM Pool Configuration (www.conf)
+# PHP-FPM Pools
 #
-# Per-version overrides via php_versions[].fpm_pool dict (keys without php_fpm_pool_ prefix).
+# Global defaults for every FPM pool. The role always writes the www pool
+# (www.conf); php_versions[].fpm_pools adds named pools per version, each
+# written to <pool dir>/<name>.conf. An entry takes the settings below as keys
+# without the php_fpm_pool_ prefix and falls back to these defaults for every
+# key it leaves out. An entry named www configures www.conf. Further entry keys:
+#   name  - pool name, [a-z0-9_-]+, unique per version (required)
+#   state - 'present' (default) or 'absent', which removes <name>.conf; not
+#           allowed for www, the package ships that file
+# The pool users and groups must exist before the role runs.
+# Example:
+#   php_versions:
+#     - version: 'auto'
+#       fpm_pools:
+#         - name: 'app'
+#           user: 'app'
+#           group: 'app'
+#           listen_owner: 'www-data'
+#           admin_values:
+#             open_basedir: '/srv/app:/tmp'
+#         - name: 'legacy'
+#           state: 'absent'
+#
+# DEPRECATED: removed in v4.0.0. php_versions[].fpm_pool (dict, keys without
+# the php_fpm_pool_ prefix) still configures the www pool and prints a
+# deprecation warning; move its keys into an fpm_pools entry named www. A
+# version cannot set both.
 
 # Pool user/group (empty = OS default from vars/)
 php_fpm_pool_user: ''
 php_fpm_pool_group: ''
 
-# Listen socket (empty = auto-constructed per version and OS)
+# Listen address of the www pool (empty = default socket per version and OS).
+# Named pools ignore it and default to a socket of their own next to it, e.g.
+# /run/php/php8.4-fpm-<name>.sock on Debian; their entries set listen to
+# change it.
 php_fpm_pool_listen: ''
 php_fpm_pool_listen_owner: ''
 php_fpm_pool_listen_group: ''
@@ -197,13 +227,25 @@ php_fpm_pool_admin_flags: {}
 # Environment variables for the pool workers, as a mapping of name to value,
 # written as env[NAME] = value. PHP-FPM clears the worker environment
 # (clear_env = yes), so these are the only variables an application finds in
-# its environment through getenv(). Per-version entries in
-# php_versions[].fpm_pool.env are merged over this mapping.
+# its environment through getenv(). The env key of an fpm_pools entry is
+# merged over this mapping, as are admin_values and admin_flags over theirs.
 php_fpm_pool_env: {}
 # Example — outbound proxy for HTTP clients such as Guzzle:
 #   php_fpm_pool_env:
 #     HTTPS_PROXY: 'http://proxy.example.com:3128'
 #     NO_PROXY: 'localhost,127.0.0.1'
+
+# Remove pool files from the pool directory of each version that are neither
+# listed in fpm_pools nor in php_fpm_pools_keep. Only files whose content
+# starts with the ansible_managed header are removed, so pools shipped by a
+# package or written by hand are never touched; www.conf always counts as
+# listed. Opt-in because it deletes files.
+php_fpm_pools_exclusive: false
+
+# Pool file names to keep in exclusive mode even when unlisted
+# Example:
+#   - 'legacy.conf'
+php_fpm_pools_keep: []
 
 #
 # Composer
