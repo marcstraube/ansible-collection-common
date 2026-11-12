@@ -1,14 +1,14 @@
 {{ ansible_managed | default('Ansible managed') | comment(decoration='; ') }}
 
 ; Pool name
-[www]
+[{{ __php_pool.name }}]
 
 ; Unix user/group of processes
 user = {{ __php_pool.user | default(php_fpm_pool_user | default(__php_fpm_default_user, true)) }}
 group = {{ __php_pool.group | default(php_fpm_pool_group | default(__php_fpm_default_group, true)) }}
 
 ; The address on which to accept FastCGI requests.
-listen = {{ __php_pool.listen | default(php_fpm_pool_listen | default(__php_effective_listen, true)) }}
+listen = {{ __php_pool.listen }}
 
 ; Set permissions for unix socket
 listen.owner = {{ __php_pool.listen_owner | default(php_fpm_pool_listen_owner | default(__php_fpm_default_user, true)) }}
@@ -76,5 +76,14 @@ php_admin_value[{{ __key }}] = {{ __value }}
 {% endfor %}
 {% for __key, __value in __php_pool_admin_flags | dictsort %}
 php_admin_flag[{{ __key }}] = {{ __value }}
+{% endfor %}
+{% endif %}
+{% set __php_pool_env = php_fpm_pool_env | combine(__php_pool.env | default({})) %}
+{% if __php_pool_env %}
+
+; Environment of the pool workers. clear_env stays on, so the workers get only
+; these variables from the environment.
+{% for __key, __value in __php_pool_env | dictsort %}
+env[{{ __key }}] = {{ __value }}
 {% endfor %}
 {% endif %}

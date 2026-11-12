@@ -21,9 +21,10 @@
           - xdebug      # PECL from AppStream: php-pecl-xdebug3 / php8.4-pecl-xdebug3
         fpm: true
     php_default_version: '{{ __converge_version }}'
-    # composer (EPEL) depends on the default php-cli, which conflicts with
-    # the php8.4-* set on Rocky 10.
-    php_composer_enabled: false
+    # EPEL package on Rocky 9 (php-* set), composer.phar on Rocky 10: the
+    # EPEL package depends on the default php-cli, which conflicts with the
+    # php8.4-* set.
+    php_composer_enabled: true
 
   tasks:
     - name: Converge | Include php role  # noqa: role-name[path]

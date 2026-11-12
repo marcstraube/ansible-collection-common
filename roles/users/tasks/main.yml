@@ -13,6 +13,18 @@
     - users
     - users:users
 
+- name: Main | Include BTRFS tasks
+  ansible.builtin.include_tasks:
+    file: btrfs.yml
+    apply:
+      tags:
+        - users
+        - users:users
+  when: users_enabled | bool
+  tags:
+    - users
+    - users:users
+
 - name: Main | Import SSH keys tasks
   ansible.builtin.import_tasks: ssh_keys.yml
   when: users_enabled | bool

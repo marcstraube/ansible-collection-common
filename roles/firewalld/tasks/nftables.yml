@@ -1,0 +1,197 @@
+---
+# Custom nftables tables next to the firewalld table. Every table is a file
+# named <family>-<name>.nft in the role-owned directory; the main file includes
+# them all, so one nft run loads every table in a single transaction.
+#
+# Ownership: a file belongs to the role when its content starts with the
+# rendered ansible_managed header. Files without it (placed by hand) are never
+# overwritten or removed. If the ansible_managed text changes between runs,
+# files written with the old text no longer match and are left alone
+# (fail-safe: nothing removed by mistake).
+#
+# Desired state = firewalld_nftables_tables: role-owned files that are no
+# longer configured are deleted from the ruleset and removed.
+
+- name: Nftables | Assert table definitions
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name is match('^[A-Za-z_][A-Za-z0-9_]*$')
+      - item.family | default('') in ['ip', 'ip6', 'inet', 'arp', 'bridge', 'netdev']
+      - item.chains | default([]) | length > 0
+      - item.chains | rejectattr('name', 'defined') | list | length == 0
+      - item.chains | rejectattr('hook', 'defined') | list | length == 0
+      - item.chains | rejectattr('priority', 'defined') | list | length == 0
+    fail_msg: >-
+      Each entry in firewalld_nftables_tables needs a name (letters, digits,
+      underscores), a family (ip, ip6, inet, arp, bridge, netdev) and at least
+      one chain with name, hook and priority.
+    quiet: true
+  loop: '{{ firewalld_nftables_tables }}'
+  loop_control:
+    label: '{{ item.family | default("") }} {{ item.name | default("") }}'
+
+- name: Nftables | Create table directory
+  ansible.builtin.file:
+    path: '{{ __firewalld_nftables_config_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  register: __firewalld_nftables_dir
+
+#
+# Ownership
+#
+
+# Check mode only simulates the directory on the first run, so there is
+# nothing to find yet
+- name: Nftables | Find table files
+  ansible.builtin.find:
+    paths: '{{ __firewalld_nftables_config_dir }}'
+    patterns: '*.nft'
+    file_type: file
+  register: __firewalld_nftables_files
+  when: not (ansible_check_mode and __firewalld_nftables_dir is changed)
+
+- name: Nftables | Read table file headers
+  ansible.builtin.slurp:
+    src: '{{ item.path }}'
+  loop: '{{ __firewalld_nftables_files.files | default([]) }}'
+  loop_control:
+    label: '{{ item.path | basename }}'
+  register: __firewalld_nftables_contents
+
+- name: Nftables | Build file ownership lists
+  ansible.builtin.set_fact:
+    __firewalld_nftables_owned: >-
+      {%- set marker = ansible_managed | default('Ansible managed') | comment | trim -%}
+      {%- set ns = namespace(items=[]) -%}
+      {%- for entry in __firewalld_nftables_contents.results | default([]) -%}
+        {%- if (entry.content | b64decode).startswith(marker) -%}
+          {%- set ns.items = ns.items + [entry.item.path | basename] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ns.items }}
+    __firewalld_nftables_desired: >-
+      {{ firewalld_nftables_tables
+         | map(attribute='family')
+         | zip(firewalld_nftables_tables | map(attribute='name'))
+         | map('join', '-') | map('regex_replace', '$', '.nft') | list }}
+
+# check_mode: false: read-only query, the collision check needs it under --check
+- name: Nftables | List loaded tables
+  ansible.builtin.command:
+    argv:
+      - '{{ __firewalld_nftables_binary }}'
+      - list
+      - tables
+  register: __firewalld_nftables_loaded
+  changed_when: false
+  check_mode: false
+
+# Loading a table file replaces the table of the same family and name, so a
+# configured table must not take over a table or file the role did not create
+# (e.g. inet firewalld, or tables of container runtimes)
+- name: Nftables | Assert configured tables do not collide with foreign ones
+  ansible.builtin.assert:
+    that:
+      - >-
+        (item.family ~ '-' ~ item.name ~ '.nft') in __firewalld_nftables_owned
+        or (('table ' ~ item.family ~ ' ' ~ item.name) not in __firewalld_nftables_loaded.stdout_lines
+            and (__firewalld_nftables_files.files | default([])
+                 | map(attribute='path') | map('basename')
+                 | select('equalto', item.family ~ '-' ~ item.name ~ '.nft') | list | length == 0))
+    fail_msg: >-
+      Table {{ item.family }} {{ item.name }} already exists in the ruleset or as
+      a file in {{ __firewalld_nftables_config_dir }}, but was not created by
+      this role. Loading the configured table would replace it. Choose another
+      name, or remove the foreign table by hand
+      (nft delete table {{ item.family }} {{ item.name }}) and its file, if any.
+    quiet: true
+  loop: '{{ firewalld_nftables_tables }}'
+  loop_control:
+    label: '{{ item.family }} {{ item.name }}'
+
+#
+# Deploy
+#
+
+- name: Nftables | Deploy main file
+  ansible.builtin.template:
+    src: 'nftables.conf.j2'
+    dest: '{{ __firewalld_nftables_config_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload firewalld nftables tables
+
+- name: Nftables | Deploy table files
+  ansible.builtin.template:
+    src: 'table.nft.j2'
+    dest: '{{ __firewalld_nftables_config_dir }}/{{ item.family }}-{{ item.name }}.nft'
+    owner: root
+    group: root
+    mode: '0644'
+    validate: '{{ __firewalld_nftables_binary }} --check --file %s'
+  loop: '{{ firewalld_nftables_tables }}'
+  loop_control:
+    label: '{{ item.family }} {{ item.name }}'
+  notify: Reload firewalld nftables tables
+
+#
+# Remove unconfigured role-owned tables
+#
+
+# The role wrote these files itself, so the file name carries the family and
+# name of the table it defines
+- name: Nftables | Build list of unconfigured table files
+  ansible.builtin.set_fact:
+    __firewalld_nftables_excess: >-
+      {%- set ns = namespace(items=[]) -%}
+      {%- for basename in __firewalld_nftables_owned if basename not in __firewalld_nftables_desired -%}
+        {%- set table = basename | regex_replace('\.nft$', '') -%}
+        {%- set ns.items = ns.items + [{
+              'path': __firewalld_nftables_config_dir ~ '/' ~ basename,
+              'family': table.split('-', 1)[0],
+              'name': table.split('-', 1)[1] | default('')
+            }] -%}
+      {%- endfor -%}
+      {{ ns.items }}
+
+# A table that is not loaded (e.g. never started) is already gone
+- name: Nftables | Delete unconfigured tables from the ruleset
+  ansible.builtin.command:
+    argv:
+      - '{{ __firewalld_nftables_binary }}'
+      - delete
+      - table
+      - '{{ item.family }}'
+      - '{{ item.name }}'
+  register: __firewalld_nftables_delete
+  changed_when: __firewalld_nftables_delete.rc == 0
+  failed_when:
+    - __firewalld_nftables_delete.rc != 0
+    - "'No such file or directory' not in __firewalld_nftables_delete.stderr"
+  loop: '{{ __firewalld_nftables_excess }}'
+  loop_control:
+    label: '{{ item.family }} {{ item.name }}'
+  when: item.name | length > 0
+
+- name: Nftables | Remove unconfigured table files
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: absent
+  loop: '{{ __firewalld_nftables_excess }}'
+  loop_control:
+    label: '{{ item.path | basename }}'
+
+- name: Nftables | Deploy systemd service
+  ansible.builtin.template:
+    src: 'firewalld-nftables.service.j2'
+    dest: '/etc/systemd/system/{{ __firewalld_nftables_service_name }}.service'
+    owner: root
+    group: root
+    mode: '0644'
+  register: __firewalld_nftables_unit
+  notify: Reload firewalld systemd units

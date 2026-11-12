@@ -1,0 +1,152 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # cgi-fcgi sends a request straight to an FPM socket (verify)
+    __prepare_packages:
+      Archlinux: ['fcgi', 'procps-ng']
+      Debian: ['libfcgi-bin', 'procps']
+      RedHat: ['fcgi', 'procps-ng']
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Prepare | Update package cache (Debian)
+      ansible.builtin.apt:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Install Debian prerequisites
+      ansible.builtin.apt:
+        name:
+          - gnupg
+          - ca-certificates
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Update package cache (RedHat)
+      ansible.builtin.dnf:
+        update_cache: true
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # fcgi comes from EPEL
+    - name: Prepare | Install EPEL (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Prepare | Install test dependencies
+      ansible.builtin.package:
+        name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
+        state: present
+      retries: 3
+      delay: 5
+
+    # The role does not create pool users: application users come from the
+    # role of the application, general groups from the users role.
+    - name: Prepare | Create the web server group of the pool sockets
+      ansible.builtin.group:
+        name: 'molecule-web'
+        system: true
+        state: present
+
+    - name: Prepare | Create the pool groups
+      ansible.builtin.group:
+        name: '{{ item }}'
+        system: true
+        state: present
+      loop:
+        - 'molecule-app1'
+        - 'molecule-app2'
+        - 'molecule-app3'
+
+    - name: Prepare | Create the pool users
+      ansible.builtin.user:
+        name: '{{ item }}'
+        group: '{{ item }}'
+        system: true
+        create_home: false
+        shell: '/usr/sbin/nologin'
+        state: present
+      loop:
+        - 'molecule-app1'
+        - 'molecule-app2'
+        - 'molecule-app3'
+
+    - name: Prepare | Create the test script directory
+      ansible.builtin.file:
+        path: '/srv/molecule-pools'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    # Answers with the pool environment marker and the open_basedir the pool
+    # sets, so the response shows which pool served it. One copy per pool:
+    # the pools of one FPM master share the OPcache, and the optimizer of
+    # newer PHP versions folds ini_get() into the cached script, so a shared
+    # script would answer with the open_basedir of the pool that compiled it.
+    - name: Prepare | Deploy the test scripts
+      ansible.builtin.copy:
+        dest: '/srv/molecule-pools/{{ item }}.php'
+        content: |
+          <?php
+          echo getenv('MOLECULE_POOL'), '|', ini_get('open_basedir');
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - 'app1'
+        - 'app2'
+
+    # OPcache isolation between pools (verify): a script only app2 may read,
+    # which app1 tries to include once app2 has cached it, and a script that
+    # reports the OPcache checks the role enables for named pools. Created
+    # here, well before verify, because OPcache skips files younger than
+    # opcache.file_update_protection (2 s).
+    - name: Prepare | Deploy the script only app2 may read
+      ansible.builtin.copy:
+        dest: '/srv/molecule-pools/app2-secret.php'
+        content: |
+          <?php
+          echo 'app2-secret';
+        owner: 'molecule-app2'
+        group: 'molecule-app2'
+        mode: '0600'
+
+    - name: Prepare | Deploy the OPcache test scripts of app1
+      ansible.builtin.copy:
+        dest: '/srv/molecule-pools/{{ item.file }}'
+        content: '{{ item.content }}'
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - file: 'app1-include.php'
+          content: |
+            <?php
+            echo (@include '/srv/molecule-pools/app2-secret.php') === false ? 'denied' : '';
+        - file: 'app1-opcache.php'
+          content: |
+            <?php
+            echo ini_get('opcache.enable'), '|', ini_get('opcache.validate_permission'),
+                '|', ini_get('opcache.validate_root');
+      loop_control:
+        label: '{{ item.file }}'

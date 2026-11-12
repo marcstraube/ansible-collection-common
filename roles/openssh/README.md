@@ -234,10 +234,59 @@ users_list:
 
 ### SSH Agent
 
-| Variable                               | Default | Description                     |
-|----------------------------------------|---------|---------------------------------|
-| `openssh_agent_global_service_enabled` | `false` | Enable global ssh-agent service |
-| `openssh_askpass_enabled`              | `false` | Enable SSH askpass program      |
+| Variable                               | Default     | Description                                 |
+|----------------------------------------|-------------|---------------------------------------------|
+| `openssh_agent_global_service_enabled` | `false`     | Enable global ssh-agent service             |
+| `openssh_askpass_enabled`              | `false`     | Enable SSH askpass program                  |
+| `openssh_askpass`                      | `'default'` | Askpass program (see below)                 |
+| `openssh_askpass_program`              | `''`        | `custom` only: path of the program          |
+| `openssh_askpass_package`              | `''`        | `custom` only: package to install, optional |
+
+With the global service enabled, `/etc/environment.d/40-ssh-agent.conf`
+points `SSH_AUTH_SOCK` at `$XDG_RUNTIME_DIR/ssh-agent.socket` for every user
+session, so `ssh` and tools that add keys to the agent (e.g. KeePassXC) find
+it. A user-level export such as `50-gpg-ssh.conf` from
+`marcstraube.common.gnupg` takes precedence. The file is removed when the
+service is disabled. Debian and EL 9 ship the agent service as a static unit
+that cannot be enabled, so the role neither enables it nor exports its socket
+there; on Debian the agent's socket unit sets `SSH_AUTH_SOCK` itself.
+
+ssh-agent runs the askpass program to confirm the use of a key added with a
+confirmation constraint, as password managers such as KeePassXC do. Without
+`SSH_ASKPASS` it uses its compiled-in default path, where only the
+distribution's askpass installs its program. `openssh_askpass` selects the
+program; every choice but `default` is exported as `SSH_ASKPASS` through
+`/etc/environment.d/40-ssh-askpass.conf`, which is removed again for
+`default` or with askpass disabled.
+
+| Choice        | Package                | Arch Linux                      | Debian, EL                          |
+|---------------|------------------------|---------------------------------|-------------------------------------|
+| `default`     | distribution askpass   | compiled-in path                | compiled-in path                    |
+| `lxqt`        | `lxqt-openssh-askpass` | `/usr/bin/lxqt-openssh-askpass` | `/usr/bin/lxqt-openssh-askpass`     |
+| `ksshaskpass` | `ksshaskpass`          | `/usr/bin/ksshaskpass`          | `/usr/bin/ksshaskpass`              |
+| `seahorse`    | `seahorse`             | `/usr/lib/seahorse/ssh-askpass` | `/usr/libexec/seahorse/ssh-askpass` |
+
+The distribution askpass is `x11-ssh-askpass` (Arch Linux), `ssh-askpass`
+(Debian) or `openssh-askpass` (EL); `ksshaskpass` on EL comes from EPEL.
+
+`lxqt-openssh-askpass` has no EL package; the choice is a no-op there, use
+`ksshaskpass`, `seahorse` or `custom` instead. `custom` takes any other
+program: `openssh_askpass_program` is required, `openssh_askpass_package`
+installs its package if set (or install it through `base_extra_packages` of
+`marcstraube.common.base`). An unknown choice, `custom` without a program, or
+a program with another choice fails the run.
+
+```yaml
+# Wayland-native askpass
+openssh_askpass_enabled: true
+openssh_askpass: 'lxqt'
+
+# Any other askpass program
+openssh_askpass_enabled: true
+openssh_askpass: 'custom'
+openssh_askpass_program: '/usr/bin/my-askpass'
+openssh_askpass_package: 'my-askpass'
+```
 
 ### Escape Hatch
 

@@ -54,6 +54,110 @@
   tags:
     - always
 
+# fpm_pool configures the www pool the same way as an fpm_pools entry named
+# www, so the two on one version would contradict each other.
+- name: Main | Validate fpm_pool and fpm_pools are not combined
+  ansible.builtin.assert:
+    that:
+      - not (item.fpm_pool is defined and item.fpm_pools is defined)
+    fail_msg: >-
+      php_versions entry '{{ item.version }}' sets both fpm_pool and fpm_pools.
+      Move the fpm_pool settings into an fpm_pools entry named www.
+    quiet: true
+  loop: '{{ php_versions }}'
+  loop_control:
+    label: '{{ item.version }}'
+  when: php_enabled | bool
+  tags:
+    - always
+
+# The name becomes the pool section and the file name <name>.conf in the pool
+# directory, so it must be a plain file name component.
+- name: Main | Validate fpm_pools entries
+  ansible.builtin.assert:
+    that:
+      - __php_entries is sequence
+      - __php_entries is not string
+      - __php_entries is not mapping
+      - __php_entries | reject('mapping') | list | length == 0
+      - >-
+        __php_entries | map(attribute='name', default='') | select('string')
+        | select('match', '^[a-z0-9_-]+$') | list | length == __php_entries | length
+      - >-
+        __php_entries | map(attribute='state', default='present')
+        | reject('in', ['present', 'absent']) | list | length == 0
+    fail_msg: >-
+      php_versions entry '{{ item.version }}': fpm_pools must be a list of
+      mappings, each with a name matching [a-z0-9_-]+ and an optional state
+      of 'present' or 'absent'.
+    quiet: true
+  vars:
+    __php_entries: '{{ item.fpm_pools | default([]) }}'
+  loop: '{{ php_versions }}'
+  loop_control:
+    label: '{{ item.version }}'
+  when: php_enabled | bool
+  tags:
+    - always
+
+- name: Main | Validate fpm_pools names are unique
+  ansible.builtin.assert:
+    that:
+      - __php_names | unique | length == __php_names | length
+    fail_msg: >-
+      php_versions entry '{{ item.version }}': fpm_pools names must be unique
+      (got {{ __php_names | join(', ') }}).
+    quiet: true
+  vars:
+    __php_names: "{{ item.fpm_pools | default([]) | map(attribute='name') | list }}"
+  loop: '{{ php_versions }}'
+  loop_control:
+    label: '{{ item.version }}'
+  when: php_enabled | bool
+  tags:
+    - always
+
+# The FPM package ships www.conf and may restore it on update, so the role
+# keeps the www pool under its control instead of removing it.
+- name: Main | Validate the www pool is not removed
+  ansible.builtin.assert:
+    that:
+      - >-
+        item.fpm_pools | default([]) | selectattr('name', 'equalto', 'www')
+        | selectattr('state', 'defined') | selectattr('state', 'equalto', 'absent')
+        | list | length == 0
+    fail_msg: >-
+      php_versions entry '{{ item.version }}': the www pool cannot be set to
+      state absent. Configure it through its fpm_pools entry instead.
+    quiet: true
+  loop: '{{ php_versions }}'
+  loop_control:
+    label: '{{ item.version }}'
+  when: php_enabled | bool
+  tags:
+    - always
+
+# php_versions[].fpm_pool is deprecated and will be removed in v4.0.0. The
+# flag is set on every run so the warning below fires only while a version
+# still sets it.
+- name: Main | Detect deprecated php_versions fpm_pool
+  ansible.builtin.set_fact:
+    __php_fpm_pool_deprecated: >-
+      {{ php_enabled | bool
+         and php_versions | selectattr('fpm_pool', 'defined') | list | length > 0 }}
+  tags:
+    - always
+
+- name: Main | Warn about php_versions fpm_pool deprecation
+  ansible.builtin.debug:
+    msg: >
+      php_versions[].fpm_pool is DEPRECATED and will be removed in v4.0.0.
+      Move its settings into an entry named www in php_versions[].fpm_pools
+      instead. See #569.
+  when: __php_fpm_pool_deprecated | bool
+  tags:
+    - always
+
 - name: Main | Import repository tasks
   ansible.builtin.import_tasks:
     file: repos.yml

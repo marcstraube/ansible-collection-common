@@ -59,3 +59,11 @@
       retries: 3
       delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
+
+    # cgi-fcgi sends a request straight to the FPM socket (verify: getenv())
+    - name: Prepare | Install FastCGI client
+      ansible.builtin.package:
+        name: "{{ {'Archlinux': 'fcgi', 'Debian': 'libfcgi-bin', 'RedHat': 'fcgi'}[ansible_facts['os_family']] }}"
+        state: present
+      retries: 3
+      delay: 5

@@ -5,3 +5,13 @@
     enabled: "{{ firewalld_service_enabled | bool }}"
     state: "{{ firewalld_service_enabled | bool | ternary('started', 'stopped') }}"
     daemon_reload: true
+
+# Check mode only simulates the unit file on the first run, so there is no
+# unit to manage yet
+- name: Service | Manage firewalld nftables service
+  ansible.builtin.systemd_service:
+    name: '{{ __firewalld_nftables_service_name }}'
+    enabled: "{{ firewalld_nftables_service_enabled | bool }}"
+    state: "{{ firewalld_nftables_service_enabled | bool | ternary('started', 'stopped') }}"
+    daemon_reload: true
+  when: not (ansible_check_mode and (__firewalld_nftables_unit | default({}) is changed))

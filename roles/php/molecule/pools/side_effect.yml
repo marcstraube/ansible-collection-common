@@ -1,0 +1,351 @@
+---
+# Re-runs the role against the converged host: first with the deprecated
+# fpm_pool dict, then with app3 removed through state: absent and exclusive
+# pruning on, then with a pool change the FPM configuration test rejects and
+# a missing pool user, and finally with invalid fpm_pools settings that the
+# validation has to reject.
+- name: Side Effect
+  hosts: all
+  gather_facts: true
+
+  vars:
+    php_enabled: true
+    php_default_version: 'auto'
+    php_fpm_pool_env:
+      MOLECULE_POOL: 'www'
+    # Same pools as the converge; app3 is removed now. The empty www entry
+    # must render the same www.conf as no entry at all.
+    __side_effect_pools:
+      - name: 'www'
+      - name: 'app1'
+        user: 'molecule-app1'
+        group: 'molecule-app1'
+        listen_owner: 'molecule-app1'
+        listen_group: 'molecule-web'
+        listen_mode: '0660'
+        admin_values:
+          open_basedir: '/srv/molecule-pools:/tmp'
+        env:
+          MOLECULE_POOL: 'app1'
+      - name: 'app2'
+        user: 'molecule-app2'
+        group: 'molecule-app2'
+        listen_owner: 'molecule-app2'
+        listen_group: 'molecule-app2'
+        listen_mode: '0600'
+        pm: 'static'
+        pm_max_children: 2
+        env:
+          MOLECULE_POOL: 'app2'
+      - name: 'app3'
+        state: 'absent'
+    __side_effect_pool_dir: >-
+      {{ {'Archlinux': '/etc/php/php-fpm.d',
+          'Debian': '/etc/php/' + __side_effect_branch.stdout + '/fpm/pool.d',
+          'RedHat': '/etc/php-fpm.d'}[ansible_facts['os_family']] }}
+    # Pool files planted for the exclusive mode. Each one is a valid pool on
+    # a TCP port, since FPM loads the ones that stay.
+    __side_effect_planted:
+      - file: 'molecule-orphan.conf'
+        header: true
+        port: 9101
+      - file: 'molecule-handwritten.conf'
+        header: false
+        port: 9102
+      - file: 'molecule-kept.conf'
+        header: true
+        port: 9103
+
+  tasks:
+    - name: Side Effect | Detect the PHP branch
+      ansible.builtin.command:
+        argv: ['php', '-r', 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;']
+      register: __side_effect_branch
+      changed_when: false
+
+    #
+    # Deprecated fpm_pool
+    #
+
+    - name: Side Effect | Include php role with the deprecated fpm_pool  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        php_versions:
+          - version: 'auto'
+            extensions: ['opcache']
+            fpm: true
+            fpm_pool:
+              pm_max_children: 7
+
+    - name: Side Effect | Assert the fpm_pool deprecation warning
+      ansible.builtin.assert:
+        that:
+          - __php_fpm_pool_deprecated | bool
+        fail_msg: 'no deprecation warning although fpm_pool is set'
+        quiet: true
+
+    - name: Side Effect | Read www.conf with the deprecated fpm_pool
+      ansible.builtin.slurp:
+        src: '{{ __side_effect_pool_dir }}/www.conf'
+      register: __side_effect_www_deprecated
+
+    - name: Side Effect | Assert the deprecated fpm_pool still configures www
+      ansible.builtin.assert:
+        that:
+          - "'pm.max_children = 7' in (__side_effect_www_deprecated.content | b64decode)"
+        fail_msg: 'fpm_pool did not reach www.conf'
+        quiet: true
+
+    #
+    # state: absent and exclusive mode
+    #
+
+    - name: Side Effect | Plant pool files for the exclusive mode
+      ansible.builtin.copy:
+        dest: '{{ __side_effect_pool_dir }}/{{ item.file }}'
+        content: |
+          {% if item.header %}
+          {{ ansible_managed | default('Ansible managed') | comment(decoration='; ') }}
+          {% endif %}
+          [{{ item.file | regex_replace('\.conf$', '') }}]
+          user = molecule-app1
+          group = molecule-app1
+          listen = 127.0.0.1:{{ item.port }}
+          pm = static
+          pm.max_children = 1
+        owner: root
+        group: root
+        mode: '0644'
+      loop: '{{ __side_effect_planted }}'
+      loop_control:
+        label: '{{ item.file }}'
+
+    - name: Side Effect | Include php role with app3 absent and exclusive mode  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        php_versions:
+          - version: 'auto'
+            extensions: ['opcache']
+            fpm: true
+            fpm_pools: '{{ __side_effect_pools }}'
+        php_fpm_pools_exclusive: true
+        php_fpm_pools_keep:
+          - 'molecule-kept.conf'
+
+    - name: Side Effect | Assert no fpm_pool deprecation warning
+      ansible.builtin.assert:
+        that:
+          - not (__php_fpm_pool_deprecated | bool)
+        fail_msg: 'deprecation warning fired although no version sets fpm_pool'
+        quiet: true
+
+    - name: Side Effect | Run the queued handlers
+      ansible.builtin.meta: flush_handlers
+
+    #
+    # Pool change rejected by the FPM configuration test: one pool changed,
+    # one removed and one invalid pool added must all be rolled back.
+    #
+
+    - name: Side Effect | Checksum the pool files before the rejected change
+      ansible.builtin.find:
+        paths: '{{ __side_effect_pool_dir }}'
+        patterns: '*.conf'
+        get_checksum: true
+      register: __side_effect_pools_before
+
+    - name: Side Effect | Run a pool change the FPM test rejects
+      block:
+        - name: Side Effect | Include php role with an invalid pool  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            php_versions:
+              - version: 'auto'
+                extensions: ['opcache']
+                fpm: true
+                fpm_pools:
+                  - name: 'www'
+                  - "{{ __side_effect_pools[1] | combine({'pm_max_children': 9}) }}"
+                  - name: 'app2'
+                    state: 'absent'
+                  - name: 'broken'
+                    user: 'molecule-app1'
+                    group: 'molecule-app1'
+                    pm: 'bogus'
+            php_fpm_pools_exclusive: true
+            php_fpm_pools_keep:
+              - 'molecule-kept.conf'
+
+        - name: Side Effect | Fail because the invalid pool was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a pool the FPM configuration test rejects.'
+      rescue:
+        - name: Side Effect | Assert the FPM test stopped the invalid pool
+          ansible.builtin.assert:
+            that:
+              - "'Fail with the rejected FPM pool change' in ansible_failed_task.name"
+              - "'broken' in ansible_failed_result.msg"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Side Effect | Checksum the pool files after the rejected change
+      ansible.builtin.find:
+        paths: '{{ __side_effect_pool_dir }}'
+        patterns: '*.conf'
+        get_checksum: true
+      register: __side_effect_pools_after
+
+    - name: Side Effect | Assert the pool files are back to their previous state
+      ansible.builtin.assert:
+        that:
+          - __side_effect_after_checksums == __side_effect_before_checksums
+          - __side_effect_after_modes == __side_effect_before_modes
+        fail_msg: >-
+          pool files before: {{ __side_effect_before_checksums }} {{ __side_effect_before_modes }},
+          after: {{ __side_effect_after_checksums }} {{ __side_effect_after_modes }}
+      vars:
+        __side_effect_before_checksums: >-
+          {{ __side_effect_pools_before.files | items2dict(key_name='path', value_name='checksum') }}
+        __side_effect_after_checksums: >-
+          {{ __side_effect_pools_after.files | items2dict(key_name='path', value_name='checksum') }}
+        __side_effect_before_modes: >-
+          {{ __side_effect_pools_before.files | items2dict(key_name='path', value_name='mode') }}
+        __side_effect_after_modes: >-
+          {{ __side_effect_pools_after.files | items2dict(key_name='path', value_name='mode') }}
+
+    - name: Side Effect | Check the FPM service after the rejected change
+      ansible.builtin.systemd_service:
+        name: >-
+          {{ {'Archlinux': 'php-fpm', 'Debian': 'php' + __side_effect_branch.stdout + '-fpm',
+              'RedHat': 'php-fpm'}[ansible_facts['os_family']] }}
+      register: __side_effect_fpm_status
+
+    - name: Side Effect | Assert FPM still runs after the rejected change
+      ansible.builtin.assert:
+        that:
+          - __side_effect_fpm_status.status.ActiveState == 'active'
+        fail_msg: 'FPM is {{ __side_effect_fpm_status.status.ActiveState }} after the rejected change'
+
+    #
+    # Missing pool user (the role stops before it writes a pool file)
+    #
+
+    - name: Side Effect | Reject a pool user that does not exist
+      block:
+        - name: Side Effect | Include php role with a missing pool user  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            php_versions:
+              - version: 'auto'
+                extensions: ['opcache']
+                fpm: true
+                fpm_pools:
+                  - name: 'nouser'
+                    user: 'molecule-missing'
+                    group: 'molecule-app1'
+
+        - name: Side Effect | Fail because a missing pool user was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a pool user that does not exist.'
+      rescue:
+        - name: Side Effect | Assert the account check stopped the missing pool user
+          ansible.builtin.assert:
+            that:
+              - "'Assert FPM pool users and groups exist' in ansible_failed_task.name"
+              - "'molecule-missing' in ansible_failed_result.msg"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    #
+    # Validation (the role stops before it changes anything)
+    #
+
+    - name: Side Effect | Reject a duplicate pool name
+      block:
+        - name: Side Effect | Include php role with a duplicate pool name  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            php_versions:
+              - version: 'auto'
+                fpm_pools:
+                  - name: 'app1'
+                  - name: 'app1'
+
+        - name: Side Effect | Fail because a duplicate pool name was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a duplicate pool name.'
+      rescue:
+        - name: Side Effect | Assert the validation stopped a duplicate pool name
+          ansible.builtin.assert:
+            that:
+              - "'Validate fpm_pools names are unique' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Side Effect | Reject an invalid pool name
+      block:
+        - name: Side Effect | Include php role with an invalid pool name  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            php_versions:
+              - version: 'auto'
+                fpm_pools:
+                  - name: '../App1'
+
+        - name: Side Effect | Fail because an invalid pool name was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted an invalid pool name.'
+      rescue:
+        - name: Side Effect | Assert the validation stopped an invalid pool name
+          ansible.builtin.assert:
+            that:
+              - "'Validate fpm_pools entries' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Side Effect | Reject fpm_pool together with fpm_pools
+      block:
+        - name: Side Effect | Include php role with fpm_pool and fpm_pools  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            php_versions:
+              - version: 'auto'
+                fpm_pool:
+                  pm_max_children: 7
+                fpm_pools:
+                  - name: 'app1'
+
+        - name: Side Effect | Fail because fpm_pool with fpm_pools was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted fpm_pool together with fpm_pools.'
+      rescue:
+        - name: Side Effect | Assert the validation stopped fpm_pool with fpm_pools
+          ansible.builtin.assert:
+            that:
+              - "'Validate fpm_pool and fpm_pools are not combined' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Side Effect | Reject state absent on the www pool
+      block:
+        - name: Side Effect | Include php role with the www pool absent  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            php_versions:
+              - version: 'auto'
+                fpm_pools:
+                  - name: 'www'
+                    state: 'absent'
+
+        - name: Side Effect | Fail because the www pool was removed
+          ansible.builtin.fail:
+            msg: 'The role accepted state absent on the www pool.'
+      rescue:
+        - name: Side Effect | Assert the validation stopped removing the www pool
+          ansible.builtin.assert:
+            that:
+              - "'Validate the www pool is not removed' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'

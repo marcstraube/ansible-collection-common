@@ -1,0 +1,33 @@
+---
+# Nested subvolume for ~/.cache of every present regular user. Snapshots of
+# the home subvolume skip nested subvolumes, so caches stay out of them.
+# root and system users are left alone; the per-user checks in
+# btrfs_cache.yml skip homes on other filesystems and populated directories.
+
+- name: BTRFS | Collect regular users
+  ansible.builtin.set_fact:
+    __users_btrfs_list: >-
+      {%- set ns = namespace(users=[]) -%}
+      {%- for user in users_list -%}
+      {%- if user.name != 'root'
+             and user.state | default('present') == 'present'
+             and not (user.system | default(false) | bool) -%}
+      {%- set ns.users = ns.users + [user] -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ ns.users }}
+
+- name: BTRFS | Include cache subvolume tasks
+  ansible.builtin.include_tasks:
+    file: btrfs_cache.yml
+    apply:
+      tags:
+        - users
+        - users:users
+  loop: '{{ __users_btrfs_list }}'
+  loop_control:
+    loop_var: __users_btrfs_user
+    label: '{{ __users_btrfs_user.name }}'
+  tags:
+    - users
+    - users:users

@@ -95,6 +95,22 @@
       when: ansible_facts['os_family'] != 'Archlinux'
 
     #
+    # Deprecated User Groups Verification
+    #
+
+    - name: Verify | Get vagrant group membership
+      ansible.builtin.command: id -nG vagrant
+      register: vagrant_groups
+      changed_when: false
+
+    - name: Verify | Assert vagrant in plugdev (Debian, EL)
+      ansible.builtin.assert:
+        that:
+          - "'plugdev' in vagrant_groups.stdout.split()"
+        fail_msg: 'deprecated hardware_tokens_users did not add vagrant to plugdev'
+      when: ansible_facts['os_family'] != 'Archlinux'
+
+    #
     # Lock on Removal Verification
     #
 

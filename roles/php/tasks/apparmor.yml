@@ -7,7 +7,8 @@
 # the stock php abstraction only permits the unversioned config paths
 # (/etc/php/**). The versioned /etc/phpXX trees are denied and FPM
 # fails to start with EACCES (13) even as root. Extend the profile
-# through its `include if exists <local/php-fpm>` hook.
+# through its `include if exists <local/php-fpm>` hook, which also
+# grants the sockets of named pools outside the default directories.
 #
 
 - name: AppArmor | Check if AppArmor is active
