@@ -145,17 +145,20 @@ package layout in `vars/`:
 - a name absent from the map falls through to `<prefix><name>`
 
 The distinction matters because the platforms disagree. `mbstring` and `pdo` are
-separate packages on EL but compiled in on Arch; `openssl`, `pcre`, `session`
-and `filter` are compiled in on Debian and have no package of that name at all;
-the PDO drivers ship inside their database package on Debian.
+separate packages on EL but compiled in on Arch; `openssl`, `pcre`, `session`,
+`filter` and `iconv` come with the core packages on Debian and have no package
+of that name at all; the PDO drivers ship inside their database package on
+Debian, and `pdo_pgsql` does so everywhere (`pgsql` on EL, Remi and Arch).
 
 On Arch there is a second step. Arch installs an extension's `.so` file but
 leaves it disabled — `php.ini` keeps the directive commented out and nothing is
 written to `conf.d`, not even by separate packages such as `php-gd`. The role
 therefore writes `10-ansible-extensions.ini` into each config directory,
 carrying an `extension=` line for every configured extension that is not
-compiled into the binary. The file is rewritten on every run, so dropping an
-extension from the list removes its directive.
+compiled into the binary. The line follows the listed name, not the package:
+`pdo_pgsql` and `pgsql` share a package but each loads only when listed. The
+file is rewritten on every run, so dropping an extension from the list removes
+its directive.
 
 ### PHP Configuration (php.ini)
 
