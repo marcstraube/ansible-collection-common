@@ -19,6 +19,9 @@ __php_extension_map:
   session: ''
   sodium: ''
   zlib: ''
+  # Part of php<ver>-common, which php<ver>-cli depends on -- no package of
+  # that name exists
+  iconv: ''
   # The PDO drivers ship inside their database package
   pdo_mysql: 'php{{ __php_ver }}-mysql'
   pdo_pgsql: 'php{{ __php_ver }}-pgsql'

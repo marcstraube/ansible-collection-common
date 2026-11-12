@@ -3,6 +3,15 @@
   hosts: all
   gather_facts: true
 
+  vars:
+    # The extensions converge.yml configures for every version
+    __verify_expected_modules:
+      - curl
+      - mbstring
+      - bcmath
+      - pdo_pgsql
+      - iconv
+
   tasks:
     #
     # Detect system PHP version (mirrors role logic)
@@ -87,21 +96,22 @@
       register: __verify_php_modules
       changed_when: false
 
-    # bcmath carries the weight here. curl is compiled in everywhere and
-    # mbstring arrives as a composer dependency on EL, so both stay loaded even
-    # when the extension map is wrong -- they cannot detect a regression. No
-    # package pulls bcmath in, and each platform reaches it by a different
-    # route: its own package on EL and Debian, a .so needing an ini directive on
-    # Arch. That makes it the one that actually exercises the mapping.
+    # bcmath, pdo_pgsql and iconv carry the weight here. curl is compiled in
+    # everywhere and mbstring arrives as a composer dependency on EL, so both
+    # stay loaded even when the extension map is wrong -- they cannot detect a
+    # regression. No package pulls bcmath in, and each platform reaches it by a
+    # different route: its own package on EL and Debian, a .so needing an ini
+    # directive on Arch. pdo_pgsql has no package of its own on EL and Arch and
+    # needs a directive under its own name on Arch; iconv has no package on
+    # Debian. Without their map entries the install fails or the driver stays
+    # unloaded.
     - name: Verify | Assert configured extensions loaded
       ansible.builtin.assert:
         that:
-          - "'curl' in __verify_php_modules.stdout_lines"
-          - "'mbstring' in __verify_php_modules.stdout_lines"
-          - "'bcmath' in __verify_php_modules.stdout_lines"
+          - __verify_expected_modules | reject('in', __verify_php_modules.stdout_lines) | list | length == 0
         fail_msg: >-
           Configured extension missing from php -m:
-          {{ ['curl', 'mbstring', 'bcmath']
+          {{ __verify_expected_modules
              | reject('in', __verify_php_modules.stdout_lines) | list }}
 
     #
@@ -136,6 +146,27 @@
         fail_msg: >-
           {{ __verify_auto_fpm }} not active/enabled:
           {{ __verify_auto_fpm_status.status.ActiveState }}
+
+    # On Debian the FPM SAPI reads its own php.ini and conf.d, so a module the
+    # CLI loads can still be missing in the pool. php-fpm -m reads the FPM set.
+    - name: Verify | Check modules loaded by PHP-FPM
+      ansible.builtin.command:
+        argv:
+          - >-
+            {{ (ansible_facts['os_family'] == 'Debian')
+               | ternary('php-fpm' + __verify_system_ver, 'php-fpm') }}
+          - -m
+      register: __verify_fpm_modules
+      changed_when: false
+
+    - name: Verify | Assert configured extensions loaded by PHP-FPM
+      ansible.builtin.assert:
+        that:
+          - __verify_expected_modules | reject('in', __verify_fpm_modules.stdout_lines) | list | length == 0
+        fail_msg: >-
+          Configured extension missing from php-fpm -m:
+          {{ __verify_expected_modules
+             | reject('in', __verify_fpm_modules.stdout_lines) | list }}
 
     #
     # FPM service — second version (Debian/RedHat only)
@@ -627,7 +658,7 @@
              _mapped_final +
              (_unmapped | map('regex_replace', '^(.*)$', 'php84-' + '\1') | list) }}
       vars:
-        _exts: [curl, mbstring, intl, pgsql, gd, imagick, xdebug, pcov, redis, json]
+        _exts: [curl, mbstring, intl, pgsql, pdo_pgsql, gd, imagick, xdebug, pcov, redis, json]
         _map: '{{ __php_extension_map_aur }}'
         _mapped_raw: "{{ _exts | select('in', _map) | map('extract', _map) | reject('equalto', '') | list }}"
         _unmapped: "{{ _exts | reject('in', _map) | list }}"
@@ -645,6 +676,8 @@
           - "'php84-mbstring' in __verify_aur_packages"
           - "'php84-intl' in __verify_aur_packages"
           - "'php84-pgsql' in __verify_aur_packages"
+          # pdo_pgsql ships inside phpXX-pgsql
+          - "'php84-pdo_pgsql' not in __verify_aur_packages"
           - "'php84-gd' in __verify_aur_packages"
           - "'php84-imagick' in __verify_aur_packages"
           - "'php84-xdebug' in __verify_aur_packages"
@@ -686,7 +719,7 @@
              _mapped_final +
              (_unmapped | map('regex_replace', '^(.*)$', 'php84-php-' + '\1') | list) }}
       vars:
-        _exts: [curl, mbstring, intl, gd, xdebug, redis, pcov, mysqli, xsl, pdo_sqlite, json]
+        _exts: [curl, mbstring, intl, gd, xdebug, redis, pcov, mysqli, xsl, pdo_sqlite, pdo_pgsql, json]
         _map: '{{ __php_extension_map_remi }}'
         _mapped_raw: "{{ _exts | select('in', _map) | map('extract', _map) | reject('equalto', '') | list }}"
         _unmapped: "{{ _exts | reject('in', _map) | list }}"
@@ -713,6 +746,9 @@
           - "'php84-php-xml' in __verify_remi_packages"
           # pdo_sqlite is bundled into the pdo subpackage
           - "'php84-php-pdo' in __verify_remi_packages"
+          # pdo_pgsql ships inside the pgsql subpackage
+          - "'php84-php-pgsql' in __verify_remi_packages"
+          - "'php84-php-pdo_pgsql' not in __verify_remi_packages"
           # AppStream package names must not leak into the Remi path
           - "'php-gd' not in __verify_remi_packages"
           - "'php-pecl-xdebug3' not in __verify_remi_packages"

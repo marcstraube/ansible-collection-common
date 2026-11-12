@@ -82,6 +82,8 @@ __php_extension_map:
   opcache: 'opcache'
   pdo_sqlite: 'pdo'
   pgsql: 'pgsql'
+  # The PDO driver ships in the pgsql package; there is no pdo_pgsql package
+  pdo_pgsql: 'pgsql'
   process: 'process'
   snmp: 'snmp'
   soap: 'soap'
@@ -151,6 +153,8 @@ __php_extension_map_remi:
   odbc: 'odbc'
   opcache: 'opcache'
   pgsql: 'pgsql'
+  # The PDO driver ships in the pgsql subpackage; there is no pdo_pgsql one
+  pdo_pgsql: 'pgsql'
   snmp: 'snmp'
   soap: 'soap'
   sodium: 'sodium'

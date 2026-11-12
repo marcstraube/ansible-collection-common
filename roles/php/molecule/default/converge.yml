@@ -11,6 +11,8 @@
           - curl
           - mbstring
           - bcmath
+          - pdo_pgsql
+          - iconv
         fpm: true
     php_default_version: 'auto'
     php_composer_enabled: true
@@ -45,12 +47,16 @@
               - curl
               - mbstring
               - bcmath
+              - pdo_pgsql
+              - iconv
             fpm: true
           - version: '8.3'
             extensions:
               - curl
               - mbstring
               - bcmath
+              - pdo_pgsql
+              - iconv
             fpm: true
             ini:
               extra_settings:
