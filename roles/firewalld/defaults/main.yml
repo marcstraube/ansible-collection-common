@@ -242,6 +242,31 @@ firewalld_direct_rules: []
 #     rule: '-p tcp --dport 9999 -j ACCEPT'
 
 #
+# Custom nftables Tables
+#
+# Own nftables tables next to the firewalld table, for filtering that rich
+# rules cannot express (e.g. IP header fields). Every table is a separate file
+# in /etc/firewalld/nftables.d/, loaded at boot by firewalld-nftables.service.
+# Tables removed from the list are deleted from the ruleset.
+
+# Enable and start firewalld-nftables.service, which loads the tables at boot
+firewalld_nftables_service_enabled: true
+
+# Tables to manage (family: ip, ip6, inet, arp, bridge, netdev)
+firewalld_nftables_tables: []
+# Example:
+#   - name: 'cve_2026_98432'
+#     family: 'inet'
+#     chains:
+#       - name: 'input'
+#         type: 'filter'     # default: filter
+#         hook: 'input'
+#         priority: -310
+#         policy: 'accept'   # default: accept
+#         rules:
+#           - 'ip protocol tcp ip hdrlength > 5 counter drop'
+
+#
 # Custom Services
 #
 

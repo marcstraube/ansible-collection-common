@@ -12,7 +12,7 @@ This role manages OS-level plumbing for hardware tokens:
 - **pcscd**: PC/SC smart card daemon socket activation
 - **PAM U2F**: FIDO2 authentication (2FA or passwordless mode)
 - **Lock on removal**: Auto-lock screen when token is unplugged
-- **User groups**: plugdev membership on Debian/RHEL (Arch uses uaccess)
+- **Device access**: `plugdev` group on Debian and EL, `uaccess` tag on Arch Linux
 
 GPG smart card configuration (scdaemon.conf) is managed by the
 `marcstraube.common.gnupg` role, which deploys per-user `~/.gnupg/scdaemon.conf`
@@ -91,21 +91,53 @@ package, so the smartcard toggle installs only pcsc-lite there.
 
 ### Users
 
-| Variable                | Default | Description                          |
-|-------------------------|---------|--------------------------------------|
-| `hardware_tokens_users` | `[]`    | Users to add to device access groups |
+| Variable                | Default | Description                                        |
+|-------------------------|---------|----------------------------------------------------|
+| `hardware_tokens_users` | `[]`    | Deprecated: users to add to `plugdev` (Debian, EL) |
+
+> **Deprecation:** `hardware_tokens_users` is deprecated and will be removed in
+> v4.0.0. While it is set, the role still adds the users to `plugdev` on Debian
+> and EL and prints a deprecation warning. Add the users to the device access
+> group through `users_list[].groups` of `marcstraube.common.users` instead
+> (see [Device Access Group](#device-access-group)). See #535.
+
+## Device Access Group
+
+The udev rules grant token access per platform:
+
+| Platform   | Access                                                   |
+|------------|----------------------------------------------------------|
+| Arch Linux | `uaccess` tag grants the logged-in user access; no group |
+| Debian     | `plugdev` group                                          |
+| EL         | `plugdev` group                                          |
+
+`plugdev` is a general group; its membership belongs to
+`marcstraube.common.users`. On Debian and EL, add the users through
+`users_list[].groups`. EL does not ship a `plugdev` group, so create it there
+through `users_groups`:
+
+```yaml
+users_groups:
+  - name: 'plugdev'
+    system: true
+
+users_list:
+  - name: 'johndoe'
+    groups:
+      - 'plugdev'
+```
 
 ## Tags
 
-| Tag                       | Scope                   |
-|---------------------------|-------------------------|
-| `hardware-tokens`         | All tasks               |
-| `hardware-tokens:install` | Package installation    |
-| `hardware-tokens:udev`    | udev rules deployment   |
-| `hardware-tokens:service` | pcscd socket management |
-| `hardware-tokens:users`   | Group membership        |
-| `hardware-tokens:pam`     | PAM U2F configuration   |
-| `hardware-tokens:lock`    | Lock on removal         |
+| Tag                       | Scope                         |
+|---------------------------|-------------------------------|
+| `hardware-tokens`         | All tasks                     |
+| `hardware-tokens:install` | Package installation          |
+| `hardware-tokens:udev`    | udev rules deployment         |
+| `hardware-tokens:service` | pcscd socket management       |
+| `hardware-tokens:users`   | Group membership (deprecated) |
+| `hardware-tokens:pam`     | PAM U2F configuration         |
+| `hardware-tokens:lock`    | Lock on removal               |
 
 ## Example Playbook
 
@@ -125,7 +157,10 @@ cd roles/hardware_tokens
 molecule test
 ```
 
-Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9
+Driver: `vagrant` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
+
+The scenario runs the role without and with `hardware_tokens_users` and asserts
+that the deprecation warning fires only while the variable is set.
 
 ## Notes
 

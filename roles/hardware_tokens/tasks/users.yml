@@ -1,4 +1,6 @@
 ---
+# Deprecated, removed in v4.0.0: general groups belong to users_list[].groups
+# of marcstraube.common.users.
 - name: Users | Add users to required groups
   ansible.builtin.user:
     name: '{{ item.0.username }}'

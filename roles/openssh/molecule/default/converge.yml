@@ -6,6 +6,11 @@
   vars:
     openssh_enabled: true
 
+    # The distribution's askpass sits at ssh-agent's compiled-in path and
+    # needs no SSH_ASKPASS export
+    openssh_askpass_enabled: true
+    openssh_askpass: 'default'
+
     # Test security settings
     openssh_server_port: 22
     openssh_server_permit_root_login: 'no'
@@ -75,6 +80,93 @@
     openssh_tools_autossh_enabled: true
 
   tasks:
+    - name: Converge | Ensure environment.d directory
+      ansible.builtin.file:
+        path: /etc/environment.d
+        state: directory
+        mode: '0755'
+
+    # The global ssh-agent stays disabled; the role must remove the export
+    - name: Converge | Pre-seed stale SSH_AUTH_SOCK export to prove removal
+      ansible.builtin.copy:
+        content: |
+          SSH_AUTH_SOCK=${XDG_RUNTIME_DIR}/ssh-agent.socket
+        dest: /etc/environment.d/40-ssh-agent.conf
+        mode: '0644'
+      # Re-seeding on the idempotence run would report a change.
+      tags:
+        - molecule-idempotence-notest
+
+    # The 'default' choice exports nothing; the role must remove the export
+    - name: Converge | Pre-seed stale SSH_ASKPASS export to prove removal
+      ansible.builtin.copy:
+        content: |
+          SSH_ASKPASS=/usr/bin/lxqt-openssh-askpass
+        dest: /etc/environment.d/40-ssh-askpass.conf
+        mode: '0644'
+      tags:
+        - molecule-idempotence-notest
+
+    # Each invalid askpass setting must stop the run in its validation,
+    # before anything is installed.
+    - name: Converge | Reject an unknown askpass choice
+      block:
+        - name: Converge | Include openssh role with an unknown askpass choice  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            openssh_askpass_enabled: true
+            openssh_askpass: 'gnome'
+
+        - name: Converge | Fail because an unknown askpass choice was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted an unknown askpass choice.'
+      rescue:
+        - name: Converge | Assert the validation stopped an unknown askpass choice
+          ansible.builtin.assert:
+            that:
+              - "'Validate openssh_askpass choice' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject custom without a program
+      block:
+        - name: Converge | Include openssh role with custom without a program  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            openssh_askpass_enabled: true
+            openssh_askpass: 'custom'
+
+        - name: Converge | Fail because custom without a program was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted custom without a program.'
+      rescue:
+        - name: Converge | Assert the validation stopped custom without a program
+          ansible.builtin.assert:
+            that:
+              - "'Validate openssh_askpass_program for custom' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a program with another choice
+      block:
+        - name: Converge | Include openssh role with a program with another choice  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            openssh_askpass_enabled: true
+            openssh_askpass: 'lxqt'
+            openssh_askpass_program: '/usr/bin/molecule-askpass'
+
+        - name: Converge | Fail because a program with another choice was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a program with another choice.'
+      rescue:
+        - name: Converge | Assert the validation stopped a program with another choice
+          ansible.builtin.assert:
+            that:
+              - "'Validate openssh_askpass_program with another choice' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
     - name: Converge | Include openssh role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

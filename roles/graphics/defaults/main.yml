@@ -61,6 +61,17 @@ graphics_amd_vulkan_enabled: true
 # Enable AMD 32-bit support (for Steam, Wine, etc.)
 graphics_amd_32bit_enabled: false
 
+# Enable ROCm diagnostic tools: rocminfo (shows whether ROCm detects the GPU)
+# and rocm-smi (VRAM, clocks, temperature, utilization). EPEL on EL; EL 9
+# ships rocm-smi only.
+graphics_amd_rocm_tools_enabled: false
+
+# Install rocRAND, the ROCm random number generator library, for applications
+# that need it at runtime without depending on it. Large on Arch Linux (about
+# 8.5 GiB installed: hip-runtime-amd pulls in rocm-llvm); EPEL on EL 10; not
+# packaged for EL 9.
+graphics_amd_rocrand_enabled: false
+
 #
 # NVIDIA GPU
 #

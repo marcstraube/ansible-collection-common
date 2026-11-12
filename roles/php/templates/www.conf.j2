@@ -78,3 +78,12 @@ php_admin_value[{{ __key }}] = {{ __value }}
 php_admin_flag[{{ __key }}] = {{ __value }}
 {% endfor %}
 {% endif %}
+{% set __php_pool_env = php_fpm_pool_env | combine(__php_pool.env | default({})) %}
+{% if __php_pool_env %}
+
+; Environment of the pool workers. clear_env stays on, so the workers get only
+; these variables from the environment.
+{% for __key, __value in __php_pool_env | dictsort %}
+env[{{ __key }}] = {{ __value }}
+{% endfor %}
+{% endif %}

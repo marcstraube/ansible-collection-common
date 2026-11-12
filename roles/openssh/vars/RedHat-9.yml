@@ -24,9 +24,23 @@ __openssh_userdbctl: '/usr/bin/userdbctl'
 
 __openssh_ssh_audit_package: 'ssh-audit'
 
-__openssh_askpass_package: 'openssh-askpass'
+# Askpass choices (openssh_askpass): package and program path. 'default'
+# sits at ssh-agent's compiled-in path and needs no export.
+# ksshaskpass comes from EPEL; lxqt-openssh-askpass has no EL package.
+__openssh_askpass_choices:
+  default:
+    package: 'openssh-askpass'
+    program: ''
+  ksshaskpass:
+    package: 'ksshaskpass'
+    program: '/usr/bin/ksshaskpass'
+  seahorse:
+    package: 'seahorse'
+    program: '/usr/libexec/seahorse/ssh-askpass'
 
 __openssh_agent_service: 'ssh-agent.service'
+# Socket of the agent in $XDG_RUNTIME_DIR, exported as SSH_AUTH_SOCK
+__openssh_agent_socket: 'ssh-agent.socket'
 
 # Optional SSH client tools (from EPEL; empty string = not packaged)
 # sshm is not packaged for EL → no-op (Layer-1); see drift workflow.

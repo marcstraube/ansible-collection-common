@@ -39,10 +39,3 @@
   when:
     - ansible_facts['os_family'] == 'Archlinux'
     - build_tools_c_codelldb_enabled | bool
-
-- name: C | codelldb not packaged notice
-  ansible.builtin.debug:
-    msg: 'codelldb is not packaged for {{ ansible_facts["os_family"] }}; upstream ships a VSIX archive only.'
-  when:
-    - ansible_facts['os_family'] != 'Archlinux'
-    - build_tools_c_codelldb_enabled | bool

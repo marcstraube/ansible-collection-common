@@ -83,9 +83,7 @@
       tags:
         - base
         - base:kernel
-  when:
-    - base_enabled | bool
-    - ansible_facts['os_family'] == 'Archlinux'
+  when: base_enabled | bool
   tags:
     - base
     - base:kernel

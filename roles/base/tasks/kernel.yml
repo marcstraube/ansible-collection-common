@@ -1,121 +1,345 @@
 ---
-- name: Kernel | Detect CPU vendor for microcode
+# Kernel packages on every platform, the targeted kernel update and the
+# reboot into a new kernel. A regular run only makes sure the kernel package
+# is installed. The checks (package facts, minimum, running kernel) run when
+# an update, a minimum or a reboot is requested.
+
+- name: Kernel | Validate kernel update settings
+  ansible.builtin.assert:
+    that:
+      - base_kernel_packages_state in ['present', 'latest']
+      - base_kernel_packages_minimum is string or base_kernel_packages_minimum is mapping
+    fail_msg: >-
+      base_kernel_packages_state must be 'present' or 'latest' (got
+      '{{ base_kernel_packages_state }}'), base_kernel_packages_minimum must be
+      a version string, e.g. '6.12.115', or a mapping per platform
+    quiet: true
+
+# A mapping selects the minimum by '<os_family>-<major>', then
+# '<os_family>'. A host without a matching key fails here, before any
+# change, so a platform left out of the mapping cannot pass unchecked.
+- name: Kernel | Select the minimum kernel version for this platform
   ansible.builtin.set_fact:
-    __base_microcode_package: |-
-      {% if base_microcode == 'auto' %}
-      {%
-        if 'GenuineIntel' in ansible_facts['processor']
-      %}intel-ucode{%
-        elif 'AuthenticAMD' in ansible_facts['processor']
-      %}amd-ucode{%
-        endif
-      %}
-      {% else %}{{ base_microcode }}{% endif %}
-  when: base_microcode != ''
+    __base_kernel_minimum: >-
+      {{ (base_kernel_packages_minimum[__base_kernel_minimum_key] if __base_kernel_minimum_key | length > 0 else '')
+         if base_kernel_packages_minimum is mapping
+         else base_kernel_packages_minimum }}
+    __base_kernel_minimum_key_found: >-
+      {{ base_kernel_packages_minimum is not mapping or __base_kernel_minimum_key | length > 0 }}
+  vars:
+    __base_kernel_minimum_key: >-
+      {{ ([ansible_facts['os_family'] ~ '-' ~ ansible_facts['distribution_major_version'],
+           ansible_facts['os_family']]
+          | select('in', base_kernel_packages_minimum) | list + [''])
+         | first
+         if base_kernel_packages_minimum is mapping
+         else '' }}
+
+# The value reaches dpkg, rpm and vercmp as an argument; only characters of
+# a package version are accepted.
+- name: Kernel | Validate the minimum kernel version for this platform
+  ansible.builtin.assert:
+    that:
+      - __base_kernel_minimum_key_found | bool
+      - __base_kernel_minimum | string is match('^[0-9A-Za-z.+~:_-]*$')
+    fail_msg: >-
+      {{ ('base_kernel_packages_minimum has no key for this host (expected '
+          ~ ansible_facts['os_family'] ~ '-' ~ ansible_facts['distribution_major_version']
+          ~ ' or ' ~ ansible_facts['os_family'] ~ ')')
+         if not (__base_kernel_minimum_key_found | bool)
+         else ('base_kernel_packages_minimum ' ~ __base_kernel_minimum ~ ' is not a package version') }}
+    quiet: true
+
+- name: Kernel | Decide whether to check the kernel
+  ansible.builtin.set_fact:
+    __base_kernel_check: >-
+      {{ base_kernel_packages_state == 'latest'
+         or __base_kernel_minimum | length > 0
+         or base_kernel_reboot | bool }}
+    __base_kernel_install_packages: '{{ [base_kernel] + base_kernel_extra_packages }}'
+
+# A targeted update must see the current repository state; dnf otherwise
+# keeps cached metadata for up to metadata_expire. The cache is cleared
+# rather than refreshed: dnf on EL 9 keeps the cached mirror list on
+# makecache --refresh and stays on the mirror it picked first, even when
+# that mirror has stopped syncing. Clearing the cache fetches a new list.
+# check_mode: false — the metadata cache holds no package, and --check
+# must report the update the real run would install.
+- name: Kernel | Clear package metadata for update (RedHat)
+  ansible.builtin.command:
+    cmd: dnf clean metadata
+  changed_when: false
+  check_mode: false
+  when:
+    - base_kernel_packages_state == 'latest'
+    - ansible_facts['os_family'] == 'RedHat'
+
+- name: Kernel | Refresh package metadata for update (RedHat)
+  ansible.builtin.command:
+    cmd: dnf makecache
+  changed_when: false
+  check_mode: false
+  when:
+    - base_kernel_packages_state == 'latest'
+    - ansible_facts['os_family'] == 'RedHat'
+
+- name: Kernel | Refresh package metadata for update (Debian)
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+  check_mode: false
+  when:
+    - base_kernel_packages_state == 'latest'
+    - ansible_facts['os_family'] == 'Debian'
+
+- name: Kernel | Gather package facts before the update
+  ansible.builtin.package_facts:
+  when: __base_kernel_check | bool
+
+# A targeted update covers every installed kernel package, not only the
+# configured ones: modules, devel and tools packages pin the exact kernel
+# version and must move in the same transaction.
+- name: Kernel | Merge installed kernel packages into the update
+  ansible.builtin.set_fact:
+    __base_kernel_install_packages: >-
+      {{ (__base_kernel_install_packages
+          + (ansible_facts['packages'] | list
+             | select('match', __base_kernel_update_pattern) | list))
+         | unique | list }}
+  when:
+    - base_kernel_packages_state == 'latest'
+    - ansible_facts['os_family'] in ['RedHat', 'Debian']
+
+- name: Kernel | Record the installed kernel versions
+  ansible.builtin.set_fact:
+    __base_kernel_versions_before: '{{ __base_kernel_installed_versions }}'
+  vars:
+    __base_kernel_installed_versions: &installed_versions >-
+      {%- set ns = namespace(items=[]) -%}
+      {%- for name, entries in ansible_facts['packages'] | dictsort
+            if name is match(__base_kernel_version_pattern) -%}
+        {%- for pkg in entries -%}
+          {%- set release = ('-' ~ pkg.release) if pkg.release | default('', true) else '' -%}
+          {%- set ns.items = ns.items + [pkg.version ~ release] -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ ns.items | unique | list }}
+  when: __base_kernel_check | bool
+
+# Pre-check: ask the package manager which version the package task would
+# install, resolved like the install (dnf honors excludes and versionlock,
+# apt honors pinning). On Debian the metapackage carries the version of the
+# kernel it depends on. Arch Linux installs a missing kernel from the sync
+# database and otherwise keeps the installed version, which the system
+# upgrade updates. The queries change nothing, so they also run under
+# --check.
+- name: Kernel | Query the version the update would install (RedHat)
+  ansible.builtin.command:
+    argv:
+      - dnf
+      - --quiet
+      - repoquery
+      - --latest-limit=1
+      - '--queryformat=%{version}-%{release}'
+      - kernel-core
+  register: __base_kernel_candidate_dnf
+  changed_when: false
+  check_mode: false
+  when:
+    - __base_kernel_minimum | length > 0
+    - ansible_facts['os_family'] == 'RedHat'
+    - base_kernel_packages_state == 'latest' or __base_kernel_versions_before | length == 0
+
+- name: Kernel | Query the version the update would install (Debian)
+  ansible.builtin.command:
+    argv:
+      - apt-cache
+      - policy
+      - '{{ base_kernel }}'
+  environment:
+    LC_ALL: C
+  register: __base_kernel_candidate_apt
+  changed_when: false
+  check_mode: false
+  when:
+    - __base_kernel_minimum | length > 0
+    - ansible_facts['os_family'] == 'Debian'
+    - base_kernel_packages_state == 'latest' or __base_kernel_versions_before | length == 0
+
+- name: Kernel | Query the version the install would add (Archlinux)
+  ansible.builtin.command:
+    argv:
+      - pacman
+      - --sync
+      - --info
+      - '{{ base_kernel }}'
+  environment:
+    LC_ALL: C
+  register: __base_kernel_candidate_pacman
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when:
+    - __base_kernel_minimum | length > 0
+    - ansible_facts['os_family'] == 'Archlinux'
+    - __base_kernel_versions_before | length == 0
+
+- name: Kernel | Check the minimum version before the update
+  ansible.builtin.include_tasks:
+    file: kernel_version_check.yml
+  vars:
+    __base_kernel_check_stage: 'pre'
+    __base_kernel_check_versions: '{{ __base_kernel_versions_before }}'
+    __base_kernel_check_candidate: >-
+      {{ (((__base_kernel_candidate_dnf.stdout_lines | default([])) + ['']) | first)
+         ~ (((__base_kernel_candidate_apt.stdout | default('')) | regex_findall('(?m)^ *Candidate: *([^ ]+)$')) + [''])
+           | first | replace('(none)', '')
+         ~ (((__base_kernel_candidate_pacman.stdout | default('')) | regex_findall('(?m)^Version *: *([^ ]+)$')) + [''])
+           | first }}
+  when: __base_kernel_minimum | length > 0
 
 - name: Kernel | Install kernel packages
   ansible.builtin.package:
-    name: '{{ [base_kernel] + base_kernel_extra_packages }}'
-    state: present
+    name: '{{ __base_kernel_install_packages }}'
+    state: "{{ (ansible_facts['os_family'] == 'Archlinux') | ternary('present', base_kernel_packages_state) }}"
+  register: __base_kernel_packages_result
   retries: 3
   delay: 5
 
-- name: Kernel | Install microcode package
-  ansible.builtin.package:
-    name: '{{ __base_microcode_package }}'
-    state: present
-  retries: 3
-  delay: 5
+- name: Kernel | Include Arch Linux kernel tasks
+  ansible.builtin.include_tasks:
+    file: kernel_archlinux.yml
+  when: ansible_facts['os_family'] == 'Archlinux'
+
+# Re-read the installed packages, the facts gathered before the update show
+# the old versions.
+- name: Kernel | Gather package facts after the update
+  ansible.builtin.package_facts:
   when:
-    - __base_microcode_package is defined
-    - __base_microcode_package | length > 0
+    - __base_kernel_check | bool
+    - not ansible_check_mode
 
-# A kernel upgrade removes the module directory of the running kernel; until
-# the next reboot no module can be loaded for the first time. The package
-# keeps the modules across the upgrade with pacman hooks and ships a unit that
-# removes the modules of uninstalled kernels at boot.
-- name: Kernel | Install kernel modules hook
-  ansible.builtin.package:
-    name: '{{ __base_kernel_keep_modules_package }}'
-    state: present
-  retries: 3
-  delay: 5
-  when:
-    - base_kernel_keep_modules_enabled | bool
-    - __base_kernel_keep_modules_package | default('') | length > 0
-
-# The unit ships with the package: with the toggle off it may not exist, and in
-# check mode a first run only simulates the install.
-- name: Kernel | Check if kernel modules cleanup unit is installed
-  ansible.builtin.stat:
-    path: '/usr/lib/systemd/system/{{ __base_kernel_keep_modules_service }}'
-  register: __base_kernel_keep_modules_unit
-  when: __base_kernel_keep_modules_service | default('') | length > 0
-
-# The unit is a oneshot that runs at boot (WantedBy=basic.target): only its
-# enabled state is managed, not the running state. Turning the toggle off
-# disables the unit and leaves the package installed.
-- name: Kernel | Manage kernel modules cleanup service
-  ansible.builtin.systemd_service:
-    name: '{{ __base_kernel_keep_modules_service }}'
-    enabled: "{{ base_kernel_keep_modules_enabled | bool }}"
-  when:
-    - __base_kernel_keep_modules_service | default('') | length > 0
-    - __base_kernel_keep_modules_unit.stat.exists
-
-# mkinitcpio — only manage when explicitly configured
-# IMPORTANT: Do NOT template mkinitcpio.conf unless the user explicitly sets
-# hooks/modules/etc. The installer sets up mkinitcpio.conf with the correct
-# hooks for the system (encrypt, gpg, sd-encrypt, etc.). Templating it
-# changes the file format which triggers mkinitcpio -P. If hardware state
-# differs at regeneration time (e.g. smartcard not present), the initramfs
-# breaks and the system becomes unbootable.
-
-- name: Kernel | Check if mkinitcpio is explicitly configured
+- name: Kernel | Record the updated kernel versions
   ansible.builtin.set_fact:
-    __base_mkinitcpio_managed: >-
-      {{ (base_mkinitcpio_hooks | length > 0) or
-         (base_mkinitcpio_modules | length > 0) or
-         (base_mkinitcpio_binaries | length > 0) or
-         (base_mkinitcpio_files | length > 0) }}
+    __base_kernel_versions_after: *installed_versions
+  when:
+    - __base_kernel_check | bool
+    - not ansible_check_mode
 
-- name: Kernel | Update mkinitcpio hooks
-  ansible.builtin.lineinfile:
-    path: '/etc/mkinitcpio.conf'
-    regexp: '^HOOKS=\(.*\)'
-    line: 'HOOKS=({{ base_mkinitcpio_hooks | join(" ") }})'
-    backup: true
-  notify: 'regenerate initramfs'
-  when: base_mkinitcpio_hooks | length > 0
+- name: Kernel | Report the installed kernel
+  ansible.builtin.debug:
+    msg: >-
+      {{ base_kernel }}: installed
+      {{ __base_kernel_versions_after | difference(__base_kernel_versions_before) | join(', ') }}
+      (before: {{ __base_kernel_versions_before | join(', ') | default('none', true) }})
+  when:
+    - __base_kernel_check | bool
+    - not ansible_check_mode
+    - __base_kernel_versions_after | difference(__base_kernel_versions_before) | length > 0
 
-- name: Kernel | Update mkinitcpio modules
-  ansible.builtin.lineinfile:
-    path: '/etc/mkinitcpio.conf'
-    regexp: '^MODULES=\(.*\)'
-    line: 'MODULES=({{ base_mkinitcpio_modules | join(" ") }})'
-  notify: 'regenerate initramfs'
-  when: base_mkinitcpio_modules | length > 0
+# Post-check: the transaction can install something else than the queried
+# candidate (excludes, a mirror behind), so the installed versions are
+# checked again.
+- name: Kernel | Check the minimum version after the update
+  ansible.builtin.include_tasks:
+    file: kernel_version_check.yml
+  vars:
+    __base_kernel_check_stage: 'post'
+    __base_kernel_check_versions: '{{ __base_kernel_versions_after }}'
+    __base_kernel_check_candidate: ''
+  when:
+    - __base_kernel_minimum | length > 0
+    - not ansible_check_mode
 
-- name: Kernel | Update mkinitcpio binaries
-  ansible.builtin.lineinfile:
-    path: '/etc/mkinitcpio.conf'
-    regexp: '^BINARIES=\(.*\)'
-    line: 'BINARIES=({{ base_mkinitcpio_binaries | join(" ") }})'
-  notify: 'regenerate initramfs'
-  when: base_mkinitcpio_binaries | length > 0
+#
+# Reboot
+#
 
-- name: Kernel | Update mkinitcpio files
-  ansible.builtin.lineinfile:
-    path: '/etc/mkinitcpio.conf'
-    regexp: '^FILES=\(.*\)'
-    line: 'FILES=({{ base_mkinitcpio_files | join(" ") }})'
-  notify: 'regenerate initramfs'
-  when: base_mkinitcpio_files | length > 0
+# Check mode installs nothing, so the running kernel is compared with the
+# kernels installed before the run
+- name: Kernel | Check the running kernel
+  ansible.builtin.include_tasks:
+    file: kernel_running.yml
+  vars:
+    __base_kernel_running_versions: >-
+      {{ __base_kernel_versions_before if ansible_check_mode else __base_kernel_versions_after }}
+  when: __base_kernel_check | bool
 
-- name: Kernel | Update mkinitcpio compression
-  ansible.builtin.lineinfile:
-    path: '/etc/mkinitcpio.conf'
-    regexp: '^COMPRESSION='
-    line: 'COMPRESSION="{{ base_mkinitcpio_compression }}"'
-  notify: 'regenerate initramfs'
-  when: __base_mkinitcpio_managed | bool
+- name: Kernel | Report a pending reboot
+  ansible.builtin.debug:
+    msg: >-
+      Reboot pending: the running kernel {{ __base_kernel_running_release }}
+      {{ __base_kernel_running_state }} ({{ __base_kernel_running_versions | join(', ') }}).{{
+      '' if base_kernel_reboot | bool else ' Reboot with -e base_kernel_reboot=true.' }}
+  vars:
+    # A folded message keeps the line breaks of more-indented lines
+    __base_kernel_running_state: >-
+      {{ ('(' ~ __base_kernel_running_version ~ ') is older than the newest installed kernel')
+         if __base_kernel_running_version | length > 0
+         else 'is not an installed kernel package' }}
+    __base_kernel_running_versions: >-
+      {{ __base_kernel_versions_before if ansible_check_mode else __base_kernel_versions_after }}
+  when:
+    - __base_kernel_check | bool
+    - __base_kernel_reboot_pending | bool
+
+# Check mode installs nothing: a kernel the run would install makes the
+# reboot pending after the real run
+- name: Kernel | Report the reboot the update would need
+  ansible.builtin.debug:
+    msg: >-
+      Reboot pending after the update: the run would install a newer
+      {{ base_kernel }} than the running kernel {{ __base_kernel_running_release }}.{{
+      '' if base_kernel_reboot | bool else ' Reboot with -e base_kernel_reboot=true.' }}
+  when:
+    - __base_kernel_check | bool
+    - ansible_check_mode
+    - __base_kernel_packages_result is changed
+    - not (__base_kernel_reboot_pending | bool)
+
+- name: Kernel | Reboot into the new kernel
+  ansible.builtin.reboot:
+    msg: 'Reboot into the updated kernel'
+    reboot_timeout: '{{ base_kernel_reboot_timeout }}'
+  register: __base_kernel_reboot_result
+  when:
+    - __base_kernel_check | bool
+    - base_kernel_reboot | bool
+    - __base_kernel_reboot_pending | bool
+
+# After the reboot the newest installed kernel must run and meet the minimum;
+# otherwise the boot loader started another kernel (default entry, a failed
+# boot fallback)
+- name: Kernel | Check the running kernel after the reboot
+  ansible.builtin.include_tasks:
+    file: kernel_running.yml
+  vars:
+    __base_kernel_running_versions: '{{ __base_kernel_versions_after }}'
+  when:
+    - not ansible_check_mode
+    - __base_kernel_reboot_result | default({}) is changed
+
+- name: Kernel | Assert the newest kernel runs after the reboot
+  ansible.builtin.assert:
+    that:
+      - not (__base_kernel_reboot_pending | bool)
+    fail_msg: >-
+      After the reboot the host runs {{ __base_kernel_running_release }}, not the
+      newest installed kernel ({{ __base_kernel_versions_after | join(', ') }}).
+      Check the default boot entry.
+    quiet: true
+  when:
+    - not ansible_check_mode
+    - __base_kernel_reboot_result | default({}) is changed
+
+- name: Kernel | Check the minimum version of the running kernel
+  ansible.builtin.include_tasks:
+    file: kernel_version_check.yml
+  vars:
+    __base_kernel_check_stage: 'running'
+    __base_kernel_check_versions: '{{ [__base_kernel_running_version] | select | list }}'
+    __base_kernel_check_candidate: ''
+  when:
+    - __base_kernel_minimum | length > 0
+    - not ansible_check_mode
+    - __base_kernel_reboot_result | default({}) is changed

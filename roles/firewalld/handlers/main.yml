@@ -28,3 +28,13 @@
     delay: '{{ firewalld_service_wait_for_connection_delay }}'
     timeout: '{{ firewalld_service_wait_for_connection_timeout }}'
   when: firewalld_service_enabled | bool
+
+# Re-runs nft -f on the main file, which replaces every table in one
+# transaction. Defined after the firewalld handlers so it runs after them.
+- name: Reload firewalld nftables tables
+  ansible.builtin.systemd_service:
+    name: '{{ __firewalld_nftables_service_name }}'
+    state: reloaded
+  when:
+    - firewalld_nftables_service_enabled | bool
+    - not (ansible_check_mode and (__firewalld_nftables_unit | default({}) is changed))
