@@ -13,6 +13,20 @@
   tags:
     - always
 
+# marcstraube.server.postfix configures the same Postfix instance (main.cf,
+# master.cf); both roles on one host would overwrite each other's settings.
+- name: Main | Validate that the full Postfix role is not enabled
+  ansible.builtin.assert:
+    that:
+      - not (postfix_enabled | default(false) | bool)
+    fail_msg: >-
+      mta and marcstraube.server.postfix both configure Postfix (main.cf,
+      master.cf) and would overwrite each other. Set mta_enabled: false on
+      hosts that run marcstraube.server.postfix.
+  when: mta_enabled | bool
+  tags:
+    - always
+
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: mta_enabled | bool
