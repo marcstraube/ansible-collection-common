@@ -9,6 +9,57 @@
     mta_mydomain: 'example.test'
 
   tasks:
+    # Runs before the role on a fresh host, so the Postfix files do not exist
+    # yet; on the idempotence run they must stay as the converge left them.
+    - name: Converge | Checksum the Postfix files before the rejected run
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        checksum_algorithm: sha256
+      loop:
+        - /etc/postfix/main.cf
+        - /etc/postfix/master.cf
+      register: __converge_postfix_before
+
+    - name: Converge | Reject mta next to the full Postfix role
+      block:
+        - name: Converge | Include mta role with postfix_enabled  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            postfix_enabled: true
+
+        - name: Converge | Fail because mta ran next to the full Postfix role
+          ansible.builtin.fail:
+            msg: 'The role ran although postfix_enabled is true.'
+      rescue:
+        - name: Converge | Checksum the Postfix files after the rejected run
+          ansible.builtin.stat:
+            path: '{{ item }}'
+            checksum_algorithm: sha256
+          loop:
+            - /etc/postfix/main.cf
+            - /etc/postfix/master.cf
+          register: __converge_postfix_after
+
+        - name: Converge | Assert the validation stopped the run before any change
+          ansible.builtin.assert:
+            that:
+              - "'Validate that the full Postfix role is not enabled' in ansible_failed_task.name"
+              - "'Set mta_enabled: false' in ansible_failed_result.msg"
+              - "'marcstraube.server.postfix' in ansible_failed_result.msg"
+              - __converge_postfix_after_files == __converge_postfix_before_files
+            fail_msg: >-
+              Unexpected failure: {{ ansible_failed_result }}; Postfix files
+              before: {{ __converge_postfix_before_files }},
+              after: {{ __converge_postfix_after_files }}
+          vars:
+            __converge_postfix_before_files: >-
+              {{ __converge_postfix_before.results
+                 | map(attribute='stat.checksum', default='absent') | list }}
+            __converge_postfix_after_files: >-
+              {{ __converge_postfix_after.results
+                 | map(attribute='stat.checksum', default='absent') | list }}
+
     - name: Converge | Include mta role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'

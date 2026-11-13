@@ -10,7 +10,8 @@ instead. The host binds to loopback only and accepts no inbound mail.
 
 This role intentionally stays a **null client**. For a full inbound mail server
 (MX, spam filtering, authenticated submission, virtual domains) use the
-`marcstraube.server.postfix` role instead — do not enable both on one host.
+`marcstraube.server.postfix` role instead — do not enable both on one host;
+the role fails when `postfix_enabled` is true (see [Notes](#notes)).
 
 ## Requirements
 
@@ -112,7 +113,10 @@ Trixie and Rocky Linux 9/10.
   template, so the distribution's compiled-in defaults (queue paths, owners,
   alias maps) stay intact and only the parameters this role owns change.
 - On a host that should run the full mail stack, disable this role
-  (`mta_enabled: false`) and use `marcstraube.server.postfix` instead.
+  (`mta_enabled: false`) and use `marcstraube.server.postfix` instead. Both
+  roles configure Postfix (`main.cf`, `master.cf`): the role fails before any
+  change when `mta_enabled` and `postfix_enabled` are both true. An unset
+  `postfix_enabled` counts as `false`.
 
 ## References
 
