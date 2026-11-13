@@ -52,6 +52,12 @@
     owner: root
     group: root
     mode: '0644'
+  environment: >-
+    {{
+      {'HTTPS_PROXY': php_composer_proxy, 'HTTP_PROXY': php_composer_proxy}
+      if php_composer_proxy | length > 0
+      else {}
+    }}
   retries: 5
   delay: 10
   when: __php_composer_use_phar | bool
