@@ -18,8 +18,10 @@
 
 - name: Install | Askpass package
   ansible.builtin.package:
-    name: '{{ openssh_askpass_package | default(__openssh_askpass_package) }}'
+    name: '{{ __openssh_askpass_selected.package }}'
     state: present
   retries: 3
   delay: 5
-  when: openssh_askpass_enabled | bool
+  when:
+    - openssh_askpass_enabled | bool
+    - __openssh_askpass_selected.package | length > 0

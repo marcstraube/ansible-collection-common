@@ -1,0 +1,145 @@
+---
+# Targeted kernel update: prepare.yml installed an older kernel build on EL
+# and Debian. A minimum the repository does not offer must fail before any
+# change; the update with the newest build as minimum must install it and
+# report the pending reboot (a container always runs the host kernel, which
+# is no installed kernel package). Arch Linux ignores 'latest' and checks the
+# minimum against the installed kernel.
+- name: Side Effect
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # Package versions of the kernel image packages, compared before and after
+    __side_effect_kernel_pattern: >-
+      {{ '^kernel-core$' if ansible_facts['os_family'] == 'RedHat'
+         else ('^linux-image-[0-9].*-amd64$' if ansible_facts['os_family'] == 'Debian'
+               else '^linux$') }}
+
+  tasks:
+    - name: Side Effect | Read the kernel builds from prepare
+      ansible.builtin.slurp:
+        src: /root/kernel-builds.yml
+      register: __side_effect_kernel_builds_file
+      when: ansible_facts['os_family'] in ['RedHat', 'Debian']
+
+    - name: Side Effect | Gather package facts before the update
+      ansible.builtin.package_facts:
+
+    - name: Side Effect | Record the kernel state before the update
+      ansible.builtin.set_fact:
+        __side_effect_kernel_builds: >-
+          {{ (__side_effect_kernel_builds_file.content | b64decode | from_yaml)
+             if ansible_facts['os_family'] in ['RedHat', 'Debian']
+             else {'newest': __side_effect_kernel_installed | first} }}
+        __side_effect_kernel_before: '{{ __side_effect_kernel_installed }}'
+      vars:
+        __side_effect_kernel_installed: &kernel_installed >-
+          {{ ansible_facts['packages'] | dict2items
+             | selectattr('key', 'match', __side_effect_kernel_pattern)
+             | map(attribute='value') | flatten
+             | map(attribute='version') | zip(
+               ansible_facts['packages'] | dict2items
+               | selectattr('key', 'match', __side_effect_kernel_pattern)
+               | map(attribute='value') | flatten
+               | map(attribute='release', default=''))
+             | map('join', '-') | map('regex_replace', '-$', '') | sort | list }}
+
+    # The pre-check runs before the package task, so a minimum the
+    # repository does not offer fails without a change
+    - name: Side Effect | Run with a minimum the repository does not offer
+      block:
+        - name: Side Effect | Include kernel tasks with an unmet minimum  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+            tasks_from: kernel.yml
+            vars_from: '{{ ansible_facts["os_family"] }}.yml'
+          vars:
+            base_kernel_packages_state: 'latest'
+            base_kernel_packages_minimum: "{{ {ansible_facts['os_family']: '99.0'} }}"
+
+        - name: Side Effect | Fail because the unmet minimum was accepted
+          ansible.builtin.fail:
+            msg: 'A kernel minimum of 99.0 did not fail.'
+      rescue:
+        - name: Side Effect | Record the minimum check failure
+          ansible.builtin.set_fact:
+            __side_effect_minimum_error: '{{ ansible_failed_result.msg | default("") }}'
+
+    - name: Side Effect | Gather package facts after the unmet minimum
+      ansible.builtin.package_facts:
+
+    - name: Side Effect | Assert the unmet minimum failed without a change
+      ansible.builtin.assert:
+        that:
+          - "'requires 99.0' in __side_effect_minimum_error"
+          - "'nothing was changed' in __side_effect_minimum_error"
+          - __side_effect_kernel_now == __side_effect_kernel_before
+        fail_msg: >-
+          A kernel minimum of 99.0 did not fail before the update (error:
+          {{ __side_effect_minimum_error }}; kernels before
+          {{ __side_effect_kernel_before }}, now {{ __side_effect_kernel_now }})
+        success_msg: 'The pre-check rejects a kernel the repository does not offer'
+      vars:
+        __side_effect_kernel_now: *kernel_installed
+
+    # The newest build as the full distribution version proves the minimum
+    # check with Debian revisions and EL release strings
+    - name: Side Effect | Update the kernel with the newest build as minimum  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: kernel.yml
+        vars_from: '{{ ansible_facts["os_family"] }}.yml'
+      vars:
+        base_kernel_packages_state: 'latest'
+        base_kernel_packages_minimum: '{{ __side_effect_kernel_builds.newest }}'
+
+    - name: Side Effect | Gather package facts after the update
+      ansible.builtin.package_facts:
+
+    - name: Side Effect | Assert the newest kernel is installed
+      ansible.builtin.assert:
+        that:
+          - __side_effect_kernel_builds.newest in __side_effect_kernel_now
+          - __side_effect_kernel_before | difference(__side_effect_kernel_now) | length == 0
+        fail_msg: >-
+          Expected {{ __side_effect_kernel_builds.newest }} next to
+          {{ __side_effect_kernel_before }}, installed: {{ __side_effect_kernel_now }}
+        # Arch Linux keeps one kernel version: nothing older stays next to it
+        success_msg: >-
+          {{ __side_effect_kernel_builds.newest }} installed{{
+            (' next to ' ~ (__side_effect_kernel_older | join(', ')))
+            if __side_effect_kernel_older | length > 0 else '' }}
+      vars:
+        __side_effect_kernel_now: *kernel_installed
+        __side_effect_kernel_older: >-
+          {{ __side_effect_kernel_before | difference([__side_effect_kernel_builds.newest]) }}
+
+    # A container runs the host kernel, which is no installed kernel package
+    - name: Side Effect | Assert the role reports the pending reboot
+      ansible.builtin.assert:
+        that:
+          - __base_kernel_reboot_pending | bool
+          - __base_kernel_running_version == ''
+        fail_msg: >-
+          The role did not report a pending reboot for the host kernel
+          {{ __base_kernel_running_release | default('unknown') }}
+        success_msg: >-
+          Reboot pending reported for the running kernel
+          {{ __base_kernel_running_release }}
+
+    - name: Side Effect | Run the update again  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: kernel.yml
+        vars_from: '{{ ansible_facts["os_family"] }}.yml'
+      vars:
+        base_kernel_packages_state: 'latest'
+        base_kernel_packages_minimum: '{{ __side_effect_kernel_builds.newest }}'
+
+    - name: Side Effect | Assert the second update changed nothing
+      ansible.builtin.assert:
+        that:
+          - __base_kernel_packages_result is not changed
+        fail_msg: 'The second update run changed the kernel packages'
+        success_msg: 'The second update run changed nothing'

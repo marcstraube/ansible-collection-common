@@ -40,6 +40,10 @@
       loop:
         - php-pecl-xdebug3
         - php-gd
+        # Composer comes as composer.phar, not as the EPEL package that
+        # pulls in the AppStream PHP CLI
+        - composer
+        - php-cli
 
     #
     # Loaded modules — the SCL php84 binary loads the requested extensions.
@@ -128,3 +132,127 @@
       loop: '{{ __verify_remi_conf.results }}'
       loop_control:
         label: '{{ item.item }}'
+
+    #
+    # FPM log links — /var/log/php<XX>-fpm points into the SCL tree of
+    # each version and resolves to its existing log directory.
+    #
+
+    - name: Verify | Check the Remi FPM log links
+      ansible.builtin.stat:
+        path: '/var/log/php{{ item }}-fpm'
+      register: __verify_remi_log_links
+      loop:
+        - '84'
+        - '83'
+
+    - name: Verify | Check the Remi FPM log links resolve
+      ansible.builtin.stat:
+        path: '/var/log/php{{ item }}-fpm'
+        follow: true
+      register: __verify_remi_log_dirs
+      loop:
+        - '84'
+        - '83'
+
+    - name: Verify | Assert the Remi FPM log links point to the log directories
+      ansible.builtin.assert:
+        that:
+          - item.0.stat.islnk | default(false)
+          - item.0.stat.lnk_target == '/var/opt/remi/php' ~ item.0.item ~ '/log/php-fpm'
+          - item.1.stat.isdir | default(false)
+        fail_msg: >-
+          /var/log/php{{ item.0.item }}-fpm is not a link to an existing
+          /var/opt/remi/php{{ item.0.item }}/log/php-fpm:
+          {{ item.0.stat.lnk_target | default('no link') }}
+      loop: '{{ __verify_remi_log_links.results | zip(__verify_remi_log_dirs.results) | list }}'
+      loop_control:
+        label: '/var/log/php{{ item.0.item }}-fpm'
+
+    #
+    # Named pool of 8.4 — its file and socket live in the php84 trees.
+    #
+
+    - name: Verify | Read the named Remi pool
+      ansible.builtin.slurp:
+        src: /etc/opt/remi/php84/php-fpm.d/app.conf
+      register: __verify_remi_pool
+
+    - name: Verify | Assert the named Remi pool listens next to the www socket
+      ansible.builtin.assert:
+        that:
+          - "'[app]' in (__verify_remi_pool.content | b64decode)"
+          - >-
+            'listen = /var/opt/remi/php84/run/php-fpm/app.sock'
+            in (__verify_remi_pool.content | b64decode)
+        fail_msg: 'app.conf content unexpected'
+
+    - name: Verify | Check the named Remi pool socket and the other version
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: __verify_remi_pool_paths
+      loop:
+        - /var/opt/remi/php84/run/php-fpm/app.sock
+        - /etc/opt/remi/php83/php-fpm.d/app.conf
+
+    - name: Verify | Assert the named Remi pool stays with its version
+      ansible.builtin.assert:
+        that:
+          - __verify_remi_pool_paths.results[0].stat.exists
+          - __verify_remi_pool_paths.results[0].stat.issock
+          - not __verify_remi_pool_paths.results[1].stat.exists
+        fail_msg: >-
+          app.sock missing under php84 or app.conf written for php83:
+          {{ __verify_remi_pool_paths.results | map(attribute='stat.exists') | list }}
+
+    #
+    # Composer — one composer.phar, the wrappers run on their SCL binary.
+    #
+
+    - name: Verify | Check composer.phar
+      ansible.builtin.stat:
+        path: /usr/local/lib/composer.phar
+      register: __verify_composer_phar
+
+    - name: Verify | Assert composer.phar downloaded
+      ansible.builtin.assert:
+        that:
+          - __verify_composer_phar.stat.exists
+          - __verify_composer_phar.stat.mode == '0644'
+        fail_msg: >-
+          /usr/local/lib/composer.phar missing or with mode
+          {{ __verify_composer_phar.stat.mode | default('-') }}
+
+    - name: Verify | Check Composer wrappers
+      ansible.builtin.command:
+        argv:
+          - '/usr/local/bin/{{ item.key }}'
+          - --version
+      environment:
+        COMPOSER_ALLOW_SUPERUSER: '1'
+      register: __verify_composer
+      changed_when: false
+      loop: '{{ __verify_composer_wrappers | dict2items }}'
+      loop_control:
+        label: '{{ item.key }}'
+      vars:
+        __verify_composer_wrappers:
+          composer: '8.4'
+          composer84: '8.4'
+          composer83: '8.3'
+
+    - name: Verify | Assert Composer wrappers run on their PHP version
+      ansible.builtin.assert:
+        that:
+          - "'Composer version' in item.stdout"
+          # Composer prints the PHP version line on stderr
+          - __verify_composer_lines | select('match', __verify_php_pattern) | list | length > 0
+        fail_msg: >-
+          {{ item.item.key }} does not run on PHP {{ item.item.value }}:
+          {{ item.stdout }}
+      loop: '{{ __verify_composer.results }}'
+      loop_control:
+        label: '{{ item.item.key }}'
+      vars:
+        __verify_composer_lines: '{{ item.stdout_lines + item.stderr_lines }}'
+        __verify_php_pattern: '^PHP version {{ item.item.value | regex_escape }}\.'

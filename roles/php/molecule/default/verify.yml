@@ -300,7 +300,70 @@
           - >-
             'php_admin_flag[log_errors] = on'
             in (__verify_auto_pool_content.content | b64decode)
+          - >-
+            'env[HTTPS_PROXY] = http://proxy.invalid:3128'
+            in (__verify_auto_pool_content.content | b64decode)
+          - >-
+            'env[MOLECULE_FPM_ENV] = global'
+            in (__verify_auto_pool_content.content | b64decode)
         fail_msg: "www.conf content unexpected"
+
+    #
+    # Worker environment reaches getenv() in a script served through FPM.
+    # getenv() also sees the FastCGI request parameters, and cgi-fcgi sends its
+    # own environment as such; the two test variables are not part of it, so
+    # their values can only come from the pool. A restart recreates the socket
+    # file (see the reload note below).
+    #
+
+    - name: Verify | Create FPM test script directory
+      ansible.builtin.file:
+        path: /srv/molecule-php
+        state: directory
+        mode: '0755'
+
+    - name: Verify | Deploy getenv() test script
+      ansible.builtin.copy:
+        dest: /srv/molecule-php/env.php
+        content: |
+          <?php
+          echo getenv('MOLECULE_FPM_ENV'), '|', getenv('HTTPS_PROXY');
+        mode: '0644'
+
+    - name: Verify | Restart the auto FPM service
+      ansible.builtin.systemd_service:
+        name: '{{ __verify_auto_fpm }}'
+        state: restarted
+
+    - name: Verify | Read the auto FPM socket
+      ansible.builtin.set_fact:
+        __verify_auto_socket: >-
+          {{ (__verify_auto_pool_content.content | b64decode)
+             | regex_search('^listen = (.+)$', '\1', multiline=True) | first }}
+
+    - name: Verify | Wait for the auto FPM socket
+      ansible.builtin.wait_for:
+        path: '{{ __verify_auto_socket }}'
+        timeout: 30
+
+    - name: Verify | Request the test script through FPM
+      ansible.builtin.command:
+        argv:
+          - cgi-fcgi
+          - -bind
+          - -connect
+          - '{{ __verify_auto_socket }}'
+      environment:
+        SCRIPT_FILENAME: /srv/molecule-php/env.php
+        REQUEST_METHOD: GET
+      register: __verify_fpm_env
+      changed_when: false
+
+    - name: Verify | Assert the workers see the pool environment
+      ansible.builtin.assert:
+        that:
+          - "'global|http://proxy.invalid:3128' in __verify_fpm_env.stdout"
+        fail_msg: 'getenv() through FPM returned: {{ __verify_fpm_env.stdout }}'
 
     #
     # FPM picks up ini changes (side_effect changed max_input_vars while the
@@ -470,21 +533,109 @@
         fail_msg: "Second version www.conf not found at {{ __verify_second_pool }}"
       when: ansible_facts['os_family'] == 'Debian'
 
-    #
-    # Composer
-    #
+    - name: Verify | Check second www.conf content
+      ansible.builtin.slurp:
+        src: '{{ __verify_second_pool }}'
+      register: __verify_second_pool_content
+      when: ansible_facts['os_family'] == 'Debian'
 
-    - name: Verify | Check Composer
-      ansible.builtin.command: composer --version
-      register: __verify_composer
-      changed_when: false
-      failed_when: __verify_composer.rc != 0
-
-    - name: Verify | Assert Composer installed
+    - name: Verify | Assert per-version env overrides the global mapping
       ansible.builtin.assert:
         that:
-          - "'Composer' in __verify_composer.stdout"
-        fail_msg: "Composer not found: {{ __verify_composer.stdout }}"
+          - >-
+            'env[MOLECULE_FPM_ENV] = per-version'
+            in (__verify_second_pool_content.content | b64decode)
+          - >-
+            'env[MOLECULE_FPM_ENV] = global'
+            not in (__verify_second_pool_content.content | b64decode)
+          - >-
+            'env[HTTPS_PROXY] = http://proxy.invalid:3128'
+            in (__verify_second_pool_content.content | b64decode)
+        fail_msg: 'second www.conf env lines unexpected'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    #
+    # Composer — every wrapper runs on its own PHP version: composer on the
+    # default version, composer<XX> on each configured version (Debian
+    # converges a second one).
+    #
+
+    # Composer comes from the source of PHP: the distribution package on Arch
+    # and AppStream, composer.phar for Sury on Debian.
+    - name: Verify | Gather package facts for Composer
+      ansible.builtin.package_facts:
+
+    - name: Verify | Check composer.phar
+      ansible.builtin.stat:
+        path: /usr/local/lib/composer.phar
+      register: __verify_composer_phar
+
+    - name: Verify | Assert Composer comes from the source of PHP
+      ansible.builtin.assert:
+        that:
+          - ('composer' in ansible_facts.packages) == (not __verify_composer_expect_phar)
+          - __verify_composer_phar.stat.exists == __verify_composer_expect_phar
+        fail_msg: >-
+          Expected Composer from
+          {{ __verify_composer_expect_phar | ternary('composer.phar', 'the distribution package') }}
+          on {{ ansible_facts['os_family'] }}.
+      vars:
+        __verify_composer_expect_phar: "{{ ansible_facts['os_family'] == 'Debian' }}"
+
+    - name: Verify | Set expected Composer wrappers
+      ansible.builtin.set_fact:
+        __verify_composer_wrappers: >-
+          {{ {'composer': __verify_system_ver,
+              'composer' ~ __verify_system_ver_compact: __verify_system_ver}
+             | combine((ansible_facts['os_family'] == 'Debian') | ternary({'composer83': '8.3'}, {})) }}
+
+    - name: Verify | Check Composer wrappers
+      ansible.builtin.command:
+        argv:
+          - '/usr/local/bin/{{ item.key }}'
+          - --version
+      environment:
+        COMPOSER_ALLOW_SUPERUSER: '1'
+      register: __verify_composer
+      changed_when: false
+      loop: '{{ __verify_composer_wrappers | dict2items }}'
+      loop_control:
+        label: '{{ item.key }}'
+
+    - name: Verify | Assert Composer wrappers run on their PHP version
+      ansible.builtin.assert:
+        that:
+          - "'Composer version' in item.stdout"
+          # Composer prints the PHP version line on stderr
+          - __verify_composer_lines | select('match', __verify_php_pattern) | list | length > 0
+        fail_msg: >-
+          {{ item.item.key }} does not run on PHP {{ item.item.value }}:
+          {{ item.stdout }}
+      loop: '{{ __verify_composer.results }}'
+      loop_control:
+        label: '{{ item.item.key }}'
+      vars:
+        __verify_composer_lines: '{{ item.stdout_lines + item.stderr_lines }}'
+        __verify_php_pattern: '^PHP version {{ item.item.value | regex_escape }}\.'
+
+    # community.general.composer starts Composer as "php <composer>", so the
+    # wrapper must also work as a PHP script.
+    - name: Verify | Check Composer started through php
+      ansible.builtin.command:
+        argv:
+          - php
+          - /usr/local/bin/composer
+          - --version
+      environment:
+        COMPOSER_ALLOW_SUPERUSER: '1'
+      register: __verify_composer_php
+      changed_when: false
+
+    - name: Verify | Assert Composer started through php runs
+      ansible.builtin.assert:
+        that:
+          - __verify_composer_php.stdout is regex('^Composer version ', multiline=True)
+        fail_msg: 'php /usr/local/bin/composer failed: {{ __verify_composer_php.stdout }}'
 
     #
     # AUR build-list logic (Arch only)

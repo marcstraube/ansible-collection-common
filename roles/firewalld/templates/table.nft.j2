@@ -1,0 +1,22 @@
+{{ ansible_managed | default('Ansible managed') | comment }}
+#
+# Declaring the table first lets the delete succeed when it does not exist yet,
+# so the table is replaced in one transaction.
+#
+
+table {{ item.family }} {{ item.name }}
+delete table {{ item.family }} {{ item.name }}
+
+table {{ item.family }} {{ item.name }} {
+{% for chain in item.chains %}
+{% if not loop.first %}
+
+{% endif %}
+	chain {{ chain.name }} {
+		type {{ chain.type | default('filter') }} hook {{ chain.hook }} priority {{ chain.priority }}; policy {{ chain.policy | default('accept') }};
+{% for rule in chain.rules | default([]) %}
+		{{ rule }}
+{% endfor %}
+	}
+{% endfor %}
+}

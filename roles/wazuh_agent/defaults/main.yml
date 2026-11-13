@@ -19,7 +19,7 @@ wazuh_agent_service_enabled: true
 # to it when it changes; a version lower than the installed one fails the
 # run. Arch Linux installs the AUR package, and the run fails when the AUR
 # version is newer than this one.
-wazuh_agent_version: '4.14.9'
+wazuh_agent_version: '4.14.10'
 
 #
 # Manager Connection

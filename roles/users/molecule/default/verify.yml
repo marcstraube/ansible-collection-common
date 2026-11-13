@@ -193,6 +193,14 @@
       register: service_home
       failed_when: service_home.stat.exists
 
+    # The container's home is not on BTRFS, so the role must not create
+    # ~/.cache; the btrfs scenario covers the subvolume itself.
+    - name: Verify | Check basicuser has no cache directory on a non-BTRFS home
+      ansible.builtin.stat:
+        path: /home/basicuser/.cache
+      register: basicuser_cache
+      failed_when: basicuser_cache.stat.exists
+
     #
     # SSH Directory Verification
     #
@@ -314,6 +322,62 @@
         that:
           - "'keyfile-test@molecule' in (keyfileuser_pubkey_content.content | b64decode)"
         fail_msg: 'Deployed public key lost its comment'
+
+    - name: Verify | Check public-only key files
+      ansible.builtin.stat:
+        path: '/home/keyfileuser/.ssh/{{ item }}'
+      register: keyfileuser_agent_key
+      loop:
+        - 'id_agent.pub'
+        - 'id_agent'
+
+    - name: Verify | Check public-only entry deployed no private key
+      ansible.builtin.assert:
+        that:
+          - keyfileuser_agent_key.results[0].stat.exists
+          - keyfileuser_agent_key.results[0].stat.mode == '0644'
+          - keyfileuser_agent_key.results[0].stat.pw_name == 'keyfileuser'
+          - keyfileuser_agent_key.results[0].stat.gr_name == 'keyfileuser'
+          - not keyfileuser_agent_key.results[1].stat.exists
+        fail_msg: >-
+          Public-only entry: id_agent.pub missing or with incorrect permissions,
+          or a private key file id_agent was deployed
+
+    - name: Verify | Run users role with a key file entry without sources
+      block:
+        - name: Verify | Include users role with a key file entry without sources  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            users_list:
+              - name: 'nosourceuser'
+                ssh_key_files:
+                  - dest: 'id_nosource'
+
+        - name: Verify | Fail when the entry without sources was accepted
+          ansible.builtin.fail:
+            msg: 'users ssh_key_files accepted an entry without src and src_public'
+      rescue:
+        - name: Verify | Check the entry without sources was rejected by the assert
+          ansible.builtin.assert:
+            that:
+              - "'Validate ssh_key_files sources' in ansible_failed_task.name"
+              - ansible_failed_result.msg is search('nosourceuser: id_nosource')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result.msg }}'
+
+    # getent exits with 2 when the key is missing
+    - name: Verify | Look up the user of the rejected entry
+      ansible.builtin.command:
+        cmd: getent passwd nosourceuser
+      register: nosourceuser_entry
+      changed_when: false
+      failed_when: nosourceuser_entry.rc not in [0, 2]
+
+    - name: Verify | Check the rejected entry stopped the role before any change
+      ansible.builtin.assert:
+        that:
+          - nosourceuser_entry.rc == 2
+        fail_msg: 'The role created nosourceuser although its ssh_key_files entry was rejected'
 
     #
     # root SSH Key Verification

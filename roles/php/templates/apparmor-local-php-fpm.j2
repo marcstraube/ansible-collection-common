@@ -9,3 +9,12 @@
 @{run}/php[0-9]*-fpm/ rw,
 @{run}/php[0-9]*-fpm/*.sock{,et} rwlk,
 @{run}/php[0-9]*-fpm.pid rw,
+{% if __php_fpm_sockets | default([]) %}
+
+# Sockets of the named pools. The stock profile and the rules above cover the
+# default socket directories; these rules also cover a pool whose listen path
+# points elsewhere.
+{% for __socket in __php_fpm_sockets | unique | sort %}
+"{{ __socket }}" rwlk,
+{% endfor %}
+{% endif %}

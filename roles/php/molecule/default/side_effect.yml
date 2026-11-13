@@ -31,6 +31,9 @@
       error_log: '/var/log/php-fpm/www-error.log'
     php_fpm_pool_admin_flags:
       log_errors: 'on'
+    php_fpm_pool_env:
+      MOLECULE_FPM_ENV: 'global'
+      HTTPS_PROXY: 'http://proxy.invalid:3128'
     # Changed while php-fpm is already running: the ini drop-in is rewritten and
     # the workers must pick the new value up, which only happens if the role
     # queues a reload. verify.yml asserts both the file content and the reload.
@@ -77,6 +80,10 @@
             ini:
               extra_settings:
                 realpath_cache_size: '8192k'
+            fpm_pools:
+              - name: 'www'
+                env:
+                  MOLECULE_FPM_ENV: 'per-version'
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Side Effect | Detect the system PHP branch
@@ -169,3 +176,39 @@
           - "'requires 99.0.0' in __side_effect_minimum_error"
         fail_msg: "A minimum of 99.0.0 did not fail the run"
         success_msg: "The minimum check rejects an older installed version"
+
+    # php_composer_proxy must reach the composer.phar download. A checksum that
+    # does not match the installed phar forces a download, which goes through
+    # an unreachable proxy. Without the proxy the download would reach
+    # getcomposer.org and fail on the checksum instead, so a refused connection
+    # shows the proxy was used. The failed download leaves the installed phar
+    # in place for verify.yml. composer.phar is used on Debian only here.
+    - name: Side Effect | Download composer.phar through an unreachable proxy
+      when: ansible_facts['os_family'] == 'Debian'
+      block:
+        - name: Side Effect | Include Composer tasks with an unreachable proxy  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+            tasks_from: composer.yml
+          vars:
+            php_composer_proxy: 'http://127.0.0.1:9'
+            php_composer_checksum: 'sha256:{{ "0" * 64 }}'
+      rescue:
+        - name: Side Effect | Record the proxy download failure
+          ansible.builtin.set_fact:
+            __side_effect_proxy_task: '{{ ansible_failed_task.name | default("") }}'
+            __side_effect_proxy_error: '{{ ansible_failed_result.msg | default("") }}'
+
+    - name: Side Effect | Assert the download went through the proxy
+      ansible.builtin.assert:
+        that:
+          - __side_effect_proxy_error is defined
+          - "'Download composer.phar' in __side_effect_proxy_task"
+          # ECONNREFUSED; the message text itself follows the locale
+          - "'[Errno 111]' in __side_effect_proxy_error"
+        fail_msg: >-
+          The composer.phar download did not fail on the proxy
+          http://127.0.0.1:9: {{ __side_effect_proxy_task | default('no failure') }}:
+          {{ __side_effect_proxy_error | default('') }}
+        success_msg: "The composer.phar download uses php_composer_proxy"
+      when: ansible_facts['os_family'] == 'Debian'

@@ -1,0 +1,50 @@
+---
+# Remove pool files of this version that are neither listed in fpm_pools nor
+# in php_fpm_pools_keep. Only files whose content starts with the rendered
+# ansible_managed header are candidates, so pools shipped by a package or
+# written by hand are never touched. If the ansible_managed text changes
+# between runs, pools written with the old text no longer match and survive.
+# www.conf is always in the list of written pools.
+- name: FPM Pools Exclusive | Find FPM pool files
+  ansible.builtin.find:
+    paths: '{{ __php_fpm_pool_dir }}'
+    patterns: '*.conf'
+    file_type: file
+  register: __php_pools_found
+
+- name: FPM Pools Exclusive | Identify unlisted FPM pool files
+  ansible.builtin.set_fact:
+    __php_pools_unlisted: >-
+      {{ __php_pools_found.files | map(attribute='path') | map('basename')
+         | reject('in', (__php_pools | map(attribute='name') | map('regex_replace', '$', '.conf') | list)
+                        + php_fpm_pools_keep)
+         | sort }}
+
+- name: FPM Pools Exclusive | Read unlisted FPM pool file headers
+  ansible.builtin.slurp:
+    src: '{{ __php_fpm_pool_dir }}/{{ item }}'
+  loop: '{{ __php_pools_unlisted }}'
+  register: __php_pools_unlisted_content
+
+- name: FPM Pools Exclusive | Identify orphaned role-managed FPM pools
+  ansible.builtin.set_fact:
+    __php_pools_pruned: >-
+      {% set marker = ansible_managed | default('Ansible managed') | comment(decoration='; ') | trim -%}
+      {% set result = [] -%}
+      {% for entry in __php_pools_unlisted_content.results | default([]) -%}
+        {% if (entry.content | b64decode).startswith(marker) -%}
+          {% set _ = result.append(entry.item) -%}
+        {%- endif %}
+      {%- endfor -%}
+      {{ result }}
+
+- name: FPM Pools Exclusive | Report orphaned FPM pools to remove
+  ansible.builtin.debug:
+    msg: "Removing orphaned FPM pool '{{ __php_fpm_pool_dir }}/{{ item }}' (exclusive mode)."
+  loop: '{{ __php_pools_pruned }}'
+
+- name: FPM Pools Exclusive | Remove orphaned FPM pools
+  ansible.builtin.file:
+    path: '{{ __php_fpm_pool_dir }}/{{ item }}'
+    state: absent
+  loop: '{{ __php_pools_pruned }}'

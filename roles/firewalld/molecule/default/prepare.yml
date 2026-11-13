@@ -120,3 +120,70 @@
           - --zone=public
           - --add-rich-rule=rule family="ipv4" source address="203.0.113.0/24" port port="2222" protocol="tcp" accept
       changed_when: true
+
+    #
+    # Custom nftables Table Test State
+    #
+
+    - name: Prepare | Create custom nftables table directory
+      ansible.builtin.file:
+        path: /etc/firewalld/nftables.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    # A table file the role wrote for an earlier configuration (it starts with
+    # the ansible_managed header), loaded into the ruleset. The role must
+    # delete the table and remove the file.
+    - name: Prepare | Write a stale role-owned custom nftables table file
+      ansible.builtin.copy:
+        dest: /etc/firewalld/nftables.d/inet-molecule_stale.nft
+        content: |
+          {{ ansible_managed | default('Ansible managed') | comment }}
+          table inet molecule_stale {
+            chain input {
+              type filter hook input priority 0; policy accept;
+            }
+          }
+        owner: root
+        group: root
+        mode: '0644'
+
+    # A file placed by hand (no ansible_managed header). The role must leave
+    # it in place.
+    - name: Prepare | Write a hand-made custom nftables table file
+      ansible.builtin.copy:
+        dest: /etc/firewalld/nftables.d/inet-molecule_handmade.nft
+        content: |
+          table inet molecule_handmade {
+            chain input {
+              type filter hook input priority 0; policy accept;
+            }
+          }
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Prepare | Load the stale and hand-made custom nftables tables
+      ansible.builtin.command:
+        argv:
+          - nft
+          - -f
+          - '{{ item }}'
+      loop:
+        - /etc/firewalld/nftables.d/inet-molecule_stale.nft
+        - /etc/firewalld/nftables.d/inet-molecule_handmade.nft
+      changed_when: true
+
+    # A table loaded by another tool, without a file. Configuring a table of
+    # the same name must fail (converge.yml).
+    - name: Prepare | Load a foreign nftables table
+      ansible.builtin.command:
+        argv:
+          - nft
+          - add
+          - table
+          - inet
+          - molecule_foreign
+      changed_when: true

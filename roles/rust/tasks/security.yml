@@ -6,8 +6,3 @@
   retries: 3
   delay: 5
   when: __rust_cargo_audit_package | length > 0
-
-- name: Security | cargo-audit not packaged notice
-  ansible.builtin.debug:
-    msg: 'cargo-audit is not packaged for {{ ansible_facts["os_family"] }}; install it with cargo install cargo-audit.'
-  when: __rust_cargo_audit_package | length == 0

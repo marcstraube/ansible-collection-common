@@ -1,8 +1,16 @@
 ---
 __firewalld_packages:
   - 'firewalld'
+  - 'nftables'
 __firewalld_service_name: 'firewalld'
 __firewalld_config_dir: '/etc/firewalld'
+
+# Custom nftables tables: one file per table in the directory, loaded by the
+# main file through a wildcard include
+__firewalld_nftables_config_dir: '/etc/firewalld/nftables.d'
+__firewalld_nftables_config_file: '/etc/firewalld/nftables.conf'
+__firewalld_nftables_service_name: 'firewalld-nftables'
+__firewalld_nftables_binary: '/usr/sbin/nft'
 
 # System interpreter that carries the firewall Python package of firewalld
 # (firewall-cmd runs on it). Used to normalize rich rules for the purge.

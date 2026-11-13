@@ -1,7 +1,101 @@
 ---
-- name: Composer | Install Composer
+# Composer runs on any PHP version: the interpreter that starts it decides
+# which version it resolves dependencies for. One Composer install serves
+# every configured version through one wrapper per version.
+#
+# Composer comes from the same source as PHP where that source ships it:
+# the distribution package depends on the distribution's default PHP CLI,
+# so it is only installed when that PHP is one of the configured versions.
+# Everywhere else the package would pull in a second PHP, and the role
+# downloads the upstream composer.phar instead:
+# - Arch: package when the official php package is configured; AUR
+#   versions alone would pull it in.
+# - Debian and Ubuntu: PHP comes from Sury or the Sury PPA, neither ships
+#   Composer, and the distribution package pulls in their default PHP.
+# - EL with AppStream: the EPEL package for the php-* set (every version
+#   on EL 9, the default on EL 10); it conflicts with the php8.4-* set.
+# - EL with Remi: Remi ships no Composer.
+- name: Composer | Resolve Composer versions
+  ansible.builtin.set_fact:
+    __php_composer_default_version: >-
+      {{ (php_default_version == 'auto') | ternary(__php_system_version, php_default_version) | string }}
+    __php_composer_versions: >-
+      {{ php_versions | map(attribute='version') | map('string')
+         | map('regex_replace', '^auto$', __php_system_version) | unique | list }}
+
+- name: Composer | Select the Composer source
+  ansible.builtin.set_fact:
+    __php_composer_use_phar: >-
+      {{ not ((ansible_facts['os_family'] == 'Archlinux'
+               and __php_system_version in __php_composer_all_versions)
+              or (ansible_facts['os_family'] == 'RedHat' and php_redhat_repo == 'appstream'
+                  and (__php_composer_all_versions
+                       | map('extract', __php_redhat_versions) | unique | list) == ['php-'])) }}
+  vars:
+    __php_composer_all_versions: '{{ (__php_composer_versions + [__php_composer_default_version]) | unique | list }}'
+
+- name: Composer | Install Composer package
   ansible.builtin.package:
     name: '{{ __php_composer_package }}'
     state: present
   retries: 3
   delay: 5
+  when: not (__php_composer_use_phar | bool)
+
+# get_url skips the download while the file matches the checksum and replaces
+# it when php_composer_version and php_composer_checksum change.
+- name: Composer | Download composer.phar
+  ansible.builtin.get_url:
+    url: '{{ __php_composer_download_url }}'
+    dest: '{{ __php_composer_phar }}'
+    checksum: '{{ php_composer_checksum }}'
+    owner: root
+    group: root
+    mode: '0644'
+  environment: >-
+    {{
+      {'HTTPS_PROXY': php_composer_proxy, 'HTTP_PROXY': php_composer_proxy}
+      if php_composer_proxy | length > 0
+      else {}
+    }}
+  retries: 5
+  delay: 10
+  when: __php_composer_use_phar | bool
+
+# Wrapper name → PHP version: composer for php_default_version,
+# composer<XX> for every entry in php_versions.
+- name: Composer | Build wrapper list
+  ansible.builtin.set_fact:
+    __php_composer_script: >-
+      {{ (__php_composer_use_phar | bool)
+         | ternary(__php_composer_phar, __php_composer_package_script) }}
+    __php_composer_wrappers: >-
+      {{ dict((['composer']
+               + (__php_composer_versions | map('replace', '.', '') | map('regex_replace', '^', 'composer') | list))
+              | zip([__php_composer_default_version] + __php_composer_versions)) }}
+
+# The wrappers are PHP scripts, not shell scripts: community.general.composer
+# runs "php <composer>", which a shell script would only print.
+- name: Composer | Deploy wrappers
+  ansible.builtin.template:
+    src: composer.j2
+    dest: '{{ __php_composer_wrapper_dir }}/{{ item.key }}'
+    owner: root
+    group: root
+    mode: '0755'
+  vars:
+    # CLI binary of the version: /usr/bin/php<X.Y> on Debian, /usr/bin/php<XY>
+    # on Remi and for AUR versions on Arch, /usr/bin/php for the official Arch
+    # package and AppStream (one version per host).
+    __php_composer_php: >-
+      {%- if ansible_facts['os_family'] == 'Debian' -%}
+      /usr/bin/php{{ item.value }}
+      {%- elif (ansible_facts['os_family'] == 'RedHat' and php_redhat_repo == 'remi')
+            or (ansible_facts['os_family'] == 'Archlinux' and item.value != __php_system_version) -%}
+      /usr/bin/php{{ item.value | replace('.', '') }}
+      {%- else -%}
+      /usr/bin/php
+      {%- endif -%}
+  loop: '{{ __php_composer_wrappers | dict2items }}'
+  loop_control:
+    label: '{{ item.key }}'

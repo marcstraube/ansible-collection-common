@@ -59,10 +59,13 @@ and ninja come from the CRB repository.
 | `build_tools_c_bear_enabled`     | `false` | bear, compile_commands.json for non-CMake builds          |
 
 Tools a platform does not package are skipped: codelldb exists only as an AUR
-package (upstream ships a VSIX archive), bear is missing from EPEL 10, and
-valgrind on EL arrives as a member of the Development Tools group, so the
-toggle is a no-op there. The role installs and never removes; disabling a
-toggle leaves an installed tool in place.
+package on Arch Linux, bear is missing from EPEL 10, and valgrind on EL
+arrives as a member of the Development Tools group, so the toggle is a no-op
+there. On Debian and EL, codelldb comes with the VS Code extension
+(`code --install-extension vadimcn.vscode-lldb`) or as a VSIX archive from
+the [upstream releases](https://github.com/vadimcn/codelldb/releases). The
+role installs and never removes; disabling a toggle leaves an installed tool
+in place.
 
 ## Tags
 

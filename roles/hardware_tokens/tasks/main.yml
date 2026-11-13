@@ -13,6 +13,27 @@
   tags:
     - always
 
+# hardware_tokens_users is deprecated and will be removed in v4.0.0. The flag
+# is set on every run so the warning below fires only while the deprecated
+# variable is set.
+- name: Main | Detect deprecated hardware_tokens_users
+  ansible.builtin.set_fact:
+    __hardware_tokens_users_deprecated: >-
+      {{ hardware_tokens_enabled | bool
+         and hardware_tokens_users | default([]) | length > 0 }}
+  tags:
+    - always
+
+- name: Main | Warn about hardware_tokens_users deprecation
+  ansible.builtin.debug:
+    msg: >
+      hardware_tokens_users is DEPRECATED and will be removed in v4.0.0. Add
+      the users to the device access group through users_list[].groups of
+      marcstraube.common.users instead. See #535.
+  when: __hardware_tokens_users_deprecated | bool
+  tags:
+    - always
+
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: hardware_tokens_enabled | bool
@@ -38,9 +59,7 @@
 
 - name: Main | Import users tasks
   ansible.builtin.import_tasks: users.yml
-  when:
-    - hardware_tokens_enabled | bool
-    - hardware_tokens_users | length > 0
+  when: __hardware_tokens_users_deprecated | bool
   tags:
     - hardware-tokens
     - hardware-tokens:users

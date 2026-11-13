@@ -28,6 +28,11 @@
       error_log: '/var/log/php-fpm/www-error.log'
     php_fpm_pool_admin_flags:
       log_errors: 'on'
+    # Worker environment: verify reads both through getenv() in FPM; the
+    # Debian second version overrides MOLECULE_FPM_ENV per version.
+    php_fpm_pool_env:
+      MOLECULE_FPM_ENV: 'global'
+      HTTPS_PROXY: 'http://proxy.invalid:3128'
 
   pre_tasks:
     # Multi-version: add second PHP version on Debian.
@@ -56,6 +61,10 @@
             ini:
               extra_settings:
                 realpath_cache_size: '8192k'
+            fpm_pools:
+              - name: 'www'
+                env:
+                  MOLECULE_FPM_ENV: 'per-version'
       when: ansible_facts['os_family'] == 'Debian'
 
   tasks:

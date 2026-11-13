@@ -12,6 +12,14 @@ __base_default_packages:
 
 __base_dialog_package: 'dialog'
 
+# Kernel
+__base_default_kernel: 'linux'
+__base_default_kernel_extra_packages:
+  - '{{ base_kernel }}-headers'
+# Package compared with the minimum (the kernel updates with the system
+# upgrade, so there is nothing to move along)
+__base_kernel_version_pattern: '^{{ base_kernel | regex_escape }}$'
+
 # Keeps the modules of the running kernel across a kernel upgrade
 __base_kernel_keep_modules_package: 'kernel-modules-hook'
 __base_kernel_keep_modules_service: 'linux-modules-cleanup.service'

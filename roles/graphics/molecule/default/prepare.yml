@@ -19,6 +19,16 @@
       delay: 5
       when: ansible_facts['os_family'] == 'Debian'
 
+    # The ROCm diagnostic tools come from EPEL; the package_management role
+    # enables it on real hosts.
+    - name: Prepare | Enable EPEL repository (RedHat)
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'RedHat'
+
     - name: Prepare | Update package cache (RedHat)
       ansible.builtin.dnf:
         update_cache: true

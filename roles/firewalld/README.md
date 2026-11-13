@@ -6,8 +6,9 @@ Configure firewalld zones, services, ports, and rich rules.
 
 Installs and configures firewalld as the host firewall. Manages daemon settings,
 zones, services, ports, rich rules, source-based routing, interface assignments,
-port forwarding, masquerading, ICMP blocking, direct rules, and custom service
-definitions. This is the infrastructure-wide standard firewall role.
+port forwarding, masquerading, ICMP blocking, direct rules, custom service
+definitions, and custom nftables tables for filtering that firewalld cannot
+express. This is the infrastructure-wide standard firewall role.
 
 ## Requirements
 
@@ -163,6 +164,16 @@ See [Purge](#purge) for what a managed zone is and what the purge removes.
 |--------------------------|---------|-------------------------------------------------------|
 | `firewalld_direct_rules` | `[]`    | Low-level nftables/iptables rules (deprecated in 2.x) |
 
+### Custom nftables Tables
+
+| Variable                             | Default | Description                                     |
+|--------------------------------------|---------|-------------------------------------------------|
+| `firewalld_nftables_tables`          | `[]`    | Own nftables tables next to the firewalld table |
+| `firewalld_nftables_service_enabled` | `true`  | Enable and start `firewalld-nftables.service`   |
+
+See [Custom nftables Tables](#custom-nftables-tables-1) for the entry format
+and how tables are loaded and removed.
+
 ### Custom Services
 
 | Variable                    | Default | Description                    |
@@ -177,6 +188,7 @@ See [Purge](#purge) for what a managed zone is and what the purge removes.
 | `firewalld:install`   | Package installation                           |
 | `firewalld:zones`     | Zones and zone targets                         |
 | `firewalld:configure` | Configuration and rules                        |
+| `firewalld:nftables`  | Custom nftables tables                         |
 | `firewalld:purge`     | Purge unconfigured services, ports, rich rules |
 | `firewalld:service`   | Service management                             |
 
@@ -277,10 +289,73 @@ firewalld_purge_services: true
 firewalld_purge_rich_rules: true
 ```
 
+### Custom nftables Tables
+
+Rich rules cannot match IP header fields, and direct rules use iptables syntax
+and are deprecated in firewalld 2.x. `firewalld_nftables_tables` covers such
+cases with own nftables tables next to the firewalld table, for example the
+interim mitigation for CVE-2026-98432
+([RHSB-2026-016](https://access.redhat.com/security/vulnerabilities/RHSB-2026-016)),
+which drops IPv4 TCP packets carrying IP options:
+
+```yaml
+firewalld_nftables_tables:
+  - name: 'cve_2026_98432'
+    family: 'inet'
+    chains:
+      - name: 'input'
+        hook: 'input'
+        priority: -310
+        rules:
+          - 'ip protocol tcp ip hdrlength > 5 counter drop'
+```
+
+| Key                 | Required | Description                                                    |
+|---------------------|----------|----------------------------------------------------------------|
+| `name`              | yes      | Table name (letters, digits, underscores)                      |
+| `family`            | yes      | `ip`, `ip6`, `inet`, `arp`, `bridge` or `netdev`               |
+| `chains`            | yes      | Base chains of the table                                       |
+| `chains[].name`     | yes      | Chain name                                                     |
+| `chains[].type`     | no       | Chain type (default `filter`)                                  |
+| `chains[].hook`     | yes      | Netfilter hook (`prerouting`, `input`, `forward`, `output`, …) |
+| `chains[].priority` | yes      | Chain priority (number)                                        |
+| `chains[].policy`   | no       | Chain policy (default `accept`)                                |
+| `chains[].rules`    | no       | Rules in nft syntax                                            |
+
+Each table is written to `/etc/firewalld/nftables.d/<family>-<name>.nft` and
+checked with `nft --check` before it is placed. `/etc/firewalld/nftables.conf`
+includes the configured tables, and `firewalld-nftables.service` loads it at
+boot (after firewalld, before the network comes up) and on every change,
+replacing all tables in one transaction. firewalld only manages its own
+tables, so the custom tables stay in place across a firewalld reload or
+restart.
+
+A `drop` in such a base chain is final: packets it drops never reach the
+firewalld rules, whatever the zones allow. An `accept` only ends the chain of
+this table; the firewalld chains still evaluate the packet.
+
+Removing an entry from `firewalld_nftables_tables` deletes the table from the
+ruleset and removes its file on the next run, e.g. once a kernel update fixes
+the vulnerability a table mitigates.
+
+The role only touches files it wrote itself: files whose content starts with
+the rendered `ansible_managed` header. Files placed in the directory by hand
+are neither loaded, overwritten nor removed. If the `ansible_managed` text
+changes, files written with the old text are no longer recognized and stay in
+place; remove them by hand if needed.
+
+Loading a table replaces any table of the same family and name. The run
+therefore fails before any change when a configured table already exists in
+the ruleset or as a file in the directory without having been created by the
+role, e.g. `inet firewalld` or a table of a container runtime. Choose another
+name, or remove the foreign table by hand (`nft delete table <family> <name>`)
+when it is a leftover, such as a table loaded manually from a vendor advisory.
+
 ## References
 
 - [firewalld](https://firewalld.org/) — Dynamically managed firewall with network zones
 - [firewalld Documentation](https://firewalld.org/documentation/) — Official documentation
+- [nft(8)](https://www.netfilter.org/projects/nftables/manpage.html) — nftables rule syntax
 
 ## License
 

@@ -489,6 +489,17 @@ openssh_agent_global_service_enabled: false
 # Enable SSH askpass program
 openssh_askpass_enabled: false
 
+# Askpass program: 'default' (the distribution's askpass at ssh-agent's
+# compiled-in path), 'lxqt', 'ksshaskpass', 'seahorse' or 'custom'. Every
+# choice but 'default' is exported as SSH_ASKPASS through
+# /etc/environment.d/40-ssh-askpass.conf.
+openssh_askpass: 'default'
+
+# Only with 'custom': path of the askpass program (required) and the package
+# that provides it (optional, empty installs nothing)
+openssh_askpass_program: ''
+openssh_askpass_package: ''
+
 #
 # SSHFP DNS Records
 #
