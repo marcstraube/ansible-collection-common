@@ -28,12 +28,6 @@ users_groups: []
 #
 # SPECIAL HANDLING:
 # - name: 'root' → Only password/shell updated (no useradd, no home creation)
-# - default: true → This user's password is used for ansible_become_password
-#
-# DEFAULT USER LOGIC:
-# 1. User with 'default: true' → this user
-# 2. Multiple with 'default: true' → first one (+ warning)
-# 3. None with 'default: true' → first non-root user in list
 #
 # Example:
 #   users_list:
@@ -43,7 +37,6 @@ users_groups: []
 #
 #     - name: 'johndoe'
 #       comment: 'John Doe'
-#       default: true              # → become_password uses this user's password
 #       uid: 1001
 #       group: 'johndoe'           # Primary group
 #       groups: ['wheel', 'docker'] # Additional groups

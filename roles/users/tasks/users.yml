@@ -1,38 +1,5 @@
 ---
 #
-# Determine Default User (for become_password)
-#
-
-- name: Users | Find users with default flag
-  ansible.builtin.set_fact:
-    users_with_default_flag: >-
-      {{ users_list | selectattr('default', 'defined')
-         | selectattr('default', 'equalto', true) | list }}
-    users_non_root: >-
-      {{ users_list | rejectattr('name', 'equalto', 'root') | list }}
-
-- name: Users | Warn if multiple users have default flag
-  ansible.builtin.debug:
-    msg: "WARNING: Multiple users have 'default: true'. Using first one: {{ users_with_default_flag[0].name }}"
-  when: users_with_default_flag | length > 1
-
-- name: Users | Set default user fact
-  ansible.builtin.set_fact:
-    users_default_user: >-
-      {%- if users_with_default_flag | length > 0 -%}
-        {{ users_with_default_flag[0] }}
-      {%- elif users_non_root | length > 0 -%}
-        {{ users_non_root[0] }}
-      {%- else -%}
-        {{ {} }}
-      {%- endif -%}
-
-- name: Users | Display default user
-  ansible.builtin.debug:
-    msg: "Default user: {{ users_default_user.name | default('none') }} (used for become_password)"
-  when: users_default_user.name is defined
-
-#
 # Root User (Special Handling - password/shell only)
 #
 
