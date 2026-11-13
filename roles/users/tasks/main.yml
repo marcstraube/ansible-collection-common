@@ -1,4 +1,29 @@
 ---
+# An ssh_key_files entry deploys a private key (src), a public key (src_public)
+# or both; an entry with neither would deploy nothing
+- name: Main | Validate ssh_key_files sources
+  ansible.builtin.assert:
+    that:
+      - __users_ssh_key_files_invalid | length == 0
+    fail_msg: >-
+      users_list ssh_key_files: {{ __users_ssh_key_files_invalid | join(', ') }}
+      without src or src_public
+    quiet: true
+  vars:
+    __users_ssh_key_files_invalid: >-
+      {%- set ns = namespace(entries=[]) -%}
+      {%- for user in users_list -%}
+      {%- for key_file in user.ssh_key_files | default([]) -%}
+      {%- if key_file.src is not defined and key_file.src_public is not defined -%}
+      {%- set ns.entries = ns.entries + [user.name ~ ': ' ~ key_file.dest | default('(no dest)')] -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- endfor -%}
+      {{ ns.entries }}
+  when: users_enabled | bool
+  tags:
+    - always
+
 - name: Main | Import groups tasks
   ansible.builtin.import_tasks: groups.yml
   when: users_enabled | bool

@@ -81,9 +81,31 @@ Key files listed in a user's `ssh_key_files` are read from
 `{{ inventory_dir }}/files/ssh/` and written to the user's `.ssh` directory.
 Encrypt private key files with `ansible-vault encrypt` — the `copy` module
 decrypts a vault-encrypted source transparently, so the key stays encrypted at
-rest in the inventory. The public half is optional and named through
-`src_public`, which keeps the source filename free while the destination
-follows SSH convention as `<dest>.pub`.
+rest in the inventory. The public half is named through `src_public`, which
+keeps the source filename free while the destination follows SSH convention as
+`<dest>.pub`. Each entry needs `src`, `src_public` or both; an entry with
+neither fails before any change, naming the user and `dest`. `mode` applies to
+the private key; the public key always gets `users_ssh_public_key_file_mode`.
+
+An entry with only `src_public` deploys `<dest>.pub` and no private key file.
+This fits a key whose private half never leaves its store, such as a password
+manager's SSH agent or a hardware token:
+
+```yaml
+ssh_key_files:
+  - src_public: 'git_agent.pub'     # <inventory>/files/ssh/git_agent.pub
+    dest: 'id_git'                  # ~/.ssh/id_git.pub, no ~/.ssh/id_git
+```
+
+`ssh_config` points `IdentityFile` at the public key file. With
+`IdentitiesOnly yes`, the client offers only that key from the agent instead of
+every key the agent holds:
+
+```text
+Host git.example.com
+    IdentityFile ~/.ssh/id_git.pub
+    IdentitiesOnly yes
+```
 
 ### Password Policy
 
@@ -156,9 +178,11 @@ Each entry in `users_list` supports:
   ssh_key_passphrase: ''
   ssh_key_files:             # Deploy existing key files from the inventory
     - src: 'deploy_key'              # <inventory>/files/ssh/deploy_key
-      src_public: 'deploy_key.pub'   # Optional public half
+      src_public: 'deploy_key.pub'   # Public half (optional with src)
       dest: 'id_ed25519'             # ~/.ssh/id_ed25519 (public: id_ed25519.pub)
-      mode: '0600'                   # Optional
+      mode: '0600'                   # Optional, private key only
+    - src_public: 'agent_key.pub'    # Public half only (agent-held key)
+      dest: 'id_agent'               # ~/.ssh/id_agent.pub, no private key file
   environment:               # Login shell variables for this user only
     HTTP_PROXY: 'http://proxy.example.com:3128'
   profile_image: ''          # Path to image file
