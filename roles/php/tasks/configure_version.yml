@@ -64,9 +64,28 @@
     __php_fpm_service: 'php{{ __php_ver_compact }}-php-fpm'
     __php_fpm_binary: '/opt/remi/php{{ __php_ver_compact }}/root/usr/sbin/php-fpm'
     __php_fpm_config: '/etc/opt/remi/php{{ __php_ver_compact }}/php-fpm.conf'
+    __php_fpm_log_dir: '/var/opt/remi/php{{ __php_ver_compact }}/log/php-fpm'
   when:
     - ansible_facts['os_family'] == 'RedHat'
     - php_redhat_repo == 'remi'
+
+# Remi keeps the FPM logs of each version in its SCL tree, where nobody looks
+# for them. The link makes them visible as /var/log/php<XX>-fpm. The directory
+# belongs to the php<XX>-php-fpm package, so only FPM versions get a link. In
+# check mode the package may not be installed yet, hence force there only; a
+# real run fails rather than replace a file or directory of that name.
+- name: Configure Version | Link the Remi FPM log directory into /var/log
+  ansible.builtin.file:
+    src: '{{ __php_fpm_log_dir }}'
+    dest: '/var/log/php{{ __php_ver_compact }}-fpm'
+    state: link
+    force: '{{ ansible_check_mode }}'
+    owner: root
+    group: root
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - php_redhat_repo == 'remi'
+    - __php_config_item.fpm | default(true) | bool
 
 - name: Configure Version | Set effective listen socket
   ansible.builtin.set_fact:
