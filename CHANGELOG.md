@@ -2,6 +2,17 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.2.1 (2026-11-13)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(users): remove the default flag that never set the become password by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/589
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.2.0...v3.2.1
+
 ## 3.2.0 (2026-11-13)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
