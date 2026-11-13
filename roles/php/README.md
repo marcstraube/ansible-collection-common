@@ -414,6 +414,7 @@ as `HTTP_PROXY` there (httpoxy). libcurl reads the lowercase `http_proxy` and
 | `php_composer_enabled`  | `false`        | Install Composer and its wrappers                 |
 | `php_composer_version`  | pinned release | Upstream release where `composer.phar` is used    |
 | `php_composer_checksum` | its SHA-256    | Checksum of that `composer.phar` (hash or URL)    |
+| `php_composer_proxy`    | `''`           | HTTP(S) proxy for the `composer.phar` download    |
 
 Composer itself does not depend on a PHP version; the interpreter that starts
 it decides which version it resolves dependencies for. The role installs one
@@ -475,6 +476,15 @@ instead, select a channel and its published checksum:
 php_composer_version: 'latest-stable'
 php_composer_checksum: 'sha256:https://getcomposer.org/download/latest-stable/composer.phar.sha256sum'
 ```
+
+In networks without direct DNS or internet access to getcomposer.org (e.g.
+an internal corporate network with an outbound HTTP(S) proxy), set
+`php_composer_proxy` to the proxy URL. It is applied as
+`HTTPS_PROXY`/`HTTP_PROXY` on the `composer.phar` download only; the
+Composer package comes through the package manager's own proxy
+configuration. Composer's own requests at runtime (`composer install`,
+`composer update`, …) read the proxy from the environment of the user who
+runs it.
 
 Composer 2.3 and later needs PHP 7.2.5; for older PHP versions use the LTS
 channel `latest-2.2.x`.

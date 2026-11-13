@@ -266,3 +266,9 @@ php_composer_version: '2.11.1'
 # SHA-256 checksum of composer.phar of php_composer_version, set together
 # with it: 'sha256:<hash>' or 'sha256:<url of the .sha256sum file>'
 php_composer_checksum: 'sha256:6f1b891e1d4927d62740276c540fb490e47689e19e102c49e8da849794882f8c'
+
+# Optional HTTP(S) proxy for the composer.phar download — applied as
+# HTTPS_PROXY/HTTP_PROXY env vars on the download task. Required in networks
+# that have no direct DNS/internet access to getcomposer.org.
+# Empty (default) = no proxy. Example: http://proxy.example.com:3128
+php_composer_proxy: ''
