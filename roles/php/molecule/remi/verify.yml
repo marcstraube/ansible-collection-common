@@ -134,6 +134,42 @@
         label: '{{ item.item }}'
 
     #
+    # FPM log links — /var/log/php<XX>-fpm points into the SCL tree of
+    # each version and resolves to its existing log directory.
+    #
+
+    - name: Verify | Check the Remi FPM log links
+      ansible.builtin.stat:
+        path: '/var/log/php{{ item }}-fpm'
+      register: __verify_remi_log_links
+      loop:
+        - '84'
+        - '83'
+
+    - name: Verify | Check the Remi FPM log links resolve
+      ansible.builtin.stat:
+        path: '/var/log/php{{ item }}-fpm'
+        follow: true
+      register: __verify_remi_log_dirs
+      loop:
+        - '84'
+        - '83'
+
+    - name: Verify | Assert the Remi FPM log links point to the log directories
+      ansible.builtin.assert:
+        that:
+          - item.0.stat.islnk | default(false)
+          - item.0.stat.lnk_target == '/var/opt/remi/php' ~ item.0.item ~ '/log/php-fpm'
+          - item.1.stat.isdir | default(false)
+        fail_msg: >-
+          /var/log/php{{ item.0.item }}-fpm is not a link to an existing
+          /var/opt/remi/php{{ item.0.item }}/log/php-fpm:
+          {{ item.0.stat.lnk_target | default('no link') }}
+      loop: '{{ __verify_remi_log_links.results | zip(__verify_remi_log_dirs.results) | list }}'
+      loop_control:
+        label: '/var/log/php{{ item.0.item }}-fpm'
+
+    #
     # Named pool of 8.4 — its file and socket live in the php84 trees.
     #
 

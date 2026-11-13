@@ -236,6 +236,29 @@ overridden by the application at runtime. Anything PHP writes outside this log �
 extension startup warnings, engine-level messages — reaches the FPM master log
 only with `php_fpm_pool_catch_workers_output` enabled; FPM discards it otherwise.
 
+#### Log locations
+
+With the default `php_ini_error_log: syslog`, PHP errors land in the journal on
+every platform. The FPM master log and any file a pool sets as `error_log` stay
+where the package puts them:
+
+| Platform                | FPM log directory                           | Link in `/var/log`     |
+|-------------------------|---------------------------------------------|------------------------|
+| RHEL (AppStream)        | `/var/log/php-fpm/`                         | —                      |
+| RHEL (Remi)             | `/var/opt/remi/php<XX>/log/php-fpm/`        | `/var/log/php<XX>-fpm` |
+| Debian (Sury)           | `/var/log/php<X.Y>-fpm.log` (file)          | —                      |
+| Arch (official and AUR) | `error_log` in the version's `php-fpm.conf` | —                      |
+
+Remi keeps each version in its own software collection tree, so the role links
+the log directory of every version with `fpm: true` to `/var/log/php<XX>-fpm`
+(e.g. `/var/log/php84-fpm`). A version without FPM has no such directory and
+gets no link. The link is for reading: a pool `error_log` names the real path
+below `/var/opt/remi`.
+
+The link of a version dropped from `php_versions` stays: the role does not
+uninstall that version, so the link still points to its logs. Remove it by hand
+together with the packages (`rm /var/log/php<XX>-fpm`).
+
 ### PHP-FPM Pools
 
 Full pool templates deployed for each version with FPM enabled. The
@@ -596,8 +619,9 @@ The `appstream` scenario installs a non-default AppStream version on Rocky
 Linux (the `php:8.3` module stream on Rocky 9, the `php8.4-*` package set
 on Rocky 10), with Composer from EPEL on Rocky 9 and from `composer.phar`
 on Rocky 10; the `remi` scenario installs two Remi versions side by side,
-with Composer from `composer.phar`, and a named pool under the paths of its
-version. The `pools` scenario runs named pools on all four platforms: two
+with Composer from `composer.phar`, a named pool under the paths of its
+version and the `/var/log/php<XX>-fpm` link of each version. The `pools`
+scenario runs named pools on all four platforms: two
 pools serve requests under their own users and sockets, a third one is
 removed through `state: absent`, the exclusive mode removes only an unlisted
 managed pool file, `www.conf` stays the same as without `fpm_pools`, the
