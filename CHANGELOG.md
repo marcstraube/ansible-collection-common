@@ -2,6 +2,40 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.2.0 (2026-11-13)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Features
+* feat(utils): add nvtop to the system monitors by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/530
+* feat(graphics): add ROCm diagnostic tools by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/531
+* feat(php): set environment variables in the PHP-FPM pool by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/533
+* feat(firewalld): manage custom nftables tables by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/539
+* feat(graphics): add rocRAND to the AMD section by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/541
+* feat(base): add a targeted kernel update with reboot by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/543
+* feat(openssh): export SSH_AUTH_SOCK for the global ssh-agent by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/547
+* feat(openssh): select the askpass program and export SSH_ASKPASS by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/552
+* feat(users): keep ~/.cache out of home snapshots with a BTRFS subvolume by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/565
+* chore(wazuh_agent): update Wazuh version to 4.14.10 by @marcstraube-bot[bot] in https://github.com/marcstraube/ansible-collection-common/pull/566
+* feat(php): support several named PHP-FPM pools per version by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/575
+* feat(php): link the Remi PHP-FPM log directories into /var/log by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/580
+* feat(mta): fail when the full Postfix role is enabled by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/581
+* feat(users): deploy a public key file without its private half by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/582
+### Bug Fixes
+* fix(base): install no microcode in virtual machines with auto by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/544
+* fix(openssh): run the ssh-agent unit lookup in check mode by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/549
+* fix(php): run Composer on the managed PHP versions by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/564
+* fix(php): download composer.phar through a configurable proxy by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/579
+### Code Refactoring
+* refactor(build_tools,go,rust): drop the notices for unpackaged tools by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/555
+* refactor(hardware_tokens): deprecate hardware_tokens_users by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/562
+### Documentation
+* docs(users): document append_groups as the way to replace supplementary groups by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/556
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.1.2...v3.2.0
+
 ## 3.1.2 (2026-11-12)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
