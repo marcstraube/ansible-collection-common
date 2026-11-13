@@ -77,6 +77,9 @@
           - src: 'molecule_test_key'
             src_public: 'molecule_test_key.pub'
             dest: 'id_ed25519'
+          # Public half only: the private key stays in an agent
+          - src_public: 'molecule_test_key.pub'
+            dest: 'id_agent'
 
       # System user
       - name: 'serviceuser'
