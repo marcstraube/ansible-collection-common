@@ -169,6 +169,117 @@ be on a filesystem without `noexec`, for example `/var/cache/makepkg`.
 | `paru_sort_by`          | `votes`                 | Sort search results              |
 | `paru_search_by`        | `name-desc`             | Search by field                  |
 
+### Arch Linux - Paru PKGBUILD Repositories
+
+| Variable                     | Default | Description                    |
+|------------------------------|---------|--------------------------------|
+| `paru_pkgbuild_repositories` | `[]`    | PKGBUILD repositories for paru |
+
+paru (2.0 and later) builds packages from repositories of PKGBUILDs besides
+the AUR. Each entry becomes a `[name]` section in `/etc/paru.conf` and needs
+`name` and exactly one of `url` and `path`:
+
+| Key                | paru.conf         | Description                                                    |
+|--------------------|-------------------|----------------------------------------------------------------|
+| `name`             | `[name]`          | Unique name: letters, digits, `_`, `+`, `-`                    |
+| `url`              | `Url`             | Git URL: `https://`, `ssh://` or `file:///`                    |
+| `path`             | `Path`            | Absolute path of an existing directory on the host             |
+| `subdirectory`     | `Path`            | With `url`: search for PKGBUILDs below this relative directory |
+| `depth`            | `Depth`           | Directory levels scanned, `1` is the top only (paru: `2`)      |
+| `skip_review`      | `SkipReview`      | With `url`: skip the review in manual runs (`false`)           |
+| `generate_srcinfo` | `GenerateSrcinfo` | Regenerate `.SRCINFO` even if present (`false`)                |
+
+```yaml
+paru_pkgbuild_repositories:
+  - name: 'mypkgbuilds'
+    url: 'https://git.example.com/johndoe/pkgbuilds.git'
+    subdirectory: 'packages'
+  - name: 'local'
+    path: '/srv/pkgbuilds'
+```
+
+The role fails before any change when an entry is invalid, when a `path`
+directory is not safe (see below) or when the list is set and `aur_helper` is
+not `paru`: yay has no PKGBUILD repositories. Every value becomes a line in
+`paru.conf`, so `path` and `subdirectory` must not contain whitespace or
+control characters, and `subdirectory` must not start with `/` or contain `..`.
+
+`pacman_custom_repositories` adds binary repositories that pacman itself
+installs from, signed packages built elsewhere. A PKGBUILD repository holds
+build recipes instead: paru builds its packages on the host as `aur_builder`,
+like AUR packages, and pacman never sees the repository.
+
+**A PKGBUILD repository shadows the AUR.** paru prefers its packages over AUR
+packages of the same name, and a PKGBUILD runs arbitrary code during the build.
+Only add repositories from a trusted source. A `path` repository has no review
+step at all. For a `url` repository, `skip_review: false` only shows changes
+in manual paru runs, and only the commits paru has not marked as seen yet.
+paru marks the downloaded commits as seen even with `--noconfirm`, which skips
+the review: every download the role starts and every install by another role
+(`kewlfft.aur.aur`) does that, so a later manual `paru -Syu` does not show
+these changes. When the source is not under the administrator's control,
+review new commits in the clone yourself (`git log -p` in
+`<paru_clone_dir>/repo/<name>`) before installing from it with Ansible.
+
+A `url` repository is cloned to `<paru_clone_dir>/repo/<name>`. The role
+downloads it as `aur_builder` with `paru -Sy --pkgbuilds` when the section of
+a `url` repository in `paru.conf` is added or changed or a clone is missing,
+so other roles can install its packages in the same run; this does not
+refresh the pacman databases. Other changes to `paru.conf` do not download,
+so a run without access to the Git server only fails when a `url` repository
+changed. Later changes arrive with every manual `paru -Sy` or `paru -Syu`.
+When paru is not installed yet, for example with
+`--tags package-management:configure` on a new host, the role skips the
+download and says so; the next run that finds paru catches up.
+
+Only `https://`, `ssh://` and `file:///` URLs are accepted: `http://` and
+`git://` have no transport protection, and the downloaded build recipes are
+installed as root. A `url` must not contain credentials: neither
+`user:password@` nor, in an `https://` URL, a token or user name before the
+`@` (`https://<token>@host/...`). `paru.conf` is world-readable and the clone
+stores the URL in `.git/config`. An `ssh://` URL may name the login user
+(`ssh://git@host/...`). For a private repository use `ssh://` with an
+SSH key of `aur_builder`, or keep `https://` and give `aur_builder` a Git
+credential helper that reads the token from a file only it can read. The role sets up neither the key nor the host key:
+put the key below `<aur_builder_home>/.ssh/` and the server's host key into
+`<aur_builder_home>/.ssh/known_hosts`, both owned by `aur_builder`. Without a
+known host key the download fails, since it runs without a terminal.
+
+paru itself keeps fetching from the URL a clone was made with, even after the
+`Url` in `paru.conf` changed. The role therefore compares the origin of each
+clone with its `url`, removes the clone of a repository whose `url` changed and
+downloads it again from the new URL. Installed packages are rebuilt from the
+new source on their next upgrade, once it offers a newer version. Clones of
+repositories removed from the list stay in place. paru normalizes a `Url`
+before cloning (WHATWG URL rules), so the role only accepts a `url` in a form
+paru keeps: printable ASCII without whitespace and without the characters
+paru percent-encodes (`"`, `<`, `>`, `\`, `^`, `` ` ``, `{`, `|`, `}`) or a
+query or fragment (`?`, `#`), lowercase scheme and host, no `:443` with
+`https://`, a path of at least `/` after an `https://` host, `file:///`
+instead of `file://localhost/` and no `.` or `..` path segments (also not as
+`%2e`). A `url` that paru still rewrites, such as an IPv4 host in hexadecimal
+notation, is cloned again on every run.
+
+paru reads a `path` repository in place on every run, so no download is
+needed. paru builds its packages inside that directory and afterwards cleans
+the package directory with `git restore` and `git clean -fx`
+(`kewlfft.aur.aur` always passes `--cleanafter`). The directory must
+therefore be a Git work tree that `aur_builder` can write to; uncommitted
+changes and untracked files in a package directory are discarded after its
+build. Outside a Git work tree the build installs the package but paru exits
+with an error.
+
+Whoever can write to a `path` directory can slip in a package that is
+installed as root. The role therefore fails when the directory does not exist,
+is a symlink or another non-directory, grants write permission to its group or
+others, or is not owned by root or `aur_builder_user`. The role creates
+`aur_builder` itself: on a new host the directory can belong to root until
+the first run, and is then handed to `aur_builder` (`chown -R`) for builds.
+
+Packages from these repositories install like AUR packages, for example with
+`kewlfft.aur.aur` as `aur_builder`. `aur_only: true` passes `--aur`, which
+excludes PKGBUILD repositories.
+
 ### Arch Linux - Shared AUR Build Infrastructure
 
 These apply to whichever helper `aur_helper` selects.

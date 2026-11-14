@@ -15,6 +15,24 @@
     - package-management
     - package-management:configure
 
+# The sections of the URL repositories in the previous and the deployed
+# paru.conf decide whether the repositories are downloaded below; other
+# changes to paru.conf do not need the Git server.
+- name: Paru | Check paru.conf
+  ansible.builtin.stat:
+    path: '/etc/paru.conf'
+    get_checksum: false
+  register: __package_management_paru_conf_stat
+  when: __package_management_pkgbuild_url_repos | length > 0
+
+- name: Paru | Read previous paru.conf
+  ansible.builtin.slurp:
+    src: '/etc/paru.conf'
+  register: __package_management_paru_conf_old
+  when:
+    - __package_management_pkgbuild_url_repos | length > 0
+    - __package_management_paru_conf_stat.stat.exists
+
 - name: Paru | Deploy paru.conf
   ansible.builtin.template:
     src: 'archlinux/paru.conf.j2'
@@ -22,6 +40,117 @@
     owner: root
     group: root
     mode: '0644'
+  register: __package_management_paru_conf
+
+# Check mode does not write paru.conf, and the download is skipped there
+- name: Paru | Read deployed paru.conf
+  ansible.builtin.slurp:
+    src: '/etc/paru.conf'
+  register: __package_management_paru_conf_new
+  when:
+    - __package_management_pkgbuild_url_repos | length > 0
+    - __package_management_paru_conf is changed
+    - not ansible_check_mode
+
+# Only URL repositories are downloaded; paru reads path repositories in
+# place on every run. A missing clone triggers the download as well, so a
+# run that failed after deploying paru.conf catches up on the next one.
+- name: Paru | Check PKGBUILD repository clones
+  ansible.builtin.stat:
+    path: '{{ paru_clone_dir }}/{{ __package_management_pkgbuild_repo_clone_subdir }}/{{ item.name }}/.git'
+  loop: '{{ __package_management_pkgbuild_url_repos }}'
+  loop_control:
+    label: '{{ item.name }}'
+  register: __package_management_pkgbuild_clones
+
+# paru keeps fetching from the URL a clone was made with, so a changed url
+# would go unnoticed. The origin of the clone is compared with the url
+# (paru stores no subdirectory in it). Read-only, so it also runs in check
+# mode. rc 1 means the clone has no origin.
+- name: Paru | Read PKGBUILD repository clone origins
+  become: true
+  become_user: '{{ aur_builder_user }}'
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - '{{ item.stat.path | dirname }}'
+      - config
+      - --get
+      - remote.origin.url
+  loop: "{{ __package_management_pkgbuild_clones.results | selectattr('stat.exists') | list }}"
+  loop_control:
+    label: '{{ item.item.name }}'
+  register: __package_management_pkgbuild_origins
+  changed_when: false
+  failed_when: __package_management_pkgbuild_origins.rc not in [0, 1]
+  check_mode: false
+
+# Only the clone of a configured repository whose url changed is removed;
+# the download below clones it again from the new url.
+- name: Paru | Remove PKGBUILD repository clones with a changed url
+  ansible.builtin.file:
+    path: '{{ item.item.stat.path | dirname }}'
+    state: absent
+  loop: "{{ __package_management_pkgbuild_origins.results }}"
+  loop_control:
+    label: '{{ item.item.item.name }}'
+  register: __package_management_pkgbuild_removed
+  when: item.rc != 0 or item.stdout != item.item.item.url
+
+# Without the install phase (e.g. --tags package-management:configure on a
+# new host) paru may not be installed yet. The download then waits for the
+# next run that finds it; the missing clones trigger it there.
+- name: Paru | Check paru binary
+  ansible.builtin.stat:
+    path: '/usr/bin/paru'
+    get_checksum: false
+  register: __package_management_paru_binary
+  when: __package_management_pkgbuild_url_repos | length > 0
+
+- name: Paru | Report skipped PKGBUILD repository download
+  ansible.builtin.debug:
+    msg: >-
+      /usr/bin/paru is missing, so the PKGBUILD repositories are not
+      downloaded. Run the role with the package-management:install tag (or
+      without tags) to install paru; the next run downloads them.
+  when:
+    - __package_management_pkgbuild_url_repos | length > 0
+    - not __package_management_paru_binary.stat.exists
+
+# --pkgbuilds limits the refresh to PKGBUILD repositories, so the pacman
+# databases are not refreshed without an upgrade. --noconfirm skips the
+# diff review, which needs a terminal; paru still marks the downloaded
+# commits as seen, so a later manual run does not show them for review.
+# Runs as the builder user, which owns the shared clone tree. Only due when
+# a URL repository section was added or changed, a clone was removed for a
+# changed url or a clone is missing.
+- name: Paru | Download PKGBUILD repositories
+  become: true
+  become_user: '{{ aur_builder_user }}'
+  vars:
+    __package_management_pkgbuild_sections_old: >-
+      {{ __package_management_paru_conf_old.content | default('') | b64decode
+         | regex_findall('(?ms)^\[.*?(?=^\[|\Z)')
+         | select('search', '(?m)^Url = ') | list }}
+    __package_management_pkgbuild_sections_new: >-
+      {{ __package_management_paru_conf_new.content | default('') | b64decode
+         | regex_findall('(?ms)^\[.*?(?=^\[|\Z)')
+         | select('search', '(?m)^Url = ') | list }}
+  ansible.builtin.command:
+    cmd: '/usr/bin/paru -Sy --pkgbuilds --noconfirm'
+  changed_when: true
+  retries: 5
+  delay: 10
+  when:
+    - __package_management_pkgbuild_url_repos | length > 0
+    - __package_management_paru_binary.stat.exists
+    - >-
+      __package_management_pkgbuild_sections_new
+      | difference(__package_management_pkgbuild_sections_old) | length > 0
+      or __package_management_pkgbuild_removed is changed
+      or __package_management_pkgbuild_clones.results
+         | rejectattr('stat.exists') | list | length > 0
 
 # Manual paru runs must happen as the builder user, otherwise the shared
 # clone tree gains entries owned by the login user and locks the builder

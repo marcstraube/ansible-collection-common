@@ -1,0 +1,157 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+
+  # Runs after side_effect.yml, so molecule-url points to the second URL
+  # repository; molecule-pkgbuild-url came from the first one.
+  # molecule-stable kept its url, molecule-removed is no longer listed.
+  vars:
+    paru_clone_dir: '/var/cache/paru/clone'
+    __pm_url2: 'file:///srv/molecule-pkgbuild-url2'
+    __pm_stable: 'file:///srv/molecule-pkgbuild-stable'
+
+  tasks:
+    - name: Verify | Read paru.conf
+      ansible.builtin.slurp:
+        src: /etc/paru.conf
+      register: __pm_paru_conf
+
+    - name: Verify | Assert the PKGBUILD repository sections
+      vars:
+        __pm_paru_conf_text: '{{ __pm_paru_conf.content | b64decode }}'
+      ansible.builtin.assert:
+        that:
+          - >-
+            '[molecule-url]\nUrl = ' ~ __pm_url2 ~ '\nPath = packages\nSkipReview\n'
+            in __pm_paru_conf_text
+          - >-
+            '[molecule-path]\nPath = /srv/molecule-pkgbuild-path\nDepth = 2\nGenerateSrcinfo\n'
+            in __pm_paru_conf_text
+          - "'[molecule-stable]\\nUrl = ' ~ __pm_stable ~ '\\n' in __pm_paru_conf_text"
+          - "'[molecule-removed]' not in __pm_paru_conf_text"
+          - __pm_paru_conf_text.index('[molecule-url]') > __pm_paru_conf_text.index('[options]')
+        fail_msg: >-
+          paru.conf lacks the expected PKGBUILD repository sections:
+          {{ __pm_paru_conf_text }}
+
+    - name: Verify | Stat the URL repository clone
+      ansible.builtin.stat:
+        path: '{{ paru_clone_dir }}/repo/molecule-url/.git'
+      register: __pm_url_clone
+
+    - name: Verify | Assert the URL repository was downloaded by the builder
+      ansible.builtin.assert:
+        that:
+          - __pm_url_clone.stat.exists
+          - __pm_url_clone.stat.pw_name == 'aur_builder'
+        fail_msg: 'The URL repository was not cloned below the paru clone directory by aur_builder.'
+
+    # Read-only; ansible.builtin.git cannot report the origin of a clone
+    - name: Verify | Read the origin of the URL repository clone  # noqa: command-instead-of-module
+      become: true
+      become_user: aur_builder
+      ansible.builtin.command:
+        cmd: 'git -C {{ paru_clone_dir }}/repo/molecule-url config --get remote.origin.url'
+      register: __pm_url_origin
+      changed_when: false
+
+    - name: Verify | Assert the clone was replaced after the url changed
+      ansible.builtin.assert:
+        that:
+          - __pm_url_origin.stdout == __pm_url2
+        fail_msg: >-
+          The clone of molecule-url still points to {{ __pm_url_origin.stdout }}
+          instead of {{ __pm_url2 }}.
+
+    - name: Verify | Stat the marker in the clone of the unchanged URL repository
+      ansible.builtin.stat:
+        path: '{{ paru_clone_dir }}/repo/molecule-stable/.git/molecule-marker'
+      register: __pm_stable_marker
+
+    # Read-only; ansible.builtin.git cannot report the origin of a clone
+    - name: Verify | Read the origin of the unchanged URL repository clone  # noqa: command-instead-of-module
+      become: true
+      become_user: aur_builder
+      ansible.builtin.command:
+        cmd: 'git -C {{ paru_clone_dir }}/repo/molecule-stable config --get remote.origin.url'
+      register: __pm_stable_origin
+      changed_when: false
+
+    - name: Verify | Assert only the clone with the changed url was replaced
+      ansible.builtin.assert:
+        that:
+          - __pm_stable_marker.stat.exists
+          - __pm_stable_origin.stdout == __pm_stable
+        fail_msg: >-
+          The clone of molecule-stable, whose url did not change, was replaced
+          (marker present: {{ __pm_stable_marker.stat.exists }}, origin:
+          {{ __pm_stable_origin.stdout }}).
+
+    - name: Verify | Stat the clone of the removed URL repository
+      ansible.builtin.stat:
+        path: '{{ paru_clone_dir }}/repo/molecule-removed/.git'
+      register: __pm_removed_clone
+
+    - name: Verify | Assert the clone of the removed URL repository stays
+      ansible.builtin.assert:
+        that:
+          - __pm_removed_clone.stat.exists
+        fail_msg: 'The clone of molecule-removed was deleted after it left the list.'
+
+    - name: Verify | Query the packages from the PKGBUILD repositories
+      ansible.builtin.command:
+        cmd: 'pacman -Q molecule-pkgbuild-url molecule-pkgbuild-path molecule-pkgbuild-new'
+      register: __pm_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert the packages are installed
+      ansible.builtin.assert:
+        that:
+          - __pm_installed.rc == 0
+        fail_msg: >-
+          Packages from the PKGBUILD repositories are missing:
+          {{ __pm_installed.stderr }}
+
+    # paru -Si exits 0 even for an unknown package, so the output decides.
+    # --pkgbuilds keeps the query local, without the AUR.
+    - name: Verify | Show the package of the second URL repository
+      become: true
+      become_user: aur_builder
+      ansible.builtin.command:
+        cmd: '/usr/bin/paru -Si --pkgbuilds molecule-pkgbuild-new'
+      register: __pm_si_url
+      changed_when: false
+
+    - name: Verify | Show the package of the first URL repository
+      become: true
+      become_user: aur_builder
+      ansible.builtin.command:
+        cmd: '/usr/bin/paru -Si --pkgbuilds molecule-pkgbuild-url'
+      register: __pm_si_old
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Show the package outside the subdirectory
+      become: true
+      become_user: aur_builder
+      ansible.builtin.command:
+        cmd: '/usr/bin/paru -Si --pkgbuilds molecule-pkgbuild-outside'
+      register: __pm_si_outside
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert the URL repository serves the second repository below the subdirectory
+      ansible.builtin.assert:
+        that:
+          - "__pm_si_url.stdout is search('Repository *: *molecule-url')"
+          - "'was not found' in (__pm_si_outside.stdout ~ __pm_si_outside.stderr)"
+          - "'was not found' in (__pm_si_old.stdout ~ __pm_si_old.stderr)"
+        fail_msg: >-
+          The URL repository does not provide molecule-pkgbuild-new from the
+          second repository, still provides molecule-pkgbuild-url from the
+          first one, or paru finds molecule-pkgbuild-outside outside the
+          subdirectory. new: {{ __pm_si_url.stdout }}
+          old: {{ __pm_si_old.stdout }} {{ __pm_si_old.stderr }}
+          outside: {{ __pm_si_outside.stdout }} {{ __pm_si_outside.stderr }}

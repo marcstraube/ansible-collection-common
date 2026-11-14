@@ -6,6 +6,187 @@
   tags:
     - package-management
   block:
+    # Only paru reads PKGBUILD repositories; yay has no equivalent. Checked
+    # first, before the helper is built.
+    - name: Main | Validate PKGBUILD repositories against the AUR helper
+      ansible.builtin.assert:
+        that:
+          - paru_pkgbuild_repositories | length == 0 or aur_helper == 'paru'
+        fail_msg: >-
+          paru_pkgbuild_repositories needs aur_helper 'paru', got
+          '{{ aur_helper }}'
+        quiet: true
+      tags:
+        - always
+
+    # paru rejects the section names options, bin, env, local, aur, pkg and
+    # base and names with a dot; Url must be an absolute URL with a scheme.
+    # The name also becomes the clone directory below paru_clone_dir/repo.
+    # Every value ends up on a line of paru.conf, so whitespace and control
+    # characters are rejected: a line break would start a section of its
+    # own. \Z instead of $, which also matches before a final line break.
+    # The loop runs over indexes, so neither the output nor a failure shows
+    # a url, which could hold credentials.
+    - name: Main | Validate PKGBUILD repository entries
+      vars:
+        __package_management_repo: '{{ paru_pkgbuild_repositories[item] }}'
+        __package_management_repo_url: >-
+          {{ __package_management_repo.url | default('')
+             if __package_management_repo is mapping else '' }}
+        __package_management_repo_path: >-
+          {{ __package_management_repo.path | default('')
+             if __package_management_repo is mapping else '' }}
+        __package_management_repo_subdirectory: >-
+          {{ __package_management_repo.subdirectory | default('')
+             if __package_management_repo is mapping else '' }}
+      ansible.builtin.assert:
+        that:
+          - __package_management_repo is mapping
+          - __package_management_repo.keys() | difference(__package_management_pkgbuild_repo_keys) | length == 0
+          - __package_management_repo.name | default('') is string
+          - __package_management_repo.name | default('') is match('^[A-Za-z0-9][A-Za-z0-9_+-]*\Z')
+          - __package_management_repo.name | lower not in __package_management_pkgbuild_repo_reserved_names
+          - (__package_management_repo_url | length > 0) != (__package_management_repo_path | length > 0)
+          - >-
+            __package_management_repo_url | length == 0
+            or __package_management_repo_url is match('^[A-Za-z][A-Za-z0-9+.-]*://')
+          - >-
+            __package_management_repo_path | length == 0
+            or __package_management_repo_path is match('^/[^\x00-\x20\x7f-\x9f]*\Z')
+          - >-
+            __package_management_repo_subdirectory | length == 0
+            or (__package_management_repo_url | length > 0
+                and __package_management_repo_subdirectory is match('^[^/\x00-\x20\x7f-\x9f][^\x00-\x20\x7f-\x9f]*\Z')
+                and __package_management_repo_subdirectory is not search('(^|/)[.][.](/|\Z)'))
+          - >-
+            __package_management_repo.depth is not defined
+            or (__package_management_repo.depth is integer and __package_management_repo.depth > 0)
+        fail_msg: >-
+          Invalid paru_pkgbuild_repositories entry
+          {{ "'" ~ __package_management_repo.name ~ "'"
+             if __package_management_repo is mapping and __package_management_repo.name is defined
+             else 'at index ' ~ item }}:
+          it needs a name (letters, digits, '_', '+', '-'; not one of
+          {{ __package_management_pkgbuild_repo_reserved_names | join(', ') }}),
+          exactly one of url (with a scheme, e.g. 'https://' or 'file:///')
+          and path (absolute), subdirectory only with url and relative without
+          '..', depth as a positive integer and no keys besides
+          {{ __package_management_pkgbuild_repo_keys | join(', ') }}. path
+          and subdirectory must not contain whitespace or control characters.
+        quiet: true
+      loop: '{{ range(paru_pkgbuild_repositories | length) | list }}'
+      loop_control:
+        label: '{{ item }}'
+      tags:
+        - always
+
+    # Only https, ssh and local file URLs: http and git have no transport
+    # protection for build recipes that are installed as root. paru
+    # normalizes a Url before it clones (WHATWG URL rules), and the role
+    # compares the origin of an existing clone with the url to notice a
+    # change. A url that paru would rewrite never matches and would be
+    # cloned again on every run, so it has to be written the way paru
+    # stores it: printable ASCII without the characters paru percent-encodes,
+    # lowercase scheme and host, no default port, a path after an https host
+    # and no '.' or '..' segments, which paru resolves (also as %2e).
+    # Credentials in the url would end up in the world-readable paru.conf.
+    - name: Main | Validate PKGBUILD repository URLs
+      vars:
+        __package_management_repo: '{{ paru_pkgbuild_repositories[item] }}'
+        __package_management_repo_url: '{{ __package_management_repo.url }}'
+        __package_management_repo_scheme: "{{ __package_management_repo_url | urlsplit('scheme') }}"
+        __package_management_repo_netloc: "{{ __package_management_repo_url | urlsplit('netloc') }}"
+        __package_management_repo_host: >-
+          {{ (__package_management_repo_netloc.split('@') | last).split(':') | first }}
+        __package_management_repo_port: "{{ __package_management_repo_url | urlsplit('port') }}"
+        __package_management_repo_urlpath: "{{ __package_management_repo_url | urlsplit('path') }}"
+      ansible.builtin.assert:
+        that:
+          - __package_management_repo_url is match('^[][A-Za-z0-9._~:/@!$&()*+,;=%-]+\Z')
+          - __package_management_repo_url is match('^((https|ssh)://[^/]|file:///)')
+          # ssh may name the login user (git@); https and file carry no user
+          # information, so neither a password nor a token as user name
+          - >-
+            (':' not in __package_management_repo_netloc.split('@')[:-1] | join('@'))
+            if __package_management_repo_scheme == 'ssh'
+            else ('@' not in __package_management_repo_netloc)
+          - __package_management_repo_host == __package_management_repo_host | lower
+          - "'%' not in __package_management_repo_host"
+          - >-
+            __package_management_repo_port | string
+            != __package_management_pkgbuild_repo_default_ports[__package_management_repo_scheme] | default('') | string
+          - __package_management_repo_scheme != 'https' or __package_management_repo_urlpath | length > 0
+          - __package_management_repo_urlpath is not search('(?i)(^|/)([.]|%2e){1,2}(/|\Z)')
+        fail_msg: >-
+          paru_pkgbuild_repositories url of '{{ __package_management_repo.name }}'
+          is not accepted. It must start with 'https://', 'ssh://' or
+          'file:///', contain no credentials (no 'user:password@', and no user
+          or token before '@' in an https url; use an SSH key for
+          {{ aur_builder_user }} instead) and be in the form paru stores:
+          printable ASCII without whitespace and without '"<>\^`{|}#?',
+          lowercase scheme and host, no default port, a path of at least '/'
+          after an https host and no '.' or '..' path segments.
+        quiet: true
+      loop: '{{ range(paru_pkgbuild_repositories | length) | list }}'
+      loop_control:
+        label: '{{ item }}'
+      when: paru_pkgbuild_repositories[item].url | default('') | length > 0
+      tags:
+        - always
+
+    - name: Main | Validate PKGBUILD repository names are unique
+      ansible.builtin.assert:
+        that:
+          - >-
+            paru_pkgbuild_repositories | map(attribute='name') | unique | length
+            == paru_pkgbuild_repositories | length
+        fail_msg: >-
+          paru_pkgbuild_repositories names must be unique, got
+          {{ paru_pkgbuild_repositories | map(attribute='name') | list }}
+        quiet: true
+      tags:
+        - always
+
+    # paru builds the packages of a path repository from the directory and
+    # installs them as root, so whoever can write to it can slip in a
+    # package. Symlinks are not followed.
+    - name: Main | Check PKGBUILD repository paths
+      ansible.builtin.stat:
+        path: '{{ item.path }}'
+        follow: false
+        get_checksum: false
+      loop: '{{ __package_management_pkgbuild_path_repos }}'
+      loop_control:
+        label: '{{ item.name }}'
+      register: __package_management_pkgbuild_paths
+      tags:
+        - always
+
+    - name: Main | Validate PKGBUILD repository paths are safe
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+          - not item.stat.wgrp and not item.stat.woth
+          - item.stat.uid == 0 or item.stat.pw_name == aur_builder_user
+        fail_msg: >-
+          paru_pkgbuild_repositories path {{ item.item.path }} of
+          '{{ item.item.name }}'
+          {{ 'does not exist' if not item.stat.exists
+             else 'is not a directory (symlinks are not followed)' if not item.stat.isdir
+             else 'grants write permission to its group or others (mode ' ~ item.stat.mode ~ ')'
+                  if item.stat.wgrp or item.stat.woth
+             else 'is owned by ' ~ item.stat.pw_name }}.
+          Packages built from it are installed as root. Create it as a
+          directory owned by root or {{ aur_builder_user }} that only its
+          owner can write to (chmod go-w).
+        quiet: true
+      loop: '{{ __package_management_pkgbuild_paths.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'
+      tags:
+        - always
+
     - name: Main | Import Reflector tasks
       ansible.builtin.import_tasks: archlinux/reflector.yml
       when: reflector_enabled | bool

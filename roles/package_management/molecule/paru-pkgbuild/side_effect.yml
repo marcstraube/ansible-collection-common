@@ -1,0 +1,67 @@
+---
+# A second URL repository with unrelated history and other content. Its
+# existence switches the url of molecule-url in converge.yml to it and drops
+# molecule-removed from the list. A marker in the clone of molecule-stable,
+# whose url stays, shows whether that clone survives the converge.
+- name: Side Effect | Second URL repository
+  hosts: all
+  gather_facts: false
+
+  vars:
+    __pm_url2_repo: '/srv/molecule-pkgbuild-url2'
+    __pm_pkgbuild: |
+      pkgname=%s
+      pkgver=2.0
+      pkgrel=1
+      pkgdesc='Molecule PKGBUILD repository fixture, second repository'
+      arch=('any')
+      license=('MIT')
+
+      package() {
+        install -Dm644 /dev/null "${pkgdir}/usr/share/%s/marker"
+      }
+
+  tasks:
+    - name: Side Effect | Create second URL repository PKGBUILD directories
+      ansible.builtin.file:
+        path: '{{ __pm_url2_repo }}/{{ item }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - 'packages/molecule-pkgbuild-new'
+        - 'outside/molecule-pkgbuild-outside'
+
+    - name: Side Effect | Create second URL repository PKGBUILDs
+      ansible.builtin.copy:
+        content: "{{ __pm_pkgbuild | format(item | basename, item | basename) }}"
+        dest: '{{ __pm_url2_repo }}/{{ item }}/PKGBUILD'
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - 'packages/molecule-pkgbuild-new'
+        - 'outside/molecule-pkgbuild-outside'
+
+    # ansible.builtin.git clones but cannot create a repository or commit
+    - name: Side Effect | Commit the second URL repository  # noqa: command-instead-of-module
+      ansible.builtin.shell:
+        cmd: >-
+          git init -q -b master &&
+          git add -A &&
+          git -c user.name=Molecule -c user.email=molecule@example.com
+          commit -q -m second
+        chdir: '{{ __pm_url2_repo }}'
+        creates: '{{ __pm_url2_repo }}/.git'
+
+    - name: Side Effect | Mark the clone of the unchanged URL repository
+      ansible.builtin.copy:
+        content: ''
+        dest: '/var/cache/paru/clone/repo/molecule-stable/.git/molecule-marker'
+        owner: aur_builder
+        group: aur_builder
+        mode: '0644'
+
+- name: Side Effect | Converge with the changed url
+  ansible.builtin.import_playbook: converge.yml
