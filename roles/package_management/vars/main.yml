@@ -45,3 +45,42 @@ __package_management_url_proxy_env: >-
 
 __package_management_pacman_ignore_dir: '/etc/pacman.d/ignore.d'
 __package_management_pacman_ignore_base_file: '00-package-management.conf'
+
+#
+# paru PKGBUILD repositories (Arch Linux)
+#
+# Keys a paru_pkgbuild_repositories entry may carry, and the section names
+# paru reserves for its own use or rejects as repository names. A URL
+# repository is cloned below <paru_clone_dir>/<subdir>/<name>. paru drops
+# the default port of these schemes from a Url before it clones.
+#
+
+__package_management_pkgbuild_repo_keys:
+  - 'name'
+  - 'url'
+  - 'path'
+  - 'subdirectory'
+  - 'depth'
+  - 'skip_review'
+  - 'generate_srcinfo'
+__package_management_pkgbuild_repo_reserved_names:
+  - 'options'
+  - 'bin'
+  - 'env'
+  - 'local'
+  - 'aur'
+  - 'pkg'
+  - 'base'
+__package_management_pkgbuild_repo_clone_subdir: 'repo'
+__package_management_pkgbuild_repo_default_ports:
+  https: 443
+
+# Entries by kind: URL repositories are cloned, path repositories read in place
+__package_management_pkgbuild_url_repos: >-
+  {{ paru_pkgbuild_repositories
+     | selectattr('url', 'defined') | rejectattr('url', 'equalto', '')
+     | list }}
+__package_management_pkgbuild_path_repos: >-
+  {{ paru_pkgbuild_repositories
+     | selectattr('path', 'defined') | rejectattr('path', 'equalto', '')
+     | list }}
