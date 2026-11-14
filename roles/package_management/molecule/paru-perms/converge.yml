@@ -25,3 +25,14 @@
           'umask 0022; mkdir -p {{ paru_clone_dir }}/testpkg;
           echo x > {{ paru_clone_dir }}/testpkg/PKGBUILD'
         creates: '{{ paru_clone_dir }}/testpkg/PKGBUILD'
+
+    # pkgfile is not installed in the image; disabling it must not fail on
+    # the missing timer unit
+    - name: Converge | Run the tools tasks with pkgfile disabled  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: archlinux/tools.yml
+      vars:
+        pacman_pkgfile_enabled: false
+        pacman_rebuild_detector_enabled: false
+        pacman_informant_enabled: false
