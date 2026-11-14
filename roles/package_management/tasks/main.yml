@@ -19,6 +19,15 @@
         - package-management
         - package-management:configure
 
+    # After pacman.conf, keys and cache are in place; before the AUR helper
+    # and every later role install a package that needs a listed provider
+    - name: Main | Import Dependencies tasks
+      ansible.builtin.import_tasks: archlinux/dependencies.yml
+      when: pacman_dependency_packages | length > 0
+      tags:
+        - package-management
+        - package-management:dependencies
+
     - name: Main | Import Makepkg tasks
       ansible.builtin.import_tasks: archlinux/makepkg.yml
       tags:

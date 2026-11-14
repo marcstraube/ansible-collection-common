@@ -61,6 +61,58 @@ directory, because pacman fails on an `Include` glob that matches no file.
 An ignored package is still installed by an explicit `pacman -S` or
 `pacman -U`.
 
+### Arch Linux - Dependency Packages
+
+| Variable                     | Default | Description                                   |
+|------------------------------|---------|-----------------------------------------------|
+| `pacman_dependency_packages` | `[]`    | Repository packages installed as dependencies |
+
+When a package depends on a virtual package with several providers (for
+example `tessdata` for `tesseract`, or `cron` for a package that needs a
+cron daemon), an unattended install (`pacman --noconfirm`, paru, the
+`community.general.pacman` module) takes the first provider, not the one you
+want. Listing the wanted provider in a role's package list installs it
+explicitly, so it stays when nothing needs it anymore and does not show up as
+a dependency.
+
+The role installs every missing package in `pacman_dependency_packages`
+(`--needed`) as dependency right after `pacman.conf`, the repository keys and the
+package cache are in place, and before the AUR helper or any later role
+installs packages. A later install that needs the virtual package then finds
+the listed provider and keeps it. A listed package that is already installed
+explicitly is marked as dependency (`pacman -D --asdeps`); the role reads the
+install reason first, so a second run changes nothing. The list takes
+packages from the configured repositories only, not from the AUR. Debian and
+RHEL/Rocky ignore it.
+
+```yaml
+pacman_dependency_packages:
+  - 'tesseract-data-deu'  # instead of tesseract-data-afr for tesseract
+  - 'fcron'               # instead of cronie for packages that need cron
+```
+
+A package installed as dependency is an orphan as soon as no installed
+package requires it (`pacman -Qtdq`): before the consumer is installed, and
+after it is removed. `marcstraube.archlinux.system_update` reports orphans
+(`system_update_warn_orphans`) and removes them with
+`system_update_auto_remove_orphans: true`. That role runs before this one in
+the site playbook, so with the removal enabled a listed provider that nothing
+needs is removed and installed again on every run. List only providers that a
+package on the host requires.
+
+The list chooses a provider only while none is installed. A listed provider
+that conflicts with an installed one (`fcron` while `cronie` is installed)
+fails the run, since `--noconfirm` declines removing the installed package;
+`--check` does not detect the conflict. Replace the installed provider by hand
+first, e.g. `pacman -S fcron` and confirm the removal of `cronie`.
+
+The list is the one place that enforces a provider for the whole host. A
+role that needs a virtual package and brings a default provider installs it
+only while the virtual package is not satisfied yet (`pacman -T cron` exits
+127) and leaves an installed provider alone. Since this role runs first, a
+provider in the list takes precedence over every role default, and the roles
+never pull a second, conflicting provider.
+
 ### Arch Linux - Reflector
 
 | Variable                  | Default | Description                                                   |
@@ -232,13 +284,14 @@ the file in place when the `sudo` role purges unmanaged drop-ins.
 
 ## Tags
 
-| Tag                            | Scope                         |
-|--------------------------------|-------------------------------|
-| `package-management`           | All tasks                     |
-| `package-management:install`   | AUR helper installation       |
-| `package-management:configure` | Package manager configuration |
-| `package-management:repos`     | Repository management         |
-| `package-management:tools`     | Additional tool installation  |
+| Tag                               | Scope                           |
+|-----------------------------------|---------------------------------|
+| `package-management`              | All tasks                       |
+| `package-management:install`      | AUR helper installation         |
+| `package-management:configure`    | Package manager configuration   |
+| `package-management:dependencies` | Dependency package installation |
+| `package-management:repos`        | Repository management           |
+| `package-management:tools`        | Additional tool installation    |
 
 ## Example Playbook
 
