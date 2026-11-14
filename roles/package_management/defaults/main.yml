@@ -115,6 +115,18 @@ pacman_multilib_testing_enabled: false
 pacman_custom_repositories: []
 
 #
+# Pacman - Dependency Packages
+#
+
+# Packages from the configured repositories that the role installs as
+# dependencies (--asdeps), before other roles install packages. Meant for the
+# provider of a virtual package: a later install that needs the virtual
+# package finds it in place instead of choosing the first provider. A listed
+# package that is already installed explicitly is marked as dependency.
+# Example: ['fcron'] keeps cronie out when a package needs 'cron'.
+pacman_dependency_packages: []
+
+#
 # Pacman - Hooks
 #
 
