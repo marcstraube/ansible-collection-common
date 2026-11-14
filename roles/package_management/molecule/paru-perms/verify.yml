@@ -137,3 +137,20 @@
         that:
           - "'%wheel ALL=(aur_builder) /usr/bin/paru' in (__pm_sudoers_content.content | b64decode)"
         fail_msg: 'The wheel-to-aur_builder paru sudoers rule is missing.'
+
+    - name: Verify | Check pkgfile is not installed
+      ansible.builtin.command:
+        argv:
+          - pacman
+          - -Q
+          - pkgfile
+      register: __pm_pkgfile_query
+      changed_when: false
+      # pacman -Q exits 1 when the package is missing
+      failed_when: __pm_pkgfile_query.rc not in [0, 1]
+
+    - name: Verify | Assert pkgfile stayed absent
+      ansible.builtin.assert:
+        that:
+          - __pm_pkgfile_query.rc == 1
+        fail_msg: 'pkgfile is installed: {{ __pm_pkgfile_query.stdout }}'
