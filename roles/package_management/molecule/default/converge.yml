@@ -184,7 +184,9 @@
       age: 24
     aur_helper: ''
     paccache_enabled: true
-    pacman_pkgfile_enabled: true
+    # pkgfile is installed by the managed play above; the disabled play must
+    # cope with a host where its timer unit is absent, so remove the unit.
+    pacman_pkgfile_enabled: false
     makepkg_tmpdir: '/var/cache/makepkg'
     makepkg_user_config_mode: 'disabled'
     makepkg_users:
@@ -216,6 +218,14 @@
             name: globaldisableduser
             state: present
             create_home: true
+
+        # Model a host where pkgfile was never installed: the package is
+        # still reported installed for the later verify play, but its timer
+        # unit is gone, so managing it must be skipped.
+        - name: Converge | Remove the pkgfile update timer unit
+          ansible.builtin.file:
+            path: '/usr/lib/systemd/system/pkgfile-update.timer'
+            state: absent
 
 
   tasks:

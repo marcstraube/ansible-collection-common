@@ -16,11 +16,22 @@
   when: pacman_pkgfile_enabled | bool
   notify: 'pkgfile installed'
 
+- name: Tools | Look for the pkgfile update timer unit
+  ansible.builtin.stat:
+    path: '{{ item }}'
+  loop:
+    - '/usr/lib/systemd/system/pkgfile-update.timer'
+    - '/etc/systemd/system/pkgfile-update.timer'
+  register: pkgfile_update_timer_unit
+
 - name: Tools | Manage pkgfile update timer
   ansible.builtin.systemd_service:
     name: 'pkgfile-update.timer'
     enabled: "{{ pacman_pkgfile_enabled | bool }}"
     state: "{{ pacman_pkgfile_enabled | bool | ternary('started', 'stopped') }}"
+  when: >-
+    pacman_pkgfile_enabled | bool
+    or pkgfile_update_timer_unit.results | selectattr('stat.exists') | list | length > 0
 
 - name: Tools | Install informant
   become: true
