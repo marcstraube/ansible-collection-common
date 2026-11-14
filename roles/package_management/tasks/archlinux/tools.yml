@@ -16,11 +16,30 @@
   when: pacman_pkgfile_enabled | bool
   notify: 'pkgfile installed'
 
+# The timer only exists while pkgfile is installed; a host that never had
+# it has nothing to disable
+- name: Tools | Check pkgfile update timer unit  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    argv:
+      - systemctl
+      - list-unit-files
+      - pkgfile-update.timer
+  register: __package_management_pkgfile_timer_unit
+  changed_when: false
+  # Exits 1 when the unit does not exist
+  failed_when: false
+  # Read-only lookup; must run under --check so the guard below holds
+  check_mode: false
+  when: not pacman_pkgfile_enabled | bool
+
 - name: Tools | Manage pkgfile update timer
   ansible.builtin.systemd_service:
     name: 'pkgfile-update.timer'
     enabled: "{{ pacman_pkgfile_enabled | bool }}"
     state: "{{ pacman_pkgfile_enabled | bool | ternary('started', 'stopped') }}"
+  when: >-
+    pacman_pkgfile_enabled | bool
+    or __package_management_pkgfile_timer_unit.rc == 0
 
 - name: Tools | Install informant
   become: true
