@@ -152,7 +152,6 @@ Each entry in `users_list` supports:
 ```yaml
 - name: 'username'          # Required
   comment: 'Full Name'
-  default: true              # Use this user's password for become_password
   uid: 1001
   group: 'username'          # Primary group
   groups: ['wheel', 'docker']  # Supplementary groups
