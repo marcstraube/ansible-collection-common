@@ -1,4 +1,132 @@
 ---
+# A download that fails after a change to the options of an existing url
+# section is retried on the next run, although paru.conf no longer changes.
+# The source of molecule-stable (also the source of molecule-removed) is
+# moved away, the role runs with a depth for molecule-stable and fails in
+# the download. With the source back and a new commit in it, the role runs
+# again with the same entries; only the download marker can trigger the
+# download now, which fetches the new commit.
+- name: Side Effect | Retried download
+  hosts: all
+  gather_facts: true
+
+  vars:
+    aur_helper: 'paru'
+    reflector_enabled: false
+    pacman_rebuild_detector_enabled: false
+    paccache_timer_enabled: false
+    __pm_stable_repo: '/srv/molecule-pkgbuild-stable'
+    __pm_stable_away: '/srv/molecule-pkgbuild-stable-away'
+    __pm_stable_clone: '/var/cache/paru/clone/repo/molecule-stable'
+    # The entries of converge.yml before the url change, with a depth for
+    # molecule-stable
+    paru_pkgbuild_repositories:
+      - name: 'molecule-url'
+        url: 'file:///srv/molecule-pkgbuild-url'
+        subdirectory: 'packages'
+        skip_review: true
+      - name: 'molecule-stable'
+        url: 'file://{{ __pm_stable_repo }}'
+        depth: 3
+      - name: 'molecule-removed'
+        url: 'file://{{ __pm_stable_repo }}'
+      - name: 'molecule-path'
+        path: '/srv/molecule-pkgbuild-path'
+        depth: 2
+        generate_srcinfo: true
+
+  tasks:
+    - name: Side Effect | Move the source of molecule-stable away
+      ansible.builtin.command:
+        cmd: 'mv {{ __pm_stable_repo }} {{ __pm_stable_away }}'
+        creates: '{{ __pm_stable_away }}'
+
+    - name: Side Effect | Run the role while the source is unreachable
+      block:
+        - name: Side Effect | Include package_management role with a changed depth  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+
+        - name: Side Effect | Fail because the download succeeded
+          ansible.builtin.fail:
+            msg: 'The download succeeded although the source of molecule-stable is unreachable.'
+      rescue:
+        - name: Side Effect | Assert the download failed
+          ansible.builtin.assert:
+            that:
+              - "'Download PKGBUILD repositories' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Side Effect | Move the source of molecule-stable back
+      ansible.builtin.command:
+        cmd: 'mv {{ __pm_stable_away }} {{ __pm_stable_repo }}'
+        creates: '{{ __pm_stable_repo }}'
+
+    - name: Side Effect | Create a PKGBUILD directory for a new commit
+      ansible.builtin.file:
+        path: '{{ __pm_stable_repo }}/molecule-pkgbuild-retry'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Side Effect | Create a PKGBUILD for a new commit
+      ansible.builtin.copy:
+        content: |
+          pkgname=molecule-pkgbuild-retry
+          pkgver=1.0
+          pkgrel=1
+          pkgdesc='Molecule PKGBUILD repository fixture, retried download'
+          arch=('any')
+          license=('MIT')
+
+          package() {
+            install -Dm644 /dev/null "${pkgdir}/usr/share/molecule-pkgbuild-retry/marker"
+          }
+        dest: '{{ __pm_stable_repo }}/molecule-pkgbuild-retry/PKGBUILD'
+        owner: root
+        group: root
+        mode: '0644'
+
+    # ansible.builtin.git clones but cannot commit
+    - name: Side Effect | Commit to the source of molecule-stable  # noqa: command-instead-of-module
+      ansible.builtin.shell:
+        cmd: >-
+          git add -A &&
+          git -c user.name=Molecule -c user.email=molecule@example.com
+          commit -q -m retry
+        chdir: '{{ __pm_stable_repo }}'
+      changed_when: true
+
+    - name: Side Effect | Include package_management role with the same entries  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+    # Read-only; ansible.builtin.git cannot report a commit without a clone
+    - name: Side Effect | Read the new commit of the source  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: 'git -C {{ __pm_stable_repo }} rev-parse HEAD'
+      register: __pm_retry_head
+      changed_when: false
+
+    # Read-only; ansible.builtin.git cannot query objects
+    - name: Side Effect | Look up the new commit in the clone  # noqa: command-instead-of-module
+      become: true
+      become_user: aur_builder
+      ansible.builtin.command:
+        cmd: 'git -C {{ __pm_stable_clone }} cat-file -e {{ __pm_retry_head.stdout }}^{commit}'
+      register: __pm_retry_fetched
+      changed_when: false
+      failed_when: false
+
+    - name: Side Effect | Assert the failed download was retried
+      ansible.builtin.assert:
+        that:
+          - __pm_retry_fetched.rc == 0
+        fail_msg: >-
+          The clone of molecule-stable lacks the new commit: the download
+          that failed after the depth change was not retried.
+
 # A second URL repository with unrelated history and other content. Its
 # existence switches the url of molecule-url in converge.yml to it and drops
 # molecule-removed from the list. A marker in the clone of molecule-stable,
