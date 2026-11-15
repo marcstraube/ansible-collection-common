@@ -94,6 +94,7 @@
       vars:
         __package_management_repo: '{{ paru_pkgbuild_repositories[item] }}'
         __package_management_repo_url: '{{ __package_management_repo.url }}'
+        __package_management_pkgbuild_checked_urls: '{{ [__package_management_repo_url] }}'
         __package_management_repo_scheme: "{{ __package_management_repo_url | urlsplit('scheme') }}"
         __package_management_repo_netloc: "{{ __package_management_repo_url | urlsplit('netloc') }}"
         __package_management_repo_host: >-
@@ -104,12 +105,7 @@
         that:
           - __package_management_repo_url is match('^[][A-Za-z0-9._~:/@!$&()*+,;=%-]+\Z')
           - __package_management_repo_url is match('^((https|ssh)://[^/]|file:///)')
-          # ssh may name the login user (git@); https and file carry no user
-          # information, so neither a password nor a token as user name
-          - >-
-            (':' not in __package_management_repo_netloc.split('@')[:-1] | join('@'))
-            if __package_management_repo_scheme == 'ssh'
-            else ('@' not in __package_management_repo_netloc)
+          - __package_management_pkgbuild_urls_with_credentials | int == 0
           - __package_management_repo_host == __package_management_repo_host | lower
           - "'%' not in __package_management_repo_host"
           - >-
@@ -147,9 +143,15 @@
       tags:
         - always
 
-    # paru builds the packages of a path repository from the directory and
-    # installs them as root, so whoever can write to it can slip in a
-    # package. Symlinks are not followed.
+    # paru builds the packages of a path repository inside it as the builder
+    # user and installs them as root; tasks/archlinux/paru.yml hands the
+    # directory to the builder user and the shared group. Before any change,
+    # the path must be a canonical path of a directory (symlinks are not
+    # followed) holding a Git directory, neither a system directory nor the
+    # home of an account, apart from the shared clone directories, without
+    # entries others can write to, without credentials in its remote URLs,
+    # and only root may be able to replace it: every parent directory is
+    # owned by root and not writable by group or others.
     - name: Main | Check PKGBUILD repository paths
       ansible.builtin.stat:
         path: '{{ item.path }}'
@@ -162,28 +164,259 @@
       tags:
         - always
 
+    # Symlinks inside the repository are skipped: their mode means nothing
+    # and find does not follow them. Read-only, so it also runs in check mode.
+    - name: Main | Find PKGBUILD repository entries writable by others
+      ansible.builtin.command:
+        argv:
+          - find
+          - -P
+          - '{{ item.item.path }}'
+          - '!'
+          - -type
+          - l
+          - -perm
+          - '-o+w'
+          - -print
+          - -quit
+      loop: '{{ __package_management_pkgbuild_paths.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'
+      register: __package_management_pkgbuild_path_writable
+      changed_when: false
+      check_mode: false
+      when: item.stat.isdir | default(false)
+      tags:
+        - always
+
+    # Every later task uses the path as written, so it must be canonical: no
+    # symlink in a parent, no '.', '..', '//' or trailing '/' (with a
+    # trailing '/' the check above follows a symlink). realpath resolves it
+    # for the comparison; the parents are then checked on that same path.
+    - name: Main | Resolve PKGBUILD repository paths
+      ansible.builtin.command:
+        argv:
+          - realpath
+          - -e
+          - --
+          - '{{ item.item.path }}'
+      loop: '{{ __package_management_pkgbuild_paths.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'
+      register: __package_management_pkgbuild_path_realpaths
+      changed_when: false
+      check_mode: false
+      when: item.stat.isdir | default(false)
+      tags:
+        - always
+
+    # Only a Git directory inside the tree: a .git file (worktree,
+    # submodule) points to a Git directory elsewhere, whose configuration
+    # git runs commands from as the builder user, and which the role neither
+    # checks nor manages. Read without following a symlink.
+    - name: Main | Check PKGBUILD repository Git directories
+      ansible.builtin.stat:
+        path: '{{ item.item.path }}/.git'
+        follow: false
+        get_checksum: false
+      loop: '{{ __package_management_pkgbuild_paths.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'
+      register: __package_management_pkgbuild_path_gitdirs
+      when: item.stat.isdir | default(false)
+      tags:
+        - always
+
+    - name: Main | Check PKGBUILD repository parent directories
+      vars:
+        __package_management_pkgbuild_path_parents: >-
+          {%- set ns = namespace(dirs=[], cur='') -%}
+          {%- for res in __package_management_pkgbuild_path_realpaths.results if res is not skipped -%}
+          {%-   set ns.cur = '' -%}
+          {%-   set ns.dirs = ns.dirs + [{'name': res.item.item.name, 'dir': '/'}] -%}
+          {%-   for part in (res.stdout | dirname).split('/') if part | length > 0 -%}
+          {%-     set ns.cur = ns.cur ~ '/' ~ part -%}
+          {%-     set ns.dirs = ns.dirs + [{'name': res.item.item.name, 'dir': ns.cur}] -%}
+          {%-   endfor -%}
+          {%- endfor -%}
+          {{ ns.dirs | to_json }}
+      ansible.builtin.stat:
+        path: '{{ item.dir }}'
+        follow: false
+        get_checksum: false
+      loop: '{{ __package_management_pkgbuild_path_parents | from_json }}'
+      loop_control:
+        label: '{{ item.name }}: {{ item.dir }}'
+      register: __package_management_pkgbuild_path_parent_stats
+      tags:
+        - always
+
+    # The takeover would hand a home directory to the builder user, so a
+    # path must not be the home of any account. A command instead of
+    # ansible.builtin.getent, which stores duplicate entries as nested lists.
+    # Read-only, so it also runs in check mode.
+    - name: Main | Read accounts for PKGBUILD repository paths
+      ansible.builtin.command:
+        argv:
+          - getent
+          - passwd
+      register: __package_management_pkgbuild_passwd
+      changed_when: false
+      check_mode: false
+      when: __package_management_pkgbuild_path_repos | length > 0
+      tags:
+        - always
+
+    # Compared as canonical paths like the repository paths; -m also
+    # resolves homes that do not exist. Read-only, so it also runs in check
+    # mode.
+    - name: Main | Resolve home directories of accounts
+      ansible.builtin.command:
+        argv: >-
+          {{ ['realpath', '-m', '--']
+             + (__package_management_pkgbuild_accounts | from_json | map(attribute='home') | list) }}
+      register: __package_management_pkgbuild_home_realpaths
+      changed_when: false
+      check_mode: false
+      when:
+        - __package_management_pkgbuild_path_repos | length > 0
+        - __package_management_pkgbuild_accounts | from_json | length > 0
+      tags:
+        - always
+
+    # The shared clone directories get the same setup with another
+    # safe.directory entry and paru cleans path repositories with git, so a
+    # path must neither be one of them nor lie inside or above one. Compared
+    # as written, like everything else that uses them.
     - name: Main | Validate PKGBUILD repository paths are safe
+      vars:
+        __package_management_path_realpath: >-
+          {{ __package_management_pkgbuild_path_realpaths.results[__package_management_index].stdout
+             | default('') }}
+        __package_management_path_gitdir: >-
+          {{ __package_management_pkgbuild_path_gitdirs.results[__package_management_index].stat
+             | default({}) }}
+        __package_management_path_clone_dirs: >-
+          {%- set ns = namespace(dirs=[]) -%}
+          {%- set path = item.item.path ~ '/' -%}
+          {%- for dir in [paru_clone_dir, yay_clone_dir] if dir is string and dir | length > 0 -%}
+          {%-   set clone = dir | regex_replace('/+\Z', '') ~ '/' -%}
+          {%-   if path.startswith(clone) or clone.startswith(path) -%}
+          {%-     set ns.dirs = ns.dirs + [dir] -%}
+          {%-   endif -%}
+          {%- endfor -%}
+          {{ ns.dirs | to_json }}
+        __package_management_path_writable: >-
+          {{ __package_management_pkgbuild_path_writable.results[__package_management_index].stdout
+             | default('') }}
+        __package_management_path_home_accounts: >-
+          {%- set ns = namespace(names=[]) -%}
+          {%- set homes = __package_management_pkgbuild_home_realpaths.stdout_lines | default([]) -%}
+          {%- for account in __package_management_pkgbuild_accounts | from_json -%}
+          {%-   if homes[loop.index0] | default('') == item.item.path -%}
+          {%-     set ns.names = ns.names + [account.name] -%}
+          {%-   endif -%}
+          {%- endfor -%}
+          {{ ns.names | to_json }}
+        __package_management_path_parent_stats: >-
+          {{ __package_management_pkgbuild_path_parent_stats.results
+             | selectattr('item.name', 'equalto', item.item.name) | list }}
+        __package_management_path_unsafe_parents: >-
+          {{ (__package_management_path_parent_stats | rejectattr('stat.uid', 'equalto', 0) | list
+              + __package_management_path_parent_stats | selectattr('stat.wgrp') | list
+              + __package_management_path_parent_stats | selectattr('stat.woth') | list)
+             | map(attribute='item.dir') | unique | list }}
       ansible.builtin.assert:
         that:
           - item.stat.exists
           - item.stat.isdir
-          - not item.stat.wgrp and not item.stat.woth
-          - item.stat.uid == 0 or item.stat.pw_name == aur_builder_user
+          - __package_management_path_realpath == item.item.path
+          - item.item.path not in __package_management_pkgbuild_path_system_dirs
+          - __package_management_path_home_accounts | from_json | length == 0
+          - __package_management_path_unsafe_parents | length == 0
+          - __package_management_path_clone_dirs | from_json | length == 0
+          - __package_management_path_writable | length == 0
+          - __package_management_path_gitdir.isdir | default(false)
         fail_msg: >-
           paru_pkgbuild_repositories path {{ item.item.path }} of
           '{{ item.item.name }}'
           {{ 'does not exist' if not item.stat.exists
              else 'is not a directory (symlinks are not followed)' if not item.stat.isdir
-             else 'grants write permission to its group or others (mode ' ~ item.stat.mode ~ ')'
-                  if item.stat.wgrp or item.stat.woth
-             else 'is owned by ' ~ item.stat.pw_name }}.
-          Packages built from it are installed as root. Create it as a
-          directory owned by root or {{ aur_builder_user }} that only its
-          owner can write to (chmod go-w).
+             else 'must be a canonical absolute path (no symlinks, \'.\', \'..\', \'//\' or '
+                  ~ 'trailing \'/\'), it resolves to ' ~ __package_management_path_realpath
+                  if __package_management_path_realpath != item.item.path
+             else 'is a system directory' if item.item.path in __package_management_pkgbuild_path_system_dirs
+             else 'is the home directory of '
+                  ~ (__package_management_path_home_accounts | from_json | join(', '))
+                  if __package_management_path_home_accounts | from_json | length > 0
+             else 'has parent directories that are not owned by root or are writable by group or others: '
+                  ~ __package_management_path_unsafe_parents | join(', ')
+                  if __package_management_path_unsafe_parents | length > 0
+             else 'overlaps the shared clone directory '
+                  ~ (__package_management_path_clone_dirs | from_json | join(', '))
+                  if __package_management_path_clone_dirs | from_json | length > 0
+             else 'contains an entry writable by others: ' ~ __package_management_path_writable
+                  if __package_management_path_writable | length > 0
+             else 'has no Git directory .git (a .git file of a worktree or submodule is not accepted)' }}.
+          Packages built from it are installed as root. Use the canonical
+          path of a Git work tree of its own (not a home or system
+          directory) outside the shared clone directories, without entries
+          writable by others (chmod -R o-w), below parent directories that
+          only root can write to.
         quiet: true
       loop: '{{ __package_management_pkgbuild_paths.results }}'
       loop_control:
         label: '{{ item.item.name }}'
+        index_var: __package_management_index
+      tags:
+        - always
+
+    # Every file of a path repository becomes readable by all users, its
+    # .git/config included. Read with --file, so neither the configuration
+    # of the repository nor its includes run anything; only the remote URLs.
+    # rc 1 means there are none. no_log, as the output holds the URLs.
+    # Read-only, so it also runs in check mode.
+    - name: Main | Read PKGBUILD repository remote URLs
+      ansible.builtin.command:
+        argv:
+          - git
+          - config
+          - --file
+          - '{{ item.path }}/.git/config'
+          - --get-regexp
+          - '^remote\..*\.(url|pushurl)$'
+      loop: '{{ __package_management_pkgbuild_path_repos }}'
+      loop_control:
+        label: '{{ item.name }}'
+      register: __package_management_pkgbuild_path_remotes
+      changed_when: false
+      failed_when: __package_management_pkgbuild_path_remotes.rc not in [0, 1]
+      check_mode: false
+      no_log: true
+      tags:
+        - always
+
+    # The same rule as for a url. Each line is '<key> <url>'. The loop runs
+    # over indexes, so neither the output nor a failure shows a URL.
+    - name: Main | Validate PKGBUILD repository remote URLs
+      vars:
+        __package_management_repo: '{{ __package_management_pkgbuild_path_repos[item] }}'
+        __package_management_pkgbuild_checked_urls: >-
+          {{ __package_management_pkgbuild_path_remotes.results[item].stdout_lines
+             | map('regex_replace', '^\S+ ', '') | list }}
+      ansible.builtin.assert:
+        that:
+          - __package_management_pkgbuild_urls_with_credentials | int == 0
+        fail_msg: >-
+          paru_pkgbuild_repositories path {{ __package_management_repo.path }} of
+          '{{ __package_management_repo.name }}' has a remote URL with
+          credentials in .git/config, which becomes readable by all users.
+          Remove them from the URL (git remote set-url) and use an SSH key or
+          a credential helper of {{ aur_builder_user }} instead.
+        quiet: true
+      loop: '{{ range(__package_management_pkgbuild_path_repos | length) | list }}'
+      loop_control:
+        label: '{{ item }}'
       tags:
         - always
 

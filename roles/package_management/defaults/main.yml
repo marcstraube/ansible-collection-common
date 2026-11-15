@@ -476,10 +476,13 @@ paru_file_manager: ''
 #   url:  Git URL starting with 'https://', 'ssh://' or 'file:///', without
 #         a password, cloned below <paru_clone_dir>/repo/<name> by the
 #         builder user (see the README for the accepted form)
-#   path: absolute path of an existing directory on the host, read in
-#         place; it must be a Git work tree that the builder user can write
-#         to, owned by root or the builder user and not writable by group
-#         or others
+#   path: canonical absolute path (no symlinks, '.', '..', '//' or
+#         trailing '/') of an existing directory on the host, read in
+#         place; it must be a Git work tree with a .git directory, outside
+#         the shared clone directories, without entries writable by others,
+#         below parent directories owned by root and not writable by group
+#         or others. The role hands it to the builder user and
+#         aur_shared_group like the shared clone directory
 # Optional keys:
 #   subdirectory: with url only, search for PKGBUILDs below this relative
 #                 directory

@@ -222,14 +222,20 @@ review new commits in the clone yourself (`git log -p` in
 `<paru_clone_dir>/repo/<name>`) before installing from it with Ansible.
 
 A `url` repository is cloned to `<paru_clone_dir>/repo/<name>`. The role
-downloads it as `aur_builder` with `paru -Sy --pkgbuilds` when the section of
-a `url` repository in `paru.conf` is added or changed or a clone is missing,
-so other roles can install its packages in the same run; this does not
-refresh the pacman databases. Other changes to `paru.conf` do not download,
-so a run without access to the Git server only fails when a `url` repository
-changed. Later changes arrive with every manual `paru -Sy` or `paru -Syu`.
-When paru is not installed yet, for example with
-`--tags package-management:configure` on a new host, the role skips the
+downloads it as `aur_builder` with `paru -Sy --pkgbuilds` when the `url`
+sections in `paru.conf` differ from those of the last successful download
+(a `url` repository was added, changed or removed) or a clone is missing, so
+other roles can install its packages in the same run; this does not refresh
+the pacman databases. The checksum of the sections of the last successful
+download is kept in `<paru_clone_dir>/repo/.package_management-sync`, so a
+download that failed, for example after only `subdirectory`, `depth` or
+`generate_srcinfo` changed, is retried on the next run. The marker follows
+the removal of all `url` repositories as well, so one added again later is
+downloaded again. Other changes to
+`paru.conf` do not download, so a run without access to the Git server only
+fails when a `url` repository changed. Later changes arrive with every
+manual `paru -Sy` or `paru -Syu`. When paru is not installed yet, for example
+with `--tags package-management:configure` on a new host, the role skips the
 download and says so; the next run that finds paru catches up.
 
 Only `https://`, `ssh://` and `file:///` URLs are accepted: `http://` and
@@ -264,17 +270,67 @@ paru reads a `path` repository in place on every run, so no download is
 needed. paru builds its packages inside that directory and afterwards cleans
 the package directory with `git restore` and `git clean -fx`
 (`kewlfft.aur.aur` always passes `--cleanafter`). The directory must
-therefore be a Git work tree that `aur_builder` can write to; uncommitted
-changes and untracked files in a package directory are discarded after its
-build. Outside a Git work tree the build installs the package but paru exits
-with an error.
+therefore be a Git work tree; uncommitted changes and untracked files in a
+package directory are discarded after its build. Outside a Git work tree the
+build installs the package but paru exits with an error.
 
-Whoever can write to a `path` directory can slip in a package that is
-installed as root. The role therefore fails when the directory does not exist,
-is a symlink or another non-directory, grants write permission to its group or
-others, or is not owned by root or `aur_builder_user`. The role creates
-`aur_builder` itself: on a new host the directory can belong to root until
-the first run, and is then handed to `aur_builder` (`chown -R`) for builds.
+paru always builds as `aur_builder`, also in manual runs through the wrapper,
+so the role manages a `path` repository like the shared clone directory:
+owner `aur_builder`, group `aur_shared_group`, mode `2775`, the ownership
+(`chown -R`) and read access (`chmod -R g+rX,o+rX`) of existing entries
+restored, ACLs removed, and the repository marked as `safe.directory` in the
+system Git configuration. Its subdirectories also get the SGID bit, which
+those of the clone directory inherit from its top directory: files that Git
+and paru rewrite during a build keep `aur_shared_group` then. The directory
+may belong to root or a login user before the first run. On every run a
+read-only `find` looks for an entry that is not owned by `aur_builder` and
+`aur_shared_group`, lacks read access (and execute where `chmod X` adds it)
+for group and others, or is a directory without the SGID bit, and
+`getfacl -s` for an entry with ACLs (`find` cannot test ACLs). Only then do the recursive
+tasks run, and the run reports them as changed; check mode reports the change
+without making it. So entries that others create in the repository are
+handed to `aur_builder` on the next run, visibly.
+
+After the takeover, login users can no longer commit inside the repository:
+only its top directory is writable by the group. Update it as `aur_builder`
+with `sudo -u aur_builder git -C <path> pull <remote>` from a remote that
+`aur_builder` can reach, for example a bare repository or a Git server
+reachable with the credentials of `aur_builder`.
+
+Every file in it, `.git` included, becomes readable by all users (`o+rX`).
+Before any change, the role therefore reads the `url` and `pushurl` of every
+remote from `.git/config` (with `git config --file`, so no configuration of
+the repository is run) and fails when one carries credentials, by the same
+rule as for a `url` repository: an `ssh://` URL may name the login user, any
+other URL no user or password before the `@`. Any other secret in the tree
+remains the operator's responsibility. Use an SSH key or a credential helper
+of `aur_builder` that keeps the secret outside the tree.
+
+Whoever can replace a `path` directory or write to it can slip in a package
+that is installed as root. Before any change, the role therefore fails when
+the directory does not exist, is a symlink or another non-directory, is not
+written as a canonical absolute path (no symlink in it, no `.`, `..` or `//`
+and no trailing `/`, which would follow a symlink), is one of the system
+directories `/etc`, `/root`, `/usr`, `/var`, `/boot`, `/opt`, `/srv`,
+`/home`, `/proc`, `/sys`, `/dev`, `/run` or `/tmp` itself (directories below
+them are subject to the other checks), is the home directory of an account
+that `getent passwd` lists (compared after resolving the home, homes `/` and
+empty ones ignored), lies below a parent
+directory that is not owned by root or is writable by group or others, is,
+contains or lies inside `paru_clone_dir` or `yay_clone_dir`, contains an entry
+writable by others (symlinks inside it are skipped), or has no `.git`
+directory. A `.git` file, as in a Git worktree or submodule, is refused: it
+points to a Git directory outside the tree, whose configuration Git runs
+commands from as `aur_builder`, and which the role neither checks nor
+manages.
+
+**Members of `aur_shared_group` can swap any PKGBUILD package directory.**
+The top directory of every `path` repository and of the clone directory has
+mode `2775`, so each member can create, rename and delete entries there, which
+is enough to replace a package directory with one of their own. Whatever they
+put there is built and installed as root. Trust every `aur_shared_users` entry
+(by default every wheel member of `users_list`) as much as the source of the
+PKGBUILDs.
 
 Packages from these repositories install like AUR packages, for example with
 `kewlfft.aur.aur` as `aur_builder`. `aur_only: true` passes `--aur`, which

@@ -10,6 +10,7 @@
     paru_clone_dir: '/var/cache/paru/clone'
     __pm_url2: 'file:///srv/molecule-pkgbuild-url2'
     __pm_stable: 'file:///srv/molecule-pkgbuild-stable'
+    __pm_path_repo: '/srv/molecule-pkgbuild-path'
 
   tasks:
     - name: Verify | Read paru.conf
@@ -98,6 +99,77 @@
         that:
           - __pm_removed_clone.stat.exists
         fail_msg: 'The clone of molecule-removed was deleted after it left the list.'
+
+    - name: Verify | Stat the path repository and the entries of the login user
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - '{{ __pm_path_repo }}'
+        - '{{ __pm_path_repo }}/molecule-pkgbuild-path'
+        - '{{ __pm_path_repo }}/molecule-pkgbuild-path/PKGBUILD'
+      register: __pm_path_stats
+
+    - name: Verify | Assert the path repository belongs to the builder user and the shared group
+      ansible.builtin.assert:
+        that:
+          - item.stat.pw_name == 'aur_builder'
+          - item.stat.gr_name == 'aur_shared'
+          - item.stat.roth
+          - item.item != __pm_path_repo or item.stat.mode == '2775'
+          - not item.stat.isdir or item.stat.isgid
+        fail_msg: >-
+          {{ item.item }} is {{ item.stat.pw_name }}:{{ item.stat.gr_name }}
+          {{ item.stat.mode }}, expected aur_builder:aur_shared and readable
+          by others ({{ '2775' if item.item == __pm_path_repo else 'any mode' }},
+          SGID on directories).
+      loop: '{{ __pm_path_stats.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    # converge.yml put an access and a default ACL on the package directory
+    - name: Verify | Read the extended ACLs in the path repository
+      ansible.builtin.command:
+        argv:
+          - getfacl
+          - -R
+          - -P
+          - -s
+          - -p
+          - '{{ __pm_path_repo }}'
+      register: __pm_path_acls
+      changed_when: false
+
+    - name: Verify | Assert the path repository carries no extended ACLs
+      ansible.builtin.assert:
+        that:
+          - __pm_path_acls.stdout | length == 0
+        fail_msg: 'ACLs remain in the path repository: {{ __pm_path_acls.stdout }}'
+
+    - name: Verify | Read the system safe.directory entries  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: 'git config --system --get-all safe.directory'
+      register: __pm_safe_dirs
+      changed_when: false
+
+    - name: Verify | Assert the path repository is git-safe
+      ansible.builtin.assert:
+        that:
+          - __pm_path_repo in __pm_safe_dirs.stdout_lines
+        fail_msg: >-
+          {{ __pm_path_repo }} is missing from safe.directory:
+          {{ __pm_safe_dirs.stdout_lines }}
+
+    - name: Verify | Stat the PKGBUILD repository download marker
+      ansible.builtin.stat:
+        path: '{{ paru_clone_dir }}/repo/.package_management-sync'
+      register: __pm_sync_marker
+
+    - name: Verify | Assert the download marker exists
+      ansible.builtin.assert:
+        that:
+          - __pm_sync_marker.stat.exists
+          - __pm_sync_marker.stat.pw_name == 'aur_builder'
+        fail_msg: 'The download marker is missing or not owned by aur_builder.'
 
     - name: Verify | Query the packages from the PKGBUILD repositories
       ansible.builtin.command:

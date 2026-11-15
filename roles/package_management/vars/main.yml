@@ -84,3 +84,54 @@ __package_management_pkgbuild_path_repos: >-
   {{ paru_pkgbuild_repositories
      | selectattr('path', 'defined') | rejectattr('path', 'equalto', '')
      | list }}
+
+# Checksum of the URL repository sections of the last successful download
+__package_management_pkgbuild_sync_marker: >-
+  {{ paru_clone_dir }}/{{ __package_management_pkgbuild_repo_clone_subdir }}/.package_management-sync
+
+# How many of the URLs in __package_management_pkgbuild_checked_urls (set by
+# the task) carry credentials: an ssh URL may name the login user (git@) but
+# no password, any other URL carries no user information at all, so neither
+# a password nor a token as user name. Shared by the url check and the
+# remote URL check of path repositories. Only the count, so no URL shows up
+# in a message.
+__package_management_pkgbuild_urls_with_credentials: >-
+  {%- set ns = namespace(count=0) -%}
+  {%- for url in __package_management_pkgbuild_checked_urls -%}
+  {%-   set netloc = url | urlsplit('netloc') -%}
+  {%-   if ((':' in netloc.split('@')[:-1] | join('@'))
+            if url | urlsplit('scheme') == 'ssh'
+            else ('@' in netloc)) -%}
+  {%-     set ns.count = ns.count + 1 -%}
+  {%-   endif -%}
+  {%- endfor -%}
+  {{ ns.count }}
+
+# A path repository must not be one of these trees itself; paths below them
+# pass when their parents are safe
+__package_management_pkgbuild_path_system_dirs:
+  - '/etc'
+  - '/root'
+  - '/usr'
+  - '/var'
+  - '/boot'
+  - '/opt'
+  - '/srv'
+  - '/home'
+  - '/proc'
+  - '/sys'
+  - '/dev'
+  - '/run'
+  - '/tmp'
+
+# Accounts with a home directory other than '/' from getent passwd, as
+# [{name, home}]; tasks/main.yml resolves the homes in the same order
+__package_management_pkgbuild_accounts: >-
+  {%- set ns = namespace(accounts=[]) -%}
+  {%- for line in __package_management_pkgbuild_passwd.stdout_lines | default([]) -%}
+  {%-   set fields = line.split(':') -%}
+  {%-   if fields | length >= 6 and fields[5] not in ['', '/'] -%}
+  {%-     set ns.accounts = ns.accounts + [{'name': fields[0], 'home': fields[5]}] -%}
+  {%-   endif -%}
+  {%- endfor -%}
+  {{ ns.accounts | to_json }}
