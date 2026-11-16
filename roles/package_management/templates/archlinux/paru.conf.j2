@@ -79,3 +79,24 @@ Sudo = {{ paru_sudo }}
 FileManager = {{ paru_file_manager }}
 {% endif %}
 {% endif %}
+{% for repo in paru_pkgbuild_repositories %}
+
+[{{ repo.name }}]
+{% if repo.url | default('') | length > 0 %}
+Url = {{ repo.url }}
+{% if repo.subdirectory | default('') | length > 0 %}
+Path = {{ repo.subdirectory }}
+{% endif %}
+{% else %}
+Path = {{ repo.path }}
+{% endif %}
+{% if repo.depth is defined %}
+Depth = {{ repo.depth }}
+{% endif %}
+{% if repo.skip_review | default(false) | bool %}
+SkipReview
+{% endif %}
+{% if repo.generate_srcinfo | default(false) | bool %}
+GenerateSrcinfo
+{% endif %}
+{% endfor %}

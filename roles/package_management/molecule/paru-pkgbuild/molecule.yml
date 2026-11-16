@@ -1,0 +1,55 @@
+---
+# Focused scenario for paru PKGBUILD repositories (issue #592). Runs the
+# whole role on Arch with aur_helper 'paru' and one 'url' repository (a
+# local Git repository through file://, limited to a subdirectory) and one
+# 'path' repository, created by root with an entry of a login user and
+# parts in the state of the former aur_shared group. Asserts the rendered
+# paru.conf sections, the download of the URL repository, the path
+# repository handed to the builder user and its group (0755, no SGID, no
+# group write access, a reported change, no write access for a wheel login
+# user), packages from both installed through the AUR builder, and the
+# early failures for yay, invalid entries and unsafe paths.
+# side_effect first fails a download after a depth change and checks that
+# the next run retries it, then points the url to a second, unrelated
+# repository and converges again; the second idempotence run proves the
+# replaced clone stays put.
+driver:
+  name: podman
+platforms:
+  - name: package-management-paru-pkgbuild-archlinux
+    image: docker.io/marcstraube/archlinux-ansible:latest
+    pre_build_image: true
+    command: /usr/lib/systemd/systemd
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      /run: rw,nosuid,nodev,size=65536k
+      /tmp: rw,nosuid,nodev
+provisioner:
+  name: ansible
+  playbooks:
+    prepare: prepare.yml
+    converge: converge.yml
+    side_effect: side_effect.yml
+    verify: verify.yml
+  inventory:
+    host_vars:
+      package-management-paru-pkgbuild-archlinux:
+        ansible_python_interpreter: /usr/bin/python
+  config_options:
+    defaults:
+      allow_broken_conditionals: true
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - dependency
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - idempotence
+    - verify
+    - destroy
