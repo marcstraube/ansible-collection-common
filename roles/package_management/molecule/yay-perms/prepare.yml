@@ -3,6 +3,16 @@
   hosts: all
   gather_facts: true
 
+  vars:
+    # Accounts that get a checkout of the local test package (issue #609)
+    __prepare_pkg_accounts:
+      - owner: 'sharinguser'
+        base: '/home/sharinguser'
+        checkout: 'localpkg'
+      - owner: 'aur_builder'
+        base: '/var/cache/aur_builder'
+        checkout: 'rootpkg'
+
   tasks:
     - name: Prepare | Update package cache (Arch)
       community.general.pacman:
@@ -69,3 +79,123 @@
         setfacl -m d:g::rwX /var/cache/yay/clone
       args:
         creates: /var/cache/yay/clone/legacypkg/PKGBUILD
+
+    #
+    # Local PKGBUILD builds (issue #609)
+    #
+
+    # The local-build checks run the real helper. It is not in the official
+    # repositories, so build the prebuilt yay-bin release from the AUR as
+    # the builder — makepkg refuses root — and install it.
+    - name: Prepare | Install build dependencies
+      community.general.pacman:
+        name:
+          - base-devel
+          - git
+        state: present
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Clone the yay-bin AUR package
+      become: true
+      become_user: aur_builder
+      ansible.builtin.git:
+        repo: 'https://aur.archlinux.org/yay-bin.git'
+        dest: '/var/cache/aur_builder/yay-bin'
+        version: master
+        depth: 1
+      retries: 5
+      delay: 10
+
+    - name: Prepare | Build the yay-bin package
+      become: true
+      become_user: aur_builder
+      ansible.builtin.command:
+        cmd: 'makepkg --noconfirm'
+        chdir: '/var/cache/aur_builder/yay-bin'
+        creates: '/var/cache/aur_builder/yay-bin/yay-bin-[0-9]*.pkg.tar.zst'
+      retries: 5
+      delay: 10
+
+    - name: Prepare | Find the built yay-bin package
+      ansible.builtin.find:
+        paths: '/var/cache/aur_builder/yay-bin'
+        patterns: 'yay-bin-[0-9]*.pkg.tar.zst'
+      register: __prepare_helper_pkg
+
+    - name: Prepare | Install the yay-bin package
+      community.general.pacman:
+        name: '{{ __prepare_helper_pkg.files[0].path }}'
+        state: present
+
+    # The shared user doubles as the login caller: its config.json names the
+    # shared tree as buildDir, which a local build must not use. Its home is
+    # unreadable for the builder, as on a real host.
+    - name: Prepare | Restrict the shared user's home to mode 0700
+      ansible.builtin.file:
+        path: /home/sharinguser
+        state: directory
+        owner: sharinguser
+        group: sharinguser
+        mode: '0700'
+
+    # A local PKGBUILD usually is a checked-out AUR package: both helpers
+    # update the checkout around the build (paru restores it, yay merges its
+    # upstream). Commit the test PKGBUILD to a source repository per account
+    # and clone it, so each build directory is a checkout with a remote.
+    # One lies inside the login user's 0700 home, which the wrapper must
+    # build as the caller; the other one the builder can read, which the
+    # wrapper builds through the builder when root calls it.
+    - name: Prepare | Create the test package source repositories
+      ansible.builtin.file:
+        path: '{{ item.base }}/pm-localtest-src'
+        state: directory
+        owner: '{{ item.owner }}'
+        group: '{{ item.owner }}'
+        mode: '0755'
+      loop: '{{ __prepare_pkg_accounts }}'
+
+    # No dependencies, no sources, arch=any: builds offline in seconds.
+    - name: Prepare | Write the test PKGBUILD
+      ansible.builtin.copy:
+        content: |
+          pkgname=pm-localtest
+          pkgver=1
+          pkgrel=1
+          pkgdesc='Local PKGBUILD build test'
+          arch=(any)
+          license=(MIT)
+          options=(!debug)
+
+          package() {
+            install -d "$pkgdir/usr/share/pm-localtest"
+            echo ok > "$pkgdir/usr/share/pm-localtest/marker"
+          }
+        dest: '{{ item.base }}/pm-localtest-src/PKGBUILD'
+        owner: '{{ item.owner }}'
+        group: '{{ item.owner }}'
+        mode: '0644'
+      loop: '{{ __prepare_pkg_accounts }}'
+
+    - name: Prepare | Commit the test PKGBUILD  # noqa: command-instead-of-module
+      become: true
+      become_user: '{{ item.owner }}'
+      # ansible.builtin.git can clone but neither init nor commit
+      ansible.builtin.shell:
+        cmd: >-
+          git init -q -b master &&
+          git add PKGBUILD &&
+          git -c user.name=molecule -c user.email=molecule@localhost
+          commit -qm 'Add test PKGBUILD'
+        chdir: '{{ item.base }}/pm-localtest-src'
+        creates: '{{ item.base }}/pm-localtest-src/.git'
+      loop: '{{ __prepare_pkg_accounts }}'
+
+    - name: Prepare | Check out the test package
+      become: true
+      become_user: '{{ item.owner }}'
+      ansible.builtin.git:
+        repo: '{{ item.base }}/pm-localtest-src'
+        dest: '{{ item.base }}/{{ item.checkout }}'
+        version: master
+      loop: '{{ __prepare_pkg_accounts }}'

@@ -4,7 +4,10 @@
 # tasks/archlinux/paru.yml (not the AUR helper build) on Arch, then
 # asserts that legacy default ACLs are stripped, foreign-owned entries
 # are adopted by the builder, and new entries inherit aur_shared group
-# access through the SGID bit.
+# access through the SGID bit. With paru-bin installed from the AUR it also
+# checks the wrapper's routing: a login user builds a local PKGBUILD in a
+# mode 0700 home as themself, root and every other operation go through
+# the builder (issue #609).
 driver:
   name: podman
 platforms:

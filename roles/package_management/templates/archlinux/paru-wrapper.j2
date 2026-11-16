@@ -17,4 +17,35 @@ if [ "$(id -un)" = '{{ aur_builder_user }}' ]; then
     exec /usr/bin/paru "$@"
 fi
 
+# Operations that work in a directory of the caller run as the caller:
+# builds from a local PKGBUILD (-U/--upgrade, -B/--build) and fetching
+# PKGBUILDs (-G/--getpkgbuild). That directory usually lies inside a mode
+# 0700 home the build user can neither read nor write. --clonedir points at
+# paru's per-user default, so the AUR dependencies of such a build land in
+# the caller's own cache instead of the shared one. --nocleanafter keeps the
+# CleanAfter of /etc/paru.conf, meant for the shared clone directory, from
+# deleting untracked files in the caller's checkout, the built package
+# included. Root keeps going through the build user for every operation,
+# since makepkg refuses root.
+#
+# Operations are uppercase short options, so an uppercase U, B or G in any
+# short option cluster selects such an operation (-U, -Ui, -iU, -Bi, -Gp),
+# while -Syu does not. paru has no other uppercase U, B or G option. Package
+# names cannot start with a dash, and "--" ends the options.
+if [ "$(id -u)" -ne 0 ]; then
+    as_caller=false
+    for arg in "$@"; do
+        case $arg in
+            --) break ;;
+            --upgrade | --build | --getpkgbuild) as_caller=true; break ;;
+            --*) ;;
+            -*[UBG]*) as_caller=true; break ;;
+        esac
+    done
+    if [ "$as_caller" = true ]; then
+        exec /usr/bin/paru --clonedir "${XDG_CACHE_HOME:-$HOME/.cache}/paru/clone" \
+            --nocleanafter "$@"
+    fi
+fi
+
 exec sudo -u {{ aur_builder_user }} -H /usr/bin/paru "$@"
