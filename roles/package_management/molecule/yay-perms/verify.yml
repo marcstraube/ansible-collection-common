@@ -125,8 +125,7 @@
     # The wrapper shadows /usr/bin/yay in PATH, so automation running the
     # helper as the builder user reaches the wrapper too. Without the re-entry
     # guard it would sudo a second time and be refused: the builder holds no
-    # sudoers rule for yay. Tracing the wrapper shows which branch is taken
-    # without needing the helper installed, which it is not in a container.
+    # sudoers rule for yay. Tracing the wrapper shows which branch is taken.
     - name: Verify | Trace the wrapper invoked as the builder user
       ansible.builtin.command:
         cmd: 'runuser -u aur_builder -- sh -x /usr/local/bin/yay --version'
@@ -146,6 +145,181 @@
         fail_msg: >-
           Traced as aur_builder, the wrapper still routed through sudo instead
           of exec'ing the helper directly. Trace was: {{ __pm_trace }}
+
+    #
+    # Local PKGBUILD builds (issue #609)
+    #
+
+    # The wrapper picks its route from the operation flag. A copy with every
+    # exec turned into an echo prints the command a call would run, without
+    # running it; the first line is the route taken.
+    - name: Verify | Write a routing stub of the wrapper
+      ansible.builtin.copy:
+        content: "{{ __pm_wrapper_content.content | b64decode | replace('exec ', 'echo ') }}"
+        dest: /tmp/pm-yay-route
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Verify | Run the routing stub for each flag form
+      ansible.builtin.command:
+        argv: >-
+          {{ (['env'] if item.route == 'root' else
+               ['runuser', '-u', 'sharinguser', '--', 'env', 'HOME=/home/sharinguser'])
+             + item.env | default([])
+             + ['sh', '/tmp/pm-yay-route'] + item.args }}
+      register: __pm_routes
+      changed_when: false
+      loop:
+        - {args: ['-B', '.'], route: caller}
+        - {args: ['-Bi', '.'], route: caller}
+        - {args: ['-iB', '.'], route: caller}
+        - {args: ['--build', '.'], route: caller}
+        - {args: ['--noconfirm', '-B', '.'], route: caller}
+        - {args: ['-G', 'foo'], route: caller}
+        - {args: ['--getpkgbuild', 'foo'], route: caller}
+        - {args: ['-Gp', 'foo'], route: caller}
+        - {args: ['-Syu'], route: builder}
+        - {args: [], route: builder}
+        - {args: ['-S', 'foo'], route: builder}
+        - {args: ['-Qu'], route: builder}
+        - {args: ['-Sc'], route: builder}
+        - {args: ['--sync', 'foo'], route: builder}
+        - {args: ['--version'], route: builder}
+        - {args: ['--noconfirm', '-Syu'], route: builder}
+        - {args: ['-U', './pm-localtest-1-1-any.pkg.tar.zst'], route: builder}
+        - {args: ['-Ui'], route: builder}
+        - {args: ['-Q', '--', '-B'], route: builder}
+        - {args: ['-Q', '--', '-G'], route: builder}
+        - {args: ['-SN', 'foo'], route: builder}
+        - {args: ['-B', '.'], route: root}
+        - {args: ['-B', '.'], env: ['XDG_CACHE_HOME=/home/sharinguser/xdg'], route: xdg}
+      loop_control:
+        label: '{{ item.route }}: {{ item.args | join(" ") }}'
+
+    - name: Verify | Assert each call takes the expected route
+      vars:
+        __pm_prefix:
+          caller: '/usr/bin/yay --builddir /home/sharinguser/.cache/yay --cleanafter=false'
+          xdg: '/usr/bin/yay --builddir /home/sharinguser/xdg/yay --cleanafter=false'
+          builder: 'sudo -u aur_builder -H /usr/bin/yay --builddir /var/cache/yay/clone'
+          root: 'sudo -u aur_builder -H /usr/bin/yay --builddir /var/cache/yay/clone'
+        __pm_expected: >-
+          {{ ([__pm_prefix[item.item.route]] + item.item.args) | join(' ') }}
+      ansible.builtin.assert:
+        that:
+          - item.stdout_lines[0] == __pm_expected
+        fail_msg: >-
+          {{ item.item.args | join(' ') }} as {{ item.item.route }} ran
+          "{{ item.stdout_lines[0] | default('') }}", expected
+          "{{ __pm_expected }}".
+      loop: '{{ __pm_routes.results }}'
+      loop_control:
+        label: '{{ item.item.route }}: {{ item.item.args | join(" ") }}'
+
+    # An untracked file in the caller's checkout must survive the build:
+    # the cleanAfter seeded into the caller's config.json would delete it, the built package
+    # included, unless the wrapper passes --cleanafter=false.
+    - name: Verify | Put an untracked file into the login user's checkout
+      ansible.builtin.copy:
+        content: 'keep me'
+        dest: /home/sharinguser/localpkg/untracked-keep
+        owner: sharinguser
+        group: sharinguser
+        mode: '0644'
+
+    # The real build: the PKGBUILD lies in a mode 0700 home the builder cannot
+    # read, so routing it through the builder fails with EACCES.
+    - name: Verify | Build the local PKGBUILD as the login user
+      become: true
+      become_user: sharinguser
+      ansible.builtin.command:
+        argv: ['/usr/local/bin/yay', '-B', '--noconfirm', '.']
+        chdir: /home/sharinguser/localpkg
+      changed_when: false
+
+    - name: Verify | Stat the package built by the login user
+      ansible.builtin.stat:
+        path: /home/sharinguser/localpkg/pm-localtest-1-1-any.pkg.tar.zst
+      register: __pm_user_pkg
+
+    - name: Verify | Stat the untracked file in the login user's checkout
+      ansible.builtin.stat:
+        path: /home/sharinguser/localpkg/untracked-keep
+      register: __pm_user_untracked
+
+    - name: Verify | Assert the login user built the package as themself
+      ansible.builtin.assert:
+        that:
+          - __pm_user_pkg.stat.exists
+          - __pm_user_pkg.stat.pw_name == 'sharinguser'
+          - __pm_user_untracked.stat.exists
+        fail_msg: >-
+          yay -B in the 0700 home did not leave a package owned by sharinguser
+          next to the untracked file: package {{ __pm_user_pkg.stat }},
+          untracked file present {{ __pm_user_untracked.stat.exists }}
+
+    # makepkg refuses root, so a working build as root proves the wrapper
+    # still hands root's local builds to the builder.
+    - name: Verify | Build the local PKGBUILD as root
+      ansible.builtin.command:
+        argv: ['/usr/local/bin/yay', '-B', '--noconfirm', '.']
+        chdir: /var/cache/aur_builder/rootpkg
+      changed_when: false
+
+    - name: Verify | Stat the package built for root
+      ansible.builtin.stat:
+        path: /var/cache/aur_builder/rootpkg/pm-localtest-1-1-any.pkg.tar.zst
+      register: __pm_root_pkg
+
+    - name: Verify | Assert root's build ran as the builder
+      ansible.builtin.assert:
+        that:
+          - __pm_root_pkg.stat.exists
+          - __pm_root_pkg.stat.pw_name == 'aur_builder'
+        fail_msg: >-
+          yay -B as root did not leave a package owned by aur_builder:
+          {{ __pm_root_pkg.stat }}
+
+    # -G clones the PKGBUILD repository into the current directory, which the
+    # builder cannot write inside the 0700 home.
+    - name: Verify | Fetch a PKGBUILD as the login user
+      become: true
+      become_user: sharinguser
+      ansible.builtin.command:
+        argv: ['/usr/local/bin/yay', '-G', 'yay-bin']
+        chdir: /home/sharinguser
+        creates: /home/sharinguser/yay-bin/PKGBUILD
+      retries: 5
+      delay: 10
+
+    - name: Verify | Stat the fetched PKGBUILD
+      ansible.builtin.stat:
+        path: /home/sharinguser/yay-bin/PKGBUILD
+      register: __pm_user_getpkgbuild
+
+    - name: Verify | Assert the login user fetched the PKGBUILD as themself
+      ansible.builtin.assert:
+        that:
+          - __pm_user_getpkgbuild.stat.exists
+          - __pm_user_getpkgbuild.stat.pw_name == 'sharinguser'
+        fail_msg: >-
+          yay -G in the 0700 home did not leave a PKGBUILD owned by sharinguser:
+          {{ __pm_user_getpkgbuild.stat }}
+
+    - name: Verify | Find shared clone entries owned by the login user
+      ansible.builtin.command:
+        argv: ['find', '{{ yay_clone_dir }}', '-user', 'sharinguser']
+      register: __pm_user_entries
+      changed_when: false
+
+    - name: Verify | Assert the shared clone tree gained no login user entries
+      ansible.builtin.assert:
+        that:
+          - __pm_user_entries.stdout_lines | length == 0
+        fail_msg: >-
+          The local build left entries owned by sharinguser in the shared clone
+          tree: {{ __pm_user_entries.stdout_lines }}
 
     - name: Verify | Validate the builder sudoers file
       ansible.builtin.command:

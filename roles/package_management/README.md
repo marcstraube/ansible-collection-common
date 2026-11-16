@@ -159,6 +159,30 @@ own password) or as `root`. Never invoke the real `/usr/bin/paru` or
 `/usr/bin/yay` directly as a login user — that would create clone entries
 owned by the wrong user and lock the builder out on the next run.
 
+Operations that work in a directory of the caller are the exception: builds
+from a local PKGBUILD and fetching PKGBUILDs. That directory usually lies
+inside a home the build user can neither read nor write. For a login user
+the wrappers therefore run these operations as the caller through the real
+binary:
+
+| Helper | Operations run as the caller                                                 |
+|--------|------------------------------------------------------------------------------|
+| paru   | `-U`/`--upgrade`, `-B`/`--build`, `-G`/`--getpkgbuild` (`-Ui`, `-Bi`, `-Gp`) |
+| yay    | `-B`/`--build`, `-G`/`--getpkgbuild` (`-Bi`, `-Gp`)                          |
+
+The install step of `-Ui` or `-Bi` then runs `pacman` with the caller's own
+`sudo` rights, not through the builder's passwordless rule, so the sudo log
+records the caller. CleanAfter does not apply to these runs: the wrappers
+pass `--nocleanafter` (paru) or `--cleanafter=false` (yay), so untracked
+files in the caller's checkout, the built package included, survive.
+
+AUR dependencies of such a build land in the caller's own cache
+(`~/.cache/paru/clone` or `~/.cache/yay`, honouring `XDG_CACHE_HOME`), never
+in the shared clone directory. Every other operation still runs as
+`aur_builder`. `root` goes through the build user for every operation,
+local builds included, because `makepkg` refuses to run as root — build
+local PKGBUILDs as a login user.
+
 All sudoers rules for the builder (passwordless `pacman`, the enforced umask,
 and the wrapper rule for `wheel`) live in
 `/etc/sudoers.d/99-role-package_management`. The `NN-role-<role>` name keeps

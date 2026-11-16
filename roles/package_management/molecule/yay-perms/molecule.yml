@@ -4,7 +4,11 @@
 # build) on Arch, then asserts that the shared clone directory carries the
 # same SGID/ownership model as the paru one, that buildDir reaches every
 # account's config.json without discarding settings already in the file,
-# and that the manual-invocation wrapper pins --builddir.
+# and that the manual-invocation wrapper pins --builddir. With yay-bin
+# installed from the AUR it also checks the wrapper's routing: a login user
+# builds a local PKGBUILD in a mode 0700 home as themself with their own
+# build directory, root and every other operation go through the builder
+# (issue #609).
 driver:
   name: podman
 platforms:

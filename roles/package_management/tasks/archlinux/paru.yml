@@ -27,7 +27,9 @@
 # clone tree gains entries owned by the login user and locks the builder
 # out on the next Ansible run. The wrapper shadows /usr/bin/paru in PATH
 # and transparently re-executes it as the builder user via sudo, so a bare
-# "paru -Syu" is safe from any wheel account or as root.
+# "paru -Syu" is safe from any wheel account or as root. Only operations
+# that work in the caller's directory (-U, -B, -G) run as the calling login
+# user, with paru's per-user clone directory.
 - name: Paru | Install manual-invocation wrapper
   ansible.builtin.template:
     src: 'archlinux/paru-wrapper.j2'
