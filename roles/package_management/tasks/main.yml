@@ -6,6 +6,22 @@
   tags:
     - package-management
   block:
+    # The role ignores both since the wrappers build every manual call as
+    # the builder user; they have no defaults any more, so only the
+    # inventory defines them.
+    - name: Main | Warn about deprecated variables
+      ansible.builtin.debug:
+        msg: >-
+          aur_shared_group and aur_shared_users are deprecated, have no effect
+          and will be removed in the next major version. The AUR clone
+          directories belong to {{ aur_builder_user }} alone; make manual
+          changes there with sudo -u {{ aur_builder_user }}. Remove both
+          variables from the inventory.
+      register: __package_management_deprecation_warning
+      when: aur_shared_group is defined or aur_shared_users is defined
+      tags:
+        - always
+
     # Only paru reads PKGBUILD repositories; yay has no equivalent. Checked
     # first, before the helper is built.
     - name: Main | Validate PKGBUILD repositories against the AUR helper
@@ -145,7 +161,7 @@
 
     # paru builds the packages of a path repository inside it as the builder
     # user and installs them as root; tasks/archlinux/paru.yml hands the
-    # directory to the builder user and the shared group. Before any change,
+    # directory to the builder user and its group. Before any change,
     # the path must be a canonical path of a directory (symlinks are not
     # followed) holding a Git directory, neither a system directory nor the
     # home of an account, apart from the shared clone directories, without

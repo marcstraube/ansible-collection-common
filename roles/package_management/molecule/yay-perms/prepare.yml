@@ -18,20 +18,35 @@
       retries: 3
       delay: 5
 
-    # yay.yml adds aur_builder to the shared group but does not create the
-    # user — that lives in aur.yml, which builds the helper and is out of
-    # scope for this scenario. Create it here so yay.yml can run standalone.
+    # yay.yml hands the clone directory to aur_builder and its group but
+    # does not create them — that lives in aur.yml, which builds the helper
+    # and is out of scope for this scenario. Create them here as aur.yml
+    # does, so yay.yml can run standalone.
+    - name: Prepare | Create aur_builder group
+      ansible.builtin.group:
+        name: aur_builder
+        system: true
+
     - name: Prepare | Create aur_builder user
       ansible.builtin.user:
         name: aur_builder
+        group: aur_builder
         home: /var/cache/aur_builder
         shell: /usr/bin/nologin
         system: true
         create_home: true
 
+    # The shared group of earlier role versions, without members: the role
+    # must not add aur_builder or aur_shared_users to it any more
+    - name: Prepare | Create the former shared AUR group
+      ansible.builtin.group:
+        name: aur_shared
+        system: true
+
     - name: Prepare | Create shared user
       ansible.builtin.user:
         name: sharinguser
+        groups: wheel
         home: /home/sharinguser
         create_home: true
 
@@ -43,8 +58,8 @@
         group: 'sharinguser'
         mode: '0755'
 
-    # A config the user saved through `yay --save`. The role must keep
-    # these keys and only take ownership of buildDir.
+    # A config the user saved through `yay --save`. The role must leave it
+    # alone: the wrapper passes --builddir.
     - name: Prepare | Seed an existing yay config for the shared user
       ansible.builtin.copy:
         content: |
@@ -58,14 +73,44 @@
         group: 'sharinguser'
         mode: '0644'
 
-    # Recreate the legacy state earlier role versions left behind: default
-    # ACLs on the clone directory and a clone entry owned by root, mode 0700
-    # as a hardened 0077 umask would have left it.
-    - name: Prepare | Create clone directory with a legacy root-owned entry
+    # A config the builder saved through `yay --save`. The role must keep
+    # these keys and only take ownership of buildDir.
+    - name: Prepare | Create the builder's yay config directory
+      ansible.builtin.file:
+        path: '/var/cache/aur_builder/.config/yay'
+        state: directory
+        owner: 'aur_builder'
+        group: 'aur_builder'
+        mode: '0755'
+
+    - name: Prepare | Seed an existing yay config for the builder
+      ansible.builtin.copy:
+        content: |
+          {
+              "buildDir": "/var/cache/aur_builder/.cache/yay",
+              "sudoloop": true
+          }
+        dest: '/var/cache/aur_builder/.config/yay/config.json'
+        owner: 'aur_builder'
+        group: 'aur_builder'
+        mode: '0644'
+
+    # Recreate the legacy state earlier role versions left behind: the
+    # clone directory of the shared group (2775) with default ACLs, a clone
+    # entry of the shared group with the inherited SGID bit and a
+    # group-writable file, and a clone entry owned by root, mode 0700 as a
+    # hardened 0077 umask would have left it.
+    - name: Prepare | Create the clone directory in the state of the shared group
       ansible.builtin.shell: |
-        mkdir -p /var/cache/yay/clone/legacypkg
+        mkdir -p /var/cache/yay/clone/legacypkg /var/cache/yay/clone/sharedpkg
         echo x > /var/cache/yay/clone/legacypkg/PKGBUILD
         chmod 0700 /var/cache/yay/clone/legacypkg
+        echo x > /var/cache/yay/clone/sharedpkg/PKGBUILD
+        chown -R aur_builder:aur_shared /var/cache/yay/clone/sharedpkg
+        chmod 2775 /var/cache/yay/clone/sharedpkg
+        chmod 0664 /var/cache/yay/clone/sharedpkg/PKGBUILD
+        chown aur_builder:aur_shared /var/cache/yay/clone
+        chmod 2775 /var/cache/yay/clone
         setfacl -m d:g::rwX /var/cache/yay/clone
       args:
         creates: /var/cache/yay/clone/legacypkg/PKGBUILD

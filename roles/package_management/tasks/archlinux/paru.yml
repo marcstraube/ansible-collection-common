@@ -1,7 +1,4 @@
 ---
-- name: Paru | Import shared AUR infrastructure tasks
-  ansible.builtin.import_tasks: archlinux/aur_shared.yml
-
 - name: Paru | Include shared clone directory tasks
   ansible.builtin.include_tasks:
     file: archlinux/aur_clone_dir.yml
@@ -179,7 +176,7 @@
     content: "{{ __package_management_pkgbuild_sections_checksum }}\n"
     dest: '{{ __package_management_pkgbuild_sync_marker }}'
     owner: '{{ aur_builder_user }}'
-    group: '{{ aur_shared_group }}'
+    group: '{{ aur_builder_user }}'
     mode: '0644'
   when:
     - __package_management_paru_conf is not skipped
@@ -189,11 +186,12 @@
       or (__package_management_pkgbuild_url_repos | length == 0
           and __package_management_pkgbuild_sync_marker_stat.stat.exists)
 
-# Manual paru runs must happen as the builder user, otherwise the shared
-# clone tree gains entries owned by the login user and locks the builder
-# out on the next Ansible run. The wrapper shadows /usr/bin/paru in PATH
-# and transparently re-executes it as the builder user via sudo, so a bare
-# "paru -Syu" is safe from any wheel account or as root.
+# Manual paru runs must happen as the builder user, the only user that can
+# write to the shared clone tree; root would leave entries there that the
+# next Ansible run hands back to the builder. The wrapper shadows
+# /usr/bin/paru in PATH and transparently re-executes it as the builder
+# user via sudo, so a bare "paru -Syu" works from any wheel account or as
+# root.
 - name: Paru | Install manual-invocation wrapper
   ansible.builtin.template:
     src: 'archlinux/paru-wrapper.j2'

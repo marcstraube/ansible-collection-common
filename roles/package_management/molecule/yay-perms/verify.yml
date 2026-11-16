@@ -27,36 +27,75 @@
         path: '{{ yay_clone_dir }}'
       register: __pm_clone_stat
 
-    - name: Verify | Assert builder ownership and SGID mode
+    - name: Verify | Assert builder ownership and mode 0755
       ansible.builtin.assert:
         that:
           - __pm_clone_stat.stat.pw_name == 'aur_builder'
-          - __pm_clone_stat.stat.gr_name == 'aur_shared'
-          - __pm_clone_stat.stat.mode == '2775'
-        fail_msg: 'Clone directory is not aur_builder:aur_shared with mode 2775'
+          - __pm_clone_stat.stat.gr_name == 'aur_builder'
+          - __pm_clone_stat.stat.mode == '0755'
+        fail_msg: >-
+          Clone directory is {{ __pm_clone_stat.stat.pw_name }}:{{ __pm_clone_stat.stat.gr_name }}
+          {{ __pm_clone_stat.stat.mode }}, expected aur_builder:aur_builder 0755
+          without the SGID bit.
 
-    - name: Verify | Assert the legacy root-owned entry was adopted
+    - name: Verify | Stat the clone entries
       ansible.builtin.stat:
-        path: '{{ yay_clone_dir }}/legacypkg/PKGBUILD'
-      register: __pm_legacy_stat
-      failed_when:
-        - __pm_legacy_stat.stat.pw_name != 'aur_builder' or
-          __pm_legacy_stat.stat.gr_name != 'aur_shared'
+        path: '{{ yay_clone_dir }}/{{ item }}'
+      loop:
+        - legacypkg
+        - legacypkg/PKGBUILD
+        - sharedpkg
+        - sharedpkg/PKGBUILD
+        - testpkg
+        - testpkg/PKGBUILD
+      register: __pm_entry_stats
 
-    - name: Verify | Stat the builder-created entry
-      ansible.builtin.stat:
-        path: '{{ yay_clone_dir }}/testpkg'
-      register: __pm_testpkg_stat
-
-    - name: Verify | Assert SGID group inheritance and group access
+    # legacypkg was root-owned with mode 0700, sharedpkg belonged to the
+    # shared group with the SGID bit and a group-writable PKGBUILD, testpkg
+    # was created by the builder after the conversion
+    - name: Verify | Assert the clone entries belong to the builder and are readable
       ansible.builtin.assert:
         that:
-          - __pm_testpkg_stat.stat.gr_name == 'aur_shared'
-          - __pm_testpkg_stat.stat.rgrp
-          - __pm_testpkg_stat.stat.xgrp
+          - item.stat.pw_name == 'aur_builder'
+          - item.stat.gr_name == 'aur_builder'
+          - item.stat.rgrp and item.stat.roth
+          - not item.stat.isdir or (item.stat.xgrp and item.stat.xoth)
+          - not item.stat.wgrp
+          - not item.stat.isgid
         fail_msg: >-
-          Builder-created entry did not inherit the shared group access
-          through the SGID bit under the enforced 022 umask.
+          {{ item.item }} is {{ item.stat.pw_name }}:{{ item.stat.gr_name }}
+          {{ item.stat.mode }}, expected aur_builder:aur_builder, readable by
+          group and others, without group write access and the SGID bit.
+      loop: '{{ __pm_entry_stats.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    # sharinguser is a wheel member
+    - name: Verify | Try to create an entry in the clone directory as a login user
+      ansible.builtin.command:
+        cmd: 'runuser -u sharinguser -- touch {{ yay_clone_dir }}/molecule-intruder'
+      register: __pm_login_write
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert the login user cannot write to the clone directory
+      ansible.builtin.assert:
+        that:
+          - __pm_login_write.rc != 0
+        fail_msg: 'The wheel login user created an entry in {{ yay_clone_dir }}.'
+
+    - name: Verify | Read the members of the former shared AUR group
+      ansible.builtin.getent:
+        database: group
+        key: aur_shared
+
+    - name: Verify | Assert the role added nobody to the former shared AUR group
+      ansible.builtin.assert:
+        that:
+          - getent_group['aur_shared'][2] | length == 0
+        fail_msg: >-
+          The role added {{ getent_group['aur_shared'][2] }} to the deprecated
+          aur_shared group.
 
     #
     # yay-specific: per-user configuration
@@ -67,32 +106,34 @@
         src: /var/cache/aur_builder/.config/yay/config.json
       register: __pm_builder_config
 
-    - name: Verify | Assert the builder config points at the shared tree
+    - name: Verify | Assert buildDir was merged into the builder config without discarding settings
       vars:
         __pm_builder_json: '{{ __pm_builder_config.content | b64decode | from_json }}'
       ansible.builtin.assert:
         that:
           - __pm_builder_json.buildDir == yay_clone_dir
+          - __pm_builder_json.sudoloop
         fail_msg: >-
           The builder's config.json does not point buildDir at the shared
-          clone directory, so kewlfft.aur builds would land elsewhere.
+          clone directory, or its other keys were lost — the role must merge
+          buildDir into an existing config.json instead of replacing it.
 
     - name: Verify | Read the shared user's yay config
       ansible.builtin.slurp:
         src: /home/sharinguser/.config/yay/config.json
       register: __pm_user_config
 
-    - name: Verify | Assert buildDir was merged without discarding user settings
+    - name: Verify | Assert the shared user's config was left alone
       vars:
         __pm_user_json: '{{ __pm_user_config.content | b64decode | from_json }}'
       ansible.builtin.assert:
         that:
-          - __pm_user_json.buildDir == yay_clone_dir
+          - __pm_user_json.buildDir == '/home/sharinguser/.cache/yay'
           - __pm_user_json.sudoloop
           - __pm_user_json.cleanAfter
         fail_msg: >-
-          The seeded config keys were lost — the role must merge buildDir
-          into an existing config.json instead of replacing it.
+          The role wrote the config.json of an aur_shared_users entry; the
+          wrapper passes --builddir instead.
 
     #
     # yay-specific: manual invocation

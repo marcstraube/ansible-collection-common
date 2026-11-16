@@ -1,10 +1,11 @@
 ---
 # Focused scenario for the shared paru clone-directory permission model
-# (SGID + builder ownership, no ACLs — issue #286). Runs only
-# tasks/archlinux/paru.yml (not the AUR helper build) on Arch, then
-# asserts that legacy default ACLs are stripped, foreign-owned entries
-# are adopted by the builder, and new entries inherit aur_shared group
-# access through the SGID bit.
+# (aur_builder:aur_builder 0755 without SGID, no ACLs — issues #286, #604).
+# Runs only tasks/archlinux/paru.yml (not the AUR helper build) on Arch,
+# then asserts that legacy default ACLs are stripped, foreign-owned entries
+# are adopted by the builder, a tree of the former aur_shared group is
+# converted with a reported change, and a wheel login user cannot write to
+# the clone directory.
 driver:
   name: podman
 platforms:

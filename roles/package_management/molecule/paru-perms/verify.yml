@@ -27,54 +27,87 @@
         path: '{{ paru_clone_dir }}'
       register: __pm_clone_stat
 
-    - name: Verify | Assert builder ownership and SGID mode
+    - name: Verify | Assert builder ownership and mode 0755
       ansible.builtin.assert:
         that:
           - __pm_clone_stat.stat.pw_name == 'aur_builder'
-          - __pm_clone_stat.stat.gr_name == 'aur_shared'
-          - __pm_clone_stat.stat.mode == '2775'
-        fail_msg: 'Clone directory is not aur_builder:aur_shared with mode 2775'
-
-    - name: Verify | Stat the legacy entry
-      ansible.builtin.stat:
-        path: '{{ paru_clone_dir }}/legacypkg/PKGBUILD'
-      register: __pm_legacy_stat
-
-    - name: Verify | Assert the legacy root-owned entry was adopted
-      ansible.builtin.assert:
-        that:
-          - __pm_legacy_stat.stat.pw_name == 'aur_builder'
-          - __pm_legacy_stat.stat.gr_name == 'aur_shared'
-        fail_msg: 'Legacy clone entry was not adopted by the builder'
-
-    - name: Verify | Stat the legacy directory
-      ansible.builtin.stat:
-        path: '{{ paru_clone_dir }}/legacypkg'
-      register: __pm_legacy_dir_stat
-
-    - name: Verify | Assert the legacy 0700 directory was made group-readable
-      ansible.builtin.assert:
-        that:
-          - __pm_legacy_dir_stat.stat.rgrp
-          - __pm_legacy_dir_stat.stat.xgrp
+          - __pm_clone_stat.stat.gr_name == 'aur_builder'
+          - __pm_clone_stat.stat.mode == '0755'
         fail_msg: >-
-          Legacy directory kept its restrictive 0700 mode — chown alone does
-          not repair modes, so the aur_shared group stays locked out.
+          Clone directory is {{ __pm_clone_stat.stat.pw_name }}:{{ __pm_clone_stat.stat.gr_name }}
+          {{ __pm_clone_stat.stat.mode }}, expected aur_builder:aur_builder 0755
+          without the SGID bit.
 
-    - name: Verify | Stat the builder-created entry
+    - name: Verify | Stat the clone entries
       ansible.builtin.stat:
-        path: '{{ paru_clone_dir }}/testpkg'
-      register: __pm_testpkg_stat
+        path: '{{ paru_clone_dir }}/{{ item }}'
+      loop:
+        - legacypkg
+        - legacypkg/PKGBUILD
+        - sharedpkg
+        - sharedpkg/PKGBUILD
+        - testpkg
+        - testpkg/PKGBUILD
+      register: __pm_entry_stats
 
-    - name: Verify | Assert SGID group inheritance and group access
+    # legacypkg was root-owned with mode 0700, sharedpkg belonged to the
+    # shared group with the SGID bit and a group-writable PKGBUILD, testpkg
+    # was created by the builder after the conversion
+    - name: Verify | Assert the clone entries belong to the builder and are readable
       ansible.builtin.assert:
         that:
-          - __pm_testpkg_stat.stat.gr_name == 'aur_shared'
-          - __pm_testpkg_stat.stat.rgrp
-          - __pm_testpkg_stat.stat.xgrp
+          - item.stat.pw_name == 'aur_builder'
+          - item.stat.gr_name == 'aur_builder'
+          - item.stat.rgrp and item.stat.roth
+          - not item.stat.isdir or (item.stat.xgrp and item.stat.xoth)
+          - not item.stat.wgrp
+          - not item.stat.isgid
         fail_msg: >-
-          Builder-created entry did not inherit aur_shared group access
-          through the SGID bit under the enforced 022 umask.
+          {{ item.item }} is {{ item.stat.pw_name }}:{{ item.stat.gr_name }}
+          {{ item.stat.mode }}, expected aur_builder:aur_builder, readable by
+          group and others, without group write access and the SGID bit.
+      loop: '{{ __pm_entry_stats.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    # molecule_login is a wheel member and still in the former shared group
+    - name: Verify | Try to create an entry in the clone directory as a login user
+      ansible.builtin.command:
+        cmd: 'runuser -u molecule_login -- touch {{ paru_clone_dir }}/molecule-intruder'
+      register: __pm_login_write
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert the login user cannot write to the clone directory
+      ansible.builtin.assert:
+        that:
+          - __pm_login_write.rc != 0
+        fail_msg: 'The wheel login user created an entry in {{ paru_clone_dir }}.'
+
+    # Check mode with a clone directory that does not exist yet (a new host
+    # or a changed paru_clone_dir): the checks of the tree must skip instead
+    # of failing on the missing path
+    - name: Verify | Run paru configuration tasks in check mode with a new clone directory  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+        tasks_from: archlinux/paru.yml
+        apply:
+          check_mode: true
+      vars:
+        paru_clone_dir: '/var/cache/paru/molecule-new-clone'
+
+    - name: Verify | Stat the new clone directory
+      ansible.builtin.stat:
+        path: '/var/cache/paru/molecule-new-clone'
+      register: __pm_new_clone_stat
+
+    - name: Verify | Assert check mode skipped the checks and created nothing
+      ansible.builtin.assert:
+        that:
+          - not __pm_new_clone_stat.stat.exists
+          - __package_management_clone_dir_foreign is skipped
+        fail_msg: >-
+          Check mode created the new clone directory or ran find on it.
 
     - name: Verify | Stat the manual-invocation wrapper
       ansible.builtin.stat:

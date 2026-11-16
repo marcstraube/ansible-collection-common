@@ -10,10 +10,11 @@
         path: '/srv/molecule-pkgbuild-path'
 
   tasks:
-    # A login user, whose entries end up in path repositories
+    # A wheel login user, whose entries end up in path repositories
     - name: Converge | Create a login user
       ansible.builtin.user:
         name: molecule_login
+        groups: wheel
         shell: /bin/bash
         create_home: true
 
@@ -607,6 +608,9 @@
     __pm_url_repo: '/srv/molecule-pkgbuild-url'
     __pm_stable_repo: '/srv/molecule-pkgbuild-stable'
     __pm_path_repo: '/srv/molecule-pkgbuild-path'
+    __pm_conversion_marker: '/var/tmp/molecule-paru-pkgbuild-converted'
+    # Deprecated: only warns, the role neither creates nor uses the group
+    aur_shared_group: 'molecule_shared'
     # side_effect.yml creates the second URL repository; from then on the
     # url of molecule-url points to it, molecule-stable keeps its url and
     # molecule-removed is no longer listed
@@ -694,9 +698,17 @@
     # The role refuses a missing path repository. It is a Git work tree
     # created by root, as the builder user does not exist before the first
     # run, with a package directory of a login user that is only readable
-    # by its owner and carries an access and a default ACL. The role hands
-    # it all to the builder user and the shared group and strips the ACLs,
-    # so the builder can build in it.
+    # by its owner and carries an access and a default ACL. The top
+    # directory and .git are in the state the shared group of earlier role
+    # versions left: group aur_shared, mode 2775, a group-writable file. The
+    # role hands it all to the builder user and its group, strips the ACLs,
+    # the SGID bit and group write access, so the builder alone can build
+    # in it.
+    - name: Converge | Create the former shared AUR group
+      ansible.builtin.group:
+        name: aur_shared
+        system: true
+
     - name: Converge | Check for the path repository
       ansible.builtin.stat:
         path: '{{ __pm_path_repo }}'
@@ -756,10 +768,53 @@
               - '{{ __pm_path_repo }}/molecule-pkgbuild-path'
           changed_when: true
 
+        - name: Converge | Put the top directory and .git into the state of the shared group
+          ansible.builtin.shell:
+            cmd: >-
+              chown root:aur_shared {{ __pm_path_repo }} {{ __pm_path_repo }}/.git
+              {{ __pm_path_repo }}/.git/description &&
+              chmod 2775 {{ __pm_path_repo }} {{ __pm_path_repo }}/.git &&
+              chmod 0664 {{ __pm_path_repo }}/.git/description
+          changed_when: true
+
   tasks:
+    - name: Converge | Check for the conversion marker
+      ansible.builtin.stat:
+        path: '{{ __pm_conversion_marker }}'
+      register: __pm_conversion_marker_stat
+
     - name: Converge | Include package_management role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    # The path repository is the last directory the role sets up. Its
+    # recursive recovery reports a change exactly when these checks found
+    # something; the idempotence runs find the marker.
+    - name: Converge | Assert the first run reported the takeover of the path repository
+      ansible.builtin.assert:
+        that:
+          - __package_management_clone_dir_foreign.stdout | length > 0
+          - __package_management_clone_dir_acls.stdout | length > 0
+          - __package_management_clone_dir_recovered is changed
+        fail_msg: >-
+          The run did not report the takeover of the entries in
+          {{ __pm_path_repo }}.
+      when: not __pm_conversion_marker_stat.stat.exists
+
+    # aur_shared_group is set in the play vars
+    - name: Converge | Assert the deprecation warning was shown
+      ansible.builtin.assert:
+        that:
+          - __package_management_deprecation_warning is not skipped
+        fail_msg: 'The role did not warn about the deprecated aur_shared_group.'
+
+    - name: Converge | Record the checked conversion
+      ansible.builtin.copy:
+        content: ''
+        dest: '{{ __pm_conversion_marker }}'
+        owner: root
+        group: root
+        mode: '0644'
 
     # What another role does to install a package from a PKGBUILD repository
     - name: Converge | Install packages from the PKGBUILD repositories

@@ -371,21 +371,23 @@ aur_builder_home: '/var/cache/aur_builder'
 # AUR Shared Build Infrastructure (helper-agnostic)
 #
 
-# Group owning the shared clone directories
-aur_shared_group: 'aur_shared'
-
-# Users to add to the shared AUR clone group (in addition to aur_builder)
-# These users can run the AUR helper manually and share the clone cache
-aur_shared_users: []
-# Example: ['johndoe']
+# DEPRECATED: no effect (removed in the next major version). The clone
+# directories belong to aur_builder_user and its own group; the wrappers run
+# every manual call as that user. The role no longer creates the group or
+# adds users to it, leaves an existing group in place (groupdel removes it)
+# and no longer writes the users' yay config.json. While either is set, the
+# role prints a deprecation warning.
+# aur_shared_group: 'aur_shared'
+# aur_shared_users: []
 
 #
 # Paru Configuration
 #
 
 # Shared clone directory for AUR package sources
-# Both aur_builder and regular users share this directory to avoid
-# duplicate clones and enable faster updates (git pull instead of fresh clone)
+# Every build, manual ones through the wrapper included, runs as aur_builder
+# here, which avoids duplicate clones and enables faster updates (git pull
+# instead of fresh clone)
 paru_clone_dir: '/var/cache/paru/clone'
 
 # Remove untracked build files after installation
@@ -481,8 +483,8 @@ paru_file_manager: ''
 #         place; it must be a Git work tree with a .git directory, outside
 #         the shared clone directories, without entries writable by others,
 #         below parent directories owned by root and not writable by group
-#         or others. The role hands it to the builder user and
-#         aur_shared_group like the shared clone directory
+#         or others. The role hands it to the builder user and its
+#         group like the shared clone directory
 # Optional keys:
 #   subdirectory: with url only, search for PKGBUILDs below this relative
 #                 directory
@@ -507,8 +509,8 @@ paru_pkgbuild_repositories: []
 # Yay Configuration
 #
 # yay has no system-wide configuration file — the build directory is
-# written to ~/.config/yay/config.json for the builder and every shared
-# user, and passed to manual invocations through the wrapper.
+# written to ~/.config/yay/config.json of the builder user and passed to
+# manual invocations through the wrapper.
 #
 
 # Shared clone directory for AUR package sources
