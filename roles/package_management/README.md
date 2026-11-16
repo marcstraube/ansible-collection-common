@@ -276,25 +276,24 @@ build installs the package but paru exits with an error.
 
 paru always builds as `aur_builder`, also in manual runs through the wrapper,
 so the role manages a `path` repository like the shared clone directory:
-owner `aur_builder`, group `aur_shared_group`, mode `2775`, the ownership
-(`chown -R`) and read access (`chmod -R g+rX,o+rX`) of existing entries
-restored, ACLs removed, and the repository marked as `safe.directory` in the
-system Git configuration. Its subdirectories also get the SGID bit, which
-those of the clone directory inherit from its top directory: files that Git
-and paru rewrite during a build keep `aur_shared_group` then. The directory
-may belong to root or a login user before the first run. On every run a
-read-only `find` looks for an entry that is not owned by `aur_builder` and
-`aur_shared_group`, lacks read access (and execute where `chmod X` adds it)
-for group and others, or is a directory without the SGID bit, and
-`getfacl -s` for an entry with ACLs (`find` cannot test ACLs). Only then do the recursive
-tasks run, and the run reports them as changed; check mode reports the change
-without making it. So entries that others create in the repository are
-handed to `aur_builder` on the next run, visibly.
+owner and group `aur_builder`, mode `0755` without the SGID bit, the
+ownership (`chown -R`) and read access (`chmod -R g+rX,o+rX,g-w`) of existing
+entries restored, the SGID bit removed from its directories, ACLs removed,
+and the repository marked as `safe.directory` in the system Git
+configuration. The directory may belong to root or a login user before the
+first run. On every run a read-only `find` looks for an entry that is not
+owned by user and group `aur_builder`, is a directory with the SGID bit,
+lacks read access (and execute where `chmod X` adds it) for group and
+others, or is writable by the group, and `getfacl -s` for an entry with ACLs
+(`find` cannot test ACLs). Only then do the recursive tasks run, and the run
+reports them as changed; check mode reports the change without making it.
+So entries that others create in the repository are handed to `aur_builder`
+on the next run, visibly.
 
-After the takeover, login users can no longer commit inside the repository:
-only its top directory is writable by the group. Update it as `aur_builder`
-with `sudo -u aur_builder git -C <path> pull <remote>` from a remote that
-`aur_builder` can reach, for example a bare repository or a Git server
+After the takeover, only `aur_builder` can write to the repository. Make
+every change as `aur_builder`, for example
+`sudo -u aur_builder git -C <path> pull <remote>` from a remote that
+`aur_builder` can reach, such as a bare repository or a Git server
 reachable with the credentials of `aur_builder`.
 
 Every file in it, `.git` included, becomes readable by all users (`o+rX`).
@@ -324,14 +323,6 @@ points to a Git directory outside the tree, whose configuration Git runs
 commands from as `aur_builder`, and which the role neither checks nor
 manages.
 
-**Members of `aur_shared_group` can swap any PKGBUILD package directory.**
-The top directory of every `path` repository and of the clone directory has
-mode `2775`, so each member can create, rename and delete entries there, which
-is enough to replace a package directory with one of their own. Whatever they
-put there is built and installed as root. Trust every `aur_shared_users` entry
-(by default every wheel member of `users_list`) as much as the source of the
-PKGBUILDs.
-
 Packages from these repositories install like AUR packages, for example with
 `kewlfft.aur.aur` as `aur_builder`. `aur_only: true` passes `--aur`, which
 excludes PKGBUILD repositories.
@@ -340,48 +331,67 @@ excludes PKGBUILD repositories.
 
 These apply to whichever helper `aur_helper` selects.
 
-| Variable           | Default                | Description                       |
-|--------------------|------------------------|-----------------------------------|
-| `aur_shared_group` | `aur_shared`           | Group owning the clone directory  |
-| `aur_shared_users` | `[]`                   | Users sharing the AUR clone cache |
-| `yay_clone_dir`    | `/var/cache/yay/clone` | Shared clone directory for yay    |
+| Variable           | Default                | Description                    |
+|--------------------|------------------------|--------------------------------|
+| `aur_shared_group` | —                      | Deprecated, no effect          |
+| `aur_shared_users` | —                      | Deprecated, no effect          |
+| `yay_clone_dir`    | `/var/cache/yay/clone` | Shared clone directory for yay |
+
+> **Deprecation:** `aur_shared_group` and `aur_shared_users` have no effect
+> and will be removed in the next major version; there is no replacement.
+> The role no longer creates the group, adds users to it or writes `buildDir`
+> into their yay `config.json`, and warns while either variable is set. An
+> existing group stays on the host; remove it with
+> `groupdel <aur_shared_group>` (earlier default: `aur_shared`) once no file
+> belongs to it any more.
 
 `paru_clone_dir` and `yay_clone_dir` stay separate: the two helpers track VCS
 state differently, so they must not build in the same tree. Everything else —
-group, ownership, permissions, git `safe.directory` — is shared between them.
+ownership, permissions, git `safe.directory` — is shared between them.
 
 Unlike paru, yay has no system-wide configuration file. It reads
 `~/.config/yay/config.json`, so the role writes `buildDir` there for the
-builder user and for every `aur_shared_users` entry, merging into an existing
-file rather than replacing it. The wrapper additionally passes `--builddir`,
-so a manual call lands in the shared tree regardless of the caller's own
-config.
+builder user, merging into an existing file rather than replacing it. The
+wrapper additionally passes `--builddir`, so a manual call lands in the
+shared tree regardless of any configuration of the caller.
 
-The shared clone directory is owned by the `aur_builder` user and group-owned
-by `aur_shared_group` with the SGID bit. All builds run as `aur_builder` under an
-enforced `022` umask (set through the user's GECOS `umask=` field and a
-sudoers `umask_override`), so cloned sources and built packages stay readable
-and executable for the shared group even when a restrictive default
-umask (such as the `hardening` role's `0077`) is in effect. ACLs are
-deliberately **not** used: default ACLs make `libarchive`/`bsdtar` skip its
-final `chmod` during source extraction, which would bake the restrictive
-modes of the initial secure `open()` into the built packages. Because
-`makepkg` only chmods paths for their owner, the tree is owned by a single
-user; other group members get read/execute access (never write)
-through the SGID bit and the enforced umask.
+The shared clone directory is owned by user and group `aur_builder` with mode
+`0755`. All builds run as `aur_builder` under an enforced `022` umask (set
+through the user's GECOS `umask=` field and a sudoers `umask_override`), so
+cloned sources and built packages stay readable and executable for everyone
+even when a restrictive default umask (such as the `hardening` role's `0077`)
+is in effect. ACLs are deliberately **not** used: default ACLs make
+`libarchive`/`bsdtar` skip its final `chmod` during source extraction, which
+would bake the restrictive modes of the initial secure `open()` into the
+built packages. Because `makepkg` only chmods paths for their owner, the tree
+is owned by a single user; everyone else gets read/execute access, never
+write. On every run the role hands entries of other users or groups to
+`aur_builder`, restores read access, removes group write access, the SGID
+bit and ACLs; it reports a change when a read-only `find` found an entry of
+another user or group or a directory with the SGID bit, which converts the
+`aur_shared_group` tree of earlier role versions on the next run.
 
-Manual upgrades must therefore run as the build user. The role installs a
-`/usr/local/bin/paru` or `/usr/local/bin/yay` wrapper that transparently
-re-executes the helper as `aur_builder` via `sudo`, so `paru -Syu` or
-`yay -Syu` works from any `wheel` account (authenticating with the caller's
-own password) or as `root`. Never invoke the real `/usr/bin/paru` or
-`/usr/bin/yay` directly as a login user — that would create clone entries
-owned by the wrong user and lock the builder out on the next run.
+Manual upgrades and every other change in the clone directories therefore
+run as the build user. The role installs a `/usr/local/bin/paru` or
+`/usr/local/bin/yay` wrapper that transparently re-executes the helper as
+`aur_builder` via `sudo`, so `paru -Syu` or `yay -Syu` works from any `wheel`
+account (authenticating with the caller's own password) or as `root`. Make
+any other manual change with `sudo -u aur_builder`, for example
+`sudo -u aur_builder rm -rf <paru_clone_dir>/<package>` to drop a broken
+clone. Login users
+cannot write to the clone directories, so the real `/usr/bin/paru` or
+`/usr/bin/yay` fails there when a login user calls it directly; as `root` it
+would leave entries that the next run hands back to `aur_builder`.
 
 All sudoers rules for the builder (passwordless `pacman`, the enforced umask,
 and the wrapper rule for `wheel`) live in
 `/etc/sudoers.d/99-role-package_management`. The `NN-role-<role>` name keeps
 the file in place when the `sudo` role purges unmanaged drop-ins.
+
+> **Every `wheel` member can act as root through these rules.** paru options
+> such as `--fm` or `--makepkg` run a command of the caller's choice as
+> `aur_builder`, which can change the clone directories and runs `pacman`
+> without a password. Keep `wheel` to administrators.
 
 ### Arch Linux - Tools
 

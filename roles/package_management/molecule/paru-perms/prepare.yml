@@ -3,6 +3,9 @@
   hosts: all
   gather_facts: true
 
+  vars:
+    paru_clone_dir: '/var/cache/paru/clone'
+
   tasks:
     - name: Prepare | Update package cache (Arch)
       community.general.pacman:
@@ -18,27 +21,65 @@
       retries: 3
       delay: 5
 
-    # paru.yml adds aur_builder to the aur_shared group but does not create the
-    # user — that lives in aur.yml, which builds the helper and is out of scope
-    # for this scenario. Create it here so paru.yml can run standalone.
+    # paru.yml hands the clone directory to aur_builder and its group but
+    # does not create them — that lives in aur.yml, which builds the helper
+    # and is out of scope for this scenario. Create them here as aur.yml
+    # does, so paru.yml can run standalone.
+    - name: Prepare | Create aur_builder group
+      ansible.builtin.group:
+        name: aur_builder
+        system: true
+
     - name: Prepare | Create aur_builder user
       ansible.builtin.user:
         name: aur_builder
+        group: aur_builder
         home: /var/cache/aur_builder
         shell: /usr/bin/nologin
         system: true
         create_home: true
 
-    # Recreate the legacy state earlier role versions left behind: default
-    # ACLs on the clone directory and a clone entry owned by root. The entry
+    # The shared group of earlier role versions, with the builder and a
+    # wheel login user as members
+    - name: Prepare | Create the former shared AUR group
+      ansible.builtin.group:
+        name: aur_shared
+        system: true
+
+    - name: Prepare | Add aur_builder to the former shared AUR group
+      ansible.builtin.user:
+        name: aur_builder
+        groups: aur_shared
+        append: true
+
+    - name: Prepare | Create a wheel login user in the former shared AUR group
+      ansible.builtin.user:
+        name: molecule_login
+        groups:
+          - wheel
+          - aur_shared
+        shell: /bin/bash
+        create_home: true
+
+    # Recreate the legacy state earlier role versions left behind: the
+    # clone directory of the shared group (2775) with default ACLs, a clone
+    # entry of the shared group with the inherited SGID bit and a
+    # group-writable file, and a clone entry owned by root. The root entry
     # is mode 0700 as a hardened 0077 umask would have left it, so converge
-    # must strip the ACLs, adopt the entry for the builder AND normalize its
-    # mode back to group-readable.
-    - name: Prepare | Create clone directory with a legacy root-owned entry
+    # must strip the ACLs, adopt the entries for the builder, normalize the
+    # 0700 mode back to readable and clear the SGID bit and group write
+    # access.
+    - name: Prepare | Create the clone directory in the state of the shared group
       ansible.builtin.shell: |
-        mkdir -p /var/cache/paru/clone/legacypkg
-        echo x > /var/cache/paru/clone/legacypkg/PKGBUILD
-        chmod 0700 /var/cache/paru/clone/legacypkg
-        setfacl -m d:g::rwX /var/cache/paru/clone
+        mkdir -p {{ paru_clone_dir }}/legacypkg {{ paru_clone_dir }}/sharedpkg
+        echo x > {{ paru_clone_dir }}/legacypkg/PKGBUILD
+        chmod 0700 {{ paru_clone_dir }}/legacypkg
+        echo x > {{ paru_clone_dir }}/sharedpkg/PKGBUILD
+        chown -R aur_builder:aur_shared {{ paru_clone_dir }}/sharedpkg
+        chmod 2775 {{ paru_clone_dir }}/sharedpkg
+        chmod 0664 {{ paru_clone_dir }}/sharedpkg/PKGBUILD
+        chown aur_builder:aur_shared {{ paru_clone_dir }}
+        chmod 2775 {{ paru_clone_dir }}
+        setfacl -m d:g::rwX {{ paru_clone_dir }}
       args:
-        creates: /var/cache/paru/clone/legacypkg/PKGBUILD
+        creates: '{{ paru_clone_dir }}/legacypkg/PKGBUILD'

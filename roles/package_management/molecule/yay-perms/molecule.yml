@@ -1,10 +1,14 @@
 ---
 # Focused scenario for the yay side of the shared AUR build infrastructure
-# (issue #229). Runs only tasks/archlinux/yay.yml (not the AUR helper
+# (issues #229, #604). Runs only tasks/archlinux/yay.yml (not the AUR helper
 # build) on Arch, then asserts that the shared clone directory carries the
-# same SGID/ownership model as the paru one, that buildDir reaches every
-# account's config.json without discarding settings already in the file,
-# and that the manual-invocation wrapper pins --builddir.
+# same ownership model as the paru one (aur_builder:aur_builder 0755
+# without SGID, a tree of the former aur_shared group converted with a
+# reported change, no write access for a wheel login user), that buildDir
+# reaches the builder's config.json without discarding settings already in
+# the file while aur_shared_users neither joins a group nor gets its
+# config.json touched, and that the manual-invocation wrapper pins
+# --builddir.
 driver:
   name: podman
 platforms:

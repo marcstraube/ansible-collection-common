@@ -100,31 +100,61 @@
           - __pm_removed_clone.stat.exists
         fail_msg: 'The clone of molecule-removed was deleted after it left the list.'
 
-    - name: Verify | Stat the path repository and the entries of the login user
+    - name: Verify | Stat the path repository and its taken over entries
       ansible.builtin.stat:
         path: '{{ item }}'
       loop:
         - '{{ __pm_path_repo }}'
+        - '{{ __pm_path_repo }}/.git'
+        - '{{ __pm_path_repo }}/.git/description'
         - '{{ __pm_path_repo }}/molecule-pkgbuild-path'
         - '{{ __pm_path_repo }}/molecule-pkgbuild-path/PKGBUILD'
       register: __pm_path_stats
 
-    - name: Verify | Assert the path repository belongs to the builder user and the shared group
+    - name: Verify | Assert the path repository belongs to the builder user and its group
       ansible.builtin.assert:
         that:
           - item.stat.pw_name == 'aur_builder'
-          - item.stat.gr_name == 'aur_shared'
+          - item.stat.gr_name == 'aur_builder'
           - item.stat.roth
-          - item.item != __pm_path_repo or item.stat.mode == '2775'
-          - not item.stat.isdir or item.stat.isgid
+          - not item.stat.wgrp
+          - not item.stat.isgid
+          - item.item != __pm_path_repo or item.stat.mode == '0755'
         fail_msg: >-
           {{ item.item }} is {{ item.stat.pw_name }}:{{ item.stat.gr_name }}
-          {{ item.stat.mode }}, expected aur_builder:aur_shared and readable
-          by others ({{ '2775' if item.item == __pm_path_repo else 'any mode' }},
-          SGID on directories).
+          {{ item.stat.mode }}, expected aur_builder:aur_builder and readable
+          by others, without group write access and the SGID bit
+          ({{ '0755' if item.item == __pm_path_repo else 'any such mode' }}).
       loop: '{{ __pm_path_stats.results }}'
       loop_control:
         label: '{{ item.item }}'
+
+    # molecule_login is a wheel member
+    - name: Verify | Try to create an entry in the path repository as a login user
+      ansible.builtin.command:
+        cmd: 'runuser -u molecule_login -- touch {{ __pm_path_repo }}/molecule-intruder'
+      register: __pm_login_write
+      changed_when: false
+      failed_when: false
+
+    - name: Verify | Assert the login user cannot write to the path repository
+      ansible.builtin.assert:
+        that:
+          - __pm_login_write.rc != 0
+        fail_msg: 'The wheel login user created an entry in {{ __pm_path_repo }}.'
+
+    - name: Verify | Look up the deprecated group set in converge.yml
+      ansible.builtin.command:
+        cmd: 'getent group molecule_shared'
+      register: __pm_deprecated_group
+      changed_when: false
+      failed_when: __pm_deprecated_group.rc not in [0, 2]
+
+    - name: Verify | Assert the role did not create the deprecated group
+      ansible.builtin.assert:
+        that:
+          - __pm_deprecated_group.rc == 2
+        fail_msg: 'The role created the group of the deprecated aur_shared_group.'
 
     # converge.yml put an access and a default ACL on the package directory
     - name: Verify | Read the extended ACLs in the path repository
