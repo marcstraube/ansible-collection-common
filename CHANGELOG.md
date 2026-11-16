@@ -2,6 +2,17 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.2.2 (2026-11-16)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(package_management): run local AUR builds as the caller by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/610
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.2.1...v3.2.2
+
 ## 3.2.1 (2026-11-14)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
