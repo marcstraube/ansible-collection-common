@@ -68,7 +68,8 @@
 # next Ansible run hands back to the builder. The wrapper shadows
 # /usr/bin/yay in PATH and transparently re-executes it as the builder
 # user via sudo, so a bare "yay -Syu" works from any wheel account or as
-# root.
+# root. Only operations that work in the caller's directory (-B, -G) run
+# as the calling login user, with yay's per-user build directory.
 - name: Yay | Install manual-invocation wrapper
   ansible.builtin.template:
     src: 'archlinux/yay-wrapper.j2'

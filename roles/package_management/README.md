@@ -352,8 +352,9 @@ ownership, permissions, git `safe.directory` — is shared between them.
 Unlike paru, yay has no system-wide configuration file. It reads
 `~/.config/yay/config.json`, so the role writes `buildDir` there for the
 builder user, merging into an existing file rather than replacing it. The
-wrapper additionally passes `--builddir`, so a manual call lands in the
-shared tree regardless of any configuration of the caller.
+wrapper additionally passes `--builddir`, so a manual call that runs as the
+build user lands in the shared tree regardless of any configuration of the
+caller; the local builds below get the caller's own build directory.
 
 The shared clone directory is owned by user and group `aur_builder` with mode
 `0755`. All builds run as `aur_builder` under an enforced `022` umask (set
@@ -382,6 +383,30 @@ clone. Login users
 cannot write to the clone directories, so the real `/usr/bin/paru` or
 `/usr/bin/yay` fails there when a login user calls it directly; as `root` it
 would leave entries that the next run hands back to `aur_builder`.
+
+Operations that work in a directory of the caller are the exception: builds
+from a local PKGBUILD and fetching PKGBUILDs. That directory usually lies
+inside a home the build user can neither read nor write. For a login user
+the wrappers therefore run these operations as the caller through the real
+binary:
+
+| Helper | Operations run as the caller                                                 |
+|--------|------------------------------------------------------------------------------|
+| paru   | `-U`/`--upgrade`, `-B`/`--build`, `-G`/`--getpkgbuild` (`-Ui`, `-Bi`, `-Gp`) |
+| yay    | `-B`/`--build`, `-G`/`--getpkgbuild` (`-Bi`, `-Gp`)                          |
+
+The install step of `-Ui` or `-Bi` then runs `pacman` with the caller's own
+`sudo` rights, not through the builder's passwordless rule, so the sudo log
+records the caller. CleanAfter does not apply to these runs: the wrappers
+pass `--nocleanafter` (paru) or `--cleanafter=false` (yay), so untracked
+files in the caller's checkout, the built package included, survive.
+
+AUR dependencies of such a build land in the caller's own cache
+(`~/.cache/paru/clone` or `~/.cache/yay`, honouring `XDG_CACHE_HOME`), never
+in the shared clone directory. Every other operation still runs as
+`aur_builder`. `root` goes through the build user for every operation,
+local builds included, because `makepkg` refuses to run as root — build
+local PKGBUILDs as a login user.
 
 All sudoers rules for the builder (passwordless `pacman`, the enforced umask,
 and the wrapper rule for `wheel`) live in

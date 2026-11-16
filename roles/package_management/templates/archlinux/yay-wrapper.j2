@@ -19,4 +19,37 @@ if [ "$(id -un)" = '{{ aur_builder_user }}' ]; then
     exec /usr/bin/yay --builddir {{ yay_clone_dir }} "$@"
 fi
 
+# Operations that work in a directory of the caller run as the caller:
+# builds from a local PKGBUILD (-B/--build) and fetching PKGBUILDs
+# (-G/--getpkgbuild). That directory usually lies inside a mode 0700 home
+# the build user can neither read nor write. --builddir points at yay's
+# per-user default instead of any buildDir in the caller's config.json
+# (earlier role versions wrote the shared tree there), so the AUR
+# dependencies of such a build land in the caller's own cache.
+# --cleanafter=false keeps a cleanAfter from the caller's config.json,
+# meant for the clone cache, from resetting the caller's checkout and
+# deleting its untracked files (yay has no --nocleanafter). Root keeps
+# going through the build user for every operation, since makepkg refuses
+# root.
+#
+# Operations are uppercase short options, so an uppercase B or G in any
+# short option cluster selects such an operation (-B, -Bi, -iB, -Gp), while
+# -Syu does not. yay has no other uppercase B or G option. Package names
+# cannot start with a dash, and "--" ends the options.
+if [ "$(id -u)" -ne 0 ]; then
+    as_caller=false
+    for arg in "$@"; do
+        case $arg in
+            --) break ;;
+            --build | --getpkgbuild) as_caller=true; break ;;
+            --*) ;;
+            -*[BG]*) as_caller=true; break ;;
+        esac
+    done
+    if [ "$as_caller" = true ]; then
+        exec /usr/bin/yay --builddir "${XDG_CACHE_HOME:-$HOME/.cache}/yay" \
+            --cleanafter=false "$@"
+    fi
+fi
+
 exec sudo -u {{ aur_builder_user }} -H /usr/bin/yay --builddir {{ yay_clone_dir }} "$@"

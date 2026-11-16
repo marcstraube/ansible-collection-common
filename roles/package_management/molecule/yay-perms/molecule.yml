@@ -8,7 +8,10 @@
 # reaches the builder's config.json without discarding settings already in
 # the file while aur_shared_users neither joins a group nor gets its
 # config.json touched, and that the manual-invocation wrapper pins
-# --builddir.
+# --builddir. With yay-bin installed from the AUR it also checks the
+# wrapper's routing: a login user builds a local PKGBUILD in a mode 0700
+# home as themself with their own build directory, root and every other
+# operation go through the builder (issue #609).
 driver:
   name: podman
 platforms:

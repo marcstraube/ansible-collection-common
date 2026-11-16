@@ -5,7 +5,10 @@
 # then asserts that legacy default ACLs are stripped, foreign-owned entries
 # are adopted by the builder, a tree of the former aur_shared group is
 # converted with a reported change, and a wheel login user cannot write to
-# the clone directory.
+# the clone directory. With paru-bin installed from the AUR it also checks
+# the wrapper's routing: a login user builds a local PKGBUILD in a mode 0700
+# home as themself, root and every other operation go through the builder
+# (issue #609).
 driver:
   name: podman
 platforms:
