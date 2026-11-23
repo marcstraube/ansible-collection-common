@@ -14,7 +14,8 @@
 
   tasks:
     #
-    # Detect system PHP version (mirrors role logic)
+    # System PHP version: read from the package source (Arch, RedHat),
+    # fixed per release on Debian
     #
 
     - name: Verify | Detect system PHP version (Arch)
@@ -32,20 +33,11 @@
               | join('.') }}
       when: ansible_facts['os_family'] == 'Archlinux'
 
-    - name: Verify | Detect system PHP version (Debian)
-      ansible.builtin.shell:
-        cmd: >-
-          set -o pipefail &&
-          apt-cache show php | grep -m1 '^Depends:' | grep -oP 'php\K\d+\.\d+'
-        executable: /bin/bash
-      register: __verify_debian_info
-      changed_when: false
-      failed_when: __verify_debian_info.stdout | default('') | trim | length == 0
-      when: ansible_facts['os_family'] == 'Debian'
-
+    # Fixed per release: 'auto' is the version of the Debian archive, not
+    # the newer branch the Sury repository offers as its php package
     - name: Verify | Set system version fact (Debian)
       ansible.builtin.set_fact:
-        __verify_system_ver: '{{ __verify_debian_info.stdout | trim }}'
+        __verify_system_ver: "{{ {'trixie': '8.4'}[ansible_facts['distribution_release']] }}"
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Verify | Detect system PHP version (RedHat)
