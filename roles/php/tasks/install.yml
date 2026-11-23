@@ -13,9 +13,17 @@
       {{ (__php_arch_repo_info.stdout | regex_search('Version\s*:\s*(\d+)\.(\d+)', '\1', '\2')) | join('.') }}
   when: ansible_facts['os_family'] == 'Archlinux'
 
+# The distribution's own version: the php metapackage of the Debian or
+# Ubuntu archive. Sury builds the same metapackage for its newest branch
+# and marks its versions with "sury" (debsuryorg, deb.sury.org); its
+# candidate wins over the archive, so neither the first entry nor the
+# candidate is the distribution's version.
 - name: Install | Detect current Debian PHP version
   ansible.builtin.shell:
-    cmd: set -o pipefail && apt-cache show php | grep -m1 '^Depends:' | grep -oP 'php\K\d+\.\d+'
+    cmd: >-
+      set -o pipefail &&
+      apt-cache madison php | awk -F'|' '$2 !~ /sury/ { print $2; exit }'
+      | grep -oP '^\s*(?:\d+:)?\K\d+\.\d+'
     executable: /bin/bash
   register: __php_debian_repo_info
   changed_when: false
