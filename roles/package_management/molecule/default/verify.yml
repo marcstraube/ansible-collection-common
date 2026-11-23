@@ -77,6 +77,37 @@
                 cmd: mv /etc/pacman.d/ignore.d/molecule.conf.off /etc/pacman.d/ignore.d/molecule.conf
               changed_when: false
 
+        # fcron was installed by the role, openresolv explicitly by prepare.yml
+        - name: Verify | Query packages installed as dependencies
+          ansible.builtin.command:
+            cmd: pacman -Qdq
+          register: __verify_pacman_deps
+          changed_when: false
+
+        - name: Verify | Assert listed packages are installed as dependencies
+          ansible.builtin.assert:
+            that:
+              - "'fcron' in __verify_pacman_deps.stdout_lines"
+              - "'openresolv' in __verify_pacman_deps.stdout_lines"
+            fail_msg: 'fcron or openresolv is not installed as dependency'
+
+        # pppusage needs 'cron'; without the listed fcron pacman picks cronie
+        - name: Verify | Query cron providers
+          ansible.builtin.command:
+            cmd: pacman -Qq pppusage fcron cronie
+          register: __verify_cron_providers
+          changed_when: false
+          # pacman -Q exits 1 when one of the packages is missing
+          failed_when: __verify_cron_providers.rc not in [0, 1]
+
+        - name: Verify | Assert the consumer kept the listed provider
+          ansible.builtin.assert:
+            that:
+              - "'pppusage' in __verify_cron_providers.stdout_lines"
+              - "'fcron' in __verify_cron_providers.stdout_lines"
+              - "'cronie' not in __verify_cron_providers.stdout_lines"
+            fail_msg: 'cron providers installed: {{ __verify_cron_providers.stdout_lines }}'
+
         - name: Verify | Check makepkg.conf exists
           ansible.builtin.stat:
             path: /etc/makepkg.conf
@@ -490,6 +521,26 @@
           ansible.builtin.assert:
             that:
               - not __verify_globaldisabled_makepkg.stat.exists
+
+    #
+    # Dependency Packages Outside Arch Linux
+    #
+    # pacman_dependency_packages lists openresolv, which Debian packages too;
+    # the role must not install it there.
+    #
+
+    - name: Verify | Dependency packages ignored (Debian, RedHat)
+      when: ansible_facts['os_family'] != 'Archlinux'
+      block:
+        - name: Verify | Gather package facts
+          ansible.builtin.package_facts:
+
+        - name: Verify | Assert listed packages are not installed
+          ansible.builtin.assert:
+            that:
+              - "'fcron' not in ansible_facts['packages']"
+              - "'openresolv' not in ansible_facts['packages']"
+            fail_msg: 'pacman_dependency_packages was applied outside Arch Linux'
 
     #
     # Cross-platform Verification
