@@ -2,6 +2,17 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.2.3 (2026-11-23)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(php): resolve auto to the distribution's PHP version on Debian by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/617
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.2.2...v3.2.3
+
 ## 3.2.2 (2026-11-16)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
