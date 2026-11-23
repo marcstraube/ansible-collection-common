@@ -184,8 +184,11 @@ pki_csr_dir: '/etc/ssl/csr'
 # Enable directory creation
 pki_create_dirs_enabled: true
 
-# Private directory permissions
-pki_private_dir_mode: '0700'
+# Group and mode of the private key directory (owner root); empty takes the
+# platform's: root:ssl-cert 0710 on Debian, as the ssl-cert package registers
+# them with dpkg-statoverride, root:root 0700 on Arch Linux and Rocky Linux
+pki_private_dir_group: ''
+pki_private_dir_mode: ''
 
 #
 # Trusted CA Certificates

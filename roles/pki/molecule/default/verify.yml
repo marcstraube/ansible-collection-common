@@ -181,9 +181,40 @@
     - name: Verify | Assert private dir permissions
       ansible.builtin.assert:
         that:
-          - _pki_private_dir.stat.mode == '0700'
+          - _pki_private_dir.stat.mode == __verify_private_dir_mode
           - _pki_private_dir.stat.pw_name == 'root'
-        fail_msg: '/etc/ssl/private has incorrect permissions'
+          - _pki_private_dir.stat.gr_name == __verify_private_dir_group
+        fail_msg: >-
+          /etc/ssl/private is {{ _pki_private_dir.stat.pw_name }}:{{ _pki_private_dir.stat.gr_name }}
+          {{ _pki_private_dir.stat.mode }}, expected root:{{ __verify_private_dir_group }}
+          {{ __verify_private_dir_mode }}
+      vars:
+        __verify_private_dir_group: "{{ 'ssl-cert' if ansible_facts['os_family'] == 'Debian' else 'root' }}"
+        __verify_private_dir_mode: "{{ '0710' if ansible_facts['os_family'] == 'Debian' else '0700' }}"
+
+    # On Debian the role and dpkg agree on the directory: dpkg applies the
+    # override of the ssl-cert package again on package upgrades
+    - name: Verify | Read the dpkg override of the private dir (Debian)
+      ansible.builtin.command:
+        cmd: dpkg-statoverride --list /etc/ssl/private
+      register: _pki_private_dir_override
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Assert the dpkg override matches the role (Debian)
+      ansible.builtin.assert:
+        that:
+          - _pki_private_dir_override.stdout | trim == 'root ssl-cert 710 /etc/ssl/private'
+        fail_msg: 'dpkg-statoverride: {{ _pki_private_dir_override.stdout }}'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # A member of ssl-cert enters the directory and reads a key of the group
+    # (the snakeoil key of the ssl-cert package, root:ssl-cert 0640)
+    - name: Verify | Read a key of the ssl-cert group as a member (Debian)
+      ansible.builtin.command:
+        cmd: runuser -u pki-reader -- test -r /etc/ssl/private/ssl-cert-snakeoil.key
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
 
     #
     # Root CA Verification

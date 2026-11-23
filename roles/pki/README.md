@@ -145,7 +145,22 @@ Client cert dict keys: `name`, `common_name`, `email`, `validity_days`,
 | `pki_private_dir` | `'/etc/ssl/private'` | Private key directory |
 | `pki_csr_dir` | `'/etc/ssl/csr'` | CSR directory |
 | `pki_create_dirs_enabled` | `true` | Enable directory creation |
-| `pki_private_dir_mode` | `'0700'` | Private directory permissions |
+| `pki_private_dir_group` | `''` | Group of the private key directory; empty: platform default (below) |
+| `pki_private_dir_mode` | `''` | Mode of the private key directory; empty: platform default (below) |
+
+The private key directory belongs to root. On Debian, `/etc/ssl/private` belongs to the `ssl-cert` package,
+which the role installs with the directory: group and mode follow the values the package registers with
+`dpkg-statoverride`, `root:ssl-cert` `0710`, so services in the `ssl-cert` group can read their keys. Arch Linux
+and Rocky Linux, and a `pki_private_dir` of your own on any platform, use `root:root` `0700`.
+
+- The `ssl-cert` package creates a self-signed snakeoil key and certificate in that directory. The role does not
+  manage them; point services at certificates the role issues or deploys.
+- dpkg applies its registered values again when a package upgrade touches the directory. To keep other values on
+  Debian, set `pki_private_dir_group` and `pki_private_dir_mode` and register the same values with
+  `dpkg-statoverride --update --add root <group> <mode> /etc/ssl/private`; otherwise dpkg and the role change
+  the directory back and forth.
+- A `pki_private_dir_mode: '0700'` left in an inventory from the former default keeps that conflict on Debian;
+  remove it there.
 
 ### Trusted CAs
 
