@@ -1,0 +1,13 @@
+---
+# Group and mode of the private key directory: the setting, else the
+# platform's for the directory the platform's package owns (vars/<OS>.yml),
+# else root:root 0700 for a directory of the user's choice
+__pki_private_dir_of_package: '{{ pki_private_dir == __pki_private_dir }}'
+__pki_private_dir_group: >-
+  {{ pki_private_dir_group
+     | default(__pki_private_dir_group_default
+               if __pki_private_dir_of_package | bool else 'root', true) }}
+__pki_private_dir_mode: >-
+  {{ pki_private_dir_mode
+     | default(__pki_private_dir_mode_default
+               if __pki_private_dir_of_package | bool else '0700', true) }}

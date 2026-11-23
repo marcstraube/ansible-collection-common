@@ -7,6 +7,10 @@ __pki_packages:
 __pki_config_file: '/etc/ssl/openssl.cnf'
 __pki_certs_dir: '/etc/ssl/certs'
 __pki_private_dir: '/etc/ssl/private'
+# No package owns the private key directory; group and mode of it
+__pki_private_dir_package: ''
+__pki_private_dir_group_default: 'root'
+__pki_private_dir_mode_default: '0700'
 __pki_ca_certificates_path: '/etc/ca-certificates/trust-source/anchors'
 __pki_update_ca_trust_cmd: 'update-ca-trust'
 __pki_crypto_policies: false

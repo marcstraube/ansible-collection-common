@@ -11,11 +11,43 @@
     - '{{ pki_csr_dir }}'
   when: pki_create_dirs_enabled | bool
 
+# On Debian the ssl-cert package owns /etc/ssl/private and registers
+# root:ssl-cert 0710 for it with dpkg-statoverride, which dpkg applies again
+# on package upgrades. Installed here rather than with the other packages,
+# so a run with only this phase's tags finds the group.
+- name: Directories | Install the package that owns the private key directory
+  ansible.builtin.package:
+    name: '{{ __pki_private_dir_package }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - pki_create_dirs_enabled | bool
+    - __pki_private_dir_package | length > 0
+    - __pki_private_dir_of_package | bool
+
+# A check-mode run on a host without the package finds no group yet; it
+# leaves the group out instead of failing. A real run sets it and fails on
+# a group that does not exist.
+- name: Directories | Look up the group of the private key directory
+  ansible.builtin.getent:
+    database: group
+    key: '{{ __pki_private_dir_group }}'
+    fail_key: false
+  check_mode: false
+  when: pki_create_dirs_enabled | bool
+
+# The platform values belong to the package's directory; another directory
+# gets root:root 0700 unless set
 - name: Directories | Ensure private key directory exists
   ansible.builtin.file:
     path: '{{ pki_private_dir }}'
     state: directory
     owner: root
-    group: root
-    mode: '{{ pki_private_dir_mode }}'
+    group: >-
+      {{ __pki_private_dir_group
+         if not ansible_check_mode
+            or (ansible_facts['getent_group'][__pki_private_dir_group] | default(none)) is not none
+         else omit }}
+    mode: '{{ __pki_private_dir_mode }}'
   when: pki_create_dirs_enabled | bool

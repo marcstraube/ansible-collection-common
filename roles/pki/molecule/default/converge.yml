@@ -96,3 +96,13 @@
     - name: Converge | Include pki role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+
+    # A service user in ssl-cert, as PostgreSQL is on Debian, for the read
+    # check of verify
+    - name: Converge | Create a member of ssl-cert (Debian)
+      ansible.builtin.user:
+        name: 'pki-reader'
+        groups: 'ssl-cert'
+        system: true
+        create_home: false
+      when: ansible_facts['os_family'] == 'Debian'
