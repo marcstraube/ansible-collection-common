@@ -5,67 +5,247 @@
 # keeping separate directories — the two helpers track VCS state
 # differently and must not write into the same tree.
 #
+# paru also builds inside every PKGBUILD path repository, so paru.yml
+# includes this file for each of them as well, with
+# __aur_clone_dir_repository true: the directory is then a single Git work
+# tree instead of a tree of clones, so safe.directory names the directory
+# itself, its Copy-on-Write setting stays as the administrator chose it, the
+# read access of its entries is checked as well, and the recursive ACL strip,
+# ownership and mode recovery only run when an entry needs them.
+#
+# The whole tree belongs to the builder user and its own group. Every build,
+# also a manual one through the wrapper, runs as the builder user, so nobody
+# else needs write access; everybody gets read access through the builder's
+# enforced 022 umask.
+#
 
 # Owned by the builder user: makepkg chmods paths inside the tree and
-# POSIX only permits that for the owner. Group access for the other
-# shared members comes from the SGID bit plus the builder's enforced
-# 022 umask.
+# POSIX only permits that for the owner. Mode 0755 without the SGID bit
+# also converts the 2775 of the shared group of earlier role versions.
 - name: AUR Clone Dir | Create shared clone directory
   ansible.builtin.file:
     path: '{{ __aur_clone_dir }}'
     state: directory
     owner: '{{ aur_builder_user }}'
-    group: '{{ aur_shared_group }}'
-    mode: '2775'
+    group: '{{ aur_builder_user }}'
+    mode: '0755'
+
+# In check mode the directory may not exist yet: a new host, another
+# aur_helper or a changed paru_clone_dir/yay_clone_dir. The checks below then
+# have nothing to look at, and the builder user find tests for may not exist
+# either. A real run has created the directory above, which also fails when
+# the builder user or its group is missing, so this only skips in check mode.
+- name: AUR Clone Dir | Check the shared clone directory
+  ansible.builtin.stat:
+    path: '{{ __aur_clone_dir }}'
+    follow: false
+    get_checksum: false
+  register: __package_management_clone_dir_stat
+
+# The recursive tasks below report whether they change something. find
+# prints the first entry they would change: not owned by the builder user or
+# its group (chown -R changes symlinks too) or a directory with the SGID bit,
+# both left behind by the shared group of earlier role versions or by a
+# login user. In a repository, which is taken over from whoever created it,
+# also an entry that, apart from symlinks that chmod -R skips, lacks read for
+# group and others, or their execute bit where chmod X adds it (directories
+# and entries executable by anyone), or is writable by the group. The clone
+# directory skips the mode tests: build files that makepkg leaves behind with
+# their own modes would report a change after every build there, so the
+# mode recovery runs on it every time without a report. For the same reason
+# the SGID test only looks two levels deep there: the clones and their direct
+# children, where earlier role versions left the inherited SGID bit, but not
+# a directory deeper down that a PKGBUILD installs with mode 2775 into a
+# package directory that stays behind without paru_clean_after. Read-only, so
+# it also runs in check mode.
+- name: AUR Clone Dir | Find entries to take over
+  vars:
+    __package_management_clone_dir_mode_tests:
+      - -o
+      - (
+      - '!'
+      - -type
+      - l
+      - (
+      - '!'
+      - -perm
+      - '-g+r,o+r'
+      - -o
+      - -type
+      - d
+      - '!'
+      - -perm
+      - '-g+x,o+x'
+      - -o
+      - -perm
+      - '/a+x'
+      - '!'
+      - -perm
+      - '-g+x,o+x'
+      - -o
+      - -perm
+      - '/g+w'
+      - )
+      - )
+  ansible.builtin.command:
+    argv: >-
+      {{ ['find', '-P', __aur_clone_dir,
+          '(',
+          '!', '-user', aur_builder_user,
+          '-o', '!', '-group', aur_builder_user,
+          '-o', '-type', 'd', '-perm', '-g+s']
+         + (__package_management_clone_dir_mode_tests
+            if __aur_clone_dir_repository | default(false) | bool
+            else ['!', '-path', __aur_clone_dir ~ '/*/*/*'])
+         + [')', '-print', '-quit'] }}
+  register: __package_management_clone_dir_foreign
+  changed_when: false
+  check_mode: false
+  when: __package_management_clone_dir_stat.stat.isdir | default(false)
+
+# find has no ACL test. getfacl -s lists only entries with extended or
+# default ACL entries, -P does not follow symlinks; one walk over the tree
+# like find above. Read-only, so it also runs in check mode.
+- name: AUR Clone Dir | Find repository entries with ACLs
+  ansible.builtin.command:
+    argv:
+      - getfacl
+      - -R
+      - -P
+      - -s
+      - -p
+      - --
+      - '{{ __aur_clone_dir }}'
+  register: __package_management_clone_dir_acls
+  changed_when: false
+  check_mode: false
+  when:
+    - __aur_clone_dir_repository | default(false) | bool
+    - __package_management_clone_dir_stat.stat.isdir | default(false)
+
+# Check mode skips the commands below, so it reports the takeover here
+- name: AUR Clone Dir | Report entries to take over
+  ansible.builtin.debug:
+    msg: >-
+      {{ __aur_clone_dir }} has entries to hand to {{ aur_builder_user }}
+      or to strip of ACLs, for example
+      {{ (__package_management_clone_dir_foreign.stdout | default('') | trim)
+         or (__package_management_clone_dir_acls.stdout_lines | first | regex_replace('^# file: ', '')) }}
+  changed_when: true
+  when:
+    - ansible_check_mode
+    - >-
+      __package_management_clone_dir_foreign.stdout | default('') | length > 0
+      or __package_management_clone_dir_acls.stdout | default('') | length > 0
 
 # NO ACLs on the clone tree: default ACLs make libarchive/bsdtar skip
 # its final chmod during source extraction (to avoid clobbering the
 # ACLs), so extracted files keep the restrictive modes of the initial
 # secure open() and those broken modes end up inside the built packages
-# (group/other lose read and execute). Group access for the shared
-# members comes from the SGID bit plus the builder's enforced 022 umask
-# instead. The recursive strip migrates hosts that carry ACLs from
-# earlier role versions; changed_when is false because it is a top-up
-# like the ownership recovery below.
+# (group/other lose read and execute). Read access comes from the builder's
+# enforced 022 umask instead. The recursive strip migrates hosts that carry
+# ACLs from earlier role versions; for the shared clone directory it is a
+# top-up like the ownership recovery below, which only reports a change
+# when find found an entry to take over. A repository runs it only when the
+# checks above found something to change.
 - name: AUR Clone Dir | Strip ACLs from shared clone directory
   ansible.builtin.command:
-    cmd: 'setfacl -R -b {{ __aur_clone_dir }}'
-  changed_when: false
+    argv:
+      - setfacl
+      - -R
+      - -b
+      - --
+      - '{{ __aur_clone_dir }}'
+  changed_when: >-
+    __package_management_clone_dir_foreign.stdout | default('') | length > 0
+    or __package_management_clone_dir_acls.stdout | default('') | length > 0
+  when: >-
+    not __aur_clone_dir_repository | default(false) | bool
+    or __package_management_clone_dir_foreign.stdout | default('') | length > 0
+    or __package_management_clone_dir_acls.stdout | default('') | length > 0
 
 # makepkg chmods paths inside the clone tree and POSIX only permits that
 # for the owner — group write access does not help. Builds run as the
-# builder user, so normalise ownership of existing entries; clones
-# created interactively by other group members are adopted on the next
-# run. changed_when is false: this is a top-up like the ACL strip
-# above, newly built entries are owned by the builder anyway.
+# builder user, so normalise ownership of existing entries; entries of
+# root, a login user or the shared group of earlier role versions are
+# adopted on the next run.
 - name: AUR Clone Dir | Recover ownership on existing clone entries
   ansible.builtin.command:
-    cmd: 'chown -R {{ aur_builder_user }}:{{ aur_shared_group }} {{ __aur_clone_dir }}'
-  changed_when: false
+    argv:
+      - chown
+      - -R
+      - '{{ aur_builder_user }}:{{ aur_builder_user }}'
+      - --
+      - '{{ __aur_clone_dir }}'
+  register: __package_management_clone_dir_recovered
+  changed_when: >-
+    __package_management_clone_dir_foreign.stdout | default('') | length > 0
+    or __package_management_clone_dir_acls.stdout | default('') | length > 0
+  when: >-
+    not __aur_clone_dir_repository | default(false) | bool
+    or __package_management_clone_dir_foreign.stdout | default('') | length > 0
+    or __package_management_clone_dir_acls.stdout | default('') | length > 0
 
 # chown alone does not repair modes: directories created under a hardened
-# umask (0077) stay 2700 and keep locking the shared group out even after
+# umask (0077) stay 0700 and keep everybody else locked out even after
 # ownership is corrected. Normalize them additively — group and other
 # gain read, X adds execute only on directories and already executable
-# files, so regular file exec bits survive. This matches what the SGID
-# bit plus the builder's enforced 022 umask produces for newly created
-# entries. changed_when is false like the ownership recovery above.
+# files, so regular file exec bits survive. Group write goes, which earlier
+# role versions and login users with umask 002 left behind. This matches
+# what the builder's enforced 022 umask produces for newly created entries.
 - name: AUR Clone Dir | Normalize modes on existing clone entries
   ansible.builtin.command:
-    cmd: 'chmod -R g+rX,o+rX {{ __aur_clone_dir }}'
-  changed_when: false
+    argv:
+      - chmod
+      - -R
+      - g+rX,o+rX,g-w
+      - --
+      - '{{ __aur_clone_dir }}'
+  changed_when: >-
+    __package_management_clone_dir_foreign.stdout | default('') | length > 0
+    or __package_management_clone_dir_acls.stdout | default('') | length > 0
+  when: >-
+    not __aur_clone_dir_repository | default(false) | bool
+    or __package_management_clone_dir_foreign.stdout | default('') | length > 0
+    or __package_management_clone_dir_acls.stdout | default('') | length > 0
+
+# Earlier role versions kept the shared group on new entries with the SGID
+# bit, which the subdirectories inherited. chmod -R above leaves it in place
+# on directories, and g-s there would also clear it on files, so only the
+# directories that carry it lose it.
+- name: AUR Clone Dir | Clear the SGID bit on directories
+  ansible.builtin.command:
+    argv:
+      - find
+      - -P
+      - '{{ __aur_clone_dir }}'
+      - -type
+      - d
+      - -perm
+      - '-g+s'
+      - -exec
+      - chmod
+      - g-s
+      - --
+      - '{}'
+      - +
+  changed_when: true
+  when: >-
+    __package_management_clone_dir_foreign.stdout | default('') | length > 0
+    or __package_management_clone_dir_acls.stdout | default('') | length > 0
 
 # git refuses to operate on repositories owned by another user
-# (CVE-2022-24765 safe.directory check). In the shared clone directory
-# that is the normal case: any group member may have cloned a package
-# first, while builds run as the builder user. Shared write access
-# inside the group is the deliberate design here (SGID), so mark the
+# (CVE-2022-24765 safe.directory check). Builds run as the builder user,
+# while a clone may still belong to another user until the ownership
+# recovery above runs, and administrators inspect the tree as root. Mark the
 # clone tree as safe system-wide.
 - name: AUR Clone Dir | Mark shared clone directory as git-safe
   community.general.git_config:
     scope: system
     name: safe.directory
-    value: '{{ __aur_clone_dir }}/*'
+    value: >-
+      {{ __aur_clone_dir if __aur_clone_dir_repository | default(false) | bool
+         else __aur_clone_dir ~ '/*' }}
     add_mode: add
 
 # The module creates /etc/gitconfig subject to the root umask; under a
@@ -85,3 +265,4 @@
     attr: +C
   # BTRFS attribute only works on BTRFS filesystems
   failed_when: false
+  when: not __aur_clone_dir_repository | default(false) | bool

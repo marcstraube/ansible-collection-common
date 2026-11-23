@@ -115,6 +115,18 @@ pacman_multilib_testing_enabled: false
 pacman_custom_repositories: []
 
 #
+# Pacman - Dependency Packages
+#
+
+# Packages from the configured repositories that the role installs as
+# dependencies (--asdeps), before other roles install packages. Meant for the
+# provider of a virtual package: a later install that needs the virtual
+# package finds it in place instead of choosing the first provider. A listed
+# package that is already installed explicitly is marked as dependency.
+# Example: ['fcron'] keeps cronie out when a package needs 'cron'.
+pacman_dependency_packages: []
+
+#
 # Pacman - Hooks
 #
 
@@ -359,21 +371,23 @@ aur_builder_home: '/var/cache/aur_builder'
 # AUR Shared Build Infrastructure (helper-agnostic)
 #
 
-# Group owning the shared clone directories
-aur_shared_group: 'aur_shared'
-
-# Users to add to the shared AUR clone group (in addition to aur_builder)
-# These users can run the AUR helper manually and share the clone cache
-aur_shared_users: []
-# Example: ['johndoe']
+# DEPRECATED: no effect (removed in the next major version). The clone
+# directories belong to aur_builder_user and its own group; the wrappers run
+# every manual call as that user. The role no longer creates the group or
+# adds users to it, leaves an existing group in place (groupdel removes it)
+# and no longer writes the users' yay config.json. While either is set, the
+# role prints a deprecation warning.
+# aur_shared_group: 'aur_shared'
+# aur_shared_users: []
 
 #
 # Paru Configuration
 #
 
 # Shared clone directory for AUR package sources
-# Both aur_builder and regular users share this directory to avoid
-# duplicate clones and enable faster updates (git pull instead of fresh clone)
+# Every build, manual ones through the wrapper included, runs as aur_builder
+# here, which avoids duplicate clones and enables faster updates (git pull
+# instead of fresh clone)
 paru_clone_dir: '/var/cache/paru/clone'
 
 # Remove untracked build files after installation
@@ -456,11 +470,47 @@ paru_sudo: ''
 paru_file_manager: ''
 
 #
+# Paru - PKGBUILD Repositories
+#
+# Repositories of PKGBUILDs that paru builds and installs like AUR packages
+# (paru only). A package in one of them takes priority over the AUR package
+# of the same name. Each entry needs a name and exactly one of:
+#   url:  Git URL starting with 'https://', 'ssh://' or 'file:///', without
+#         a password, cloned below <paru_clone_dir>/repo/<name> by the
+#         builder user (see the README for the accepted form)
+#   path: canonical absolute path (no symlinks, '.', '..', '//' or
+#         trailing '/') of an existing directory on the host, read in
+#         place; it must be a Git work tree with a .git directory, outside
+#         the shared clone directories, without entries writable by others,
+#         below parent directories owned by root and not writable by group
+#         or others. The role hands it to the builder user and its
+#         group like the shared clone directory
+# Optional keys:
+#   subdirectory: with url only, search for PKGBUILDs below this relative
+#                 directory
+#   depth: directory levels paru scans for PKGBUILDs, 1 is the top
+#          directory only (paru's default: 2)
+#   skip_review: with url, skip the diff review of manual paru runs
+#                (default: false); paths have no review step
+#   generate_srcinfo: regenerate .SRCINFO even if the repository ships one
+#                     (default: false)
+#
+
+# Example:
+#   paru_pkgbuild_repositories:
+#     - name: 'mypkgbuilds'
+#       url: 'https://git.example.com/johndoe/pkgbuilds.git'
+#       subdirectory: 'packages'
+#     - name: 'local'
+#       path: '/srv/pkgbuilds'
+paru_pkgbuild_repositories: []
+
+#
 # Yay Configuration
 #
 # yay has no system-wide configuration file — the build directory is
-# written to ~/.config/yay/config.json for the builder and every shared
-# user, and passed to manual invocations through the wrapper.
+# written to ~/.config/yay/config.json of the builder user and passed to
+# manual invocations through the wrapper.
 #
 
 # Shared clone directory for AUR package sources
