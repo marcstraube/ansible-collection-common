@@ -2,6 +2,17 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.2.4 (2026-11-23)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(pki): manage the private key directory as the ssl-cert package does by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/622
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.2.3...v3.2.4
+
 ## 3.2.3 (2026-11-23)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->

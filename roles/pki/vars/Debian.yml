@@ -6,6 +6,12 @@ __pki_packages:
 __pki_config_file: '/etc/ssl/openssl.cnf'
 __pki_certs_dir: '/etc/ssl/certs'
 __pki_private_dir: '/etc/ssl/private'
+# The package that owns /etc/ssl/private and the ssl-cert group, and the
+# group and mode it registers for the directory with dpkg-statoverride;
+# members of ssl-cert read their keys
+__pki_private_dir_package: 'ssl-cert'
+__pki_private_dir_group_default: 'ssl-cert'
+__pki_private_dir_mode_default: '0710'
 __pki_ca_certificates_path: '/usr/local/share/ca-certificates'
 __pki_update_ca_trust_cmd: 'update-ca-certificates'
 __pki_crypto_policies: false
