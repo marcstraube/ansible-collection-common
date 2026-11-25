@@ -227,7 +227,8 @@ unbound_root_hints_file: '/var/lib/unbound/root.hints'
 
 # Enable unbound-control (required for reload, stats queries)
 unbound_remote_control_enabled: true
-unbound_control_interface: '/run/unbound/control'
+# Control socket (empty = OS default)
+unbound_control_interface: ''
 
 #
 # Advanced

@@ -58,12 +58,12 @@ server:
     qname-minimisation-strict: {{ 'yes' if unbound_qname_minimisation_strict else 'no' }}
     aggressive-nsec: {{ 'yes' if unbound_aggressive_nsec else 'no' }}
     tcp-upstream: {{ 'yes' if unbound_tcp_upstream else 'no' }}
-{% if unbound_dnssec_enabled %}
+{% if unbound_dnssec_enabled | bool %}
 
     # DNSSEC
-    auto-trust-anchor-file: "{{ __unbound_root_key }}"
+    {{ __unbound_trust_anchor_option }}: "{{ __unbound_root_key }}"
 {% endif %}
-{% if unbound_root_hints_update_enabled %}
+{% if unbound_root_hints_update_enabled | bool %}
 
     # Root hints
     root-hints: "{{ unbound_root_hints_file }}"
@@ -97,20 +97,18 @@ server:
     # TLS upstream
     tls-cert-bundle: "{{ unbound_tls_cert_bundle | default(__unbound_tls_cert_bundle, true) }}"
 {% endif %}
-{% if unbound_chroot | length > 0 %}
 
-    # Chroot
+    # Chroot (an empty string overrides the compiled-in chroot)
     chroot: "{{ unbound_chroot }}"
-{% endif %}
 {% if unbound_username | length > 0 %}
     username: "{{ unbound_username }}"
 {% endif %}
 
     # Include additional configuration
     include: "/etc/unbound/conf.d/*.conf"
-{% if unbound_remote_control_enabled %}
+{% if unbound_remote_control_enabled | bool %}
 
 remote-control:
     control-enable: yes
-    control-interface: {{ unbound_control_interface }}
+    control-interface: {{ unbound_control_interface | default(__unbound_control_interface, true) }}
 {% endif %}
