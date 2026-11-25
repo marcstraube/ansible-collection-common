@@ -32,6 +32,19 @@
         mode: '0644'
       when: ansible_facts['os_family'] == 'Archlinux'
 
+    # A provider an earlier package list installed explicitly; the role must
+    # mark it as dependency. Here and not in converge, which runs twice for
+    # the idempotence step and would reset the install reason.
+    - name: Prepare | Install explicitly installed provider (Arch)
+      community.general.pacman:
+        name: openresolv
+        state: present
+        reason: explicit
+        reason_for: all
+      retries: 3
+      delay: 5
+      when: ansible_facts['os_family'] == 'Archlinux'
+
     - name: Prepare | Update package cache (Debian)
       ansible.builtin.apt:
         update_cache: true

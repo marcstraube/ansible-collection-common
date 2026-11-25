@@ -1,0 +1,830 @@
+---
+- name: Converge — Validation
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # A valid entry, rejected only because of the helper
+    __pm_valid_repositories:
+      - name: 'molecule-path'
+        path: '/srv/molecule-pkgbuild-path'
+
+  tasks:
+    # A wheel login user, whose entries end up in path repositories
+    - name: Converge | Create a login user
+      ansible.builtin.user:
+        name: molecule_login
+        groups: wheel
+        shell: /bin/bash
+        create_home: true
+
+    # path repositories the role must refuse: an entry writable by others,
+    # a parent directory a login user owns, a parent directory of root
+    # writable by its group, a directory without .git, and a symlink. The
+    # Git work tree below molecule-pkgbuild-safe passes the checks; the role
+    # must refuse it through a symlinked parent, with a trailing '/' and
+    # inside a clone directory.
+    - name: Converge | Create unsafe path repository directories
+      ansible.builtin.file:
+        path: '{{ item.path }}'
+        state: directory
+        owner: '{{ item.owner | default("root") }}'
+        group: '{{ item.owner | default("root") }}'
+        mode: '{{ item.mode | default("0755") }}'
+      loop:
+        - path: '/srv/molecule-pkgbuild-writable'
+        - path: '/srv/molecule-pkgbuild-parent'
+          owner: 'molecule_login'
+        - path: '/srv/molecule-pkgbuild-parent/repo'
+        - path: '/srv/molecule-pkgbuild-grpw'
+          mode: '0775'
+        - path: '/srv/molecule-pkgbuild-grpw/repo'
+        - path: '/srv/molecule-pkgbuild-grpw/repo/.git'
+        - path: '/srv/molecule-pkgbuild-nogit'
+        - path: '/srv/molecule-pkgbuild-safe'
+        - path: '/srv/molecule-pkgbuild-safe/repo'
+        - path: '/srv/molecule-pkgbuild-safe/repo/.git'
+
+    - name: Converge | Create an entry writable by others
+      ansible.builtin.copy:
+        content: ''
+        dest: '/srv/molecule-pkgbuild-writable/PKGBUILD'  # pragma: allowlist secret
+        owner: root
+        group: root
+        mode: '0666'
+
+    - name: Converge | Create symlinks to path repositories and their parents
+      ansible.builtin.file:
+        path: '{{ item.path }}'
+        src: '{{ item.src }}'
+        state: link
+        owner: root
+        group: root
+      loop:
+        - path: '/srv/molecule-pkgbuild-link'
+          src: '/srv/molecule-pkgbuild-parent/repo'
+        - path: '/srv/molecule-pkgbuild-safelink'
+          src: '/srv/molecule-pkgbuild-safe'
+        - path: '/srv/molecule-pkgbuild-repolink'
+          src: '/srv/molecule-pkgbuild-safe/repo'
+
+    # The checks run first in the role, so nothing is installed or changed
+    # before the role fails.
+    - name: Converge | Reject PKGBUILD repositories with yay
+      block:
+        - name: Converge | Include package_management role with yay  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            aur_helper: 'yay'
+            paru_pkgbuild_repositories: '{{ __pm_valid_repositories }}'
+
+        - name: Converge | Fail because yay was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted PKGBUILD repositories with yay.'
+      rescue:
+        - name: Converge | Assert the validation stopped yay
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repositories against the AUR helper' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject an entry with both url and path
+      block:
+        - name: Converge | Include package_management role with url and path  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-both'
+                url: 'file:///srv/molecule-pkgbuild-url'
+                path: '/srv/molecule-pkgbuild-path'
+
+        - name: Converge | Fail because url and path were accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted an entry with both url and path.'
+      rescue:
+        - name: Converge | Assert the validation stopped url and path
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository entries' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject duplicate names
+      block:
+        - name: Converge | Include package_management role with duplicate names  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories: '{{ __pm_valid_repositories + __pm_valid_repositories }}'
+
+        - name: Converge | Fail because duplicate names were accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted duplicate repository names.'
+      rescue:
+        - name: Converge | Assert the validation stopped duplicate names
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository names are unique' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject an entry with neither url nor path
+      block:
+        - name: Converge | Include package_management role with neither url nor path  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-neither'
+
+        - name: Converge | Fail because an entry without url and path was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted an entry without url and path.'
+      rescue:
+        - name: Converge | Assert the validation stopped neither url nor path
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository entries' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a name with a line break
+      block:
+        - name: Converge | Include package_management role with a line break in the name  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: "molecule-newline\n"
+                path: '/srv/molecule-pkgbuild-path'
+
+        - name: Converge | Fail because a line break in a name was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a line break in a name.'
+      rescue:
+        - name: Converge | Assert the validation stopped a line break in the name
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository entries' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a path with an injected section
+      block:
+        - name: Converge | Include package_management role with a section in the path  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-inject'
+                path: "/srv/molecule-pkgbuild-path\n[evil]\nPath = /tmp"
+
+        - name: Converge | Fail because a line break in a path was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a line break in a path.'
+      rescue:
+        - name: Converge | Assert the validation stopped a section in the path
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository entries' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a url paru would normalize
+      block:
+        - name: Converge | Include package_management role with a url with an uppercase host  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-unnormalized'
+                url: 'https://Git.Example.com/pkgbuilds.git'
+
+        - name: Converge | Fail because a url paru normalizes was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a url paru normalizes.'
+      rescue:
+        - name: Converge | Assert the validation stopped a url with an uppercase host
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository URLs' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject an http url
+      block:
+        - name: Converge | Include package_management role with an http url  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-http'
+                url: 'http://git.example.com/pkgbuilds.git'
+
+        - name: Converge | Fail because an http url was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted an http url.'
+      rescue:
+        - name: Converge | Assert the validation stopped an http url
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository URLs' in ansible_failed_task.name"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a url with a password
+      block:
+        - name: Converge | Include package_management role with a password in the url  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-password'
+                url: 'https://johndoe:s3cret@git.example.com/pkgbuilds.git'  # pragma: allowlist secret
+
+        - name: Converge | Fail because a password in a url was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a password in a url.'
+      rescue:
+        - name: Converge | Assert the validation stopped a password in the url
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository URLs' in ansible_failed_task.name"
+              - "'s3cret' not in (ansible_failed_result | to_json)"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a token as user name in an https url
+      block:
+        - name: Converge | Include package_management role with a token in the url  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-token'
+                url: 'https://t0ken@git.example.com/pkgbuilds.git'  # pragma: allowlist secret
+
+        - name: Converge | Fail because a token in a url was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a token in an https url.'
+      rescue:
+        - name: Converge | Assert the validation stopped a token in the url
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository URLs' in ansible_failed_task.name"
+              - "'t0ken' not in (ansible_failed_result | to_json)"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a missing path
+      block:
+        - name: Converge | Include package_management role with a missing path  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-missing'
+                path: '/srv/molecule-pkgbuild-missing'
+
+        - name: Converge | Fail because a missing path was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a missing path.'
+      rescue:
+        - name: Converge | Assert the validation stopped a missing path
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - (ansible_failed_result | to_json) is search('molecule-missing.*does not exist')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a path with an entry writable by others
+      block:
+        - name: Converge | Include package_management role with an entry writable by others  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-writable'
+                path: '/srv/molecule-pkgbuild-writable'
+
+        - name: Converge | Fail because an entry writable by others was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a path with an entry writable by others.'
+      rescue:
+        - name: Converge | Assert the validation stopped an entry writable by others
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - >-
+                (ansible_failed_result | to_json)
+                is search('molecule-writable.*contains an entry writable by others: '
+                          ~ '/srv/molecule-pkgbuild-writable/PKGBUILD')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a path below a directory of a login user
+      block:
+        - name: Converge | Include package_management role with a parent of a login user  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-parent'
+                path: '/srv/molecule-pkgbuild-parent/repo'
+
+        - name: Converge | Fail because a parent of a login user was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a path below a directory owned by a login user.'
+      rescue:
+        - name: Converge | Assert the validation stopped a parent of a login user
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - >-
+                (ansible_failed_result | to_json)
+                is search('molecule-parent.*parent directories .*: /srv/molecule-pkgbuild-parent[.]')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a symlink as path
+      block:
+        - name: Converge | Include package_management role with a symlink as path  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-link'
+                path: '/srv/molecule-pkgbuild-link'
+
+        - name: Converge | Fail because a symlink as path was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a symlink as path.'
+      rescue:
+        - name: Converge | Assert the validation stopped a symlink as path
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - (ansible_failed_result | to_json) is search('molecule-link.*is not a directory')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a path with a symlinked parent
+      block:
+        - name: Converge | Include package_management role with a path with a symlinked parent  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-safelink'
+                path: '/srv/molecule-pkgbuild-safelink/repo'
+
+        - name: Converge | Fail because a path with a symlinked parent was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a path with a symlinked parent.'
+      rescue:
+        - name: Converge | Assert the validation stopped a path with a symlinked parent
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - >-
+                (ansible_failed_result | to_json)
+                is search('molecule-safelink.*'
+                          ~ 'must be a canonical absolute path.*resolves to /srv/molecule-pkgbuild-safe/repo')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a symlink as path with a trailing slash
+      block:
+        - name: Converge | Include package_management role with a trailing slash  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-slash'
+                path: '/srv/molecule-pkgbuild-repolink/'
+
+        - name: Converge | Fail because a symlink as path with a trailing slash was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a symlink as path with a trailing slash.'
+      rescue:
+        - name: Converge | Assert the validation stopped a symlink as path with a trailing slash
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - >-
+                (ansible_failed_result | to_json)
+                is search('molecule-slash.*'
+                          ~ 'must be a canonical absolute path.*resolves to /srv/molecule-pkgbuild-safe/repo')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a path below a group-writable directory of root
+      block:
+        - name: Converge | Include package_management role with a group-writable parent  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-grpw'
+                path: '/srv/molecule-pkgbuild-grpw/repo'
+
+        - name: Converge | Fail because a path below a group-writable directory of root was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a path below a group-writable directory of root.'
+      rescue:
+        - name: Converge | Assert the validation stopped a path below a group-writable directory of root
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - >-
+                (ansible_failed_result | to_json)
+                is search('molecule-grpw.*'
+                          ~ 'parent directories .*: /srv/molecule-pkgbuild-grpw[.]')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a path without a Git directory
+      block:
+        - name: Converge | Include package_management role with a path without a Git directory  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-nogit'
+                path: '/srv/molecule-pkgbuild-nogit'
+
+        - name: Converge | Fail because a path without a Git directory was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a path without a Git directory.'
+      rescue:
+        - name: Converge | Assert the validation stopped a path without a Git directory
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - (ansible_failed_result | to_json) is search('molecule-nogit.*has no Git directory')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    - name: Converge | Reject a path that contains a clone directory
+      block:
+        - name: Converge | Include package_management role with a clone directory inside  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            yay_clone_dir: '/srv/molecule-pkgbuild-safe/repo/clone'
+            paru_pkgbuild_repositories:
+              - name: 'molecule-clone'
+                path: '/srv/molecule-pkgbuild-safe/repo'
+
+        - name: Converge | Fail because a path that contains a clone directory was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a path that contains a clone directory.'
+      rescue:
+        - name: Converge | Assert the validation stopped a path that contains a clone directory
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - >-
+                (ansible_failed_result | to_json)
+                is search('molecule-clone.*'
+                          ~ 'overlaps the shared clone directory /srv/molecule-pkgbuild-safe/repo/clone')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    # A Git work tree that passes every other check but is the home of an
+    # account, below a parent of root
+    - name: Converge | Create an account with a Git work tree as home
+      ansible.builtin.user:
+        name: molecule_home
+        home: /srv/molecule-pkgbuild-home
+        shell: /usr/bin/nologin
+        create_home: false
+
+    - name: Converge | Create the home directory of the account owned by root
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /srv/molecule-pkgbuild-home
+        - /srv/molecule-pkgbuild-home/.git
+
+    - name: Converge | Reject the home directory of an account
+      block:
+        - name: Converge | Include package_management role with a home directory  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-home'
+                path: '/srv/molecule-pkgbuild-home'
+
+        - name: Converge | Fail because a home directory was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted the home directory of an account.'
+      rescue:
+        - name: Converge | Assert the validation stopped a home directory
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - >-
+                (ansible_failed_result | to_json)
+                is search('molecule-home.*is the home directory of molecule_home[.]')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    # A system directory with a Git directory, which stays for the
+    # idempotence run; nothing in the scenario uses /opt
+    - name: Converge | Create a Git directory in a system directory
+      ansible.builtin.file:
+        path: /opt/.git
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Converge | Reject a system directory
+      block:
+        - name: Converge | Include package_management role with a system directory  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-system'
+                path: '/opt'
+
+        - name: Converge | Fail because a system directory was accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted a system directory.'
+      rescue:
+        - name: Converge | Assert the validation stopped a system directory
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository paths are safe' in ansible_failed_task.name"
+              - (ansible_failed_result | to_json) is search('molecule-system.*is a system directory')
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+    # A Git work tree that passes the path checks, with a token in the URL
+    # of a remote
+    - name: Converge | Create a path repository with credentials in a remote URL
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /srv/molecule-pkgbuild-cred
+        - /srv/molecule-pkgbuild-cred/.git
+
+    - name: Converge | Write the Git configuration with credentials
+      ansible.builtin.copy:
+        content: "[remote \"origin\"]\n    url = https://user:t0ken@example.invalid/x.git\n"  # pragma: allowlist secret
+        dest: /srv/molecule-pkgbuild-cred/.git/config
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Converge | Reject credentials in a remote URL of a path repository
+      block:
+        - name: Converge | Include package_management role with credentials in a remote URL  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+          vars:
+            paru_pkgbuild_repositories:
+              - name: 'molecule-cred'
+                path: '/srv/molecule-pkgbuild-cred'
+
+        - name: Converge | Fail because credentials in a remote URL were accepted
+          ansible.builtin.fail:
+            msg: 'The role accepted credentials in a remote URL of a path repository.'
+      rescue:
+        - name: Converge | Assert the validation stopped credentials in a remote URL
+          ansible.builtin.assert:
+            that:
+              - "'Validate PKGBUILD repository remote URLs' in ansible_failed_task.name"
+              - (ansible_failed_result | to_json) is search('molecule-cred.*remote URL with credentials')
+              - "'t0ken' not in (ansible_failed_result | to_json)"
+            fail_msg: 'Unexpected failure: {{ ansible_failed_result }}'
+
+- name: Converge — PKGBUILD repositories
+  hosts: all
+  gather_facts: false
+
+  vars:
+    aur_helper: 'paru'
+    # Keep the run to what the scenario tests. pkgfile stays enabled: with
+    # pacman_pkgfile_enabled false and pkgfile never installed the timer
+    # task fails (common #596).
+    reflector_enabled: false
+    pacman_rebuild_detector_enabled: false
+    paccache_timer_enabled: false
+    __pm_url_repo: '/srv/molecule-pkgbuild-url'
+    __pm_stable_repo: '/srv/molecule-pkgbuild-stable'
+    __pm_path_repo: '/srv/molecule-pkgbuild-path'
+    __pm_conversion_marker: '/var/tmp/molecule-paru-pkgbuild-converted'
+    # Deprecated: only warns, the role neither creates nor uses the group
+    aur_shared_group: 'molecule_shared'
+    # side_effect.yml creates the second URL repository; from then on the
+    # url of molecule-url points to it, molecule-stable keeps its url and
+    # molecule-removed is no longer listed
+    __pm_url2_repo: '/srv/molecule-pkgbuild-url2'
+    __pm_url_changed: '{{ __pm_url2_stat.stat.exists }}'
+    paru_pkgbuild_repositories: >-
+      {{ [{'name': 'molecule-url',
+           'url': 'file://' ~ (__pm_url2_repo if __pm_url_changed | bool else __pm_url_repo),
+           'subdirectory': 'packages',
+           'skip_review': true},
+          {'name': 'molecule-stable',
+           'url': 'file://' ~ __pm_stable_repo}]
+         + ([] if __pm_url_changed | bool
+            else [{'name': 'molecule-removed', 'url': 'file://' ~ __pm_stable_repo}])
+         + [{'name': 'molecule-path',
+             'path': __pm_path_repo,
+             'depth': 2,
+             'generate_srcinfo': true}] }}
+    # Source repositories of the URL entries with their package directories.
+    # molecule-pkgbuild-outside lies outside the subdirectory of molecule-url
+    # and must stay invisible to paru.
+    __pm_url_sources:
+      - repo: '{{ __pm_url_repo }}'
+        packages:
+          - 'packages/molecule-pkgbuild-url'
+          - 'outside/molecule-pkgbuild-outside'
+      - repo: '{{ __pm_stable_repo }}'
+        packages:
+          - 'molecule-pkgbuild-stable'
+    __pm_pkgbuild: |
+      pkgname=%s
+      pkgver=1.0
+      pkgrel=1
+      pkgdesc='Molecule PKGBUILD repository fixture'
+      arch=('any')
+      license=('MIT')
+
+      package() {
+        install -Dm644 /dev/null "${pkgdir}/usr/share/%s/marker"
+      }
+
+  pre_tasks:
+    - name: Converge | Check for the second URL repository
+      ansible.builtin.stat:
+        path: '{{ __pm_url2_repo }}/.git'
+      register: __pm_url2_stat
+
+    # The URL repositories exist before the role runs, which downloads them
+    - name: Converge | Create URL repository PKGBUILD directories
+      ansible.builtin.file:
+        path: '{{ item.0.repo }}/{{ item.1 }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop: "{{ __pm_url_sources | subelements('packages') }}"
+      loop_control:
+        label: '{{ item.0.repo }}/{{ item.1 }}'
+
+    - name: Converge | Create URL repository PKGBUILDs
+      ansible.builtin.copy:
+        content: "{{ __pm_pkgbuild | format(item.1 | basename, item.1 | basename) }}"
+        dest: '{{ item.0.repo }}/{{ item.1 }}/PKGBUILD'
+        owner: root
+        group: root
+        mode: '0644'
+      loop: "{{ __pm_url_sources | subelements('packages') }}"
+      loop_control:
+        label: '{{ item.0.repo }}/{{ item.1 }}'
+
+    # ansible.builtin.git clones but cannot create a repository or commit
+    - name: Converge | Commit the URL repositories  # noqa: command-instead-of-module
+      ansible.builtin.shell:
+        cmd: >-
+          git init -q -b master &&
+          git add -A &&
+          git -c user.name=Molecule -c user.email=molecule@example.com
+          commit -q -m fixture
+        chdir: '{{ item.repo }}'
+        creates: '{{ item.repo }}/.git'
+      loop: '{{ __pm_url_sources }}'
+      loop_control:
+        label: '{{ item.repo }}'
+
+    # The role refuses a missing path repository. It is a Git work tree
+    # created by root, as the builder user does not exist before the first
+    # run, with a package directory of a login user that is only readable
+    # by its owner and carries an access and a default ACL. The top
+    # directory and .git are in the state the shared group of earlier role
+    # versions left: group aur_shared, mode 2775, a group-writable file. The
+    # role hands it all to the builder user and its group, strips the ACLs,
+    # the SGID bit and group write access, so the builder alone can build
+    # in it.
+    - name: Converge | Create the former shared AUR group
+      ansible.builtin.group:
+        name: aur_shared
+        system: true
+
+    - name: Converge | Check for the path repository
+      ansible.builtin.stat:
+        path: '{{ __pm_path_repo }}'
+      register: __pm_path_stat
+
+    - name: Converge | Create the path repository
+      when: not __pm_path_stat.stat.exists
+      block:
+        - name: Converge | Create the path repository directories owned by root
+          ansible.builtin.file:
+            path: '{{ item }}'
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+          loop:
+            - '{{ __pm_path_repo }}'
+            - '{{ __pm_path_repo }}/molecule-pkgbuild-path'
+
+        - name: Converge | Create the path repository PKGBUILD
+          ansible.builtin.copy:
+            content: "{{ __pm_pkgbuild | format('molecule-pkgbuild-path', 'molecule-pkgbuild-path') }}"
+            dest: '{{ __pm_path_repo }}/molecule-pkgbuild-path/PKGBUILD'
+            owner: root
+            group: root
+            mode: '0644'
+
+        # ansible.builtin.git clones but cannot create a repository or commit
+        - name: Converge | Commit the path repository  # noqa: command-instead-of-module
+          ansible.builtin.shell:
+            cmd: >-
+              git init -q -b master &&
+              git add -A &&
+              git -c user.name=Molecule -c user.email=molecule@example.com
+              commit -q -m fixture
+            chdir: '{{ __pm_path_repo }}'
+            creates: '{{ __pm_path_repo }}/.git'
+
+        - name: Converge | Hand the package directory to the login user
+          ansible.builtin.file:
+            path: '{{ __pm_path_repo }}/molecule-pkgbuild-path{{ item.suffix }}'
+            owner: molecule_login
+            group: molecule_login
+            mode: '{{ item.mode }}'
+          loop:
+            - suffix: ''
+              mode: '0700'
+            - suffix: '/PKGBUILD'
+              mode: '0600'
+
+        - name: Converge | Put ACLs on the package directory
+          ansible.builtin.command:
+            argv:
+              - setfacl
+              - -m
+              - 'u:molecule_login:rwx,d:u:molecule_login:rwx'
+              - '{{ __pm_path_repo }}/molecule-pkgbuild-path'
+          changed_when: true
+
+        - name: Converge | Put the top directory and .git into the state of the shared group
+          ansible.builtin.shell:
+            cmd: >-
+              chown root:aur_shared {{ __pm_path_repo }} {{ __pm_path_repo }}/.git
+              {{ __pm_path_repo }}/.git/description &&
+              chmod 2775 {{ __pm_path_repo }} {{ __pm_path_repo }}/.git &&
+              chmod 0664 {{ __pm_path_repo }}/.git/description
+          changed_when: true
+
+  tasks:
+    - name: Converge | Check for the conversion marker
+      ansible.builtin.stat:
+        path: '{{ __pm_conversion_marker }}'
+      register: __pm_conversion_marker_stat
+
+    - name: Converge | Include package_management role  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+    # The path repository is the last directory the role sets up. Its
+    # recursive recovery reports a change exactly when these checks found
+    # something; the idempotence runs find the marker.
+    - name: Converge | Assert the first run reported the takeover of the path repository
+      ansible.builtin.assert:
+        that:
+          - __package_management_clone_dir_foreign.stdout | length > 0
+          - __package_management_clone_dir_acls.stdout | length > 0
+          - __package_management_clone_dir_recovered is changed
+        fail_msg: >-
+          The run did not report the takeover of the entries in
+          {{ __pm_path_repo }}.
+      when: not __pm_conversion_marker_stat.stat.exists
+
+    # aur_shared_group is set in the play vars
+    - name: Converge | Assert the deprecation warning was shown
+      ansible.builtin.assert:
+        that:
+          - __package_management_deprecation_warning is not skipped
+        fail_msg: 'The role did not warn about the deprecated aur_shared_group.'
+
+    - name: Converge | Record the checked conversion
+      ansible.builtin.copy:
+        content: ''
+        dest: '{{ __pm_conversion_marker }}'
+        owner: root
+        group: root
+        mode: '0644'
+
+    # What another role does to install a package from a PKGBUILD repository
+    - name: Converge | Install packages from the PKGBUILD repositories
+      become: true
+      become_user: aur_builder
+      kewlfft.aur.aur:
+        name: >-
+          {{ ['molecule-pkgbuild-url', 'molecule-pkgbuild-path']
+             + (['molecule-pkgbuild-new'] if __pm_url_changed | bool else []) }}
+        use: paru
+        state: present
+      retries: 3
+      delay: 5

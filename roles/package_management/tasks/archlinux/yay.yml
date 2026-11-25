@@ -1,7 +1,4 @@
 ---
-- name: Yay | Import shared AUR infrastructure tasks
-  ansible.builtin.import_tasks: archlinux/aur_shared.yml
-
 - name: Yay | Include shared clone directory tasks
   ansible.builtin.include_tasks:
     file: archlinux/aur_clone_dir.yml
@@ -16,14 +13,14 @@
     - package-management:configure
 
 #
-# Per-user configuration
+# Builder configuration
 #
 # yay has no system-wide configuration file: it reads
 # $XDG_CONFIG_HOME/yay/config.json, falling back to
-# ~/.config/yay/config.json. The build directory therefore has to be
-# written for every account that runs yay — the builder user, because
-# kewlfft.aur builds as that account, and each shared user for their
-# own manual invocations.
+# ~/.config/yay/config.json. The build directory is written there for the
+# builder user, which every build runs as, so a call of /usr/bin/yay as the
+# builder also lands in the shared tree. The wrapper passes --builddir on
+# top, so login users need no configuration of their own.
 #
 
 - name: Yay | Read passwd database
@@ -32,54 +29,47 @@
 
 - name: Yay | Ensure yay config directory exists
   ansible.builtin.file:
-    path: '{{ getent_passwd[item][4] }}/.config/yay'
+    path: '{{ ansible_facts["getent_passwd"][aur_builder_user][4] }}/.config/yay'
     state: directory
-    owner: '{{ item }}'
-    group: '{{ getent_passwd[item][2] }}'
+    owner: '{{ aur_builder_user }}'
+    group: '{{ ansible_facts["getent_passwd"][aur_builder_user][2] }}'
     mode: '0755'
-  loop: '{{ [aur_builder_user] + aur_shared_users }}'
-  when: getent_passwd[item] is defined
+  when: ansible_facts["getent_passwd"][aur_builder_user] is defined
 
 # Read any existing config first and merge the build directory into it,
-# so settings a user saved through `yay --save` survive. Ansible owns
-# buildDir; everything else in the file is left as found.
+# so settings saved through `yay --save` survive. Ansible owns buildDir;
+# everything else in the file is left as found.
 - name: Yay | Read existing yay configuration
   ansible.builtin.slurp:
-    src: '{{ getent_passwd[item][4] }}/.config/yay/config.json'
+    src: '{{ ansible_facts["getent_passwd"][aur_builder_user][4] }}/.config/yay/config.json'
   register: __yay_existing_config
-  loop: '{{ [aur_builder_user] + aur_shared_users }}'
   # Absent on first run
   failed_when: false
-  when: getent_passwd[item] is defined
+  when: ansible_facts["getent_passwd"][aur_builder_user] is defined
 
 - name: Yay | Write yay configuration with the shared build directory
   ansible.builtin.copy:
     content: |
       {{ __yay_config | to_nice_json }}
-    dest: '{{ getent_passwd[item.item][4] }}/.config/yay/config.json'
-    owner: '{{ item.item }}'
-    group: '{{ getent_passwd[item.item][2] }}'
+    dest: '{{ ansible_facts["getent_passwd"][aur_builder_user][4] }}/.config/yay/config.json'
+    owner: '{{ aur_builder_user }}'
+    group: '{{ ansible_facts["getent_passwd"][aur_builder_user][2] }}'
     mode: '0644'
   vars:
     __yay_config: >-
-      {{ (item.content | default('') | b64decode | from_json
-          if (item.content is defined)
+      {{ (__yay_existing_config.content | b64decode | from_json
+          if (__yay_existing_config.content is defined)
           else {})
          | combine({'buildDir': yay_clone_dir}) }}
-  loop: '{{ __yay_existing_config.results | default([]) }}'
-  loop_control:
-    label: '{{ item.item | default("") }}'
-  when:
-    - item.item is defined
-    - getent_passwd[item.item] is defined
+  when: ansible_facts["getent_passwd"][aur_builder_user] is defined
 
-# Manual yay runs must happen as the builder user, otherwise the shared
-# clone tree gains entries owned by the login user and locks the builder
-# out on the next Ansible run. The wrapper shadows /usr/bin/yay in PATH
-# and transparently re-executes it as the builder user via sudo, so a
-# bare "yay -Syu" is safe from any wheel account or as root. Only
-# operations that work in the caller's directory (-B, -G) run as the
-# calling login user, with yay's per-user build directory.
+# Manual yay runs must happen as the builder user, the only user that can
+# write to the shared clone tree; root would leave entries there that the
+# next Ansible run hands back to the builder. The wrapper shadows
+# /usr/bin/yay in PATH and transparently re-executes it as the builder
+# user via sudo, so a bare "yay -Syu" works from any wheel account or as
+# root. Only operations that work in the caller's directory (-B, -G) run
+# as the calling login user, with yay's per-user build directory.
 - name: Yay | Install manual-invocation wrapper
   ansible.builtin.template:
     src: 'archlinux/yay-wrapper.j2'
