@@ -6,7 +6,7 @@ management.
 
 ## Description
 
-- DNSSEC validation with automatic root trust anchor management
+- DNSSEC validation with the root trust anchor of the platform
 - DNS-over-TLS upstream forwarding
 - Ad/tracker blocking via configurable blocklist URLs (systemd timer)
 - Local zones and records (A, AAAA, PTR)
@@ -59,12 +59,14 @@ See [`defaults/main.yml`](defaults/main.yml) for all variables with descriptions
 | `unbound_blocklist_enabled`           | `false`                 | Enable ad/tracker blocking             |
 | `unbound_root_hints_update_enabled`   | `true`                  | Auto-update root hints weekly          |
 | `unbound_remote_control_enabled`      | `true`                  | Enable unbound-control socket          |
+| `unbound_control_interface`           | `''`                    | Control socket (empty = OS default)    |
+| `unbound_chroot`                      | `''`                    | Chroot directory (empty = no chroot)   |
 
 ### Firewall
 
 | Variable                    | Default    | Description                      |
 |-----------------------------|------------|----------------------------------|
-| `unbound_firewalld_enabled` | `false`    | Enable firewalld integration     |
+| `unbound_firewalld_enabled` | `true`     | Enable firewalld integration     |
 | `unbound_firewalld_zone`    | `'public'` | Firewalld zone for service rules |
 
 ### AppArmor
@@ -79,7 +81,7 @@ See [`defaults/main.yml`](defaults/main.yml) for all variables with descriptions
 |---------------------|--------------------------------------------------------|
 | `unbound`           | All role tasks                                         |
 | `unbound:install`   | Package installation, root hints download, timer setup |
-| `unbound:configure` | Config files, DNSSEC anchor, unbound-control keys      |
+| `unbound:configure` | Config files, DNSSEC root key, unbound-control keys    |
 | `unbound:blocklist` | Blocklist script, timer, initial download              |
 | `unbound:service`   | Service management                                     |
 | `unbound:firewall`  | Firewalld DNS rule                                     |
@@ -128,6 +130,16 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 - Rocky 9 ships unbound 1.16.2 which is significantly older than other platforms. All
   directives used in this role are compatible with 1.16+.
 - On Rocky 10, `unbound-anchor` is a separate package (automatically installed).
+- Root trust anchor: Debian (seeded from `dns-root-data`) and EL (shipped by the package) use
+  `/var/lib/unbound/root.key`, which unbound updates itself (RFC 5011). Arch Linux uses
+  `/etc/unbound/trusted-key.key`, which the `dnssec-anchors` package keeps up to date; a
+  change of the root key needs a system update and a restart of unbound.
+- An empty `unbound_chroot` turns off the chroot `/etc/unbound` that the packages on Arch
+  Linux and EL compile in; unbound is then confined by its unit and, where active, by
+  SELinux or AppArmor. A chroot has to contain the root hints (`unbound_root_hints_file`) and
+  the root key.
+- The default control socket is `/run/unbound.ctl` on Debian (the only path the AppArmor
+  profile of the package allows) and `/run/unbound/control` on Arch Linux and EL.
 - Debian ships an AppArmor profile for unbound (enforced by default when AppArmor is active).
 - The blocklist feature downloads hosts-format blocklists and converts them to unbound
   `local-zone` entries.

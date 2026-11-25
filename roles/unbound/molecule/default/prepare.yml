@@ -6,11 +6,11 @@
   vars:
     __prepare_packages:
       Archlinux:
-        - unbound
+        - bind
       Debian:
-        - unbound
+        - bind9-dnsutils
       RedHat:
-        - unbound
+        - bind-utils
 
   tasks:
     - name: Prepare | Update package cache (Arch)
@@ -35,44 +35,9 @@
       delay: 5
       when: ansible_facts['os_family'] == 'RedHat'
 
-    - name: Prepare | Install container dependencies
+    - name: Prepare | Install test dependencies
       ansible.builtin.package:
         name: '{{ __prepare_packages[ansible_facts["os_family"]] }}'
         state: present
       retries: 3
       delay: 5
-
-    - name: Prepare | Detect unbound binary path
-      ansible.builtin.command:
-        cmd: which unbound
-      register: __prepare_unbound_path
-      changed_when: false
-
-    - name: Prepare | Create systemd override directory for unbound
-      ansible.builtin.file:
-        path: /etc/systemd/system/unbound.service.d
-        state: directory
-        owner: root
-        group: root
-        mode: '0755'
-
-    - name: Prepare | Override unbound service for containers
-      ansible.builtin.copy:
-        content: |
-          [Service]
-          Type=simple
-          ExecStart=
-          ExecStart={{ __prepare_unbound_path.stdout }} -d
-          ExecReload=
-          ExecReload=/bin/true
-        dest: /etc/systemd/system/unbound.service.d/override.conf
-        owner: root
-        group: root
-        mode: '0644'
-
-    - name: Prepare | Stop unbound before converge
-      ansible.builtin.systemd_service:
-        name: unbound.service
-        state: stopped
-        daemon_reload: true
-      failed_when: false

@@ -7,6 +7,10 @@ __unbound_service_name: 'unbound.service'
 __unbound_user: 'unbound'
 __unbound_group: 'unbound'
 
-__unbound_root_key: '/etc/unbound/root.key'
+# The unit resets /var/lib/unbound to root at every start, so unbound cannot
+# update a root key there. Package hooks keep this key up to date.
+__unbound_trust_anchor_option: 'trust-anchor-file'
+__unbound_root_key: '/etc/unbound/trusted-key.key'
+__unbound_control_interface: '/run/unbound/control'
 __unbound_tls_cert_bundle: '/etc/ssl/certs/ca-certificates.crt'
 __unbound_apparmor_profile: '/usr/bin/unbound'
