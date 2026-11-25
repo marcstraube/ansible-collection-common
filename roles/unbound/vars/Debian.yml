@@ -2,11 +2,15 @@
 __unbound_packages:
   - 'unbound'
   - 'dns-root-data'
+  - 'curl'
 
 __unbound_service_name: 'unbound.service'
 __unbound_user: 'unbound'
 __unbound_group: 'unbound'
 
+__unbound_trust_anchor_option: 'auto-trust-anchor-file'
 __unbound_root_key: '/var/lib/unbound/root.key'
+__unbound_root_key_source: '/usr/share/dns/root.key'
+__unbound_control_interface: '/run/unbound.ctl'
 __unbound_tls_cert_bundle: '/etc/ssl/certs/ca-certificates.crt'
 __unbound_apparmor_profile: 'usr.sbin.unbound'

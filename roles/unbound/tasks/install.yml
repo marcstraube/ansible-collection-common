@@ -3,6 +3,7 @@
   ansible.builtin.package:
     name: '{{ __unbound_packages }}'
     state: present
+  register: __unbound_packages_result
   retries: 3
   delay: 5
 
@@ -22,16 +23,28 @@
     group: '{{ __unbound_group }}'
     mode: '0755'
 
+# Only the packages on Debian and EL bring the directory. Its owner stays with
+# the package or, on Arch Linux, with the unit (StateDirectory, reset to root
+# at every start).
+- name: Install | Ensure data directory exists
+  ansible.builtin.file:
+    path: '/var/lib/unbound'
+    state: directory
+    mode: '0755'
+  register: __unbound_data_dir
+
 - name: Install | Download root hints
   ansible.builtin.get_url:
     url: 'https://www.internic.net/domain/named.root'
     dest: '{{ unbound_root_hints_file }}'
-    owner: '{{ __unbound_user }}'
-    group: '{{ __unbound_group }}'
+    owner: root
+    group: root
     mode: '0644'
   retries: 5
   delay: 10
-  when: unbound_root_hints_update_enabled | bool
+  when:
+    - unbound_root_hints_update_enabled | bool
+    - not (ansible_check_mode and __unbound_data_dir is changed)
 
 - name: Install | Deploy root hints update systemd service
   ansible.builtin.template:

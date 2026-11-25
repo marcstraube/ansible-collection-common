@@ -3,6 +3,16 @@
   hosts: all
   gather_facts: true
 
+  vars:
+    __verify_trust_anchors:
+      Archlinux: '    trust-anchor-file: "/etc/unbound/trusted-key.key"'
+      Debian: '    auto-trust-anchor-file: "/var/lib/unbound/root.key"'
+      RedHat: '    auto-trust-anchor-file: "/var/lib/unbound/root.key"'
+    __verify_control_interfaces:
+      Archlinux: '    control-interface: /run/unbound/control'
+      Debian: '    control-interface: /run/unbound.ctl'
+      RedHat: '    control-interface: /run/unbound/control'
+
   tasks:
     #
     # Installation
@@ -189,3 +199,127 @@
         name: 'unbound'
       register: __verify_service_status
       failed_when: __verify_service_status.status.ActiveState != 'active'
+
+    #
+    # Root Hints, Trust Anchor and Chroot
+    #
+
+    - name: Verify | Check root hints are configured
+      ansible.builtin.assert:
+        that:
+          - "'root-hints: \"/var/lib/unbound/root.hints\"' in __verify_main_config.content | b64decode"
+          - __verify_trust_anchors[ansible_facts['os_family']] in __verify_config_lines
+          - __verify_control_interfaces[ansible_facts['os_family']] in __verify_config_lines
+          - "'chroot: \"\"' in __verify_main_config.content | b64decode"
+        fail_msg: 'Root hints, trust anchor, control interface or chroot not configured'
+      vars:
+        __verify_config_lines: '{{ (__verify_main_config.content | b64decode).splitlines() }}'
+
+    - name: Verify | Get the root hints file before the update
+      ansible.builtin.stat:
+        path: /var/lib/unbound/root.hints
+      register: __verify_root_hints_before
+
+    - name: Verify | Update the root hints with the systemd service
+      ansible.builtin.systemd_service:
+        name: unbound-root-hints.service
+        state: started
+      register: __verify_root_hints_update
+      until: __verify_root_hints_update is succeeded
+      retries: 5
+      delay: 10
+
+    - name: Verify | Check the root hints file
+      ansible.builtin.stat:
+        path: /var/lib/unbound/root.hints
+      register: __verify_root_hints
+      failed_when: >-
+        not __verify_root_hints.stat.exists or __verify_root_hints.stat.size < 1000
+        or __verify_root_hints.stat.pw_name != 'root' or __verify_root_hints.stat.mode != '0644'
+
+    # A download moved into place is a new inode
+    - name: Verify | Check the root hints service replaced the file
+      ansible.builtin.assert:
+        that:
+          - __verify_root_hints.stat.inode != __verify_root_hints_before.stat.inode
+        fail_msg: 'The root hints service did not replace the root hints file'
+
+    - name: Verify | Check no temporary root hints file is left
+      ansible.builtin.stat:
+        path: /var/lib/unbound/root.hints.new
+      register: __verify_root_hints_new
+      failed_when: __verify_root_hints_new.stat.exists
+
+    - name: Verify | Check the root hints service only replaces the file after a successful download
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/unbound-root-hints.service
+      register: __verify_root_hints_unit
+      failed_when: >-
+        '--fail' not in (__verify_root_hints_unit.content | b64decode)
+        or '--output /var/lib/unbound/root.hints.new' not in (__verify_root_hints_unit.content | b64decode)
+
+    #
+    # Name Resolution
+    #
+
+    # The answer needs the root servers; the retries cover a cold cache
+    - name: Verify | Check a signed zone validates
+      ansible.builtin.command:
+        cmd: dig @127.0.0.1 iana.org A +dnssec +time=10 +tries=1
+      register: __verify_signed
+      changed_when: false
+      retries: 10
+      delay: 5
+      until: >-
+        'status: NOERROR' in __verify_signed.stdout
+        and __verify_signed.stdout is search(';; flags:[^;]* ad[ ;]')
+
+    - name: Verify | Check the zone with a broken signature resolves without validation
+      ansible.builtin.command:
+        cmd: dig @127.0.0.1 dnssec-failed.org A +cdflag +time=10 +tries=1
+      register: __verify_broken_cd
+      changed_when: false
+      retries: 10
+      delay: 5
+      until: "'status: NOERROR' in __verify_broken_cd.stdout"
+
+    - name: Verify | Check the zone with a broken signature is rejected
+      ansible.builtin.command:
+        cmd: dig @127.0.0.1 dnssec-failed.org A +time=10 +tries=1
+      register: __verify_broken
+      changed_when: false
+      retries: 10
+      delay: 5
+      until: "'status: SERVFAIL' in __verify_broken.stdout"
+
+    - name: Verify | Check a local record is answered
+      ansible.builtin.command:
+        cmd: dig @127.0.0.1 test.local A +short +time=10 +tries=1
+      register: __verify_local
+      changed_when: false
+      failed_when: __verify_local.stdout != '192.168.1.100'
+
+    #
+    # Remote Control and Reload
+    #
+
+    - name: Verify | Reload unbound with the packaged unit
+      ansible.builtin.systemd_service:
+        name: unbound
+        state: reloaded
+
+    - name: Verify | Check unbound-control reaches the service
+      ansible.builtin.command:
+        cmd: unbound-control status
+      register: __verify_control
+      changed_when: false
+      failed_when: "'is running' not in __verify_control.stdout"
+
+    # unbound that cannot store the root key stops at the first query
+    - name: Verify | Check unbound did not stop while it answered
+      ansible.builtin.systemd_service:
+        name: unbound
+      register: __verify_restarts
+      failed_when: >-
+        __verify_restarts.status.ActiveState != 'active'
+        or __verify_restarts.status.NRestarts != '0'

@@ -8,7 +8,9 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/curl -s -o {{ unbound_root_hints_file }} https://www.internic.net/domain/named.root
+# The root hints are only replaced after a successful download
+ExecStart=/usr/bin/curl --fail --silent --show-error --output {{ unbound_root_hints_file }}.new https://www.internic.net/domain/named.root
+ExecStart=/usr/bin/mv {{ unbound_root_hints_file }}.new {{ unbound_root_hints_file }}
 ExecStartPost=/usr/bin/systemctl reload {{ __unbound_service_name }}
 NoNewPrivileges=true
 ProtectSystem=full
