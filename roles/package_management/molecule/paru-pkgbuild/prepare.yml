@@ -1,0 +1,54 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Prepare | Update package cache (Arch)
+      community.general.pacman:
+        update_cache: true
+        upgrade: true
+      retries: 3
+      delay: 5
+
+    - name: Prepare | Install build dependencies
+      community.general.pacman:
+        name:
+          - git
+          - base-devel
+        state: present
+      retries: 3
+      delay: 5
+
+    # The role builds paru from source when no package provides it, a long
+    # Rust build. paru-bin provides paru, so the role's helper check finds it
+    # and skips the build. A throwaway user builds it, the role creates its
+    # own builder user later.
+    - name: Prepare | Create a user to build paru-bin
+      ansible.builtin.user:
+        name: molecule_builder
+        home: /var/tmp/molecule_builder
+        shell: /usr/bin/nologin
+        system: true
+        create_home: true
+
+    - name: Prepare | Allow the paru-bin build user to run pacman
+      ansible.builtin.copy:
+        content: "molecule_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
+        dest: /etc/sudoers.d/90-molecule-builder
+        owner: root
+        group: root
+        mode: '0440'
+        validate: 'visudo -cf %s'
+
+    - name: Prepare | Install paru-bin
+      become: true
+      become_user: molecule_builder
+      kewlfft.aur.aur:
+        name: paru-bin
+        use: makepkg
+        state: present
+      environment:
+        TMPDIR: /var/tmp/molecule_builder
+      retries: 3
+      delay: 5
