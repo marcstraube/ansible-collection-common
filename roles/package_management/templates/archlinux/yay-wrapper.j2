@@ -23,13 +23,14 @@ fi
 # builds from a local PKGBUILD (-B/--build) and fetching PKGBUILDs
 # (-G/--getpkgbuild). That directory usually lies inside a mode 0700 home
 # the build user can neither read nor write. --builddir points at yay's
-# per-user default instead of the shared tree, which the caller's
-# config.json names, so the AUR dependencies of such a build land in the
-# caller's own cache. --cleanafter=false keeps a cleanAfter from the
-# caller's config.json, meant for the clone cache, from resetting the
-# caller's checkout and deleting its untracked files (yay has no
-# --nocleanafter). Root keeps going through the build user for every
-# operation, since makepkg refuses root.
+# per-user default instead of any buildDir in the caller's config.json
+# (earlier role versions wrote the shared tree there), so the AUR
+# dependencies of such a build land in the caller's own cache.
+# --cleanafter=false keeps a cleanAfter from the caller's config.json,
+# meant for the clone cache, from resetting the caller's checkout and
+# deleting its untracked files (yay has no --nocleanafter). Root keeps
+# going through the build user for every operation, since makepkg refuses
+# root.
 #
 # Operations are uppercase short options, so an uppercase B or G in any
 # short option cluster selects such an operation (-B, -Bi, -iB, -Gp), while

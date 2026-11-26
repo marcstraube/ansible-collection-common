@@ -22,6 +22,12 @@
       score: ''
       age: 24
     aur_helper: ''  # Skip AUR helper in tests
+    # fcron: provider of 'cron' (cronie comes first) that the last play's
+    # consumer must keep. openresolv: installed explicitly by prepare.yml.
+    # Debian and Rocky ignore the list (Debian has an openresolv package).
+    pacman_dependency_packages:
+      - 'fcron'
+      - 'openresolv'
     paccache_enabled: true
     pacman_pkgfile_enabled: true
     makepkg_tmpdir: '/var/cache/makepkg'
@@ -222,4 +228,21 @@
     - name: Converge | Include package_management role  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+
+# What a role running after package_management does: install a package that
+# needs the virtual package 'cron'. On its own pacman picks cronie, the first
+# provider; the listed fcron must satisfy the dependency instead.
+- name: Converge | Later install of a cron consumer (Arch only)
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Converge | Install package that needs cron
+      community.general.pacman:
+        name: pppusage
+        state: present
+      retries: 3
+      delay: 5
       when: ansible_facts['os_family'] == 'Archlinux'
