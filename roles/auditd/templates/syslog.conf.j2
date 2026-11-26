@@ -3,9 +3,9 @@
 # Syslog Plugin Configuration
 #
 
-active = yes
+active = {{ 'yes' if auditd_plugin_syslog_enabled | bool else 'no' }}
 direction = out
-path = builtin_syslog
-type = builtin
+path = /sbin/audisp-syslog
+type = always
 args = {{ auditd_syslog_priority }} {{ auditd_syslog_facility }}
 format = string

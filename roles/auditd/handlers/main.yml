@@ -1,18 +1,41 @@
 ---
 # Use signal names (TERM, HUP) not aliases (stop, reload) for audit 3.x compat
+# auditctl returns after auditd has exited. rc=2: auditd is not running.
+# 'audit system is disabled': no kernel audit netlink (a kernel without audit
+# support, audit=0 or a container).
 - name: Stop auditd via audit subsystem
   ansible.builtin.command:
     cmd: auditctl --signal TERM
-  changed_when: true
+  register: __auditd_stop
+  changed_when: __auditd_stop.rc == 0
+  failed_when:
+    - __auditd_stop.rc not in [0, 2]
+    - "'audit system is disabled' not in __auditd_stop.stderr"
   listen: Restart auditd
   when: auditd_service_enabled | bool
+
+# systemd notices the exit asynchronously; a start while the unit is still
+# active or deactivating would be a no-op.
+- name: Wait for systemd to see auditd stopped
+  ansible.builtin.systemd_service:
+    name: '{{ __auditd_service_name }}'
+  register: __auditd_stopped
+  until: __auditd_stopped.status.ActiveState not in ['active', 'deactivating']
+  retries: 10
+  delay: 1
+  listen: Restart auditd
+  when:
+    - auditd_service_enabled | bool
+    - __auditd_stop is changed
 
 - name: Start auditd after signal stop
   ansible.builtin.systemd_service:
     name: '{{ __auditd_service_name }}'
     state: started
   listen: Restart auditd
-  when: auditd_service_enabled | bool
+  when:
+    - auditd_service_enabled | bool
+    - not (ansible_check_mode and __auditd_install | default({}) is changed)
 
   # failed_when: false — auditctl requires kernel audit subsystem (unavailable in containers)
 - name: Reload auditd config

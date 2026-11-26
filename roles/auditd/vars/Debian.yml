@@ -3,6 +3,9 @@ __auditd_packages:
   - 'auditd'
   - 'audispd-plugins'
 
+# The auditd package contains the syslog plugin
+__auditd_syslog_packages: []
+
 __auditd_remote_packages: []
 
 __auditd_service_name: 'auditd.service'

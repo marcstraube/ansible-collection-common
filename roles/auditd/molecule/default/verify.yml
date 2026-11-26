@@ -246,5 +246,127 @@
       ansible.builtin.assert:
         that:
           - "'active = yes' in (syslog_plugin_content.content | b64decode)"
+          - "'type = always' in (syslog_plugin_content.content | b64decode)"
           - "'LOG_INFO LOG_LOCAL6' in (syslog_plugin_content.content | b64decode)"
         fail_msg: 'syslog plugin not active or missing facility/priority'
+
+    - name: Verify | Check syslog plugin binary
+      ansible.builtin.stat:
+        path: >-
+          {{ syslog_plugin_content.content | b64decode
+          | regex_search('(?m)^path = (\S+)$', '\1') | first }}
+        follow: true
+      register: syslog_plugin_binary
+      failed_when: >-
+        not syslog_plugin_binary.stat.exists
+        or not syslog_plugin_binary.stat.isreg
+        or not syslog_plugin_binary.stat.executable
+
+    - name: Verify | Read auditd messages
+      ansible.builtin.command:
+        cmd: journalctl --boot --identifier auditd --output cat --no-pager
+      register: auditd_journal
+      changed_when: false
+
+    - name: Verify | Check no plugin is skipped or obsolete
+      ansible.builtin.assert:
+        that:
+          - "'audit dispatcher initialized' in auditd_journal.stdout"
+          - "'plugin due to errors' not in auditd_journal.stdout"
+          - "'is obsolete' not in auditd_journal.stdout"
+        fail_msg: 'auditd skipped a plugin or reported an obsolete option'
+
+    - name: Verify | Check syslog plugin is running
+      ansible.builtin.command:
+        cmd: pgrep --full --exact '/sbin/audisp-syslog LOG_INFO LOG_LOCAL6'
+      register: syslog_plugin_process
+      changed_when: false
+      retries: 5
+      delay: 1
+      until: syslog_plugin_process.rc == 0
+
+    # Facility 22 is LOG_LOCAL6
+    - name: Verify | Check audit events reach syslog
+      ansible.builtin.command:
+        cmd: journalctl --boot --identifier audispd SYSLOG_FACILITY=22 --lines 1 --output cat --no-pager
+      register: syslog_plugin_events
+      changed_when: false
+      failed_when: "'type=' not in syslog_plugin_events.stdout"
+
+    - name: Verify | Read auditd main PID before the argument change
+      ansible.builtin.systemd_service:
+        name: auditd.service
+      register: auditd_before_change
+
+    - name: Verify | Change the arguments of the running syslog plugin  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        auditd_syslog_facility: 'LOG_LOCAL5'
+
+    - name: Verify | Apply the changed arguments
+      ansible.builtin.meta: flush_handlers
+
+    - name: Verify | Check syslog plugin runs with the changed arguments
+      ansible.builtin.command:
+        cmd: pgrep --full --exact '/sbin/audisp-syslog LOG_INFO LOG_LOCAL5'
+      register: syslog_plugin_changed
+      changed_when: false
+      retries: 5
+      delay: 1
+      until: syslog_plugin_changed.rc == 0
+
+    - name: Verify | Read auditd main PID after the argument change
+      ansible.builtin.systemd_service:
+        name: auditd.service
+      register: auditd_after_change
+
+    - name: Verify | Check auditd was restarted for the argument change
+      ansible.builtin.assert:
+        that:
+          - auditd_after_change.status.ActiveState == 'active'
+          - auditd_after_change.status.MainPID != auditd_before_change.status.MainPID
+        fail_msg: 'auditd was not restarted after the plugin arguments changed'
+
+    - name: Verify | Disable the syslog plugin  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        auditd_plugin_syslog_enabled: false
+
+    - name: Verify | Apply the disabled syslog plugin
+      ansible.builtin.meta: flush_handlers
+
+    - name: Verify | Read disabled syslog plugin config
+      ansible.builtin.slurp:
+        src: /etc/audit/plugins.d/syslog.conf
+      register: syslog_plugin_disabled
+
+    - name: Verify | Check syslog plugin config is inactive
+      ansible.builtin.assert:
+        that:
+          - "'active = no' in (syslog_plugin_disabled.content | b64decode)"
+        fail_msg: 'disabled syslog plugin is still active'
+
+    - name: Verify | Check syslog plugin is stopped
+      ansible.builtin.command:
+        cmd: pgrep --exact audisp-syslog
+      register: syslog_plugin_stopped
+      changed_when: false
+      retries: 5
+      delay: 1
+      until: syslog_plugin_stopped.rc == 1
+      failed_when: syslog_plugin_stopped.rc != 1
+
+    - name: Verify | Check auditd runs without the syslog plugin
+      ansible.builtin.systemd_service:
+        name: auditd.service
+      register: auditd_without_plugin
+      failed_when: auditd_without_plugin.status.ActiveState != 'active'
+
+    - name: Verify | Enable the syslog plugin again  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+
+    - name: Verify | Apply the enabled syslog plugin
+      ansible.builtin.meta: flush_handlers

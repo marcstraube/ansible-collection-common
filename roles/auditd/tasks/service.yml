@@ -1,7 +1,9 @@
 ---
+# In check mode the unit does not exist while the package is not installed
 - name: Service | Manage auditd service
   ansible.builtin.systemd_service:
     name: '{{ __auditd_service_name }}'
     enabled: "{{ auditd_service_enabled | bool }}"
     state: "{{ auditd_service_enabled | bool | ternary('started', 'stopped') }}"
     daemon_reload: true
+  when: not (ansible_check_mode and __auditd_install | default({}) is changed)

@@ -8,6 +8,9 @@
     mode: '0640'
   notify: Reload auditd config
 
+# Written with 'active = no' when the plugin is disabled: the packages ship the
+# file. A reload does not apply a changed path or changed arguments of a
+# running plugin before audit 4.2, so a change restarts auditd.
 - name: Configure | Syslog plugin
   ansible.builtin.template:
     src: 'syslog.conf.j2'
@@ -15,5 +18,4 @@
     owner: root
     group: root
     mode: '0640'
-  notify: Reload auditd config
-  when: auditd_plugin_syslog_enabled | bool
+  notify: Restart auditd
