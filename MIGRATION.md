@@ -15,6 +15,33 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+### `aide` — changes no longer fail `aide-check.service`
+
+`aide-check.sh` exits with the exit code of `aide --check`. Exit codes 1 to 7
+report changes, which is the normal result after package updates, but they used
+to leave `aide-check.service` failed; errors of AIDE itself (14 and above, e.g.
+a missing database) were mailed as changes. Now:
+
+- Changes (exit codes 1 to 7) count as success of the unit
+  (`SuccessExitStatus=1 2 3 4 5 6 7`). Only errors of AIDE and of the script
+  fail it.
+- The change mail subject is now `<aide_email_subject>: changes detected on <host>`,
+  with the default `[AIDE] File Integrity Check Report: changes detected on <host>`.
+  It was `AIDE Alert: File system changes detected on <host>`. Errors get their
+  own mail, `AIDE Error: integrity check failed on <host> (exit code <N>)`.
+- With `aide_email_enabled: true`, a missing or failing mail(1) now fails the unit
+  with exit code 70. It used to be skipped without a notice.
+
+#### Required action
+
+- Monitoring that watched for a failed `aide-check.service` to learn about
+  changes no longer sees them. Enable the mail, or watch the journal for the
+  line `AIDE detected changes! Exit code: <N>` or the reports in `aide_log_dir`
+  (default `/var/log/aide`).
+- Mail filters on the old subject: adjust them, or set `aide_email_subject`.
+- Hosts with `aide_email_enabled: true` need mail(1) and a working MTA; the role
+  installs neither.
+
 ### `package_management` — the AUR clone directories belong to aur_builder only
 
 The paru and yay clone directories and the paru `path` PKGBUILD repositories

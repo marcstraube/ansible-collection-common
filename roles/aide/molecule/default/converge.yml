@@ -15,7 +15,8 @@
     aide_custom_rules:
       - path: '/opt/test'
         rule: 'R+sha512'
-    aide_email_enabled: false
+    aide_email_enabled: true
+    aide_email_to: 'admin@example.com'
 
   pre_tasks:
     - name: Converge | Create test directory for custom monitoring

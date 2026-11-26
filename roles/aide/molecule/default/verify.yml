@@ -297,7 +297,7 @@
 
     - name: Verify | Show AIDE check result (informational)
       ansible.builtin.debug:
-        msg: "AIDE check exit code: {{ aide_check_test.rc }} (0-7 = normal, >7 = error)"
+        msg: "AIDE check exit code: {{ aide_check_test.rc }} (0 = no changes, 1-7 = changes, 14 and above = error)"
 
     - name: Verify | Create test file to verify monitoring
       ansible.builtin.file:
@@ -307,16 +307,278 @@
         group: root
         mode: '0644'
 
-    - name: Verify | Run AIDE check script
-      ansible.builtin.command:
-        cmd: /usr/local/bin/aide-check.sh
-      register: aide_script_run
-      changed_when: false
-      failed_when: false
+    #
+    # Exit Code Handling (aide-check.service)
+    #
 
-    - name: Verify | AIDE check script executed
+    - name: Verify | Assert AIDE change exit codes count as success
       ansible.builtin.assert:
         that:
-          - aide_script_run.rc in [0, 1, 2, 3, 4, 5, 6, 7]
-        fail_msg: "AIDE check script failed with unexpected error"
-        success_msg: "AIDE check script executed successfully"
+          - "'SuccessExitStatus=1 2 3 4 5 6 7' in (aide_service_content.content | b64decode)"
+        fail_msg: "AIDE systemd service does not accept the change exit codes 1-7"
+        success_msg: "AIDE systemd service accepts the change exit codes 1-7"
+
+    # Each run restores the database and the mail stand-in and resets the unit
+    # in `always`, so a failed assert leaves the instance usable for the next
+    # verify.
+
+    # Changes: the unit succeeds and a change mail is sent
+
+    - name: Verify | Run with a changed file
+      block:
+        - name: Verify | Clear the mail outbox before the change run
+          ansible.builtin.file:
+            path: /var/spool/mail-stub/outbox
+            state: absent
+
+        - name: Verify | Run AIDE check service with a changed file
+          ansible.builtin.systemd_service:
+            name: aide-check.service
+            state: started
+          # Asserted below with the unit state
+          failed_when: false
+
+        - name: Verify | Get AIDE check service state after the change run
+          ansible.builtin.systemd_service:
+            name: aide-check.service
+          register: aide_change_unit
+
+        - name: Verify | Read the mail outbox after the change run
+          ansible.builtin.slurp:
+            src: /var/spool/mail-stub/outbox
+          register: aide_change_mail
+
+        - name: Verify | Assert changes leave the unit not failed and send a change mail
+          ansible.builtin.assert:
+            that:
+              - aide_change_unit.status.ActiveState in ['active', 'inactive']
+              - aide_change_unit.status.Result == 'success'
+              - aide_change_unit.status.ExecMainStatus | int in range(1, 8)
+              - "'To: admin@example.com' in (aide_change_mail.content | b64decode)"
+              - >-
+                'Subject: [AIDE] File Integrity Check Report: changes detected on '
+                in (aide_change_mail.content | b64decode)
+              - "'/opt/test/testfile.txt' in (aide_change_mail.content | b64decode)"
+              - "'AIDE Error' not in (aide_change_mail.content | b64decode)"
+            fail_msg: >-
+              AIDE change run: ActiveState={{ aide_change_unit.status.ActiveState }},
+              Result={{ aide_change_unit.status.Result }},
+              ExecMainStatus={{ aide_change_unit.status.ExecMainStatus }}
+            success_msg: "AIDE changes reported by mail, unit not failed"
+
+      always:
+        - name: Verify | Reset the AIDE check service after the change run
+          ansible.builtin.command:
+            argv:
+              - systemctl
+              - reset-failed
+              - aide-check.service
+          changed_when: true
+
+    # Error: a missing database fails the unit and sends an error mail
+
+    - name: Verify | Run without a database
+      block:
+        - name: Verify | Clear the mail outbox before the error run
+          ansible.builtin.file:
+            path: /var/spool/mail-stub/outbox
+            state: absent
+
+        - name: Verify | Move the AIDE database away
+          ansible.builtin.command:
+            argv:
+              - mv
+              - /var/lib/aide/aide.db.gz
+              - /var/lib/aide/aide.db.gz.verify
+            removes: /var/lib/aide/aide.db.gz
+
+        - name: Verify | Run AIDE check service without a database
+          ansible.builtin.systemd_service:
+            name: aide-check.service
+            state: started
+          # Expected to fail, asserted below
+          failed_when: false
+
+        - name: Verify | Get AIDE check service state after the error run
+          ansible.builtin.systemd_service:
+            name: aide-check.service
+          register: aide_error_unit
+
+        - name: Verify | Read the mail outbox after the error run
+          ansible.builtin.slurp:
+            src: /var/spool/mail-stub/outbox
+          register: aide_error_mail
+
+        - name: Verify | Assert a missing database fails the unit and sends an error mail
+          ansible.builtin.assert:
+            that:
+              - aide_error_unit.status.ActiveState == 'failed'
+              - aide_error_unit.status.Result == 'exit-code'
+              - aide_error_unit.status.ExecMainStatus | int >= 14
+              - "'Subject: AIDE Error: integrity check failed' in (aide_error_mail.content | b64decode)"
+              - "'AIDE check failed! Exit code: ' in (aide_error_mail.content | b64decode)"
+              - "'ERROR:' in (aide_error_mail.content | b64decode)"
+              - "'changes detected' not in (aide_error_mail.content | b64decode)"
+            fail_msg: >-
+              AIDE error run: ActiveState={{ aide_error_unit.status.ActiveState }},
+              Result={{ aide_error_unit.status.Result }},
+              ExecMainStatus={{ aide_error_unit.status.ExecMainStatus }}
+            success_msg: "AIDE error reported by mail with the AIDE output, unit failed"
+
+      always:
+        - name: Verify | Restore the AIDE database
+          ansible.builtin.command:
+            argv:
+              - mv
+              - /var/lib/aide/aide.db.gz.verify
+              - /var/lib/aide/aide.db.gz
+            removes: /var/lib/aide/aide.db.gz.verify
+
+        - name: Verify | Reset the AIDE check service after the error run
+          ansible.builtin.command:
+            argv:
+              - systemctl
+              - reset-failed
+              - aide-check.service
+          changed_when: true
+
+    # Mail failure: a failing mail(1) fails the unit with exit code 70
+
+    - name: Verify | Run with a failing mail command
+      block:
+        - name: Verify | Move the mail stand-in away
+          ansible.builtin.command:
+            argv:
+              - mv
+              - /usr/local/bin/mail
+              - /usr/local/bin/mail.verify
+            removes: /usr/local/bin/mail
+
+        - name: Verify | Install a failing mail command
+          ansible.builtin.copy:
+            dest: /usr/local/bin/mail
+            owner: root
+            group: root
+            mode: '0755'
+            content: |
+              #!/bin/sh
+              exit 1
+
+        - name: Verify | Run AIDE check service with a failing mail command
+          ansible.builtin.systemd_service:
+            name: aide-check.service
+            state: started
+          # Expected to fail, asserted below
+          failed_when: false
+
+        - name: Verify | Get AIDE check service state after the mail failure run
+          ansible.builtin.systemd_service:
+            name: aide-check.service
+          register: aide_mail_unit
+
+        - name: Verify | Assert a failing mail command fails the unit with exit code 70
+          ansible.builtin.assert:
+            that:
+              - aide_mail_unit.status.ActiveState == 'failed'
+              - aide_mail_unit.status.Result == 'exit-code'
+              - aide_mail_unit.status.ExecMainStatus | int == 70
+            fail_msg: >-
+              AIDE mail failure run: ActiveState={{ aide_mail_unit.status.ActiveState }},
+              Result={{ aide_mail_unit.status.Result }},
+              ExecMainStatus={{ aide_mail_unit.status.ExecMainStatus }}
+            success_msg: "Failing mail command fails the unit with exit code 70"
+
+      always:
+        - name: Verify | Restore the mail stand-in
+          ansible.builtin.command:
+            argv:
+              - mv
+              - -f
+              - /usr/local/bin/mail.verify
+              - /usr/local/bin/mail
+            removes: /usr/local/bin/mail.verify
+
+        - name: Verify | Reset the AIDE check service after the mail failure run
+          ansible.builtin.command:
+            argv:
+              - systemctl
+              - reset-failed
+              - aide-check.service
+          changed_when: true
+
+    #
+    # Script Template Variants
+    #
+
+    - name: Verify | Render the AIDE check script variants
+      vars:
+        aide_log_dir: '/var/log/aide'
+        aide_email_to: 'admin@example.com'
+        aide_email_subject: '[AIDE] File Integrity Check Report'
+        aide_report_retention_days: 90
+      block:
+        - name: Verify | Create a temporary directory for the script variants
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: aide-verify
+          register: aide_render_dir
+
+        - name: Verify | Render the script with email disabled
+          ansible.builtin.template:
+            src: '{{ playbook_dir | dirname | dirname }}/templates/aide-check.sh.j2'
+            dest: '{{ aide_render_dir.path }}/aide-check-nomail.sh'
+            owner: root
+            group: root
+            mode: '0700'
+          vars:
+            aide_email_enabled: false
+            aide_email_on_change_only: true
+
+        - name: Verify | Render the script with a mail after every check
+          ansible.builtin.template:
+            src: '{{ playbook_dir | dirname | dirname }}/templates/aide-check.sh.j2'
+            dest: '{{ aide_render_dir.path }}/aide-check-heartbeat.sh'
+            owner: root
+            group: root
+            mode: '0700'
+          vars:
+            aide_email_enabled: true
+            aide_email_on_change_only: false
+
+        - name: Verify | Check the syntax of the rendered scripts
+          ansible.builtin.command:
+            argv:
+              - bash
+              - -n
+              - '{{ aide_render_dir.path }}/{{ item }}'
+          loop:
+            - aide-check-nomail.sh
+            - aide-check-heartbeat.sh
+          changed_when: false
+
+        - name: Verify | Read the rendered script with email disabled
+          ansible.builtin.slurp:
+            src: '{{ aide_render_dir.path }}/aide-check-nomail.sh'
+          register: aide_render_nomail
+
+        - name: Verify | Read the rendered script with a mail after every check
+          ansible.builtin.slurp:
+            src: '{{ aide_render_dir.path }}/aide-check-heartbeat.sh'
+          register: aide_render_heartbeat
+
+        - name: Verify | Assert the script variants
+          ansible.builtin.assert:
+            that:
+              - not ((aide_render_nomail.content | b64decode) is search('(?m)^\s*mail '))
+              - "'MAIL_SUBJECT' not in (aide_render_nomail.content | b64decode)"
+              - (aide_render_heartbeat.content | b64decode) is search('(?m)^\s*mail ')
+              - "': no changes on ${HOSTNAME}' in (aide_render_heartbeat.content | b64decode)"
+            fail_msg: "AIDE check script renders a mail call without email or no 'no changes' mail"
+            success_msg: "AIDE check script variants render as expected"
+
+      always:
+        - name: Verify | Remove the rendered script variants
+          ansible.builtin.file:
+            path: '{{ aide_render_dir.path }}'
+            state: absent
+          when: aide_render_dir.path is defined
