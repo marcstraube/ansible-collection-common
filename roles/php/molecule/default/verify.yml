@@ -769,4 +769,3 @@
       vars:
         __verify_apparmor_override: >-
           {{ lookup('ansible.builtin.template', playbook_dir ~ '/../../templates/apparmor-local-php-fpm.j2') }}
-      run_once: true
