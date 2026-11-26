@@ -15,6 +15,8 @@ heading or rename it to a concrete version — the workflow handles that.
 
 ## Unreleased
 
+## v3.2.5 - 2026-11-26
+
 ### `aide` — changes no longer fail `aide-check.service`
 
 `aide-check.sh` exits with the exit code of `aide --check`. Exit codes 1 to 7

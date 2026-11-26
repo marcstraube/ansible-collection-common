@@ -2,6 +2,22 @@
 
 All notable changes to this collection will be documented in this file.
 
+## 3.2.5 (2026-11-26)
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+
+## What's Changed
+### Bug Fixes
+* fix(unbound): make the role work with its default settings by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/627
+* fix(auditd): use the audisp-syslog plugin instead of builtin_syslog by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/635
+* fix(php): allow sessions and uploads in /tmp in the AppArmor override by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/634
+* fix(fail2ban): read the SOGo jail from the journal or the log file by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/637
+* fix(aide): keep the check unit green on changes and report errors by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/642
+* fix(rkhunter): drop the distribution false positives and report check errors by @marcstraube in https://github.com/marcstraube/ansible-collection-common/pull/645
+
+
+**Full Changelog**: https://github.com/marcstraube/ansible-collection-common/compare/v3.2.4...v3.2.5
+
 ## 3.2.4 (2026-11-23)
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
