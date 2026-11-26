@@ -7,14 +7,42 @@
     # Mirror the role defaults so the post-include simulation task can
     # reference them (include_role defaults are not exposed to the play).
     yay_clone_dir: '/var/cache/yay/clone'
+    # Deprecated: must neither join the group nor get its config.json
+    # written
     aur_shared_users:
       - 'sharinguser'
+    __pm_conversion_marker: '/var/tmp/molecule-yay-perms-converted'
 
   tasks:
+    # The first converge converts the tree that prepare.yml left in the
+    # state of the shared group; the idempotence run finds the marker
+    - name: Converge | Check for the conversion marker
+      ansible.builtin.stat:
+        path: '{{ __pm_conversion_marker }}'
+      register: __pm_conversion_marker_stat
+
     - name: Converge | Run yay configuration tasks  # noqa: role-name[path]
       ansible.builtin.include_role:
         name: '{{ playbook_dir }}/../..'
         tasks_from: archlinux/yay.yml
+
+    - name: Converge | Assert the first run reported the conversion
+      ansible.builtin.assert:
+        that:
+          - __package_management_clone_dir_foreign.stdout | length > 0
+          - __package_management_clone_dir_recovered is changed
+        fail_msg: >-
+          The run did not report the conversion of the entries of the shared
+          group in {{ yay_clone_dir }}.
+      when: not __pm_conversion_marker_stat.stat.exists
+
+    - name: Converge | Record the checked conversion
+      ansible.builtin.copy:
+        content: ''
+        dest: '{{ __pm_conversion_marker }}'
+        owner: root
+        group: root
+        mode: '0644'
 
     # Simulate the builder creating a fresh entry under the enforced 022
     # build umask (makepkg.conf / sudoers runas-default in the full role).
