@@ -3,6 +3,9 @@ __auditd_packages:
   - 'audit'
   - 'audit-libs'
 
+__auditd_syslog_packages:
+  - 'audispd-plugins'
+
 __auditd_remote_packages:
   - 'audispd-plugins'
 
