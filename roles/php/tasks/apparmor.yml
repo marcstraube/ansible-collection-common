@@ -8,7 +8,8 @@
 # (/etc/php/**). The versioned /etc/phpXX trees are denied and FPM
 # fails to start with EACCES (13) even as root. Extend the profile
 # through its `include if exists <local/php-fpm>` hook, which also
-# grants the sockets of named pools outside the default directories.
+# grants the sockets of named pools outside the default directories and
+# the session files and uploads in /tmp.
 #
 
 - name: AppArmor | Check if AppArmor is active
@@ -22,7 +23,7 @@
   register: __php_apparmor_profile
   when: __php_apparmor_active.stat.exists
 
-- name: AppArmor | Deploy local override for versioned php-fpm variants
+- name: AppArmor | Deploy local override for php-fpm
   ansible.builtin.template:
     src: 'apparmor-local-php-fpm.j2'
     dest: '/etc/apparmor.d/local/php-fpm'

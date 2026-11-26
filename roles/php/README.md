@@ -350,7 +350,10 @@ php_versions:
   finds it unchanged.
 - **AppArmor:** where the packaged `php-fpm` profile is installed, the local
   override grants the sockets of the named pools, including a `listen` path
-  outside the default socket directories.
+  outside the default socket directories, and the session files and uploads
+  in `/tmp` (the default of Arch Linux; FPM has a private `/tmp`). A
+  `session.save_path` or `upload_tmp_dir` elsewhere than `/tmp` and
+  `/var/lib/php` needs a rule of your own in `/etc/apparmor.d/php-fpm.d/`.
 - **SELinux (EL):** sockets in the default socket directory inherit its
   `httpd_var_run_t` context (Remi maps its tree onto the system paths). A
   `listen` path elsewhere needs a matching file context.
