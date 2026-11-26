@@ -9,6 +9,14 @@
 @{run}/php[0-9]*-fpm/ rw,
 @{run}/php[0-9]*-fpm/*.sock{,et} rwlk,
 @{run}/php[0-9]*-fpm.pid rw,
+
+# Without session.save_path and upload_tmp_dir (Arch Linux) PHP keeps
+# session files and uploads in /tmp (private to the service); the stock
+# profile only covers /var/lib/php. The session garbage collection lists the
+# directory.
+/tmp/ r,
+owner /tmp/sess_* rwk,
+owner /tmp/php* rw,
 {% if __php_fpm_sockets | default([]) %}
 
 # Sockets of the named pools. The stock profile and the rules above cover the
