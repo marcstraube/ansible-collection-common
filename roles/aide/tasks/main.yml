@@ -16,6 +16,20 @@
   tags:
     - aide
 
+- name: Main | Warn if scheduled checks report changes without email
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: aide_email_enabled is false.
+      Changes found by the scheduled check do not fail aide-check.service;
+      they are only in the journal and the reports in '{{ aide_log_dir }}'.
+      Enable email or monitor those for production alerting.
+  when:
+    - aide_enabled | bool
+    - aide_timer_enabled | bool
+    - not aide_email_enabled | bool
+  tags:
+    - aide
+
 - name: Main | Load OS-specific variables
   ansible.builtin.include_vars: '{{ item }}'
   with_first_found:

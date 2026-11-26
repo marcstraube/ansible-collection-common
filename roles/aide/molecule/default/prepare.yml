@@ -57,3 +57,37 @@
         group: root
         mode: '0440'
       when: ansible_facts['os_family'] == 'Archlinux'
+
+    # aide-check.sh sends its notifications with mail(1); the stand-in writes
+    # each message to an outbox the verify step reads. /var/spool is writable
+    # under ProtectSystem=full and excluded from the AIDE check.
+    - name: Prepare | Create outbox directory for the mail stand-in
+      ansible.builtin.file:
+        path: /var/spool/mail-stub
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Prepare | Install mail stand-in
+      ansible.builtin.copy:
+        dest: /usr/local/bin/mail
+        owner: root
+        group: root
+        mode: '0755'
+        content: |
+          #!/bin/sh
+          # Stand-in for mail(1): appends the message to the outbox
+          subject=''
+          while getopts s: opt; do
+              case "${opt}" in
+                  s) subject="${OPTARG}" ;;
+                  *) exit 2 ;;
+              esac
+          done
+          shift $((OPTIND - 1))
+          {
+              printf 'To: %s\nSubject: %s\n\n' "$*" "${subject}"
+              cat
+              printf '\n'
+          } >> /var/spool/mail-stub/outbox

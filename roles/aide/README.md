@@ -12,6 +12,8 @@ EL 10) automatically through OS-specific variable files.
 - ansible-core >= 2.19
 - **Collections**:
   - `kewlfft.aur` (Arch Linux only, for AUR package installation)
+- **Mail** (only with `aide_email_enabled: true`): mail(1) and a working MTA.
+  The role installs neither, see [Email Notifications](#email-notifications).
 
 ## Supported Platforms
 
@@ -86,15 +88,21 @@ overrides if needed.
 |-----------------------------|--------------------------------------|-------------------------------------|
 | `aide_email_enabled`        | `false`                              | Enable email notifications          |
 | `aide_email_to`             | `root@localhost`                     | Email recipient                     |
-| `aide_email_subject`        | `[AIDE] File Integrity Check Report` | Email subject                       |
-| `aide_email_on_change_only` | `true`                               | Only send email if changes detected |
+| `aide_email_subject`        | `[AIDE] File Integrity Check Report` | Subject prefix of change mails      |
+| `aide_email_on_change_only` | `true`                               | No mail after a clean check         |
+
+`aide_email_enabled: true` needs mail(1) and a working MTA on the host; the role
+installs neither. Typical packages for mail(1): `s-nail` on Arch Linux and EL,
+`bsd-mailx` or `mailutils` on Debian (both pull in an MTA there). Without a
+`mail` command, or when it fails, `aide-check.service` fails with exit code
+`70`.
 
 ### Initialization
 
-| Variable          | Default | Description                      |
-|-------------------|---------|----------------------------------|
-| `aide_init_db`    | `true`  | Initialize database on first run |
-| `aide_force_init` | `false` | Force database re-initialization |
+| Variable                  | Default | Description                      |
+|---------------------------|---------|----------------------------------|
+| `aide_init_db_enabled`    | `true`  | Initialize database on first run |
+| `aide_force_init_enabled` | `false` | Force database re-initialization |
 
 ## Tags
 
@@ -156,6 +164,55 @@ AIDE 0.16 (EL 9) and 0.18+ (everything else) differ in configuration directives:
 
 The role handles this automatically via `vars/RedHat-9.yml` (0.16 overrides) and
 `vars/RedHat.yml` (0.18 defaults for all other RHEL-family distros).
+
+### Exit Codes and Reports
+
+The timer runs `aide-check.service`, which calls `/usr/local/bin/aide-check.sh`.
+The script writes each report to `aide_log_dir` and exits with the exit code of
+`aide --check`:
+
+| Exit code | Meaning                                                                           | Unit result |
+|-----------|-----------------------------------------------------------------------------------|-------------|
+| `0`       | No changes                                                                        | success     |
+| `1`–`7`   | Changes, added up: `1` added, `2` removed, `4` changed entries                    | success     |
+| above `7` | AIDE failed (it defines `14`–`25`, e.g. `17` config error, `18` missing database) | failed      |
+| `70`      | The script itself failed (see below)                                              | failed      |
+
+Exit code `70` means that mail(1) is missing or returned an error, or that
+writing the report or rotating old reports failed.
+
+With `aide_email_enabled`, changes send a mail with the subject
+`<aide_email_subject>: changes detected on <host>` and AIDE errors one with the
+fixed subject `AIDE Error: integrity check failed on <host> (exit code <N>)`.
+With `aide_email_on_change_only: false`, a clean check also sends
+`<aide_email_subject>: no changes on <host>`. Every mail carries the full
+report including the output of AIDE.
+
+Changes are the expected result after package updates, so they do not fail the
+unit (`SuccessExitStatus=1 2 3 4 5 6 7`). A failed `aide-check.service` means
+that the check or its notification did not work.
+
+With the default `aide_email_enabled: false`, changes therefore show up nowhere
+but in the journal and the report files: monitoring that only watches the unit
+state does not see them. Watch the journal of `aide-check.service` for the line
+`AIDE detected changes! Exit code: <N>` (e.g.
+`journalctl -u aide-check.service -g 'AIDE detected changes'`) or the reports
+`aide-report-*.log` in `aide_log_dir`, or enable the mail.
+
+AIDE compares against the database until it is replaced, so every check reports
+the same changes again. After reviewing them, write a new database and move it
+in place (paths for the default `aide_database`, `aide_database_new` and
+`aide_database_format: gzip`; without gzip the `.gz` suffix is left out):
+
+```bash
+# Config: /etc/aide/aide.conf on Debian, /etc/aide.conf elsewhere
+aide --update -c /etc/aide.conf
+mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+```
+
+`aide --update` exits with the same change codes `1`–`7` when it finds changes;
+that is not an error. A role run with `-e aide_force_init_enabled=true` also
+writes a fresh database, without showing the changes first.
 
 ## References
 

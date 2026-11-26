@@ -95,10 +95,13 @@ aide_email_enabled: false
 # Email recipient
 aide_email_to: 'root@localhost'
 
-# Email subject
+# Subject of the change and 'no changes' mails, followed by
+# ': changes detected on <host>' or ': no changes on <host>';
+# AIDE errors use the fixed subject 'AIDE Error: integrity check failed ...'
 aide_email_subject: '[AIDE] File Integrity Check Report'
 
-# Only send email if changes detected
+# Only send email if AIDE reports changes or fails; false also sends a
+# 'no changes' mail after every clean check
 aide_email_on_change_only: true
 
 #
