@@ -122,6 +122,66 @@ overrides if needed.
 | `fail2ban_sogo_enabled`         | `false` | Enable SOGo jail         |
 | `fail2ban_roundcube_enabled`    | `false` | Enable Roundcube jail    |
 
+#### SOGo
+
+| Variable                     | Default                      | Description                                    |
+|------------------------------|------------------------------|------------------------------------------------|
+| `fail2ban_sogo_port`         | `http,https`                 | Ports to ban                                   |
+| `fail2ban_sogo_backend`      | `''` *(see below)*           | Detection backend of the jail                  |
+| `fail2ban_sogo_logpath`      | `/var/log/sogo/sogo.log`     | Log file (not used with the `systemd` backend) |
+| `fail2ban_sogo_journalmatch` | `_SYSTEMD_UNIT=sogo.service` | Journal match (`systemd` backend)              |
+| `fail2ban_sogo_maxretry`     | `5`                          | Max retries                                    |
+| `fail2ban_sogo_bantime`      | `1h`                         | Ban duration                                   |
+
+> **Warning:** the jail lets any client get an address of its choice banned.
+> SOGo writes the login name to its log without removing line breaks, so a
+> login attempt can add a line that every filter counts as a failed login of
+> another address. With the recidive jail such a ban covers all ports,
+> including SSH. Put the addresses of the administrators into
+> `fail2ban_ignoreip`, or use the lockout of SOGo itself
+> (`SOGoMaximumFailedLoginCount`) instead of this jail.
+
+An empty `fail2ban_sogo_backend` keeps the jail on `fail2ban_sogo_logpath`
+when that file exists on the host. The backend is then
+`fail2ban_default_backend`, or `auto` if that is `systemd`. Without the file
+the default of the platform applies:
+
+| Platform       | Backend                                                  |
+|----------------|----------------------------------------------------------|
+| Arch Linux, EL | `systemd`                                                |
+| Debian         | `fail2ban_default_backend`; `auto` if that is `systemd`  |
+
+With `systemd` the jail reads the journal entries of
+`fail2ban_sogo_journalmatch`, by default the unit `sogo.service` of
+[`marcstraube.server.sogo`](https://github.com/marcstraube/ansible-collection-server/blob/main/roles/sogo/README.md)
+and of the Arch Linux and Debian packages. A SOGo under another unit (the EL
+packages of Alinto use `sogod.service`) needs its own journal match or its log
+file.
+
+With a file backend the log file has to exist when fail2ban starts,
+otherwise fail2ban does not start at all. On a new Debian host, enable the
+jail after SOGo is installed and has created its log.
+
+While the jail is enabled, the role deploys `filter.d/sogo-auth.local`, which
+matches the lines of the log file and of the journal. An entry named
+`sogo-auth` in `fail2ban_custom_filters` takes its place; the role then leaves
+the file alone when the jail is disabled.
+
+SOGo logs the address from the header `x-webobjects-remote-host` of the
+request; only without it does SOGo take `X-Forwarded-For`, of which the jail
+bans the first address. The reverse proxy has to overwrite these headers with
+the address of the client. If it passes them on or extends them
+(`$proxy_add_x_forwarded_for`), a client chooses the address that is banned:
+
+```nginx
+proxy_set_header x-webobjects-remote-host $remote_addr;
+proxy_set_header X-Forwarded-For $remote_addr;
+```
+
+The ban takes effect in the firewall of the host that runs fail2ban. It only
+blocks the client if the reverse proxy runs on the same host as SOGo; a proxy
+on another host keeps forwarding the requests of a banned client.
+
 ### Web Server Jails
 
 | Variable                             | Default | Description                   |
@@ -200,6 +260,13 @@ molecule test
 Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9, Rocky 10
 
 ## References
+
+Related roles:
+
+- [marcstraube.server.sogo](https://github.com/marcstraube/ansible-collection-server/blob/main/roles/sogo/README.md)
+  — SOGo groupware server
+
+External:
 
 - [Fail2ban](https://www.fail2ban.org/) — Intrusion prevention framework
 - [Fail2ban on GitHub](https://github.com/fail2ban/fail2ban) — Source code and issue tracker

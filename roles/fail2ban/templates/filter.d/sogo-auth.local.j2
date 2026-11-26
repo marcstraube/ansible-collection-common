@@ -1,0 +1,12 @@
+{{ ansible_managed | default('Ansible managed') | comment }}
+# SOGo login failures, from the log file and from the journal
+
+[Definition]
+# The optional parts are the prefix of the systemd backend or of syslog (host
+# and identifier; the journal match of the jail limits the source) and the
+# time stamp SOGo puts in front of its message. Everything up to the address is anchored at the
+# start of the line, the user name is chosen by the client and may contain
+# quotes or the text of another message.
+failregex = ^\s*(?:(?:\S+ )?[^\s\[]+(?:\[\d+\])?: )?(?:\w{3} +\d+ [\d:]+ )?sogod \[\d+\]: SOGoRootPage Login from '<HOST>(?:,[^']*)?' for user '.*' might not have worked(?: - password policy: \d*  grace: -?\d*  expire: -?\d*  bound: -?\d*)?\s*$
+
+ignoreregex =
