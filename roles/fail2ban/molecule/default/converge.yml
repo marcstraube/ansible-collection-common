@@ -31,6 +31,8 @@
     # Recidive
     fail2ban_recidive_enabled: true
     fail2ban_recidive_bantime: '2w'
+    # SOGo (default backend of the platform)
+    fail2ban_sogo_enabled: true
     # Custom jail
     fail2ban_custom_jails:
       - name: 'test-jail'

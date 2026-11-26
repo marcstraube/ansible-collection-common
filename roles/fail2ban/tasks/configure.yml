@@ -47,6 +47,24 @@
 # Mail Server Jails
 #
 
+- name: Configure | Check SOGo log file
+  ansible.builtin.stat:
+    path: '{{ fail2ban_sogo_logpath }}'
+  register: __fail2ban_sogo_log
+  when:
+    - fail2ban_sogo_enabled | bool
+    - fail2ban_sogo_backend | length == 0
+
+# Without a backend set for SOGo an existing log file keeps the jail on the
+# file, otherwise the default of the platform applies
+- name: Configure | Set SOGo jail backend
+  ansible.builtin.set_fact:
+    __fail2ban_sogo_jail_backend: >-
+      {{ fail2ban_sogo_backend if fail2ban_sogo_backend | length > 0
+         else __fail2ban_sogo_file_backend if __fail2ban_sogo_log.stat.exists
+         else __fail2ban_sogo_backend }}
+  when: fail2ban_sogo_enabled | bool
+
 - name: Configure | Deploy mail server jails
   ansible.builtin.template:
     src: 'jail.d/mail.local.j2'
@@ -220,6 +238,33 @@
     group: root
     mode: '0644'
   loop: '{{ fail2ban_custom_filters }}'
+  notify: Reload fail2ban
+
+#
+# SOGo Filter
+#
+
+# Deployed after the custom filters: a custom filter named sogo-auth takes
+# the place of the filter of the role
+- name: Configure | Deploy SOGo filter
+  ansible.builtin.template:
+    src: 'filter.d/sogo-auth.local.j2'
+    dest: '{{ __fail2ban_filter_d_dir }}/sogo-auth.local'
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - fail2ban_sogo_enabled | bool
+    - "'sogo-auth' not in fail2ban_custom_filters | map(attribute='name')"
+  notify: Reload fail2ban
+
+- name: Configure | Remove SOGo filter if disabled
+  ansible.builtin.file:
+    path: '{{ __fail2ban_filter_d_dir }}/sogo-auth.local'
+    state: absent
+  when:
+    - not (fail2ban_sogo_enabled | bool)
+    - "'sogo-auth' not in fail2ban_custom_filters | map(attribute='name')"
   notify: Reload fail2ban
 
 - name: Configure | Deploy custom actions

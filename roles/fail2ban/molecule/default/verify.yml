@@ -3,6 +3,50 @@
   hosts: all
   gather_facts: true
 
+  vars:
+    __verify_sogo_backend: "{{ 'auto' if ansible_facts['os_family'] == 'Debian' else 'systemd' }}"
+    __verify_sogo_policy: ' - password policy: 65535  grace: -1  expire: -1  bound: 0'
+    # Messages of failed logins, the address to find in each
+    __verify_sogo_failed:
+      - message: "Login from '203.0.113.5' for user 'probe@example.com' might not have worked{{ __verify_sogo_policy }}"
+        address: '203.0.113.5'
+      - message: "Login from '2001:db8::6' for user 'probe@example.com' might not have worked"
+        address: '2001:db8::6'
+      # Client and proxies
+      - message: "Login from '203.0.113.7, 198.51.100.1' for user 'x' might not have worked{{ __verify_sogo_policy }}"
+        address: '203.0.113.7'
+      # User names with quotes and with the text of another message
+      - message: "Login from '203.0.113.8' for user 'o'brien' might not have worked{{ __verify_sogo_policy }}"
+        address: '203.0.113.8'
+      - message: >-
+          Login from '203.0.113.9' for user 'x' might not have worked{{ __verify_sogo_policy }}
+          Nov 25 22:00:12 sogod [17]: SOGoRootPage Login from '198.51.100.9' for user 'y'
+          might not have worked{{ __verify_sogo_policy }}
+        address: '203.0.113.9'
+    # Messages without a failed login; the user names carry the text of one
+    __verify_sogo_other:
+      - "successful login from '198.51.100.2' for user 'probe@example.com' - expire = -1  grace = -1"
+      - >-
+        successful login from '198.51.100.3' for user
+        'Nov 25 22:00:12 sogod [17]: SOGoRootPage Login from '198.51.100.4' for user 'y'
+        might not have worked{{ __verify_sogo_policy }}' - expire = -1  grace = -1
+      - >-
+        New TOTP key for 'x sogod [17]: SOGoRootPage Login from '198.51.100.5' for user 'y'
+        might not have worked{{ __verify_sogo_policy }}
+      - "Missing TOTP key for 'Login from '198.51.100.6' for user 'y' might not have worked{{ __verify_sogo_policy }}"
+    __verify_sogo_addresses: "{{ __verify_sogo_failed | map(attribute='address') | list }}"
+    # Prefixes of a log file in front of the message of SOGo: its own file,
+    # syslog with and without the host
+    __verify_sogo_file_prefixes:
+      - ''
+      - 'vulcan sogod[80664]: '
+      - 'sogo[80664]: '
+    # SYSLOG_IDENTIFIER of sogod, of SOGo in a container and of podman
+    __verify_sogo_identifiers:
+      - sogod
+      - sogo
+      - conmon
+
   tasks:
     #
     # Package Verification
@@ -246,6 +290,153 @@
         fail_msg: 'sshd jail status output unexpected'
 
     #
+    # SOGo
+    #
+
+    - name: Verify | Read mail.local content
+      ansible.builtin.slurp:
+        src: /etc/fail2ban/jail.d/mail.local
+      register: mail_content
+
+    - name: Verify | Assert SOGo jail uses the backend of the platform
+      ansible.builtin.assert:
+        that:
+          - "('backend = ' ~ __verify_sogo_backend) in mail_text.split('\n')"
+          - >-
+            ('journalmatch = _SYSTEMD_UNIT=sogo.service' in mail_text)
+            == (__verify_sogo_backend == 'systemd')
+          - "('logpath = /var/log/sogo/sogo.log' in mail_text) == (__verify_sogo_backend == 'auto')"
+        fail_msg: 'SOGo jail does not use the expected backend: {{ mail_text }}'
+      vars:
+        mail_text: "{{ mail_content.content | b64decode }}"
+
+    - name: Verify | Check SOGo filter
+      ansible.builtin.stat:
+        path: /etc/fail2ban/filter.d/sogo-auth.local
+      register: sogo_filter
+
+    - name: Verify | Assert SOGo filter has the correct permissions
+      ansible.builtin.assert:
+        that:
+          - sogo_filter.stat.exists
+          - sogo_filter.stat.pw_name == 'root'
+          - sogo_filter.stat.mode == '0644'
+        fail_msg: 'sogo-auth.local is missing or has incorrect permissions'
+
+    - name: Verify | Check SOGo log file
+      ansible.builtin.stat:
+        path: /var/log/sogo/sogo.log
+      register: sogo_log
+
+    - name: Verify | Assert SOGo log file exists on Debian only
+      ansible.builtin.assert:
+        that:
+          - sogo_log.stat.exists == (ansible_facts['os_family'] == 'Debian')
+        fail_msg: 'The SOGo jail has to start without a log file outside of Debian'
+
+    # The year is missing in the lines and the jail ignores old ones
+    - name: Verify | Get current time of the instance
+      ansible.builtin.command:
+        cmd: date '+%b %d %H:%M:%S'
+      environment:
+        LC_ALL: C
+      register: sogo_time
+      changed_when: false
+
+    # Messages as SOGo writes them, to its log file and to the journal
+    - name: Verify | Create SOGo sample messages
+      ansible.builtin.copy:
+        content: |
+          {% for message in (__verify_sogo_failed | map(attribute='message')) + __verify_sogo_other %}
+          {{ sogo_time.stdout }} sogod [80664]: SOGoRootPage {{ message }}
+          {% endfor %}
+        dest: /var/tmp/sogo-sample.txt
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Verify | Create SOGo sample log
+      ansible.builtin.copy:
+        content: |
+          {% for prefix in __verify_sogo_file_prefixes %}
+          {% for message in (__verify_sogo_failed | map(attribute='message')) + __verify_sogo_other %}
+          {{ sogo_time.stdout }} {{ prefix }}{{ (sogo_time.stdout ~ ' ') if prefix else '' -}}
+          sogod [80664]: SOGoRootPage {{ message }}
+          {% endfor %}
+          {% endfor %}
+        dest: /var/tmp/sogo-sample.log
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Verify | Match sample lines as a log file
+      ansible.builtin.command:
+        cmd: fail2ban-regex --out ip /var/tmp/sogo-sample.log sogo-auth
+      register: sogo_file_match
+      changed_when: false
+
+    - name: Verify | Assert filter finds the failed logins of the log file
+      ansible.builtin.assert:
+        that:
+          - sogo_file_match.stdout_lines == __verify_sogo_addresses * (__verify_sogo_file_prefixes | length)
+        fail_msg: 'Unexpected addresses: {{ sogo_file_match.stdout_lines }}'
+
+    - name: Verify | Log sample messages to the journal of sogo.service
+      ansible.builtin.command:
+        cmd: >-
+          systemd-run --quiet --wait --collect --unit=sogo.service
+          --property=SyslogIdentifier={{ item }} cat /var/tmp/sogo-sample.txt
+      loop: '{{ __verify_sogo_identifiers }}'
+      changed_when: true
+
+    - name: Verify | Match sample lines of the journal
+      ansible.builtin.command:
+        cmd: >-
+          fail2ban-regex --out ip --journalmatch _SYSTEMD_UNIT=sogo.service systemd-journal sogo-auth
+      register: sogo_journal_match
+      changed_when: false
+      until: >-
+        sogo_journal_match.stdout_lines | length
+        >= (__verify_sogo_identifiers | length) * (__verify_sogo_addresses | length)
+      retries: 10
+      delay: 1
+
+    - name: Verify | Assert filter finds the failed logins of the journal
+      ansible.builtin.assert:
+        that:
+          - >-
+            sogo_journal_match.stdout_lines | length
+            % ((__verify_sogo_identifiers | length) * (__verify_sogo_addresses | length)) == 0
+          - sogo_journal_match.stdout_lines | unique | list == __verify_sogo_addresses
+        fail_msg: 'Unexpected addresses: {{ sogo_journal_match.stdout_lines }}'
+
+    - name: Verify | Append sample lines to the SOGo log (Debian)
+      ansible.builtin.shell:
+        cmd: cat /var/tmp/sogo-sample.txt >> /var/log/sogo/sogo.log
+      changed_when: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Verify | Get SOGo jail status
+      ansible.builtin.command: fail2ban-client status sogo-auth
+      register: sogo_status
+      changed_when: false
+      until: sogo_status.stdout is search('Total failed:\s+[1-9]')
+      retries: 10
+      delay: 2
+
+    - name: Verify | Assert SOGo jail finds the failed logins
+      ansible.builtin.assert:
+        that:
+          - sogo_status.stdout is search('Total failed:\s+[1-9]')
+          - >-
+            (sogo_status.stdout is search('Journal matches:\s+_SYSTEMD_UNIT=sogo\.service'))
+            == (__verify_sogo_backend == 'systemd')
+          - >-
+            ('/var/log/sogo/sogo.log' in sogo_status.stdout)
+            == (__verify_sogo_backend == 'auto')
+        fail_msg: 'Unexpected SOGo jail status: {{ sogo_status.stdout }}'
+
+    #
     # Database Verification
     #
 
@@ -269,3 +460,131 @@
         that:
           - jail_local.stat.mode == '0644'
         fail_msg: 'jail.local has incorrect permissions'
+
+    #
+    # SOGo Variants (they change the configuration, after all other checks)
+    #
+
+    # An existing log file keeps the jail on the file; Arch Linux and EL get
+    # one for this run only
+    - name: Verify | Create SOGo log directory for the file backend
+      ansible.builtin.file:
+        path: /var/log/sogo
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Verify | Create SOGo log for the file backend
+      ansible.builtin.copy:
+        content: ''
+        dest: /var/log/sogo/sogo.log
+        owner: root
+        group: root
+        mode: '0640'
+        force: false
+
+    - name: Verify | Run role with an existing SOGo log  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        fail2ban_default_backend: 'systemd'
+        fail2ban_sogo_enabled: true
+
+    - name: Verify | Read mail.local with an existing SOGo log
+      ansible.builtin.slurp:
+        src: /etc/fail2ban/jail.d/mail.local
+      register: mail_file_content
+
+    - name: Verify | Assert SOGo jail stays on the existing log file
+      ansible.builtin.assert:
+        that:
+          - "'backend = auto' in mail_file_text.split('\\n')"
+          - "'logpath = /var/log/sogo/sogo.log' in mail_file_text"
+          - "'journalmatch' not in mail_file_text"
+        fail_msg: 'SOGo jail does not use the existing log file: {{ mail_file_text }}'
+      vars:
+        mail_file_text: "{{ mail_file_content.content | b64decode }}"
+
+    - name: Verify | Remove SOGo log for the file backend
+      ansible.builtin.file:
+        path: /var/log/sogo
+        state: absent
+      when: ansible_facts['os_family'] != 'Debian'
+
+    # A backend set for SOGo applies on every platform
+    - name: Verify | Run role with a backend set for SOGo  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        fail2ban_sogo_enabled: true
+        fail2ban_sogo_backend: "{{ 'systemd' if ansible_facts['os_family'] == 'Debian' else 'polling' }}"
+        fail2ban_sogo_journalmatch: '_SYSTEMD_UNIT=sogod.service'
+
+    - name: Verify | Read mail.local with a backend set for SOGo
+      ansible.builtin.slurp:
+        src: /etc/fail2ban/jail.d/mail.local
+      register: mail_set_content
+
+    - name: Verify | Assert SOGo jail uses the backend set for it
+      ansible.builtin.assert:
+        that:
+          - >-
+            ('backend = ' ~ ('systemd' if ansible_facts['os_family'] == 'Debian' else 'polling'))
+            in mail_set_text.split('\n')
+          - >-
+            ('journalmatch = _SYSTEMD_UNIT=sogod.service' in mail_set_text)
+            == (ansible_facts['os_family'] == 'Debian')
+          - >-
+            ('logpath = /var/log/sogo/sogo.log' in mail_set_text)
+            == (ansible_facts['os_family'] != 'Debian')
+        fail_msg: 'SOGo jail does not use the backend set for it: {{ mail_set_text }}'
+      vars:
+        mail_set_text: "{{ mail_set_content.content | b64decode }}"
+
+    # Enabled, then disabled: the custom filter stays in both cases
+    - name: Verify | Run role with a custom filter named sogo-auth  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        fail2ban_sogo_enabled: '{{ item }}'
+        fail2ban_custom_filters:
+          - name: 'sogo-auth'
+            definition: |
+              [Definition]
+              failregex = ^Custom filter <HOST>$
+      loop:
+        - true
+        - false
+
+    - name: Verify | Read custom SOGo filter
+      ansible.builtin.slurp:
+        src: /etc/fail2ban/filter.d/sogo-auth.local
+      register: sogo_custom_filter
+
+    - name: Verify | Assert custom SOGo filter takes the place of the filter of the role
+      ansible.builtin.assert:
+        that:
+          - "'Custom filter' in (sogo_custom_filter.content | b64decode)"
+        fail_msg: 'The role replaced the custom filter sogo-auth'
+
+    - name: Verify | Run role with the SOGo jail disabled  # noqa: role-name[path]
+      ansible.builtin.include_role:
+        name: '{{ playbook_dir }}/../..'
+      vars:
+        fail2ban_sogo_enabled: false
+
+    - name: Verify | Check SOGo filter after disabling the jail
+      ansible.builtin.stat:
+        path: /etc/fail2ban/filter.d/sogo-auth.local
+      register: sogo_filter_removed
+
+    - name: Verify | Assert SOGo filter is removed
+      ansible.builtin.assert:
+        that:
+          - not sogo_filter_removed.stat.exists
+        fail_msg: 'sogo-auth.local exists although the SOGo jail is disabled'
+
+# Back to the converged state, so that verify can run again
+- name: Converge
+  ansible.builtin.import_playbook: converge.yml
