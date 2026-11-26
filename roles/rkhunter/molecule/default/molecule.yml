@@ -46,6 +46,21 @@ provisioner:
         ansible_python_interpreter: /usr/bin/python3
       rkhunter-rocky-9:
         ansible_python_interpreter: /usr/bin/python3
+    group_vars:
+      all:
+        # Centralized test configuration, shared by converge and the configure
+        # runs in verify
+        rkhunter_enabled: true
+        rkhunter_update_on_install: false
+        rkhunter_timer_enabled: true
+        rkhunter_mail_on_warning: ''
+        rkhunter_allowhiddendir:
+          - '/dev/.udev'
+        # Also in the script list of every distribution: written once
+        rkhunter_scriptwhitelist:
+          - '/usr/bin/ldd'
+        rkhunter_allowdevfile:
+          - '/dev/shm/PostgreSQL.*'
   config_options:
     defaults:
       allow_broken_conditionals: true

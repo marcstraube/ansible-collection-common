@@ -93,6 +93,52 @@
         fail_msg: "rkhunter config missing essential directives"
         success_msg: "rkhunter config contains required directives"
 
+    - name: Verify | Assert SSH protocol check accepts a missing Protocol option
+      ansible.builtin.assert:
+        that:
+          - "'ALLOW_SSH_PROT_V1=2' in __rkhunter_config_decoded.splitlines()"
+        fail_msg: "ALLOW_SSH_PROT_V1 is not 2"
+        success_msg: "ALLOW_SSH_PROT_V1=2"
+
+    - name: Verify | Assert hidden files of the distribution are allowed
+      ansible.builtin.assert:
+        that:
+          - "('ALLOWHIDDENFILE=' ~ item) in __rkhunter_config_decoded.splitlines()"
+        fail_msg: "ALLOWHIDDENFILE={{ item }} missing"
+        success_msg: "ALLOWHIDDENFILE={{ item }} present"
+      loop: '{{ __rkhunter_os_allowhiddenfile }}'
+
+    - name: Verify | Check scripts of the distribution
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        get_checksum: false
+      loop: '{{ __rkhunter_os_scriptwhitelist }}'
+      register: __rkhunter_verify_os_scripts
+
+    # Present scripts are whitelisted, missing ones are left out (rkhunter
+    # rejects a missing SCRIPTWHITELIST path)
+    - name: Verify | Assert scripts of the distribution are whitelisted when present
+      ansible.builtin.assert:
+        that:
+          - >-
+            (('SCRIPTWHITELIST=' ~ item.item) in __rkhunter_config_decoded.splitlines())
+            == item.stat.exists
+        fail_msg: "SCRIPTWHITELIST={{ item.item }} does not match the file's presence"
+        success_msg: "SCRIPTWHITELIST={{ item.item }} matches the file's presence"
+      loop: '{{ __rkhunter_verify_os_scripts.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Verify | Assert user entries are merged without duplicates
+      ansible.builtin.assert:
+        that:
+          - >-
+            __rkhunter_config_decoded.splitlines()
+            | select('equalto', 'SCRIPTWHITELIST=/usr/bin/ldd') | list | length == 1
+          - "'ALLOWDEVFILE=/dev/shm/PostgreSQL.*' in __rkhunter_config_decoded.splitlines()"
+        fail_msg: "User whitelist entries missing or duplicated"
+        success_msg: "User whitelist entries merged once"
+
     - name: Verify | Assert OS-specific PKGMGR setting (Debian)
       ansible.builtin.assert:
         that:
@@ -173,6 +219,7 @@
           - "'Ansible managed' in __rkhunter_script_decoded"
           - "'set -euo pipefail' in __rkhunter_script_decoded"
           - "'rkhunter --check' in __rkhunter_script_decoded"
+          - "'rkhunter --config-check' in __rkhunter_script_decoded"
         fail_msg: "rkhunter check script missing required content"
         success_msg: "rkhunter check script has correct content"
 
@@ -273,3 +320,273 @@
           - "'MemoryDenyWriteExecute=true' in __rkhunter_service_decoded"
         fail_msg: "rkhunter service unit missing security hardening"
         success_msg: "rkhunter service unit has security hardening"
+
+    # ProtectKernelModules hides /usr/lib/modules from the kernel module check
+    - name: Verify | Assert service hides no checked paths and accepts warnings
+      ansible.builtin.assert:
+        that:
+          - "'ProtectKernelModules=' not in __rkhunter_service_decoded"
+          - "'CapabilityBoundingSet=~CAP_SYS_MODULE' in __rkhunter_service_decoded.splitlines()"
+          - "'SystemCallFilter=~@module' in __rkhunter_service_decoded.splitlines()"
+          - "'SuccessExitStatus=1' in __rkhunter_service_decoded.splitlines()"
+        fail_msg: "rkhunter service unit hides /usr/lib/modules, loads modules or fails on warnings"
+        success_msg: "rkhunter service unit reads /usr/lib/modules, blocks module loading, accepts exit code 1"
+
+    # A configuration error also exits with 1; the check script turns it into 2
+    - name: Verify | Broken configuration fails the check service
+      block:
+        - name: Verify | Add a missing script to the whitelist
+          ansible.builtin.lineinfile:
+            path: '{{ __rkhunter_config_file }}'
+            line: 'SCRIPTWHITELIST=/nonexistent'
+
+        - name: Verify | Start check service with the broken configuration  # noqa: command-instead-of-module
+          ansible.builtin.command:
+            cmd: systemctl start rkhunter-check.service
+          register: __rkhunter_broken_start
+          changed_when: false
+          failed_when: false
+
+        - name: Verify | Read check service result  # noqa: command-instead-of-module
+          ansible.builtin.command:
+            cmd: systemctl show rkhunter-check.service -p Result -p ExecMainStatus
+          register: __rkhunter_broken_result
+          changed_when: false
+
+        - name: Verify | Assert broken configuration failed the service
+          ansible.builtin.assert:
+            that:
+              - __rkhunter_broken_start.rc != 0
+              - "'Result=exit-code' in __rkhunter_broken_result.stdout_lines"
+              - "'ExecMainStatus=2' in __rkhunter_broken_result.stdout_lines"
+            fail_msg: "Broken configuration did not fail the service: {{ __rkhunter_broken_result.stdout }}"
+            success_msg: "Broken configuration fails the service with exit code 2"
+      always:
+        - name: Verify | Remove the missing script from the whitelist
+          ansible.builtin.lineinfile:
+            path: '{{ __rkhunter_config_file }}'
+            line: 'SCRIPTWHITELIST=/nonexistent'
+            state: absent
+
+        - name: Verify | Reset failed check service  # noqa: command-instead-of-module
+          ansible.builtin.command:
+            cmd: systemctl reset-failed rkhunter-check.service
+          changed_when: false
+          failed_when: false
+
+    # rkhunter stops with exit code 1 before any test when its database is a
+    # link; the check script must not count that as warnings
+    - name: Verify | Incomplete scan fails the check service
+      block:
+        - name: Verify | Move the rkhunter database away
+          ansible.builtin.command:
+            cmd: mv /var/lib/rkhunter/db/rkhunter.dat /var/lib/rkhunter/db/rkhunter.dat.verify
+            creates: /var/lib/rkhunter/db/rkhunter.dat.verify
+
+        - name: Verify | Replace the rkhunter database by a link
+          ansible.builtin.file:
+            src: /var/lib/rkhunter/db/rkhunter.dat.verify
+            dest: /var/lib/rkhunter/db/rkhunter.dat
+            state: link
+
+        - name: Verify | Start check service with the linked database  # noqa: command-instead-of-module
+          ansible.builtin.command:
+            cmd: systemctl start rkhunter-check.service
+          register: __rkhunter_linked_start
+          changed_when: false
+          failed_when: false
+
+        - name: Verify | Read check service result after the linked database  # noqa: command-instead-of-module
+          ansible.builtin.command:
+            cmd: systemctl show rkhunter-check.service -p Result -p ExecMainStatus
+          register: __rkhunter_linked_result
+          changed_when: false
+
+        - name: Verify | Assert incomplete scan failed the service
+          ansible.builtin.assert:
+            that:
+              - __rkhunter_linked_start.rc != 0
+              - "'Result=exit-code' in __rkhunter_linked_result.stdout_lines"
+              - "'ExecMainStatus=2' in __rkhunter_linked_result.stdout_lines"
+            fail_msg: "Incomplete scan did not fail the service: {{ __rkhunter_linked_result.stdout }}"
+            success_msg: "Incomplete scan fails the service with exit code 2"
+      always:
+        - name: Verify | Check the database link
+          ansible.builtin.stat:
+            path: /var/lib/rkhunter/db/rkhunter.dat
+            follow: false
+          register: __rkhunter_db_link
+
+        - name: Verify | Remove the database link
+          ansible.builtin.file:
+            path: /var/lib/rkhunter/db/rkhunter.dat
+            state: absent
+          when: __rkhunter_db_link.stat.islnk | default(false)
+
+        - name: Verify | Restore the rkhunter database
+          ansible.builtin.command:
+            cmd: mv /var/lib/rkhunter/db/rkhunter.dat.verify /var/lib/rkhunter/db/rkhunter.dat
+            removes: /var/lib/rkhunter/db/rkhunter.dat.verify
+
+        - name: Verify | Reset failed check service after the linked database  # noqa: command-instead-of-module
+          ansible.builtin.command:
+            cmd: systemctl reset-failed rkhunter-check.service
+          changed_when: false
+          failed_when: false
+
+    #
+    # Configuration Validation
+    #
+
+    - name: Verify | Checksum configuration before the invalid run
+      ansible.builtin.stat:
+        path: '{{ __rkhunter_config_file }}'
+      register: __rkhunter_config_before
+
+    # A missing SCRIPTWHITELIST path fails rkhunter --config-check
+    - name: Verify | Invalid configuration is rejected
+      block:
+        - name: Verify | Run configure tasks with a missing whitelisted script  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+            tasks_from: configure.yml
+          vars:
+            rkhunter_scriptwhitelist:
+              - '/nonexistent'
+
+        - name: Verify | Record accepted invalid configuration
+          ansible.builtin.set_fact:
+            __rkhunter_invalid_rejected: false
+      rescue:
+        - name: Verify | Record rejected invalid configuration
+          ansible.builtin.set_fact:
+            __rkhunter_invalid_rejected: true
+
+    - name: Verify | Checksum configuration after the invalid run
+      ansible.builtin.stat:
+        path: '{{ __rkhunter_config_file }}'
+      register: __rkhunter_config_after
+
+    - name: Verify | Assert invalid configuration was rejected and the file kept
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_invalid_rejected | bool
+          - __rkhunter_config_after.stat.checksum == __rkhunter_config_before.stat.checksum
+        fail_msg: "Invalid configuration was written"
+        success_msg: "Invalid configuration rejected, previous file kept"
+
+    #
+    # Missing Distribution Script
+    #
+
+    # A listed script that is missing must stay out of the configuration,
+    # rkhunter rejects a missing SCRIPTWHITELIST path
+    - name: Verify | Missing distribution script is left out
+      block:
+        - name: Verify | Move a distribution script away
+          ansible.builtin.command:
+            cmd: mv '{{ __rkhunter_os_scriptwhitelist[1] }}' /root/rkhunter-verify-script
+            creates: /root/rkhunter-verify-script
+
+        - name: Verify | Run configure tasks without the script  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+            tasks_from: configure.yml
+
+        - name: Verify | Read configuration without the script
+          ansible.builtin.slurp:
+            src: '{{ __rkhunter_config_file }}'
+          register: __rkhunter_missing_config
+
+        - name: Verify | Check configuration without the script
+          ansible.builtin.command:
+            cmd: rkhunter --config-check --nocolors
+          register: __rkhunter_missing_check
+          changed_when: false
+          failed_when: false
+
+        - name: Verify | Assert missing script is left out and the configuration is valid
+          ansible.builtin.assert:
+            that:
+              - >-
+                ('SCRIPTWHITELIST=' ~ __rkhunter_os_scriptwhitelist[1])
+                not in (__rkhunter_missing_config.content | b64decode).splitlines()
+              - __rkhunter_missing_check.rc == 0
+            fail_msg: >-
+              Missing script written or configuration rejected:
+              {{ __rkhunter_missing_check.stdout }}
+            success_msg: "Missing script left out, configuration valid"
+      always:
+        - name: Verify | Restore the distribution script
+          ansible.builtin.command:
+            cmd: mv /root/rkhunter-verify-script '{{ __rkhunter_os_scriptwhitelist[1] }}'
+            removes: /root/rkhunter-verify-script
+
+        - name: Verify | Run configure tasks with the script  # noqa: role-name[path]
+          ansible.builtin.include_role:
+            name: '{{ playbook_dir }}/../..'
+            tasks_from: configure.yml
+
+    #
+    # Scan Verification
+    #
+
+    # Only the tests with distribution false positives; the full scan takes
+    # minutes and warns about container limits (no kernel modules, no init)
+    - name: Verify | Run rkhunter script, file system and SSH checks
+      ansible.builtin.command:
+        cmd: >-
+          rkhunter --check --skip-keypress --nocolors
+          --enable scripts,filesystem,system_configs_ssh
+      register: __rkhunter_scan
+      changed_when: false
+      # Exit code 1: warnings found, asserted below by name
+      failed_when: __rkhunter_scan.rc not in [0, 1]
+
+    - name: Verify | Read rkhunter log
+      ansible.builtin.slurp:
+        src: '/var/log/rkhunter.log'
+      register: __rkhunter_log_content
+
+    - name: Verify | Set rkhunter log fact
+      ansible.builtin.set_fact:
+        __rkhunter_log_decoded: "{{ __rkhunter_log_content.content | b64decode }}"
+
+    - name: Verify | Assert script and hidden file checks ran
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_log_decoded is search('Checking for hidden files and directories +\\[ (None found|Warning) \\]')
+          - "'All file property checks are now being skipped' not in __rkhunter_log_decoded"
+        fail_msg: "rkhunter skipped the script or hidden file checks"
+        success_msg: "rkhunter ran the script and hidden file checks"
+
+    # The EL test images ship coreutils-single, whose commands are
+    # '#!/usr/bin/coreutils --coreutils-prog-shebang' scripts; EL hosts have
+    # the coreutils package with binaries
+    - name: Verify | Assert no script warnings
+      ansible.builtin.assert:
+        that:
+          - __rkhunter_script_warnings | length == 0
+        fail_msg: "rkhunter warns about scripts: {{ __rkhunter_script_warnings }}"
+        success_msg: "No script warnings"
+      vars:
+        __rkhunter_script_warnings: >-
+          {{ __rkhunter_log_decoded.splitlines()
+             | select('search', 'has been replaced by a script')
+             | reject('search', 'coreutils-prog-shebang')
+             | list }}
+
+    - name: Verify | Assert no warnings for hidden files of the distribution
+      ansible.builtin.assert:
+        that:
+          - "('Hidden file found: ' ~ item ~ ':') not in __rkhunter_log_decoded"
+        fail_msg: "rkhunter warns about {{ item }}"
+        success_msg: "No warning for {{ item }}"
+      loop: '{{ __rkhunter_os_allowhiddenfile }}'
+
+    - name: Verify | Assert no warning for the SSH Protocol option
+      ansible.builtin.assert:
+        that:
+          - "\"The SSH configuration option 'Protocol' has not been set\" not in __rkhunter_log_decoded"
+        fail_msg: "rkhunter warns about the SSH Protocol option"
+        success_msg: "No warning for the SSH Protocol option"

@@ -1,3 +1,23 @@
 ---
+# 'file' is no dependency of the EPEL package; without it rkhunter skips the
+# script and hidden file checks
+__rkhunter_packages:
+  - rkhunter
+  - file
+
 __rkhunter_scriptdir: '/usr/share/rkhunter/scripts'
 __rkhunter_pkgmgr: 'RPM'
+
+# Shell scripts of the distribution packages (grep, glibc-common), written in
+# addition to rkhunter_scriptwhitelist when present
+__rkhunter_os_scriptwhitelist:
+  - '/usr/bin/egrep'
+  - '/usr/bin/fgrep'
+  - '/usr/bin/ldd'
+
+# Hidden files of the distribution (systemd-update-done, krb5-libs man pages),
+# written in addition to rkhunter_allowhiddenfile
+__rkhunter_os_allowhiddenfile:
+  - '/etc/.updated'
+  - '/usr/share/man/man5/.k5identity.5.gz'
+  - '/usr/share/man/man5/.k5login.5.gz'

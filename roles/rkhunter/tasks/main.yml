@@ -13,6 +13,22 @@
   tags:
     - always
 
+- name: Main | Warn if scheduled checks report warnings without email
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: rkhunter_mail_on_warning is empty.
+      Warnings found by the scheduled check do not fail rkhunter-check.service;
+      they are only in '{{ rkhunter_log_dir }}/rkhunter.log' and the journal of
+      rkhunter-check.service{{ (', and in syslog (' ~ rkhunter_syslog_facility ~ ')')
+      if rkhunter_use_syslog | bool else '' }}.
+      Set an email address or monitor those for production alerting.
+  when:
+    - rkhunter_enabled | bool
+    - rkhunter_timer_enabled | bool
+    - rkhunter_mail_on_warning | length == 0
+  tags:
+    - rkhunter
+
 - name: Main | Import install tasks
   ansible.builtin.import_tasks: install.yml
   when: rkhunter_enabled | bool
