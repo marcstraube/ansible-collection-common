@@ -2,19 +2,62 @@
 {{ ansible_managed | default('Ansible managed') | comment }}
 #
 # rkhunter scheduled check script
+#
+# Exit codes (rkhunter-check.service counts 1 as success):
+#   0 - scan completed without warnings
+#   1 - scan completed with warnings, reported by rkhunter itself
+#   2 - the check itself failed (configuration error, scan not completed)
 
 set -euo pipefail
+
+LOG_FILE='{{ rkhunter_log_dir }}/rkhunter.log'
+
+# rkhunter exits with 1 for warnings and for configuration errors alike, so
+# check the configuration first
+if ! /usr/bin/rkhunter --config-check --nocolors; then
+    echo "rkhunter configuration check failed, no scan run" >&2
+    exit 2
+fi
 {% if rkhunter_update_before_scan %}
 
 # Update rkhunter signatures
 /usr/bin/rkhunter --update --quiet || true
 {% endif %}
 
-# Run rkhunter check (exit code 1 = warnings found, not a failure)
-if /usr/bin/rkhunter --check --skip-keypress{{ ' --report-warnings-only' if rkhunter_report_warnings_only | bool else '' }}; then
-    echo "rkhunter check completed - no warnings"
-else
-    EXIT_CODE=$?
-    echo "rkhunter check completed with warnings (exit code: ${EXIT_CODE})"
-    exit "${EXIT_CODE}"
-fi
+# rkhunter also exits with 1 when it stops before or during the scan (database
+# replaced by a link, missing file properties, lock timeout). Exit code 1
+# counts as warnings only when this run wrote the scan summary to the log.
+# --language en keeps the log lines English whatever LANGUAGE is set to.
+MARKER=$(mktemp)
+trap 'rm -f "${MARKER}"' EXIT
+{% if rkhunter_append_log | bool %}
+LOG_OFFSET=$(stat -c %s "${LOG_FILE}" 2>/dev/null || echo 0)
+{% else %}
+LOG_OFFSET=0
+{% endif %}
+
+EXIT_CODE=0
+/usr/bin/rkhunter --check --skip-keypress --language en{{ ' --report-warnings-only' if rkhunter_report_warnings_only | bool else '' }} || EXIT_CODE=$?
+
+case "${EXIT_CODE}" in
+    0)
+        echo "rkhunter check completed - no warnings"
+        ;;
+    1)
+        # The summary goes to the log at the end of a completed scan
+        if [ "${LOG_FILE}" -nt "${MARKER}" ]; then
+            RUN_LOG=$(tail -c +"$((LOG_OFFSET + 1))" "${LOG_FILE}")
+            if grep -q 'System checks summary' <<<"${RUN_LOG}" \
+                && grep -q 'Warning: ' <<<"${RUN_LOG}"; then
+                echo "rkhunter check completed with warnings, see ${LOG_FILE}"
+                exit 1
+            fi
+        fi
+        echo "rkhunter exited 1 without completing the scan, see the output above" >&2
+        exit 2
+        ;;
+    *)
+        echo "rkhunter check failed (exit code: ${EXIT_CODE})" >&2
+        exit "${EXIT_CODE}"
+        ;;
+esac

@@ -1,3 +1,20 @@
 ---
+__rkhunter_packages:
+  - rkhunter
+
 __rkhunter_scriptdir: '/usr/share/rkhunter/scripts'
 __rkhunter_pkgmgr: 'DPKG'
+
+# Shell and Perl scripts of the distribution packages (adduser, grep, libc-bin,
+# debianutils), written in addition to rkhunter_scriptwhitelist when present
+__rkhunter_os_scriptwhitelist:
+  - '/usr/bin/egrep'
+  - '/usr/bin/fgrep'
+  - '/usr/bin/ldd'
+  - '/usr/bin/which.debianutils'
+  - '/usr/sbin/adduser'
+
+# Hidden files of the distribution (systemd-update-done), written in addition
+# to rkhunter_allowhiddenfile
+__rkhunter_os_allowhiddenfile:
+  - '/etc/.updated'

@@ -1,4 +1,13 @@
 ---
+# rkhunter rejects the configuration when a SCRIPTWHITELIST path is missing,
+# so only scripts of installed packages are written
+- name: Configure | Check scripts of the distribution for the script whitelist
+  ansible.builtin.stat:
+    path: '{{ item }}'
+    get_checksum: false
+  loop: '{{ __rkhunter_os_scriptwhitelist }}'
+  register: __rkhunter_os_scripts
+
 - name: Configure | Deploy rkhunter configuration
   ansible.builtin.template:
     src: rkhunter.conf.j2
@@ -6,6 +15,7 @@
     owner: root
     group: root
     mode: '0600'
+    validate: 'rkhunter --config-check --nocolors --configfile %s'
   notify: Update rkhunter database
 
 - name: Configure | Deploy rkhunter check script
