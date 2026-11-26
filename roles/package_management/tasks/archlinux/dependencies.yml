@@ -1,0 +1,12 @@
+---
+# The module reads the install reason of every listed package first and only
+# runs pacman -D --asdeps for those not marked as dependency yet, so a second
+# run changes nothing. A package it installs gets the reason the same way.
+- name: Dependencies | Install packages as dependencies
+  community.general.pacman:
+    name: '{{ pacman_dependency_packages }}'
+    state: present
+    reason: dependency
+    reason_for: all
+  retries: 3
+  delay: 5
