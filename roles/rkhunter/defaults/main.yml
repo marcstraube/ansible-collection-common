@@ -42,8 +42,13 @@ rkhunter_report_warnings_only: false
 # Should match your sshd_config PermitRootLogin setting
 rkhunter_allow_ssh_root_user: 'no'
 
-# Allow SSH protocol version 1 (0=disallow, 1=allow, 2=don't check)
-rkhunter_allow_ssh_prot_v1: 0
+# SSH 'Protocol' option check (rkhunter ALLOW_SSH_PROT_V1):
+#   0 - SSH-1 not allowed: warns when 'Protocol' is unset or includes 1.
+#   1 - SSH-1 allowed.
+#   2 - No warning while 'Protocol' is unset (OpenSSH 7.6+ has no SSH-1 and
+#       ignores the option); also accepts a 'Protocol' value with 1 ('1',
+#       '2,1'), but an explicit 'Protocol 2' line warns, use 0 then.
+rkhunter_allow_ssh_prot_v1: 2
 
 #
 # Whitelisting
@@ -52,13 +57,15 @@ rkhunter_allow_ssh_prot_v1: 0
 # Allowed hidden directories
 rkhunter_allowhiddendir: []
 
-# Allowed hidden files
+# Allowed hidden files, in addition to the hidden files of the distribution
 rkhunter_allowhiddenfile: []
 
-# Allowed device files
+# Allowed files in /dev, wildcards allowed (e.g. '/dev/shm/PostgreSQL.*' on
+# hosts with PostgreSQL)
 rkhunter_allowdevfile: []
 
-# Scripts and binaries to whitelist from script-check test
+# Scripts to whitelist from the script check, in addition to the scripts of
+# the distribution
 rkhunter_scriptwhitelist: []
 
 # Whitelist processes using deleted files (common: /usr/lib/libfoo.so)

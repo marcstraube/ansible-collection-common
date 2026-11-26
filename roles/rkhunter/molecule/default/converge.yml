@@ -3,13 +3,15 @@
   hosts: all
   gather_facts: true
 
-  vars:
-    rkhunter_enabled: true
-    rkhunter_update_on_install: false
-    rkhunter_timer_enabled: true
-    rkhunter_mail_on_warning: ''
-    rkhunter_allowhiddendir:
-      - '/dev/.udev'
+  pre_tasks:
+    # systemd-update-done writes a timestamp; rkhunter skips empty hidden files
+    - name: Converge | Give /etc/.updated content
+      ansible.builtin.copy:
+        content: "TIMESTAMP_NSEC=0\n"
+        dest: '/etc/.updated'
+        owner: root
+        group: root
+        mode: '0644'
 
   tasks:
     - name: Converge | Include rkhunter role  # noqa: role-name[path]

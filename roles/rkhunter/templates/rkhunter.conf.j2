@@ -53,9 +53,10 @@ ALLOW_SSH_PROT_V1={{ rkhunter_allow_ssh_prot_v1 }}
 ALLOWHIDDENDIR={{ dir }}
 {% endfor %}
 {% endif %}
-{% if rkhunter_allowhiddenfile | length > 0 %}
+{% set __rkhunter_allowhiddenfiles = (__rkhunter_os_allowhiddenfile + rkhunter_allowhiddenfile) | unique %}
+{% if __rkhunter_allowhiddenfiles | length > 0 %}
 
-{% for file in rkhunter_allowhiddenfile %}
+{% for file in __rkhunter_allowhiddenfiles %}
 ALLOWHIDDENFILE={{ file }}
 {% endfor %}
 {% endif %}
@@ -65,9 +66,10 @@ ALLOWHIDDENFILE={{ file }}
 ALLOWDEVFILE={{ dev }}
 {% endfor %}
 {% endif %}
-{% if rkhunter_scriptwhitelist | length > 0 %}
+{% set __rkhunter_scriptwhitelists = (__rkhunter_os_scripts.results | default([]) | selectattr('stat.exists') | map(attribute='item') | list + rkhunter_scriptwhitelist) | unique %}
+{% if __rkhunter_scriptwhitelists | length > 0 %}
 
-{% for script in rkhunter_scriptwhitelist %}
+{% for script in __rkhunter_scriptwhitelists %}
 SCRIPTWHITELIST={{ script }}
 {% endfor %}
 {% endif %}

@@ -14,7 +14,9 @@ scheduled scans, and supports per-OS package manager detection.
 - ansible-core >= 2.19
 - **Arch Linux**: Package in `extra` repository
 - **Debian Trixie**: Package in `main` repository
-- **Rocky 9**: Package in EPEL repository (requires `epel-release`)
+- **Rocky 9**: Package in EPEL repository (requires `epel-release`); the role
+  also installs `file`, which the EPEL package does not pull in and without
+  which rkhunter skips the script and hidden file checks
 
 All platforms ship rkhunter 1.4.6 (final upstream release).
 
@@ -54,12 +56,24 @@ overrides if needed.
 | `rkhunter_mail_cmd`             | `'mail -s ...'` | Mail command template                       |
 | `rkhunter_report_warnings_only` | `false`         | Only report warnings in check script        |
 
+Warnings do not fail `rkhunter-check.service` (see [Notes](#notes)). With the
+default empty `rkhunter_mail_on_warning` nothing alerts on them: they are only
+in `/var/log/rkhunter.log` (`rkhunter_log_dir`), the journal of
+`rkhunter-check.service` and syslog (`rkhunter_syslog_facility`, default
+`authpriv.warning`). Set an address or monitor one of these; the role prints a
+warning on every run while the timer is on and the address is empty.
+
 ### SSH Checks
 
 | Variable                       | Default | Description                                 |
 |--------------------------------|---------|---------------------------------------------|
 | `rkhunter_allow_ssh_root_user` | `'no'`  | Must match sshd_config PermitRootLogin      |
-| `rkhunter_allow_ssh_prot_v1`   | `0`     | Allow SSH protocol v1 (0=no, 1=yes, 2=skip) |
+| `rkhunter_allow_ssh_prot_v1`   | `2`     | SSH `Protocol` check (0=no, 1=yes, 2=unset) |
+
+`rkhunter_allow_ssh_prot_v1` is the rkhunter option `ALLOW_SSH_PROT_V1`. With
+`2` the check accepts an `sshd_config` without the `Protocol` option, which
+OpenSSH 7.6 and later no longer has. `0` warns when the option is missing;
+use it when `sshd_config` still sets `Protocol 2`, which warns with `2`.
 
 ### Whitelisting
 
@@ -67,12 +81,46 @@ overrides if needed.
 |-----------------------------|---------|---------------------------------------------------|
 | `rkhunter_allowhiddendir`   | `[]`    | Allowed hidden directories                        |
 | `rkhunter_allowhiddenfile`  | `[]`    | Allowed hidden files                              |
-| `rkhunter_allowdevfile`     | `[]`    | Allowed device files                              |
-| `rkhunter_scriptwhitelist`  | `[]`    | Whitelisted scripts/binaries                      |
+| `rkhunter_allowdevfile`     | `[]`    | Allowed files in `/dev` (wildcards allowed)       |
+| `rkhunter_scriptwhitelist`  | `[]`    | Whitelisted scripts                               |
 | `rkhunter_allowprocdelfile` | `[]`    | Whitelisted processes using deleted files         |
 | `rkhunter_allowproclisten`  | `[]`    | Whitelisted processes listening on all interfaces |
 | `rkhunter_allowipcpid`      | `[]`    | Whitelisted shared memory PIDs                    |
 | `rkhunter_allowipcuser`     | `[]`    | Whitelisted shared memory users                   |
+
+The role writes the scripts and hidden files that the distribution packages
+ship in addition to `rkhunter_scriptwhitelist` and `rkhunter_allowhiddenfile`,
+so the scan does not warn about them. Scripts go in only when they exist:
+rkhunter rejects the configuration and stops on a missing `SCRIPTWHITELIST`
+path, the same applies to your own entries. When a package update removes a
+whitelisted script, the scheduled check fails with exit code 2 until the role
+runs again (`--tags rkhunter:configure`). Adding or removing one of the listed
+scripts changes the configuration and runs `rkhunter --propupd`.
+
+| Platform      | Scripts in `/usr/bin` and `/usr/sbin`                   | Hidden files                    |
+|---------------|---------------------------------------------------------|---------------------------------|
+| Arch Linux    | `egrep`, `fgrep`, `ldd`                                 | `/etc/.updated`, krb5 man pages |
+| Debian Trixie | `egrep`, `fgrep`, `ldd`, `which.debianutils`, `adduser` | `/etc/.updated`                 |
+| EL 9          | `egrep`, `fgrep`, `ldd`                                 | `/etc/.updated`, krb5 man pages |
+
+The krb5 man pages are `/usr/share/man/man5/.k5identity.5.gz` and
+`/usr/share/man/man5/.k5login.5.gz`; `/etc/.updated` is written by
+`systemd-update-done`.
+
+The Arch Linux script entries are required: without a package manager check
+(`PKGMGR=NONE`) every scan runs the script check. On Debian and EL the entries
+are defensive: with `PKGMGR=DPKG`/`RPM` the full scan skips the script check for
+files whose hash and size match the package database, and checks them only when
+that test fails or runs alone (`--enable scripts`).
+
+On hosts with PostgreSQL, its shared memory segments in `/dev/shm` are
+reported as suspicious files in `/dev`. Allow them in the inventory of these
+hosts:
+
+```yaml
+rkhunter_allowdevfile:
+  - '/dev/shm/PostgreSQL.*'
+```
 
 ### Scanning
 
@@ -150,7 +198,26 @@ Driver: `podman` | Platforms: Arch Linux, Debian Trixie, Rocky 9
 ## Notes
 
 - Package manager detection is automatic per OS (`DPKG`/`RPM`/`NONE`)
-- The systemd service unit includes security hardening directives
+- The systemd service unit includes security hardening directives, but none
+  that hides paths the scan checks (`ProtectKernelModules` would hide
+  `/usr/lib/modules` and make the kernel module check warn)
+- Warnings count as success of `rkhunter-check.service`: rkhunter reports them
+  in its log, the journal, syslog and, with `rkhunter_mail_on_warning`, by
+  mail; without an address no failed unit alerts on them. A failed unit means
+  the check itself failed: `rkhunter-check.sh` exits with 2 when
+  `rkhunter --config-check` fails, and when rkhunter exits with 1 (its code for
+  warnings and for errors) without writing the scan summary of this run to its
+  log, for example after a database file was replaced by a link, with missing
+  file properties or on a lock timeout. Neither case sends a mail. The scan
+  runs with `--language en`, so this check works with any `LANGUAGE` setting
+  of rkhunter
+- The configuration is validated with `rkhunter --config-check` before it is
+  written; an invalid entry (e.g. a missing `rkhunter_scriptwhitelist` path)
+  fails the task and keeps the previous file
+- Module loading is blocked in the unit with `CapabilityBoundingSet=~CAP_SYS_MODULE`
+  and `SystemCallFilter=~@module` instead of `ProtectKernelModules`
+- The first scan after the installation warns once that no copy of the
+  passwd and group files exists yet; rkhunter keeps one from then on
 - `rkhunter --propupd` runs automatically as a handler when the config changes
 - Debian's built-in cron job (`/etc/default/rkhunter`) is disabled in favor of the systemd timer
 - BTRFS: NoCOW attribute is set on `/var/lib/rkhunter/db` when on BTRFS filesystem

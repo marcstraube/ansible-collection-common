@@ -11,6 +11,10 @@ After=network.target
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/rkhunter-check.sh
+# Exit code 1: the scan ran and found warnings, which rkhunter reports itself
+# (log, syslog, MAIL-ON-WARNING); every other non-zero code fails the unit.
+# rkhunter-check.sh exits with 2 when the configuration check fails.
+SuccessExitStatus=1
 StandardOutput=journal
 StandardError=journal
 
@@ -19,9 +23,14 @@ Nice=19
 IOSchedulingClass=idle
 
 # Security hardening
-# Note: rkhunter needs read access to the entire filesystem
+# Note: rkhunter needs read access to the entire filesystem, so no option that
+# hides or replaces paths it checks (ProtectKernelModules hides
+# /usr/lib/modules, ProtectHome, PrivateTmp, PrivateDevices)
 ProtectKernelTunables=true
-ProtectKernelModules=true
+# Module loading blocked without ProtectKernelModules, which would hide
+# /usr/lib/modules from the kernel module check
+CapabilityBoundingSet=~CAP_SYS_MODULE
+SystemCallFilter=~@module
 ProtectKernelLogs=true
 ProtectControlGroups=true
 ProtectClock=true

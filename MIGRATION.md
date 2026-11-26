@@ -42,6 +42,38 @@ a missing database) were mailed as changes. Now:
 - Hosts with `aide_email_enabled: true` need mail(1) and a working MTA; the role
   installs neither.
 
+### `rkhunter` — warnings no longer fail `rkhunter-check.service`
+
+`rkhunter-check.service` used to end as failed whenever rkhunter exited with 1,
+which it does for warnings. Warnings now count as success of the unit
+(`SuccessExitStatus=1`); rkhunter reports them itself. The unit fails with exit
+code 2 when the check itself fails: a configuration error, or a run that exits
+with 1 without completing the scan (a database file replaced by a link, missing
+file properties, a lock timeout).
+
+`rkhunter_allow_ssh_prot_v1` now defaults to `2` instead of `0`: no warning for
+an `sshd_config` without the `Protocol` option, which OpenSSH 7.6 and later no
+longer has. An explicit `Protocol 2` line now warns.
+
+The generated `rkhunter.conf` gains the scripts and hidden files of the
+distribution (`SCRIPTWHITELIST`, `ALLOWHIDDENFILE`) and the new SSH default, so
+the first run of the role changes it on every host and runs
+`rkhunter --propupd`. On EL the role now also installs `file`, without which
+rkhunter skipped the script and hidden file checks; expect new warnings there.
+
+#### Required action
+
+- Monitoring that relied on a failed `rkhunter-check.service` for warnings
+  misses them now. Set `rkhunter_mail_on_warning`, or watch syslog
+  (`rkhunter_syslog_facility`, default `authpriv.warning`), the journal of
+  `rkhunter-check.service` or `/var/log/rkhunter.log`. A failed unit now means
+  the check did not run to completion.
+- `--propupd` accepts the current file properties as the new baseline. Review
+  the open warnings of the last scan (`/var/log/rkhunter.log`) before the
+  rollout, so a changed file is not accepted unseen.
+- Hosts whose `sshd_config` sets `Protocol 2`: remove the line (OpenSSH ignores
+  it) or set `rkhunter_allow_ssh_prot_v1: 0`.
+
 ## v3.0.0 - 2026-10-19
 
 ### `firejail` — the cleanup path is gone
