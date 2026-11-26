@@ -38,11 +38,17 @@ maxretry = {{ fail2ban_dovecot_maxretry }}
 bantime = {{ fail2ban_dovecot_bantime }}
 {% endif %}
 {% if fail2ban_sogo_enabled %}
+{% set sogo_backend = __fail2ban_sogo_jail_backend %}
 
 [sogo-auth]
 enabled = true
 port = {{ fail2ban_sogo_port }}
+backend = {{ sogo_backend }}
+{% if sogo_backend is match('systemd') %}
+journalmatch = {{ fail2ban_sogo_journalmatch }}
+{% else %}
 logpath = {{ fail2ban_sogo_logpath }}
+{% endif %}
 maxretry = {{ fail2ban_sogo_maxretry }}
 bantime = {{ fail2ban_sogo_bantime }}
 {% endif %}

@@ -52,3 +52,24 @@
         group: root
         mode: '0640'
         force: false
+
+    # Only Debian reads the log file of SOGo; the jail of the other platforms
+    # has to start without it
+    - name: Prepare | Create SOGo log directory (Debian)
+      ansible.builtin.file:
+        path: /var/log/sogo
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Prepare | Create SOGo log (Debian)
+      ansible.builtin.copy:
+        content: ''
+        dest: /var/log/sogo/sogo.log
+        owner: root
+        group: root
+        mode: '0640'
+        force: false
+      when: ansible_facts['os_family'] == 'Debian'

@@ -247,7 +247,15 @@ fail2ban_sogo_enabled: false
 # SOGo port
 fail2ban_sogo_port: 'http,https'
 
-# SOGo log path
+# SOGo detection backend (auto, pyinotify, polling, systemd)
+# Empty: the log file if it exists, otherwise systemd on Arch Linux and EL
+# and the log file on Debian
+fail2ban_sogo_backend: ''
+
+# SOGo journal match (systemd backend)
+fail2ban_sogo_journalmatch: '_SYSTEMD_UNIT=sogo.service'
+
+# SOGo log path (not used with the systemd backend)
 fail2ban_sogo_logpath: '/var/log/sogo/sogo.log'
 
 # SOGo max retries

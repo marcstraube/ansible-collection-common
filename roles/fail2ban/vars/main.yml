@@ -1,0 +1,5 @@
+---
+# Backend of the SOGo jail for a log file: the default backend, unless that
+# reads the journal
+__fail2ban_sogo_file_backend: >-
+  {{ 'auto' if fail2ban_default_backend is match('systemd') else fail2ban_default_backend }}
