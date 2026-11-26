@@ -3,8 +3,19 @@
   ansible.builtin.package:
     name: '{{ __auditd_packages }}'
     state: present
+  register: __auditd_install
   retries: 3
   delay: 5
+
+- name: Install | Syslog plugin packages
+  ansible.builtin.package:
+    name: '{{ __auditd_syslog_packages }}'
+    state: present
+  retries: 3
+  delay: 5
+  when:
+    - auditd_plugin_syslog_enabled | bool
+    - __auditd_syslog_packages | length > 0
 
 - name: Install | Ensure audit log directory exists
   ansible.builtin.file:

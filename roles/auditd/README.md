@@ -149,11 +149,35 @@ audit logs.
 
 ### Plugins
 
-| Variable                       | Default      | Description          |
-|--------------------------------|--------------|----------------------|
-| `auditd_plugin_syslog_enabled` | `true`       | Enable syslog plugin |
-| `auditd_syslog_facility`       | `LOG_LOCAL6` | Syslog facility      |
-| `auditd_syslog_priority`       | `LOG_INFO`   | Syslog priority      |
+| Variable                       | Default      | Description                    |
+|--------------------------------|--------------|--------------------------------|
+| `auditd_plugin_syslog_enabled` | `false`      | Forward audit events to syslog |
+| `auditd_syslog_facility`       | `LOG_LOCAL6` | Syslog facility                |
+| `auditd_syslog_priority`       | `LOG_INFO`   | Syslog priority                |
+
+The syslog plugin runs `/sbin/audisp-syslog`. With
+`auditd_plugin_syslog_enabled: true` the role installs `audispd-plugins` on
+Arch Linux and EL; on Debian the plugin is part of the `auditd` package. With
+`false` the role writes `/etc/audit/plugins.d/syslog.conf` with `active = no`
+and leaves the package installed.
+
+Enabling the plugin copies every audit record into syslog, including the
+command lines of `sudo` and other audited programs. The copy has the access
+rights and the retention of the journal or the syslog files, not those of
+`/var/log/audit/` (root only): on most distributions members of `wheel`,
+`adm` or `systemd-journal` can read the journal, and its size limits decide
+how long records stay. Enable it where a central log collector reads syslog
+or the journal and its readers may see audit data; on workstations the
+audit log alone is usually enough.
+
+A change of the plugin configuration restarts auditd: before audit 4.2 a reload
+does not apply a changed path or changed arguments to a running plugin. The
+restart does not change rules locked with `auditd_rules_immutable`.
+On Debian `auditd.service` requires `audit-rules.service`, which loads the
+rules with `augenrules --load` on every start: if a rule fails to load, the
+start after the restart fails and auditd stays stopped (the role run fails).
+With rules locked by `auditd_rules_immutable`, `augenrules` loads nothing and
+the start succeeds.
 
 ## Tags
 

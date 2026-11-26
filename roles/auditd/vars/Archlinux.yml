@@ -2,6 +2,9 @@
 __auditd_packages:
   - 'audit'
 
+__auditd_syslog_packages:
+  - 'audispd-plugins'
+
 __auditd_remote_packages:
   - 'audispd-plugins'
 

@@ -261,8 +261,12 @@ auditd_email_address: 'root'
 # Plugins
 #
 
-# Enable syslog plugin
-auditd_plugin_syslog_enabled: true
+# Forward audit events to syslog with the audisp-syslog plugin. Every audit
+# record (including command lines of sudo) then lands in the journal/syslog
+# with their access rights and retention; see the README. Installs
+# audispd-plugins on Arch Linux and EL; the auditd package has it on Debian.
+# Disabled, the plugin configuration is written with 'active = no'.
+auditd_plugin_syslog_enabled: false
 
 # Syslog facility: LOG_LOCAL0-LOG_LOCAL7, LOG_AUTH, LOG_AUTHPRIV, LOG_DAEMON, LOG_SYSLOG, LOG_USER
 auditd_syslog_facility: 'LOG_LOCAL6'
