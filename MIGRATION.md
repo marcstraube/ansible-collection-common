@@ -74,6 +74,50 @@ rkhunter skipped the script and hidden file checks; expect new warnings there.
 - Hosts whose `sshd_config` sets `Protocol 2`: remove the line (OpenSSH ignores
   it) or set `rkhunter_allow_ssh_prot_v1: 0`.
 
+### `package_management` — the AUR clone directories belong to aur_builder only
+
+The paru and yay clone directories and the paru `path` PKGBUILD repositories
+used to be owned by `aur_builder` and the group `aur_shared_group`
+(`aur_shared`) with mode `2775`, so every member of the group could create,
+rename and delete entries in their top directories. The wrappers have run
+every manual paru and yay call as `aur_builder` for a while, so the group
+granted nothing a user needed any more, only the write access that let each
+member swap a package directory that is later built and installed as root.
+
+The role now gives these trees to user and group `aur_builder` with mode
+`0755` and no SGID bit, and removes group write access and the SGID bit from
+existing entries. The next run converts an existing tree and reports it as
+changed. The role no longer creates the group, no longer adds
+`aur_shared_users` (by default the `wheel` members of `users_list`) to it and
+no longer writes `buildDir` into their yay `config.json`; the yay wrapper
+passes `--builddir` itself. `aur_shared_group` and `aur_shared_users` are
+deprecated, have no effect and will be removed in the next major version;
+the role warns while either is set.
+
+#### Required action
+
+Optionally, review the tree before the converting run: until now every group
+member could swap a package directory, and the run hands everything to
+`aur_builder` as it is. List the entries of other owners, for example
+`find <paru_clone_dir> -maxdepth 2 ! -user aur_builder`, or empty the clone
+directory so the next build fetches its sources fresh.
+
+Make manual changes in the clone directories and `path` repositories as
+`aur_builder`, for example `sudo -u aur_builder git -C <path> pull <remote>`;
+login users can no longer write there. `paru` and `yay` through the wrappers
+work as before.
+
+Remove `aur_shared_group` and `aur_shared_users` from the inventory. The role
+leaves the group and its memberships in place; remove it once the converting
+run is through:
+
+```bash
+groupdel <aur_shared_group>   # default: aur_shared
+```
+
+A `buildDir` that earlier runs wrote into a login user's
+`~/.config/yay/config.json` stays and does no harm.
+
 ## v3.0.0 - 2026-10-19
 
 ### `firejail` — the cleanup path is gone
