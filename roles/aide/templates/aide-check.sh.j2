@@ -3,13 +3,18 @@
 
 set -euo pipefail
 
+# Exit codes 1-7 of AIDE report changes and count as success of
+# aide-check.service (SuccessExitStatus). Any other failure of this script
+# must not end with one of them, so it exits with 70 (EX_SOFTWARE).
+trap 'echo "aide-check: command failed in line ${LINENO}" >&2; exit 70' ERR
+
 # Configuration
 AIDE_CONFIG="{{ __aide_config_file }}"
-AIDE_DATABASE="{{ aide_database }}"
 AIDE_LOG_DIR="{{ aide_log_dir }}"
 AIDE_REPORT="${AIDE_LOG_DIR}/aide-report-$(date +%Y%m%d-%H%M%S).log"
 {% if aide_email_enabled | bool %}
 AIDE_EMAIL="{{ aide_email_to }}"
+MAIL_SUBJECT=""
 {% endif %}
 
 # Ensure log directory exists
@@ -19,24 +24,48 @@ mkdir -p "${AIDE_LOG_DIR}"
 echo "Starting AIDE integrity check at $(date)" | tee -a "${AIDE_REPORT}"
 echo "=======================================" | tee -a "${AIDE_REPORT}"
 
-if aide --check -c "${AIDE_CONFIG}" 2>&1 | tee -a "${AIDE_REPORT}"; then
+# Keep the exit codes of aide and tee; a failing tee leaves the report
+# incomplete even when aide exits 0
+PIPE_STATUS=(0 0)
+aide --check -c "${AIDE_CONFIG}" 2>&1 | tee -a "${AIDE_REPORT}" || PIPE_STATUS=("${PIPESTATUS[@]}")
+EXIT_CODE=${PIPE_STATUS[0]}
+if [[ ${PIPE_STATUS[1]} -ne 0 ]]; then
+    echo "aide-check: writing the report ${AIDE_REPORT} failed (aide exit code ${EXIT_CODE})" >&2
+    exit 70
+fi
+
+# 0: no changes, 1-7: changes (bitmask 1 added, 2 removed, 4 changed),
+# everything else: AIDE failed (missing database, configuration error, ...)
+if [[ ${EXIT_CODE} -eq 0 ]]; then
     echo "AIDE check completed successfully - no changes detected" | tee -a "${AIDE_REPORT}"
-    EXIT_CODE=0
-else
-    EXIT_CODE=$?
+{% if aide_email_enabled | bool and not aide_email_on_change_only | bool %}
+    MAIL_SUBJECT={{ aide_email_subject | quote }}": no changes on ${HOSTNAME}"
+{% endif %}
+elif [[ ${EXIT_CODE} -le 7 ]]; then
     echo "AIDE detected changes! Exit code: ${EXIT_CODE}" | tee -a "${AIDE_REPORT}"
 {% if aide_email_enabled | bool %}
-
-    # Send email notification
-    if command -v mail &> /dev/null; then
-        mail -s "AIDE Alert: File system changes detected on $(hostname)" \
-            "${AIDE_EMAIL}" < "${AIDE_REPORT}"
-    fi
+    MAIL_SUBJECT={{ aide_email_subject | quote }}": changes detected on ${HOSTNAME}"
+{% endif %}
+else
+    echo "AIDE check failed! Exit code: ${EXIT_CODE}" | tee -a "${AIDE_REPORT}"
+{% if aide_email_enabled | bool %}
+    MAIL_SUBJECT="AIDE Error: integrity check failed on ${HOSTNAME} (exit code ${EXIT_CODE})"
 {% endif %}
 fi
+{% if aide_email_enabled | bool %}
+
+# Send email notification
+if [[ -n "${MAIL_SUBJECT}" ]]; then
+    if ! command -v mail &> /dev/null; then
+        echo "aide-check: mail command not found, no notification sent" >&2
+        exit 70
+    fi
+    mail -s "${MAIL_SUBJECT}" "${AIDE_EMAIL}" < "${AIDE_REPORT}"
+fi
+{% endif %}
 
 # Rotate old reports
 find "${AIDE_LOG_DIR}" -name "aide-report-*.log" -mtime +{{ aide_report_retention_days }} -delete
 
 echo "AIDE check finished at $(date)" | tee -a "${AIDE_REPORT}"
-exit ${EXIT_CODE}
+exit "${EXIT_CODE}"
